@@ -31,7 +31,7 @@
 
 | # | Bug | Ưu tiên | Xử lý |
 |---|---|---|---|
-| B1 | Undo lần 2 không restore group state | 🔴 Cao | Gate 1 — bIsRestoring guard |
+| B1 | ✅ FIXED (16/06) — bIsRestoring guard + spawn merge | — | Đã đóng Gate 1, xem BP_UndoManager.md v1.9-1.10 |
 | B-gizmo | Gizmo ẩn sau undo trong edit mode (pre-existing) | 🟢 Thấp | Known issue, chưa có timeline |
 | Replace folder | Folder sai khi group nhiều mesh khác folder | 🟢 Thấp | Defer Sprint 5 |
 
@@ -70,22 +70,13 @@
 
 **Roadmap v3.1:**
 ```
-Gate 1 (fix B1 bIsRestoring + hợp nhất spawn)   ← TIẾP THEO
-→ Sprint D (Data Layer v2)
+Gate 1 (fix B1 bIsRestoring + hợp nhất spawn)   ✅ DONE (16/06)
+→ Sprint D (Data Layer v2)   ← TIẾP THEO
 → Sprint 5 Combo (20/06 hard deadline)
 → Sprint 7 Material v1.2
 → Sprint 6 Polish
 → Gate 2 (first packaged build)
 ```
-
-**Gate 1 còn lại:**
-1. Fix B1: thêm `bIsRestoring` flag trong BP_UndoManager
-   - RestoreSnapshot: SET True sau entry, SET False trước Broadcast OnRestoreCompleted
-   - CaptureSnapshot: guard đầu hàm `bIsRestoring=True → Return`
-2. Hợp nhất spawn: RestoreSnapshot Step 4 gọi SpawnFurnitureCopy(bAutoSelect=False) thay spawn inline
-3. Dọn doc drift
-
-Đọc `Gate1_SprintD_Execution_Opus.md` khi bắt đầu Gate 1.
 
 ---
 

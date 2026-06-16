@@ -125,13 +125,13 @@ T1-T15 shipped. Chi tiết: `Blueprints/BP_FurnitureInputManager.md`, `Blueprint
 
 ---
 
-## GATE 1 — tiếp theo
+## GATE 1 — COMPLETE ✅ (16/06/2026)
 
-- [ ] G1.1 — Fix B1: thêm bIsRestoring flag trong BP_UndoManager
-- [ ] G1.2 — Hợp nhất spawn: SpawnFurnitureCopy thay spawn inline trong RestoreSnapshot Step 4
-- [ ] G1.3 — Dọn doc drift
+- [x] G1.1 — Fix B1: bIsRestoring flag trong BP_UndoManager. Verify: hist ổn định qua nhiều lần restore liên tiếp, info bar + scene state đúng tại mọi điểm kể cả ranh giới Ungroup/CreateGroup.
+- [x] G1.2 — Hợp nhất spawn: RestoreSnapshot Step 4 gọi SpawnFurnitureCopy(bAutoSelect=False) qua cached ref (RestoreInputMgr), xóa code spawn inline cũ. Bug phát hiện trong test: bAutoSelect bị wire nhầm thành True → tất cả item bị select sau mọi lần restore → fix lại False. 5/5 test case PASS (case "crash khi tắt PIE sau Save/Load/Undo" — defer, nghi GPU/VRAM, verify ở Gate 2).
+- [x] G1.3 — Dọn doc drift (cập nhật PROGRESS.md, DEVIATIONS.md, Session_State.md, BP_UndoManager.md v1.10).
 
-Đọc `02_Current_Sprint.md` khi bắt đầu.
+→ Tiếp theo: Sprint D (Data Layer v2). Đọc `02_Current_Sprint.md` phần Sprint D khi bắt đầu.
 
 ---
 

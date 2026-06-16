@@ -112,6 +112,14 @@
 
 ---
 
+## GATE 1 (16/06/2026)
+
+| Ngày | Task | Plan nói | Thực tế làm | Lý do |
+|------|------|----------|-------------|-------|
+| 16/06 | G1.T2 Hợp nhất spawn | bAutoSelect=False khi gọi SpawnFurnitureCopy trong RestoreSnapshot | Wire ban đầu bị để True (không tick) → tất cả item bị select sau mọi lần restore | Lỗi wire khi implement, phát hiện qua test case 1/2/5 — đã fix lại False, lưu ý cho lần sau gọi SpawnFurnitureCopy trong loop luôn kiểm tra lại pin này |
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
