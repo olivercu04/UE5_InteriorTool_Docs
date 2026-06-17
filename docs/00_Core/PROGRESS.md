@@ -1,6 +1,6 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
-**Cập nhật:** 15/06/2026 (Sprint 4 Bug Fix session)
+**Cập nhật:** 17/06/2026 (Sprint D.T6)
 
 ---
 
@@ -11,12 +11,13 @@ Sprint 1 — Multi-select       ███████████████ 15
 Sprint 2 — Box + Context Menu ████████████████ 9/9  SHIPPED ✅
 Sprint 3 — Group cơ bản       ████████████████ 12/12 SHIPPED ✅  (+10 bug fix)
 Sprint 4 — Edit + Nested      ████████████████ 8/8  SHIPPED ✅  (+5 bug fix thêm)
-Gate 1                        ░░░░░░░░         0/3  task (tiếp theo)
+Gate 1                        ████████████████ 3/3  DONE ✅ (16/06)
+Sprint D — Data Layer v2      ██░░░░░░░░░░░    1/9  task (D.T6 DONE)
 Sprint 5 — Combo Mesh         ░░░░░░░░         0/8  task
 Sprint 6 — Polish UX          ░░░░░░░░░░░░░    0/14 task
 Sprint 7 — Material v1.2      ░░░░░░░░░        0/9  task
 
-TỔNG: 44/82 task
+TỔNG: 45/91 task (thêm Sprint D 9 task)
 ```
 
 ---
@@ -132,6 +133,30 @@ T1-T15 shipped. Chi tiết: `Blueprints/BP_FurnitureInputManager.md`, `Blueprint
 - [x] G1.3 — Dọn doc drift (cập nhật PROGRESS.md, DEVIATIONS.md, Session_State.md, BP_UndoManager.md v1.10).
 
 → Tiếp theo: Sprint D (Data Layer v2). Đọc `02_Current_Sprint.md` phần Sprint D khi bắt đầu.
+
+---
+
+## SPRINT D — Data Layer v2 (bắt đầu 17/06/2026)
+
+- [x] **D.T6** — Bỏ FurnitureDA (17/06/2026) ✅
+  - BP_FurnitureActor.md v1.2: thêm RowName SaveGame
+  - WBP_DetailPopup.md v1.2: InitPopup(RowName), RowData
+  - WBP_MeshControls.md v1.7: BTN_Info RowName, UpdateDetailPopup bound OnSelectionChanged
+  - WBP_DragOverlay_FurnitureCard.md v1.6: CardRowName, RowData, PendingRowName
+  - WBP_FurnitureCard.md v1.0: TẠO MỚI
+  - WBP_FurnitureInventory.md v2.5: OnCardInfoClicked(RowName), OnMeshSelected RowName branch
+  - FilterByCategory_Logic.md v1.3: Recent/Favorite DT direct
+  - FilterBySearch_Logic.md v1.3: FilterFurnitureRows + DisplayPage
+  - BP_FurnitureInputManager.md v1.10: StartReplaceMode doc + RowName branch
+  - Fix B-folder + B-stale-popup
+- [ ] D.T1 — Single-instance inventory toggle
+- [ ] D.T2 — AllFurnitureItems remove + Event Construct D.T7
+- [ ] D.T3 — DT_FurnitureCatalog editor setup
+- [ ] D.T4 — BP_FurnitureItemView wrapper
+- [ ] D.T5 — FilterFurnitureRows C++ (partially done — doc updated)
+- [ ] D.T7 — XÓA AllFurnitureItems khỏi Event Construct
+- [ ] D.T8 — DisplayPage Furniture mode
+- [ ] D.T9 — Integration test toàn bộ Furniture flow
 
 ---
 

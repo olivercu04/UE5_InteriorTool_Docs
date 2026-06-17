@@ -1,11 +1,13 @@
 # WBP_DetailPopup
-**Phiên bản:** 1.1 | **Cập nhật:** 25/05/2026 — 17:29 ICT | Popup thông tin sản phẩm + Scale editor
+**Phiên bản:** 1.2 | **Cập nhật:** 17/06/2026 — Sprint D.T6 | Popup thông tin sản phẩm + Scale editor
+
+> **v1.2 (Sprint D.T6):** Bỏ `FurnitureDA : DA_FurnitureItem` — thay bằng `RowData : S_FurnitureData`. `InitPopup` nhận `RowName : Name` thay `DA`. Toàn bộ `FurnitureDA.*` → `RowData.*`. BTN_ChangeMesh đọc `RowData.MeshFolderPath`.
 
 ---
 
 ## Variables
 ```
-FurnitureDA   : DA_FurnitureItem
+RowData       : S_FurnitureData  ← v1.2 Sprint D (thay FurnitureDA đã xóa)
 bIsDragging   : Boolean
 DragOffset    : Vector2D
 PopupPosition : Vector2D
@@ -77,23 +79,23 @@ Button_ResetScale : Button (trong Border)
 
 ---
 
-## InitPopup(DA DA_FurnitureItem, bFromScene Boolean)
+## InitPopup(RowName Name, bFromScene Boolean)  ← v1.2: thay DA DA_FurnitureItem
 ```
-SET FurnitureDA = DA
+Get Data Table Row(DT_FurnitureCatalog, RowName) → Row Found → Break S_FurnitureData → SET RowData
 SET bIsFromScene = bFromScene
 SET bLockRatio = True  ← default lock khi mở popup
 Set Brush from Lazy Texture (IMG_LockIcon, T_Lock)
-SET Brush from Lazy Texture (LazyImage_Thumbnail, DA.Thumbnail)
-SET Text (TB_Name, DA.VieName)
-SET Text (TB_Category, DA.Category)
-SET Text (TB_Description, DA.Description)
+SET Brush from Lazy Texture (LazyImage_Thumbnail, RowData.ThumbnailSoft)
+SET Text (TB_Name, RowData.VieName)
+SET Text (TB_Category, RowData.Category)
+SET Text (TB_Description, RowData.Description)
 
 Branch bFromScene == True?
   True:
     Set Visibility (VB_ScaleSection, Visible)
     Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast
     → GET SelectedFurnitureActor → Get Actor Scale 3D → CurrentScale
-    CurrentSize = DA.BoundingSize × CurrentScale (Break Vector × Break Vector)
+    CurrentSize = RowData.BoundingSize × CurrentScale (Break Vector × Break Vector)
     SET OriginalSize = CurrentSize
     SET Text (ET_LengthScale, CurrentSize.X)
     SET Text (ET_WidthScale, CurrentSize.Y)
@@ -125,9 +127,9 @@ Branch bLockRatio == True?
   False: (chỉ đổi L)
 
 ↓ Cả 2 nhánh gặp nhau:
-NewScaleX = NewL / FurnitureDA.BoundingSize.X
-NewScaleY = Float(ET_WidthScale) / FurnitureDA.BoundingSize.Y
-NewScaleZ = Float(ET_HeightScale) / FurnitureDA.BoundingSize.Z
+NewScaleX = NewL / RowData.BoundingSize.X
+NewScaleY = Float(ET_WidthScale) / RowData.BoundingSize.Y
+NewScaleZ = Float(ET_HeightScale) / RowData.BoundingSize.Z
 Clamp min = 0.01 cho cả 3
 Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast
 → GET SelectedFurnitureActor → Branch IsValid?
@@ -144,10 +146,10 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast
 → GET SelectedFurnitureActor → Branch IsValid?
   True:
     Set Actor Scale3D (1, 1, 1)
-    SET Text (ET_LengthScale, FurnitureDA.BoundingSize.X)
-    SET Text (ET_WidthScale, FurnitureDA.BoundingSize.Y)
-    SET Text (ET_HeightScale, FurnitureDA.BoundingSize.Z)
-    SET OriginalSize = FurnitureDA.BoundingSize
+    SET Text (ET_LengthScale, RowData.BoundingSize.X)
+    SET Text (ET_WidthScale, RowData.BoundingSize.Y)
+    SET Text (ET_HeightScale, RowData.BoundingSize.Z)
+    SET OriginalSize = RowData.BoundingSize
     Get All Actors Of Class(BP_UndoManager) → Get(0) → CaptureSnapshot("Scale")
 ```
 
@@ -159,7 +161,7 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast → Furnit
 SET bIsReplaceMode = True (FurnitureInputRef)
 SET MeshToReplace = GET SelectedFurnitureActor (FurnitureInputRef)
 
-GET FurnitureDA.MeshFolderPath
+GET RowData.MeshFolderPath
 
 Get Game Instance → Cast Foff_GameInstance → GET FurnitureInventoryRef
 Branch IsValid(FurnitureInventoryRef)?
@@ -194,7 +196,7 @@ Remove from Parent
 
 ## BTN_BuyLink OnClicked
 ```
-Launch URL (FurnitureDA.Link)
+Launch URL (RowData.Link)
 ```
 
 ---
@@ -224,3 +226,4 @@ Event Tick: Branch bIsDragging → Set Position = MousePos - DragOffset / Viewpo
 |---|---|---|
 | 1.0 | 22/04/2026 | Logic gốc |
 | 1.1 | 25/05/2026 — 17:29 ICT | BTN_ChangeMesh: thêm RefreshCardReplaceMode sau FilterByFolderPathWithUI. Fix: Regenerate phải chạy SAU populate cards |
+| 1.2 | 17/06/2026 — Sprint D.T6 | Bỏ FurnitureDA → RowData : S_FurnitureData. InitPopup(RowName, bFromScene): DT lookup thay DA load. Toàn bộ DA.* → RowData.*. BTN_BuyLink: RowData.Link. BTN_ChangeMesh: RowData.MeshFolderPath. |

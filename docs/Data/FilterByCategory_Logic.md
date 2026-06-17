@@ -1,6 +1,8 @@
 # FilterByCategory — Node Flow Reference
 **Nguồn:** v1.2 (25/05/2026) — mới hơn v1.1 (22/05). v1.2 là canonical.
-**Phiên bản:** 1.2 | **Cập nhật:** 25/05/2026 — 15:03 ICT | WBP_FurnitureInventory
+**Phiên bản:** 1.3 | **Cập nhật:** 17/06/2026 — Sprint D.T6 | WBP_FurnitureInventory
+
+> **v1.3 (Sprint D.T6):** Furniture Recent + Favorite: bỏ `ForEach AllFurnitureItems` inner loop. Dùng `Get Data Table Row(DT_FurnitureCatalog, RowName)` trực tiếp → `BuildFurnitureItem(RowName, RowData)` → `AddItem`. Xóa `AllFurnitureItems` class var (Sprint D.T7 XÓA khỏi Event Construct).
 
 ---
 
@@ -31,16 +33,12 @@ Branch CategoryFilter == "Recent":
         Clear List Items(CTV_FurnitureCard)
         GET BP_FurnitureUserPrefsManager → GET UserPrefs → GET RecentMeshes → RecentArray
 
-        ForEach RecentArray (RowName):         ← outer loop: giữ thứ tự Recent
-          ForEach AllFurnitureItems (DA):      ← inner loop with Break: tìm DA match
-            Loop Body:
-              String to Name( Get Object Name(DA) ) == RowName   ← Name == Name
-              Branch True:
-                Add Item(CTV_FurnitureCard, DA)   ← ⚠️ phải nối Item pin vào DA
-                → Break inner ForEach
-              Branch False:
-                (để trống — loop tự tiếp tục)
-          Completed: tiếp outer loop
+        ← v1.3 Sprint D: KHÔNG dùng inner ForEach AllFurnitureItems nữa — DT lookup trực tiếp
+        ForEach RecentArray (RowName):
+          Get Data Table Row(DT_FurnitureCatalog, RowName) → Row Found:
+            True  → Create BP_FurnitureItemView → SET ItemView.RowName = RowName
+                    → Add Item(CTV_FurnitureCard, ItemView)
+            False → (skip — RowName không tồn tại trong DT, bỏ qua)
 
         Return   ← thoát hẳn, không gọi FilterBySearch
 
@@ -60,20 +58,16 @@ Branch CategoryFilter == "Recent":
             Clear List Items(CTV_FurnitureCard)
             GET BP_FurnitureUserPrefsManager → GET UserPrefs → GET FavoriteMeshes → FavArray
 
-            Local: MatchedFavDA : Array of Object
+            ← v1.3 Sprint D: KHÔNG dùng inner ForEach AllFurnitureItems nữa
+            Local: FavItemViews : Array of BP_FurnitureItemView
 
-            ForEach FavArray (RowName):              ← outer loop
-              ForEach AllFurnitureItems (DA):        ← inner loop with Break
-                Loop Body:
-                  String to Name( Get Object Name(DA) ) == RowName
-                  Branch True:
-                    ADD(MatchedFavDA, DA)   ← ⚠️ nối Item pin vào DA
-                    → Break inner ForEach
-                  Branch False:
-                    (để trống)
-              Completed: tiếp outer loop
+            ForEach FavArray (RowName):
+              Get Data Table Row(DT_FurnitureCatalog, RowName) → Row Found:
+                True  → Create BP_FurnitureItemView → SET ItemView.RowName = RowName
+                        → ADD(FavItemViews, ItemView)
+                False → (skip)
 
-            Set List Items(CTV_FurnitureCard, MatchedFavDA)
+            Set List Items(CTV_FurnitureCard, FavItemViews)
             Return
 
       F →
@@ -208,3 +202,4 @@ BTN_Tab_Material OnClicked:
 | 1.0 | 20/05/2026 | Logic gốc: SET CategoryFilter + CurrentCategory, Branch Is Empty search text, gọi FilterBySearch |
 | 1.1 | 22/05/2026 | Thêm Recent branch ở đầu — xử lý Recent trực tiếp, bypass FilterBySearch |
 | 1.2 | 25/05/2026 — 15:03 ICT | Thêm Favorite branch. Toggle logic cho Recent/Favorite. UpdateSpecialHighlight. Persist khi switch mode. Fix: String to Name comparison, Item pin Add Item, parameter vs class variable bug |
+| 1.3 | 17/06/2026 — Sprint D.T6 | Recent + Favorite Furniture: bỏ inner loop AllFurnitureItems → Get DataTable Row(DT, RowName) trực tiếp → Create BP_FurnitureItemView. Recent: AddItem per RowName. Favorite: collect FavItemViews → Set List Items. |

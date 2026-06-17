@@ -1,20 +1,21 @@
 # BP_FurnitureActor
 **Tách từ:** `BP_FurnitureActor_SceneManager.md` (phần Actor)
-**Phiên bản:** 1.1 | **Cập nhật:** 22/05/2026 | Parent: StaticMeshActor | Interface: EMSActorSaveInterface
+**Phiên bản:** 1.2 | **Cập nhật:** 17/06/2026 — Sprint D.T6 | Parent: StaticMeshActor | Interface: EMSActorSaveInterface
 
-> **[?] Q5:** GroupID variable cần thêm vào Variables section. GroupID được SET runtime từ F_ExecuteReplace (WBP_DragOverlay_FurnitureCard), On Drop (WBP_DragOverlay), và CreateGroup (BP_FurnitureInputManager). Chưa verify kiểu dữ liệu chính xác từ Blueprint. Tạm ghi String.
+> **v1.2 (Sprint D.T6):** Thêm `RowName : Name (SaveGame)` — nguồn sự thật mới thay DA_FurnitureItem. DAPath giữ lại làm fallback cho save cũ chưa có RowName.
 
 ---
 
 ## Variables
 ```
 MeshPath              : String    ← SaveGame
-DAPath                : String    ← SaveGame
+DAPath                : String    ← SaveGame (giữ làm fallback cho save cũ — xem Branch RowName == "" trong load path)
+RowName               : Name      ← SaveGame (v1.2 Sprint D) — khóa tra DT_FurnitureCatalog; "" = chưa set (save cũ)
 MaterialOverrides     : Array of String ← SaveGame (v1.1) — package path MI theo slot index
 MaterialParams        : Array of String ← SaveGame (v1.1 placeholder — JSON per slot cho v1.2)
-PlacementSurfaceType  : Name      ← SaveGame (v1.2 UX) — "Floor" | "Wall" | "Ceiling", default="Floor"
+PlacementSurfaceType  : Name      ← SaveGame — "Floor" | "Wall" | "Ceiling", default="Floor"
 FurnitureMesh         : StaticMeshComponent (Mobility = Movable)
-GroupID               : String    ← [?] runtime var — ID của group chứa actor này; "" = đồ rời. Cần verify SaveGame hay không.
+GroupID               : String    ← SaveGame (xác nhận Sprint 3 T2) — ID của group chứa actor; "" = đồ rời
 ```
 
 ---
@@ -46,3 +47,4 @@ Wait For Save or Load Completed (Load Only) → On Completed:
 |---|---|---|
 | 1.0 | 22/04/2026 | Logic gốc — BeginPlay SET FurnitureSpawned tag, ActorLoaded restore mesh |
 | 1.1 | 22/05/2026 | Thêm MaterialOverrides + MaterialParams (SaveGame v1.1) |
+| 1.2 | 17/06/2026 — Sprint D.T6 | Thêm RowName : Name (SaveGame) — key DT_FurnitureCatalog. DAPath giữ fallback save cũ. GroupID [?] giải quyết: String SaveGame (Sprint 3 T2). |

@@ -1,7 +1,8 @@
 # WBP_MeshControls
 **HỢP NHẤT TỪ 5 file:** v1.4 base (10/06) + v1.5_patch (11/06) → WBP_MeshControls.md merged (11/06) + v1.5_update (12/06) + v1.6_patch (15/06)
-**Phiên bản:** 1.6 | **Cập nhật:** 15/06/2026 — 20:30 ICT | Persistent Toolbar — luôn hiển thị trên màn hình
+**Phiên bản:** 1.7 | **Cập nhật:** 17/06/2026 — Sprint D.T6 | Persistent Toolbar — luôn hiển thị trên màn hình
 
+> **v1.7 (Sprint D.T6):** BTN_Info đọc `RowName` thay `DAPath→Load`. `UpdateDetailPopup` rewrite: bound vào `OnSelectionChanged`, nhận Primary → GET RowName → InitPopup(RowName). Event Construct: thêm bind `UpdateDetailPopup → OnSelectionChanged`. Fix stale popup bug (cũ: Mouse Left Pressed Step 11 đọc SelectedFurnitureActor trước khi selection resolve).
 > **v1.6 (Sprint 4 Bug Fix F1):** Info bar OnSelectionChangedInfoBar Then 1 → dùng `GetSelectionUnitLabel` thay inline logic. Widget name mapping: plan dùng HB_SelectionInfo/TXT_SelectionInfo → thực tế UE5 là `Border_ET_SelectionCount`/`ET_SelectionCount`.
 > **v1.5 update (12/06):** Thêm `BTN_ExitOneLevel` ("↑ Lên 1 cấp") vào HB_EditModeBar + OnClicked.
 > **v1.5 (Sprint 4 T5):** BTN_EnterEdit, HB_EditModeBar (breadcrumb + ExitFull), bind OnEditModeChanged, Then 2 BTN_EnterEdit visibility.
@@ -55,6 +56,7 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast → InputR
 → SET ActiveMode = Select → RefreshButtonState(Select)
 ← v1.4: bind info bar
 → Bind Event to OnSelectionChanged (Target=InputRef) → OnSelectionChangedInfoBar
+→ Bind Event to OnSelectionChanged (Target=InputRef) → UpdateDetailPopup   ← v1.7: bind popup update
 → Set Visibility(Border_ET_SelectionCount, Collapsed)
 ← v1.5: bind edit mode
 → Bind Event to OnEditModeChanged (Target=InputRef) → OnEditModeChangedInfoBar
@@ -146,16 +148,23 @@ IsValid(TargetActor):
 
 ---
 
-## BTN_Info OnClicked (legacy — Load Blocking)
+## BTN_Info OnClicked — v1.7 (Sprint D.T6)
 
 ```
 Get All Actors Of Class(InputManager) → Get(0) → Cast → FurnitureInputRef
 GET DetailPopupRef → IsValid → Remove from Parent
-GET SelectedFurnitureActor → Cast → GET DAPath → Load Asset Blocking → Cast DA_FurnitureItem
-Create WBP_DetailPopup → Add to Viewport → Set Position In Viewport(chuột + Y+10) + SET PopupPosition
-SET DetailPopupRef = popup → Call InitPopup(DA, bFromScene=True)
+GET SelectedFurnitureActor → Branch IsValid:
+  True:
+    Cast → BP_FurnitureActor → GET RowName
+    Branch RowName != "":
+      True:
+        Create WBP_DetailPopup → Add to Viewport
+        Set Position In Viewport(chuột + Y+10) → SET PopupPosition
+        SET DetailPopupRef = popup
+        Call InitPopup(RowName, bFromScene=True)
+      False: (save cũ chưa có RowName — popup không mở)
 ```
-> ⚠ SPRINT D: sau D.T8 nên đọc qua RowName→DT thay DAPath (vi phạm R1/R5 hiện tại — legacy chấp nhận tạm).
+> ⚠ RowName == "" = save cũ. Popup silently bỏ qua — không fallback DAPath (cuhoang xác nhận: không cần fallback). Để hỗ trợ save cũ đầy đủ → đổi save file + re-import.
 
 ---
 
@@ -172,13 +181,25 @@ Branch bIsReplaceMode == True:
 
 ---
 
-## UpdateDetailPopup (Custom Event)
+## UpdateDetailPopup (Custom Event, bound to OnSelectionChanged) — v1.7
 
 ```
-Get All Actors Of Class(InputManager) → Get(0) → Cast → GET DetailPopupRef → IsValid:
-  True → GET SelectedFurnitureActor → IsValid → Cast → GET DAPath
-         → Load Asset Blocking → Cast DA_FurnitureItem → InitPopup(DetailPopupRef, DA, bFromScene=True)
+← Signature: (Actors: Array<BP_FurnitureActor>, Primary: BP_FurnitureActor)
+← Bound từ Event Construct: Bind OnSelectionChanged → UpdateDetailPopup
+
+GET DetailPopupRef → Branch IsValid:
+  True → (popup đang mở — update)
+    Branch IsValid(Primary):
+      True:
+        Cast Primary → BP_FurnitureActor → GET RowName
+        Branch RowName != "":
+          True  → Call InitPopup(RowName, bFromScene=True)
+          False → Remove from Parent(DetailPopupRef) → SET DetailPopupRef = None
+      False → (deselect — đóng popup)
+        Remove from Parent(DetailPopupRef) → SET DetailPopupRef = None
+  False → (popup chưa mở — no-op)
 ```
+> ⚠ Bind phải ở Event Construct — không ở handler (handler không fire thì không bao giờ bind). Fix bug stale: trước đây UpdateDetailPopup được gọi tại Mouse Left Pressed Step 11 → đọc SelectedFurnitureActor TRƯỚC khi selection resolve ở OnLMBReleased → popup hiện đồ cũ. Nay chạy SAU OnSelectionChanged fire → đúng actor.
 
 ---
 
@@ -268,3 +289,4 @@ BTN_ExitFull.OnClicked     : Get All Actors Of Class(InputManager)[0] → ExitEd
 | 1.5 | 11/06/2026 — 18:14 ICT | **Sprint 4 T5 — Edit Mode UI.** Vars: BTN_EnterEdit, HB_EditModeBar (TXT_EditBreadcrumb, BTN_ExitFull). Event Construct bind OnEditModeChanged → OnEditModeChangedInfoBar + ẩn edit bar ban đầu. Handler OnEditModeChangedInfoBar: hiện/ẩn bar + set breadcrumb. OnSelectionChangedInfoBar Then 2: BTN_EnterEdit visibility. OnClicked: BTN_EnterEdit, BTN_ExitFull. |
 | 1.5 update | 12/06/2026 — 15:04 ICT | Thêm BTN_ExitOneLevel ("↑ Lên 1 cấp") vào HB_EditModeBar + OnClicked → ExitEditModeOneLevel. Cập nhật Layout. Thêm bảng hành vi Exit buttons. |
 | 1.6 | 15/06/2026 — 20:30 ICT | **F1: Info bar dùng GetSelectionUnitLabel.** OnSelectionChangedInfoBar Then 1: thay inline label logic bằng call InputManager.GetSelectionUnitLabel(Primary, Count). Widget name fix: HB_SelectionInfo → Border_ET_SelectionCount, TXT_SelectionInfo → ET_SelectionCount (tên thực tế trong UE5 Blueprint). |
+| 1.7 | 17/06/2026 — Sprint D.T6 | BTN_Info: đọc RowName thay DAPath→Load. UpdateDetailPopup rewrite: bound OnSelectionChanged, nhận Primary → RowName → InitPopup(RowName). Event Construct: thêm bind UpdateDetailPopup. Fix stale popup bug (cũ: Step 11 Mouse Left Pressed đọc actor trước selection resolve). |

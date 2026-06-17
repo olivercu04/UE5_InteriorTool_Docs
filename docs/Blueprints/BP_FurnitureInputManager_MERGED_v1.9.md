@@ -1,8 +1,9 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 1.9 | **Cập nhật:** 15/06/2026 — 20:30 ICT | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 1.10 | **Cập nhật:** 17/06/2026 — Sprint D.T6 | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 > **HỢP NHẤT TỪ:** base v1.6 + patch v1.7 + patch v1.8 + patch v1.9 (15/06/2026). Đây là bản đầy đủ, thay thế toàn bộ file gốc + patch trong import_raw.
 >
+> **v1.10 (Sprint D.T6):** Thêm `StartReplaceMode(Actors)` — document lần đầu (đã có trong Blueprint từ v1.4 nhưng chưa ghi doc). Bổ sung: Primary actor → Branch RowName != "" → DT lookup MeshFolderPath (fallback DAPath nếu RowName rỗng). Mouse Left Pressed: ghi nhận Step 11 (UpdateDetailPopup) đã bị XÓA — xem mục bên dưới.
 > **v1.9 (Sprint 4 Bug Fix F1-F4):** thêm `GetSelectionUnitLabel` (F1), `ComputeSelectionUnits` (F3); `CreateGroup` viết lại bottom-up (F3); `SpawnFurnitureCopy` auto-join edit scope (F4); `GroupNameCounter` chuyển sang `BP_GroupsContainer` (F2).
 > **v1.8 (Sprint 4 T6-T8):** `UngroupActors` viết lại peel-one-level; `PruneEmptyGroups` dùng `GetAllDescendantActors`.
 > **v1.7 (Sprint 4 T1-T5 — Edit Mode):** `EditModeStack`, dispatcher `OnEditModeChanged`, 7 helper đệ quy + Resolver, các hàm Enter/Exit edit mode; `ExpandSelectionWithGroups` viết lại dùng `ResolveSelectionUnit`.
@@ -164,6 +165,8 @@ Step 7 : DEFER cho MỌI click trúng furniture (v1.6 — bỏ nhánh Ctrl):
 ```
 **Khác v1.4:** Step 5/6/7 trước đây select/deselect NGAY. Giờ chỉ ghi nhận + defer.
 **Khác v1.5 (v1.6 fix Ctrl+click group):** Step 7 BỎ Branch `IsInputKeyDown(Left Ctrl)` + nhánh ToggleActor-ngay. Lý do: nhánh Ctrl cũ toggle 1 đồ đơn rồi STOP → không bao giờ tới OnLMBReleased (nơi expand group) → Ctrl+click group không cộng dồn. Giờ **MỌI click defer**; phân giải single/group/Ctrl chuyển hết về **OnLMBReleased Then2** (IsValid PendingClickActor → Ctrl? → ExpandSelectionWithGroups → ToggleActor / DeselectAll+SelectActors → CaptureSnapshot → SET PendingClickActor=None). Quyết định cuối ở OnLMBReleased.
+
+> ⚠️ **v1.10 — Step 11 đã XÓA (Sprint D.T6):** Trong quá trình dev Sprint D, `UpdateDetailPopup` (WBP_MeshControls) được nối tạm vào cuối Mouse Left Pressed (Step 11 không chính thức). Gây **stale popup bug**: hàm chạy TRƯỚC khi `SelectedFurnitureActor` được set (selection chốt ở `OnLMBReleased`, không phải `Mouse Left Pressed`) → popup hiển thị đồ cũ. Đã XÓA Step 11. `UpdateDetailPopup` nay được **bind vào `OnSelectionChanged`** trong WBP_MeshControls Event Construct.
 
 ---
 
@@ -810,6 +813,41 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast
 
 ---
 
+## StartReplaceMode(Actors : Array<BP_FurnitureActor>) — v1.4 + v1.10 update
+> Document lần đầu v1.10 (đã có trong Blueprint từ v1.4). Gọi từ BTN_Replace (WBP_MeshControls) khi bIsReplaceMode == False.
+
+```
+Branch LENGTH(Actors) == 0: True → Return  ← guard empty
+
+SET MeshesToReplace = Actors
+SET bIsReplaceMode = True
+
+← Mở + expand inventory
+Get Game Instance → Cast Foff_GameInstance → GET FurnitureInventoryRef → IsValid:
+  True  → EnsureExpanded (WBP_FurnitureInventory)
+          EnterReplaceMode (WBP_FurnitureInventory)
+  False → Create WBP_FurnitureInventory → Add to Viewport → SET FurnitureInventoryRef (GameInstance)
+          ← single-instance toggle pattern (Sprint D.T1)
+
+← Navigate folder for Primary actor (hỗ trợ folder jump khi Replace từ InfoPopup / BTN_Info)
+← v1.10 D.T6: branch RowName thay DAPath
+Branch LENGTH(Actors) == 1:    ← chỉ navigate khi single-select (multi: inventory ở root)
+  True:
+    Cast Actors[0] → BP_FurnitureActor → GET RowName
+    Branch(RowName != ""):
+      True:
+        Get Data Table Row(DT_FurnitureCatalog, RowName) → Row Found
+          → Break S_FurnitureData → GET MeshFolderPath
+          → Branch MeshFolderPath != "" → FilterByFolderPathWithUI(MeshFolderPath)
+      False (save cũ RowName rỗng — fallback DAPath):
+        Cast Actors[0] → GET DAPath → Load Asset Blocking → Cast DA_FurnitureItem
+          → GET MeshFolderPath → FilterByFolderPathWithUI(MeshFolderPath)
+  False: (multi-select — không navigate, giữ folder hiện tại)
+```
+> ⚠ `FilterByFolderPathWithUI` sẽ gọi `RefreshCardReplaceMode` (Regenerate all cards) → cards hiện BTN_ChangeMesh. KHÔNG gọi `EnterReplaceMode` sau `FilterByFolderPathWithUI` (sẽ Regenerate lần 2 → UI nhảy).
+
+---
+
 ## Lịch sử cập nhật
 
 | Phiên bản | Ngày | Nội dung |
@@ -824,3 +862,4 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast
 | 1.7 | 11/06/2026 — 18:14 ICT | **Sprint 4 T1–T5 — Edit Mode Slice 1.** Var `EditModeStack`. Dispatcher `OnEditModeChanged`. 7 helper: GetCurrentEditScope, GetChildGroups, GetGroupRoot, WalkUpUntilParent, GetAllDescendantActors (đệ quy), GetGroupsInHierarchy (đệ quy bridge Combo), ResolveSelectionUnit (não Sprint 4). GetEditBreadcrumb. 2 stub ApplyEditModeVisual/RemoveEditModeVisual. **ExpandSelectionWithGroups viết lại** dùng ResolveSelectionUnit. EnterEditMode/ExitEditModeOneLevel/ExitEditModeFull/TryEnterEditFromSelection. CLEAR EditModeStack ở End Play. |
 | 1.8 | 12/06/2026 — 15:04 ICT | **Sprint 4 T6-T8 + Bug Fix.** **CreateGroup:** ParentGroupID=GetCurrentEditScope() (sau bị v1.9 thay). **PruneEmptyGroups viết lại** dùng GetAllDescendantActors. **UngroupActors viết lại peel-one-level** (scope→target→B1 actor về cha→B2 rebuild sub-groups→B3 xóa target). Local vars update (xóa FoundIdx/Root/LocalRemoveIDs, thêm target/parentGID/scope/LocalNewGroups/LocalKeep). Bug Fix cross-ref: GroupID preserved trong Replace Mesh (WBP_DragOverlay_FurnitureCard — Cast OldActor → GET GroupID → SET NewActor.GroupID TRƯỚC Destroy). |
 | 1.9 | 15/06/2026 — 20:30 ICT | **Sprint 4 Bug Fix F1-F4.** Thêm `GetSelectionUnitLabel` (F1), `ComputeSelectionUnits` (F3). `GroupNameCounter` chuyển sang BP_GroupsContainer (F2, default=1 SaveGame). **CreateGroup viết lại bottom-up** (F3 — ComputeSelectionUnits trước guard, Luật 6B). **SpawnFurnitureCopy** auto-join edit scope (F4). |
+| 1.10 | 17/06/2026 — Sprint D.T6 | Document `StartReplaceMode` lần đầu: Primary actor → Branch RowName != "" → DT lookup MeshFolderPath (fallback DAPath). Ghi nhận + xóa Step 11 Mouse Left Pressed (UpdateDetailPopup → stale popup bug → nay bind OnSelectionChanged ở WBP_MeshControls). |

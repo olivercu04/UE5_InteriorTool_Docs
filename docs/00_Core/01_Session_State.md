@@ -1,13 +1,13 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 15/06/2026 — 20:30 ICT | Lighting_Mnger UE5.5.4
+**Phiên bản:** 17/06/2026 — Sprint D.T6 | Lighting_Mnger UE5.5.4
 
 ---
 
 ## TRẠNG THÁI HIỆN TẠI
 
-**Sprint 4 Bug Fix Session — COMPLETE ✅ (15/06/2026)**
+**Sprint D.T6 — COMPLETE ✅ (17/06/2026) — Bỏ FurnitureDA**
 
 ### Sprint 4 Bug Fix (F1–F4 + A12) — ĐẦY ĐỦ PASS
 
@@ -33,7 +33,8 @@
 |---|---|---|---|
 | B1 | ✅ FIXED (16/06) — bIsRestoring guard + spawn merge | — | Đã đóng Gate 1, xem BP_UndoManager.md v1.9-1.10 |
 | B-gizmo | Gizmo ẩn sau undo trong edit mode (pre-existing) | 🟢 Thấp | Known issue, chưa có timeline |
-| Replace folder | Folder sai khi group nhiều mesh khác folder | 🟢 Thấp | Defer Sprint 5 |
+| B-folder | ✅ FIXED (17/06, D.T6) — Replace folder sai khi group nhiều mesh | — | OnMeshSelected RowName→DT, fallback DAPath save cũ |
+| B-stale-popup | ✅ FIXED (17/06, D.T6) — Popup hiển thị đồ cũ | — | UpdateDetailPopup bound OnSelectionChanged |
 
 ---
 
@@ -52,11 +53,16 @@
 
 ## KIẾN TRÚC HIỆN TẠI
 
-**BP_FurnitureInputManager v1.9** — thêm GetSelectionUnitLabel, ComputeSelectionUnits, CreateGroup bottom-up, SpawnFurnitureCopy auto-join edit scope
-**BP_UndoManager v1.8** — snapshot V=4 + EditModeStackSnapshot + TempEditModeStack
-**BP_GroupsContainer** — thêm GroupNameCounter (monotonic, SaveGame)
-**WBP_MeshControls v1.6** — info bar dùng GetSelectionUnitLabel từ InputManager
-**WBP_DragOverlay_FurnitureCard v1.5** — F4 On Drop: SET GroupID nếu trong edit scope
+**BP_FurnitureInputManager v1.10** — StartReplaceMode doc (RowName branch), Step 11 XÓA (stale popup fix)
+**BP_UndoManager v1.10** — bIsRestoring guard + SpawnFurnitureCopy merge
+**BP_FurnitureActor v1.2** — RowName : Name (SaveGame), GroupID confirmed SaveGame
+**WBP_DetailPopup v1.2** — InitPopup(RowName), RowData : S_FurnitureData
+**WBP_MeshControls v1.7** — BTN_Info RowName, UpdateDetailPopup bound OnSelectionChanged
+**WBP_FurnitureCard v1.0** — TẠO MỚI, CardRowName, BP_FurnitureItemView, DT lookup
+**WBP_DragOverlay_FurnitureCard v1.6** — PendingRowName, F_ExecuteReplace RowData
+**WBP_FurnitureInventory v2.5** — OnCardInfoClicked(RowName), OnMeshSelected RowName branch
+**FilterByCategory_Logic v1.3** — Recent/Favorite DT direct (bỏ inner loop AllFurnitureItems)
+**FilterBySearch_Logic v1.3** — FilterFurnitureRows + AllFilteredFurnitureRows → DisplayPage
 
 **Snapshot version history:**
 - V1: single select (legacy)
@@ -71,7 +77,8 @@
 **Roadmap v3.1:**
 ```
 Gate 1 (fix B1 bIsRestoring + hợp nhất spawn)   ✅ DONE (16/06)
-→ Sprint D (Data Layer v2)   ← TIẾP THEO
+Sprint D D.T6 (Bỏ FurnitureDA — 10 file)        ✅ DONE (17/06)
+→ Sprint D D.T1-D.T5, D.T7-D.T9                 ← TIẾP THEO
 → Sprint 5 Combo (20/06 hard deadline)
 → Sprint 7 Material v1.2
 → Sprint 6 Polish

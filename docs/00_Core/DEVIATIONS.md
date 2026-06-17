@@ -120,12 +120,30 @@
 
 ---
 
+## SPRINT D — D.T6 (17/06/2026) — Bỏ FurnitureDA
+
+| Ngày | Task | Plan nói | Thực tế làm | Lý do | Loại |
+|------|------|----------|-------------|-------|------|
+| 17/06 | D.T6 | Bỏ FurnitureDA khỏi WBP_FurnitureCard + WBP_DragOverlay | DAPath giữ nguyên trên BP_FurnitureActor làm fallback cho save cũ | Backward compat: actor save cũ chưa có RowName → Branch RowName == "" → fallback DAPath | [SCOPE] |
+| 17/06 | D.T6 | WBP_MaterialCard không cần tạo file mới | Skip (file không tồn tại trước D.T6, dead code xóa không cần doc) | FurnitureDA trên MaterialCard = dead code, đã xóa trong Blueprint, không có file tài liệu cần update | [SCOPE] |
+| 17/06 | D.T6 | UpdateDetailPopup gọi từ BTN_Info | UpdateDetailPopup nay là Event bound to OnSelectionChanged; BTN_Info tạo popup mới, không update | Tách rõ: BTN_Info = MỞ popup mới; UpdateDetailPopup = CẬP NHẬT popup đang mở theo selection | [PLAN-SAI] |
+| 17/06 | D.T6 | BTN_Info RowName == "" → không mở popup | Không fallback DAPath cho BTN_Info (cuhoang xác nhận) | Save cũ yêu cầu re-import → không đáng fallback thêm code path | [SCOPE] |
+| 17/06 | D.T6 | On Drag Detected: Set Operation.FurnitureDA | Set Operation.RowName = CardRowName | DA đã xóa; DragDropOperation_FurnitureCard giờ chứa RowName | [NODE] |
+| 17/06 | D.T6 | F_ExecuteReplace: Load mesh từ FurnitureDA.Mesh | Load từ RowData.Mesh (SoftObjectRef trong S_FurnitureData) + SET NewActor.RowName | DA không còn tồn tại; DT row có field Mesh (SoftObjectPath) | [NODE] |
+| 17/06 | D.T6 | FilterByCategory Recent/Favorite dùng inner loop AllFurnitureItems | DT lookup trực tiếp per RowName → Create BP_FurnitureItemView | AllFurnitureItems bị xóa trong Sprint D.T7; DT lookup O(1) thay O(n×m) | [PERF] |
+| 17/06 | D.T6 | FilterBySearch dùng FilterFurnitureItems(AllFurnitureItems) | FilterFurnitureRows(DT_FurnitureCatalog) → AllFilteredFurnitureRows → DisplayPage | AllFurnitureItems xóa; C++ function mới nhận DT làm input | [NODE] |
+| 17/06 | D.T6 | StartReplaceMode: navigate folder dùng DAPath | Branch RowName != "" → DT lookup; False → fallback DAPath (save cũ) | Thống nhất với kiến trúc D: ưu tiên RowName, fallback DAPath | [PLAN-SAI] |
+| 17/06 | D.T6 | WBP_FurnitureCard document trong WBP_DragOverlay_FurnitureCard.md | Tạo file riêng WBP_FurnitureCard.md | Widget có đủ logic riêng để xứng đáng có file riêng | [SCOPE] |
+| 17/06 | D.T6 | Stale popup: UpdateDetailPopup ở Mouse Left Pressed | Step 11 xóa; UpdateDetailPopup bind OnSelectionChanged WBP_MeshControls | Bug phát hiện trong D.T6 — selection không resolve ở Mouse Pressed | [BUG] |
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
 |---|---|---|
-| B1 | Undo lần 2 không restore group state (Groups.Length=0) | Gate 1 (bIsRestoring guard) |
-| Replace folder sai | Khi group có nhiều mesh khác folder, StartReplaceMode navigate folder của PrimarySelectedActor (last spawned) thay vì folder đại diện | Sprint 5 — revisit khi làm combo replace |
+| B1 | Undo lần 2 không restore group state (Groups.Length=0) | ✅ FIXED Gate 1 (16/06) |
+| Replace folder sai | ✅ FIXED Sprint D.T6 (17/06) — RowName→DT thay DAPath. Xem WBP_FurnitureInventory v2.5 | — |
 | B3-gizmo | Gizmo ẩn sau undo trong edit mode (mode vẫn là Move) | **Pre-existing** — xác nhận 15/06, không phải regression Sprint 4. Known issue, chưa có timeline fix. |
 
 ---

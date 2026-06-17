@@ -531,10 +531,10 @@ Coverage: Gate 1 (G1.T1 bIsRestoring guard, G1.T2 spawn merge, G1.T3 docs) + Spr
 | Q2 | WBP_MeshControls.md | BTN_Delete còn là single hay đã đổi sang DeleteSelected (multi)? |
 | Q3 | BP_UndoManager.md / BP_FurnitureInputManager.md | FindGroupData output pins: có pin Index không? |
 | Q4 | WBP_FurnitureInventory.md | Layout kích thước: 512×1024 hay 720×630? |
-| Q5 | BP_FurnitureActor.md | GroupID variable — cần thêm vào Variables section |
+| Q5 | BP_FurnitureActor.md | ✅ GIẢI QUYẾT (17/06, D.T6): GroupID : String SaveGame (xác nhận Sprint 3 T2). Đã thêm vào v1.2. |
 | Q6 | Rules/Design.md | Phần cũ bị drop (pagination=50) có thông tin nào khác v1.1 không? |
-| Q7 | Planning/Master_Roadmap.md | Không tìm thấy nguồn trong import_raw. File này cần được tạo từ đâu, hay là alias của Planning/00_Master_Plan.md? |
-| Q8 | Data/Data_Overview.md | Không tìm thấy nguồn trong import_raw (INDEX.md ref đến "Data.md" nhưng không tồn tại). Nội dung cần tạo từ đâu? |
+| Q7 | Planning/Master_Roadmap.md | ✅ GIẢI QUYẾT (17/06): ALIAS của Planning/00_Master_Plan.md (import_raw/28-05-2026_00_Master_Plan.md = C14-C29). KHÔNG tạo file mới. TODO: content lỗi thời (28/05), refresh khi làm Planning sprint. |
+| Q8 | Data/Data_Overview.md | ✅ GIẢI QUYẾT (17/06): GAP thật — ĐÃ TẠO Data/Data_Overview.md (cuhoang cung cấp content, kiến trúc D.T6). |
 
 ---
 

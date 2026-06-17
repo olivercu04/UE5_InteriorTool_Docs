@@ -1,6 +1,8 @@
 # WBP_FurnitureCard (+ WBP_DragOverlay) — Drag & Drop + Replace Mesh
 **HỢP NHẤT TỪ 3 file:** v1.3 base (25/05) → v1.4 base (10/06) + Blueprint_Logic GroupID fix (12/06) + v1.5_patch (15/06)
-**Phiên bản:** 1.5 | **Cập nhật:** 15/06/2026 — 20:30 ICT
+**Phiên bản:** 1.6 | **Cập nhật:** 17/06/2026 — Sprint D.T6
+
+> **v1.6 (Sprint D.T6):** Bỏ `FurnitureDA` khỏi WBP_FurnitureCard (biến xóa). F_ExecuteReplace: dùng `RowData` (Get DataTable Row từ `CardRowName`) thay `FurnitureDA.*`. On Drop WBP_DragOverlay: `PendingFurnitureDA` → `PendingRowName : Name`; SET `PreviewActorRef.RowName = PendingRowName`. Button_InforItem → `OnCardInfoClicked(CardRowName)` thay FurnitureDA. AddRecentMesh dùng CardRowName.
 
 > ⚠️ **Tên file gây nhầm lẫn:** Widget thực tế tên là `WBP_FurnitureCard`; không có widget `WBP_DragOverlay_FurnitureCard`. File này document cả `WBP_FurnitureCard` và `WBP_DragOverlay`.
 
@@ -26,7 +28,7 @@ Canvas Panel
 
 ### Variables
 ```
-FurnitureDA    : DA_FurnitureItem
+CardRowName    : Name               ← v1.6 Sprint D (thay FurnitureDA đã xóa)
 InventoryRef   : WBP_FurnitureInventory
 PreviewActor   : BP_FurnitureActor
 DragOverlayRef : WBP_DragOverlay
@@ -34,10 +36,11 @@ DragOverlayRef : WBP_DragOverlay
 
 ---
 
-### OnListItemObjectSet
+### OnListItemObjectSet — v1.6 (Sprint D.T6)
 ```
-Cast Item Object → DA_FurnitureItem → SET FurnitureDA
-→ Set Brush from Lazy Texture (LazyImage_Thumb, DA.Thumbnail)
+Cast Item Object → BP_FurnitureItemView → SET CardRowName = ItemView.RowName
+Get Data Table Row(DT_FurnitureCatalog, CardRowName) → Row Found → Break S_FurnitureData
+→ Set Brush from Lazy Texture (LazyImage_Thumb, RowData.ThumbnailSoft)
 
 Branch IsValid(InventoryRef)?
   False:
@@ -53,18 +56,15 @@ Branch IsValid(InventoryRef)?
   False:
     Set Visibility(Button_ChangeMesh, Hidden)
 
-← v1.2: update favorite tint sau khi set FurnitureDA
 → Call UpdateFavTint
 ```
 
 ---
 
-### UpdateFavTint (Function) — v1.2
+### UpdateFavTint (Function) — v1.6 (Sprint D)
 ```
-GET FurnitureDA → Get Object Name → String to Name → RowName
-
 GET All Actors of Class(BP_FurnitureUserPrefsManager) → GET [0]
-→ Is Favorite Mesh(RowName)
+→ Is Favorite Mesh(CardRowName)
 → Branch:
   T → Set Color and Opacity(Button_FavoriteFurniture, R=1, G=0.3, B=0.3, A=1)   ← hồng
   F → Set Color and Opacity(Button_FavoriteFurniture, R=1, G=1, B=1, A=0.3)     ← mờ
@@ -72,13 +72,10 @@ GET All Actors of Class(BP_FurnitureUserPrefsManager) → GET [0]
 
 ---
 
-### Button_FavoriteFurniture OnClicked — v1.2
+### Button_FavoriteFurniture OnClicked — v1.6 (Sprint D)
 ```
-GET FurnitureDA → Get Object Name → String to Name → RowName
-
 GET All Actors of Class(BP_FurnitureUserPrefsManager) → GET [0]
-→ Toggle Favorite Mesh(RowName)
-
+→ Toggle Favorite Mesh(CardRowName)
 → Call UpdateFavTint
 ```
 
@@ -88,12 +85,16 @@ GET All Actors of Class(BP_FurnitureUserPrefsManager) → GET [0]
 
 **Event:** `BTN_ChangeMesh OnClicked → Call F_ExecuteReplace` (Function vì cần local var `LocalNewActors`).
 
-#### F_ExecuteReplace (Function) — v1.4 + BugFix GroupID (12/06)
+#### F_ExecuteReplace (Function) — v1.6 Sprint D.T6 (thay FurnitureDA bằng RowData/CardRowName)
 ```
 Local: LocalNewActors : Array<BP_FurnitureActor>
+Local: RowData        : S_FurnitureData   ← v1.6: DT lookup một lần ở đầu hàm
 
 Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast → FurnitureInputRef
 GET MeshesToReplace → Length → Branch > 0 → False: Return        ← guard
+
+← v1.6: Lấy RowData trước ForEach (1 lần, không lặp lại trong loop)
+Get Data Table Row(DT_FurnitureCatalog, CardRowName) → Row Found → Row Out → SET RowData
 
 CLEAR LocalNewActors
 ForEach MeshesToReplace (OldActor):     ← LOOP BODY
@@ -102,22 +103,24 @@ ForEach MeshesToReplace (OldActor):     ← LOOP BODY
       GET Actor Location(OldActor) → LocalLoc
       GET Actor Rotation(OldActor) → LocalRot
       Cast OldActor → BP_FurnitureActor → GET PlacementSurfaceType → LocalSurfType
-      ← [BugFix 12/06] GET GroupID từ OldActor TRƯỚC khi destroy:
       Cast OldActor → BP_FurnitureActor → GET GroupID → OldGroupID
       Spawn BP_FurnitureActor(LocalLoc, LocalRot) → Cast → NewActor
-      Load Asset Blocking(FurnitureDA.Mesh) → Cast StaticMesh → GET FurnitureMesh(NewActor) → Set Static Mesh
-      SET MeshPath, SET DAPath = Get Object Path(FurnitureDA), SET PlacementSurfaceType = LocalSurfType
-      ← [BugFix 12/06] SET GroupID = OldGroupID (TRƯỚC Destroy):
+      ← v1.6: Break RowData → Static Mesh (TSoftObjectPtr) ●→ Load Asset Blocking → Return Value → Set Static Mesh
+      GET RowData → Break S_FurnitureData → Static Mesh ●→ Load Asset Blocking .Asset → Return Value
+      → GET FurnitureMesh(NewActor) → Set Static Mesh
+      SET NewActor.MeshPath = (Object Path via To String từ Return Value trên)
+      SET NewActor.RowName  = CardRowName    ← v1.6: SET RowName (không SET DAPath nữa)
+      SET NewActor.PlacementSurfaceType = LocalSurfType
       SET NewActor.GroupID = OldGroupID
       GET Tags(NewActor) → ADD "FurnitureSpawned" → SET Tags
-      ADD NewActor → LocalNewActors          ← ⭐ v1.4 FIX: thiếu node này → mesh mới không được chọn + không replace tiếp được
-      Destroy Actor(OldActor)               ← target = Array Element
+      ADD NewActor → LocalNewActors
+      Destroy Actor(OldActor)
 
 ForEach Completed (KHÔNG trong Loop Body):
-  DeselectAll → SelectActors(LocalNewActors)     ← chọn lại các đồ mới
+  DeselectAll → SelectActors(LocalNewActors)
   Get All Actors Of Class(BP_UndoManager)[0] → CaptureSnapshot("Replace")
-  GET All Actors(BP_FurnitureUserPrefsManager)[0] → AddRecentMesh(String to Name(Get Object Name(FurnitureDA)))
-  SET MeshesToReplace = LocalNewActors           ← để replace TIẾP được (folder nav sẽ cập nhật MeshesToReplace = SelectedActors qua OnSelectionChanged)
+  GET All Actors(BP_FurnitureUserPrefsManager)[0] → AddRecentMesh(CardRowName)   ← v1.6: trực tiếp
+  SET MeshesToReplace = LocalNewActors
   ← Inventory vẫn mở, giữ Replace mode active
 ```
 
@@ -129,19 +132,21 @@ ForEach Completed (KHÔNG trong Loop Body):
 
 ---
 
-### Button_InforItem OnClicked
+### Button_InforItem OnClicked — v1.6 (Sprint D.T6)
 ```
-Call OnCardInfoClicked(FurnitureDA)
+Call OnCardInfoClicked(CardRowName)    ← v1.6: truyền CardRowName thay FurnitureDA
 ```
 
 ---
 
-### On Drag Detected
+### On Drag Detected — v1.6 (Sprint D.T6)
 ```
 1. DeactivateGizmo  ← PHẢI đầu tiên — restore collision trước khi spawn preview
 2. Create WBP_DragVisual → Not Hit-Testable
-3. Create BP_DragDropOperation_FurnitureCard → SET FurnitureDA
-4. Spawn BP_FurnitureActor (0,0,0) → Load Mesh → Set Static Mesh
+3. Create BP_DragDropOperation_FurnitureCard → SET RowName = CardRowName   ← v1.6: thay FurnitureDA
+4. Get Data Table Row(DT_FurnitureCatalog, CardRowName) → Row Found → Break S_FurnitureData → Static Mesh
+   ●→ Load Asset Blocking .Asset → Return Value (StaticMesh)
+   Spawn BP_FurnitureActor (0,0,0) → GET FurnitureMesh → Set Static Mesh
    ← KHÔNG set ghost material — dùng material gốc
 5. SET PreviewActor
 6. Create WBP_DragOverlay → Add to Viewport → SET PreviewActorRef
@@ -167,8 +172,8 @@ Widget trong suốt phủ toàn màn hình
 
 ## Variables
 ```
-PreviewActorRef    : BP_FurnitureActor
-PendingFurnitureDA : DA_FurnitureItem
+PreviewActorRef : BP_FurnitureActor
+PendingRowName  : Name              ← v1.6 Sprint D (thay PendingFurnitureDA đã xóa)
 ```
 
 ---
@@ -194,20 +199,22 @@ PendingFurnitureDA : DA_FurnitureItem
 
 ---
 
-## On Drop — v1.5: THÊM F4 auto-join edit scope
+## On Drop — v1.6: Sprint D.T6 (RowName thay FurnitureDA)
 
-**Exec flow đầy đủ (trace từ Blueprint export 15/06/2026):**
+**Exec flow đầy đủ:**
 ```
 Entry
 → Get All Actors Of Class(BP_FurnitureInputManager) → GET[0] → GizmoControllerRef → DeactivateGizmo
-→ Cast Operation → BP_DragDropOperation_FurnitureCard → SET PendingFurnitureDA
+→ Cast Operation → BP_DragDropOperation_FurnitureCard → GET RowName → SET PendingRowName
 → Line Trace Single (screen pos, ignore PreviewActorRef)
 → Branch(Hit):
     True →
-      Cast PreviewActorRef [⚠ warning: unnecessary cast, đã là BP_FurnitureActor]
-      → Load Asset Blocking(FurnitureDA.Mesh) → Cast StaticMesh → Set Static Mesh
-      → SET MeshPath
-      → SET DAPath
+      Cast PreviewActorRef → BP_FurnitureActor
+      Get Data Table Row(DT_FurnitureCatalog, PendingRowName) → Row Found → Break S_FurnitureData
+        → Static Mesh ●→ Load Asset Blocking .Asset → Return Value (StaticMesh)
+      → GET FurnitureMesh(PreviewActorRef) → Set Static Mesh
+      → SET MeshPath = (Object Path of Return Value)
+      → SET RowName = PendingRowName    ← v1.6: thay DAPath
       → ADD "FurnitureSpawned" (Tags)
 
       ← [v1.5 F4 INSERT — 15/06/2026]:
@@ -219,7 +226,7 @@ Entry
         [merge] →
 
       → Get All Actors Of Class(BP_UndoManager) → GET[0] → CaptureSnapshot("Spawn")
-      → Get All Actors Of Class(BP_FurnitureUserPrefsManager) → GET[0] → AddRecentMesh
+      → Get All Actors Of Class(BP_FurnitureUserPrefsManager) → GET[0] → AddRecentMesh(PendingRowName)
       → Remove From Parent
       → Return(true)
     False → dead-end
@@ -249,3 +256,4 @@ Entry
 | 1.4 | 10/06/2026 — 20:34 ICT | **Replace MULTI:** BTN_ChangeMesh → F_ExecuteReplace (ForEach MeshesToReplace). Fix ADD New Actor → LocalNewActors. Completed: DeselectAll + SelectActors(LocalNewActors) + CaptureSnapshot + AddRecentMesh + SET MeshesToReplace = LocalNewActors. Bỏ biến chết MeshToReplace (single). |
 | 1.4b | 12/06/2026 | **BugFix GroupID:** F_ExecuteReplace: GET OldActor.GroupID → SET NewActor.GroupID TRƯỚC Destroy OldActor (từ Blueprint_Logic v1.4 BugFix). |
 | 1.5 | 15/06/2026 — 20:30 ICT | **F4: On Drop auto-join edit scope.** Sau ADD "FurnitureSpawned": get InputManager → GetCurrentEditScope → Branch(Scope!="") → SET PreviewActorRef.GroupID. Merge cả 2 nhánh về CaptureSnapshot (L2: False dead-end gây mesh biến mất — bug N5). |
+| 1.6 | 17/06/2026 — Sprint D.T6 | Bỏ FurnitureDA. WBP_FurnitureCard: var → CardRowName; OnListItemObjectSet cast BP_FurnitureItemView + DT lookup ThumbnailSoft; UpdateFavTint/Button_Favorite dùng CardRowName; Button_InforItem → OnCardInfoClicked(CardRowName); On Drag Detected SET Operation.RowName. F_ExecuteReplace: RowData từ DT, load RowData.Mesh, SET NewActor.RowName, AddRecentMesh(CardRowName). WBP_DragOverlay: PendingFurnitureDA→PendingRowName; On Drop DT lookup RowData, SET PreviewActor.RowName. |

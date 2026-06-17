@@ -1,6 +1,8 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 2.4 | **Cập nhật:** 10/06/2026 — 20:34 ICT
+**Phiên bản:** 2.5 | **Cập nhật:** 17/06/2026 — Sprint D.T6
+
+> **v2.5 (Sprint D.T6):** WBP_FurnitureCard section cập nhật: `OnListItemObjectSet` cast `BP_FurnitureItemView` thay `DA_FurnitureItem`; `Button_InforItem → OnCardInfoClicked(CardRowName)` thay FurnitureDA. `OnMeshSelected` nhánh REPLACE: Branch RowName != "" → DT lookup MeshFolderPath (fallback DAPath). `OnCardInfoClicked` handler: nhận RowName thay DA.
 Inventory duyệt & lọc nội thất + Material Editor (v1.1) + Resize Window + Replace multi
 
 > **⚠ SPRINT D sắp thay đổi lớn file này:** Furniture mode chuyển sang DataTable+RowName (bỏ AllFurnitureItems preload), inventory single-instance, DisplayPage 2 mode. Xem `Gate1_SprintD_Execution_Opus.md`. Doc này = trạng thái TRƯỚC Sprint D.
@@ -131,23 +133,22 @@ Event Destruct: SET MaterialItem = None, InventoryRef = None   (R2/R4)
 ### WBP_ChipTag — FolderPath/FolderName/IndentLevel_ChipTag; Dispatcher OnChipSelected.
 ### WBP_ChipRow — ScrollBox Horizontal → HorizontalBox_ChipRow; RowIndentLevel.
 
-### WBP_FurnitureCard (v1.4 + BugFix 12/06)
+### WBP_FurnitureCard (v1.0 Sprint D.T6 — tách thành file riêng)
 ```
 Interface: IUserObjectListEntry
-Variables: FurnitureDA, InventoryRef, PreviewActor (BP_FurnitureActor), DragOverlayRef, FurnitureInputRef
+Variables: CardRowName (Name), InventoryRef, PreviewActor (BP_FurnitureActor), DragOverlayRef
+  ← XÓA FurnitureDA (Sprint D.T6). Xem WBP_FurnitureCard.md để biết đầy đủ.
 Layout: LazyImage_Thumb, Button_InforItem, Button_ChangeMesh, Button_FavoriteFurniture (heart, top-right 32×32)
 
-OnListItemObjectSet:
-  Cast → DA_FurnitureItem → SET FurnitureDA → Set Brush from Lazy Texture
-  Branch IsValid(InventoryRef): False → Get GameInstance → SET InventoryRef
+OnListItemObjectSet (v1.0 Sprint D):
+  Cast → BP_FurnitureItemView → SET CardRowName = ItemView.RowName
+  DT lookup ThumbnailSoft → Set Brush from Lazy Texture
   → UpdateFavTint
-  ⚠ Sprint D (D.T6): chuyển sang BP_FurnitureItemView thay FurnitureDA
 
-Button_InforItem: Call OnCardInfoClicked(FurnitureDA)
-Button_FavoriteFurniture: FurnitureDA → Get Object Name → String to Name → RowName
-  → Toggle Favorite Mesh(RowName) → UpdateFavTint
-UpdateFavTint: Is Favorite Mesh(RowName) → tint đỏ/trắng mờ như MaterialCard
-Drag-drop: ghost PreviewActor + surface snap — chi tiết WBP_DragOverlay_FurnitureCard.md
+Button_InforItem: Call OnCardInfoClicked(CardRowName)    ← v1.0: truyền RowName thay FurnitureDA
+Button_FavoriteFurniture: Toggle Favorite Mesh(CardRowName) → UpdateFavTint
+UpdateFavTint: Is Favorite Mesh(CardRowName) → tint đỏ/trắng mờ như MaterialCard
+Drag-drop: ghost PreviewActor + surface snap — chi tiết WBP_FurnitureCard.md + WBP_DragOverlay_FurnitureCard.md
 ```
 
 #### F_ExecuteReplace (v1.4 + BugFix 12/06 GroupID — MULTI thay single v1.3)
@@ -171,7 +172,7 @@ ForEach MeshesToReplace (OldActor):           ← Loop Body
 ForEach Completed (KHÔNG trong Loop Body!):
   DeselectAll → SelectActors(LocalNewActors)  ← tự lo outline + gizmo
   Get All Actors(BP_UndoManager)[0] → CaptureSnapshot("Replace")   ← 1 lần
-  UserPrefsManager → AddRecentMesh(RowName từ FurnitureDA)
+  UserPrefsManager → AddRecentMesh(CardRowName)    ← v1.0 Sprint D: trực tiếp
   SET MeshesToReplace = LocalNewActors        ← replace tiếp được
 ```
 > Full doc: WBP_DragOverlay_FurnitureCard.md
@@ -292,15 +293,23 @@ ForLoop → Create WBP_SlotSwatch → Bind OnSwatchClicked → AddChild
 ### OnMeshSelected(SelectedActor) — handler nội bộ — v2.4: VIẾT LẠI
 > ⚠️ Custom event nội bộ của inventory — KHÁC dispatcher `OnMeshSelected` đã XÓA ở InputManager. Nay được trigger qua `OnSelectionChangedMaterial`.
 
-**Nhánh REPLACE (v1.3 + v2.4 fix):**
+**Nhánh REPLACE (v1.3 + v2.4 fix + v2.5 Sprint D.T6 RowName):**
 ```
 Branch bIsReplaceMode == True:
   T →
     Get All Actors Of Class(BP_FurnitureInputManager)[0] → IsValid →
-      SET MeshesToReplace = InputManager.SelectedActors     ← v2.4: array (KHÔNG MeshToReplace single đã xóa)
+      SET MeshesToReplace = InputManager.SelectedActors     ← v2.4: array
     Branch IsValid(SelectedActor):                          ← guard folder nav (deselect → skip)
-      T → Cast → GET DAPath → Load Asset Blocking → Cast DA_FurnitureItem → GET MeshFolderPath
-          → Branch MeshFolderPath != "" → FilterByFolderPathWithUI(MeshFolderPath)
+      T →
+        ← v2.5 Sprint D.T6: Branch RowName thay DAPath→Load
+        Cast SelectedActor → GET RowName
+        Branch(RowName != ""):
+          True:
+            Get Data Table Row(DT_FurnitureCatalog, RowName) → Row Found → GET MeshFolderPath
+            → Branch MeshFolderPath != "" → FilterByFolderPathWithUI(MeshFolderPath)
+          False (save cũ RowName rỗng — fallback DAPath):
+            Cast → GET DAPath → Load Asset Blocking → Cast DA_FurnitureItem → GET MeshFolderPath
+            → Branch MeshFolderPath != "" → FilterByFolderPathWithUI(MeshFolderPath)
   F → (tiếp tục nhánh material)
 ```
 
@@ -388,6 +397,19 @@ Branch CurrentInventoryMode == Material:
 ---
 
 ## Events
+
+### OnCardInfoClicked(RowName : Name) — v2.5 Sprint D.T6 (thay DA DA_FurnitureItem)
+```
+← Bound từ WBP_FurnitureCard.Button_InforItem (truyền CardRowName)
+GET CurrentPopup → IsValid → Remove from Parent → SET CurrentPopup = None
+Create WBP_DetailPopup → Add to Viewport
+Set Position In Viewport(chuột + Y+10) → SET PopupPosition
+SET CurrentPopup = popup
+Call InitPopup(RowName, bFromScene=False)
+```
+> Cũ (v2.4): `OnCardInfoClicked(DA : DA_FurnitureItem)` → `InitPopup(DA, False)`. Sprint D.T6: bỏ DA, dùng RowName.
+
+---
 
 ### OnTreeNodeClicked(SelectedPath, IndentLevel)
 ```
@@ -530,3 +552,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 2.3 | 08/06/2026 — 11:24 ICT | OpenMaterialModeForActor + EnsureExpanded; WBP_FurnitureCard v1.4 F_ExecuteReplace multi (thay single v1.3); Replace mode navigate (FilterByFolderPathWithUI, CreateChipTagsForPath) |
 | 2.4 | 10/06/2026 — 20:34 ICT | **Refactor dispatcher.** Event Construct Then 4: bind `OnSelectionChanged` → `OnSelectionChangedMaterial` (XÓA bind OnMeshSelected + OnMeshDeselected). Thêm `OnSelectionChangedMaterial(Actors, Primary)` → Call OnMeshSelected(Primary). OnMeshSelected (internal): replace branch SET `MeshesToReplace` (array) thay MeshToReplace (single đã xóa); material branch thêm guard IsValid(SelectedActor) với False → collapse + None + SlotIndex=-1 (thay OnMeshDeselected). XÓA handler OnMeshDeselected. EnterReplaceMode: + Call EnsureExpanded đầu hàm (fix replace lúc minimize). |
 | 2.4 HỢP NHẤT | 11/06/2026 | **Merged doc** — tổng hợp v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch + notes về v2.4. File này incorporate đầy đủ v2.4 dispatcher changes. |
+| 2.5 | 17/06/2026 — Sprint D.T6 | WBP_FurnitureCard section: OnListItemObjectSet → BP_FurnitureItemView; Button_InforItem → OnCardInfoClicked(CardRowName). OnCardInfoClicked handler: nhận RowName thay DA. OnMeshSelected Replace branch: Branch RowName != "" → DT lookup MeshFolderPath (fallback DAPath save cũ). |

@@ -1,5 +1,7 @@
 # FilterBySearch — Node Flow Reference
-**Phiên bản:** 1.2 | **Tạo:** 22/05/2026 | WBP_FurnitureInventory
+**Phiên bản:** 1.3 | **Cập nhật:** 17/06/2026 — Sprint D.T5/D.T6 | WBP_FurnitureInventory
+
+> **v1.3 (Sprint D.T5 + D.T6):** Furniture mode chuyển sang `FilterFurnitureRows` (C++) thay `FilterFurnitureItems`. Input: `DT_FurnitureCatalog` + filters. Output: `AllFilteredFurnitureRows : Array<Name>` → `DisplayPage` (không AddItem trực tiếp). `AllFurnitureItems` class var bị XÓA (Sprint D.T7).
 
 ---
 
@@ -30,19 +32,18 @@ Branch CurrentInventoryMode == Material:
     Return
 
   F →
-    ← Furniture mode:
-    ClearListItems(CTV_FurnitureCard)
-    FilterFurnitureItems(
+    ← Furniture mode (v1.3 Sprint D.T5):
+    FilterFurnitureRows(
       C++ UFurnitureFilterLibrary,
-      AllFurnitureItems,
+      DT_FurnitureCatalog,
       SearchText      = CurrentSearchText,
       FolderPath      = CurrentFolderPath,
       CategoryFilter  = CategoryFilter (class var),
       MaxResults      = 200
-    ) → FilteredItems
+    ) → AllFilteredFurnitureRows : Array<Name>
 
-    ForEach FilteredItems (DA):
-      AddItem(CTV_FurnitureCard, DA)
+    SET CurrentPage = 0
+    Call DisplayPage    ← tạo BP_FurnitureItemView per page, AddItem tới CTV_FurnitureCard
 ```
 
 ---
@@ -96,7 +97,7 @@ FilterByFolderPath         ──→ FilterBySearch(CurrentSearchText, CurrentCa
 
 FilterBySearch
   ├── Material mode → PopulateMaterialGrid
-  └── Furniture mode → C++ FilterFurnitureItems → CTV_FurnitureCard
+  └── Furniture mode → C++ FilterFurnitureRows → AllFilteredFurnitureRows → DisplayPage → CTV_FurnitureCard
 ```
 
 ---
@@ -108,3 +109,4 @@ FilterBySearch
 | 1.0 | 22/04/2026 | Logic gốc: filter furniture + material mode branch |
 | 1.1 | 20/05/2026 | Thêm ClearListItems trước ForEach, fix SwitchInventoryMode |
 | 1.2 | 22/05/2026 | Document rõ CategoryFilter class var vs parameter issue. Recent branch đã chuyển sang FilterByCategory |
+| 1.3 | 17/06/2026 — Sprint D.T5/D.T6 | Furniture mode: FilterFurnitureItems → FilterFurnitureRows(DT_FurnitureCatalog). Output: AllFilteredFurnitureRows → DisplayPage. AllFurnitureItems class var xóa (Sprint D.T7). |
