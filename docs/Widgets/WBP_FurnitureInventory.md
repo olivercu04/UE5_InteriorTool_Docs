@@ -1,6 +1,12 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 2.5 | **Cập nhật:** 17/06/2026 — Sprint D.T6
+**Phiên bản:** 2.6 | **Cập nhật:** 18/06/2026 — TreeNode/Chip Highlight + Fix Pagination
+
+> **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
+> tính năng active-folder highlight (xem chi tiết node flow mục dưới).
+> `BTN_FavoriteCategory`/`BTN_RecentCategory` thêm ClearChildren+Collapse breadcrumb
+> đầu function. Fix Bug-Pagination: Int to Float trước Ceil ở cả 2 nhánh
+> Material/Furniture trong logic Next-page.
 
 > **v2.5 (Sprint D.T6):** WBP_FurnitureCard section cập nhật: `OnListItemObjectSet` cast `BP_FurnitureItemView` thay `DA_FurnitureItem`; `Button_InforItem → OnCardInfoClicked(CardRowName)` thay FurnitureDA. `OnMeshSelected` nhánh REPLACE: Branch RowName != "" → DT lookup MeshFolderPath (fallback DAPath). `OnCardInfoClicked` handler: nhận RowName thay DA.
 Inventory duyệt & lọc nội thất + Material Editor (v1.1) + Resize Window + Replace multi
@@ -489,6 +495,56 @@ Parse(ShortPath, "/") → ForEach Break:
 ```
 - CurrentIndentLevel bắt đầu = 2 (khớp OnTreeNodeClicked). Clear Children NGOÀI loop.
 
+### IsPathActive(ThisPath: String) → ReturnValue: Boolean — Pure function
+
+```
+CurrentFolderPath ●→ ==.A
+ThisPath ●→ ==.B
+ThisPath ●→ Append.A("/" ●→ Append.B) ●→ StartsWith.InPrefix
+CurrentFolderPath ●→ StartsWith.SourceString
+==.ReturnValue ●→ OR.A
+StartsWith.ReturnValue ●→ OR.B
+OR ▶/●→ Return Node.ReturnValue
+```
+
+⚠ Pure function — KHÔNG được chèn node impure (Print String...) vào đây, sẽ phá
+exec flow. Debug chỗ này phải đặt ở hàm GỌI nó (UpdateFolderHighlights), không
+đặt trong chính IsPathActive.
+
+### UpdateFolderHighlights() — impure Function
+
+```
+ForEach(VerticalBox_44.Children) → Cast WBP_TreeNode
+  → GET FolderPath (CỦA NODE NÀY, không phải biến class)
+  → IsPathActive(FolderPath) → RefreshDisplay(bIsActive=ReturnValue)
+ForEach(VB_ChipTagArea.Children) → Cast WBP_ChipRow
+  → ForEach(HorizontalBox_ChipRow.Children) → Cast WBP_ChipTag
+    → GET FolderPath_ChipTag → IsPathActive(...) → SetHighlight(bIsActive=...)
+```
+
+**3 điểm gọi `UpdateFolderHighlights`:**
+1. Cuối `CreateChipTagsForPath` — gắn vào `Completed` của ForEachLoopWithBreak
+   ngoài cùng (trước đây dead-end).
+2. Trong `OnChipTagClicked` — gắn vào `then` của `AddChild` (thêm ChipRow vào
+   VB_ChipTagArea, KHÔNG phải AddChild thêm ChipTag vào HorizontalBox_ChipRow)
+   VÀ nhánh False của `Map_Find(FolderTree, SelectedPath)` (case leaf) — merge
+   2 dây exec vào 1 node gọi.
+3. Trong `OnTreeNodeClicked` — SAU `FilterByFolderPath`, ở CẢ 2 nhánh
+   (IndentLevel==0 true/false). ⚠ KHÔNG gọi trong `PopulateTreeColumn` —
+   PopulateTreeColumn chạy TRƯỚC khi CurrentFolderPath kịp set bởi
+   FilterByFolderPath, gây bug "All sáng lần đầu, đổi category không sáng gì,
+   click lại All thì TẤT CẢ category khác sáng lên" (do StartsWith với chuỗi
+   rỗng trả True cho mọi chuỗi khi CurrentFolderPath chưa set).
+
+### Pagination — Fix Bug-Pagination (D.T9)
+
+```
+CŨ:  LENGTH(AllFilteredFurnitureRows) ●→ ÷.A (Int) | PageSize ●→ ÷.B (Int) → Ceil
+MỚI: LENGTH ●→ Int to Float ●→ ÷.A (Float) | PageSize ●→ ÷.B → Ceil
+```
+Áp dụng ở CẢ 2 nhánh Material và Furniture (cấu trúc bị copy giống nhau).
+Lỗi: Int Divide rồi Ceil → mất phần dư → TotalPages thấp hơn thực tế 1 đơn vị.
+
 ---
 
 ## Keyboard Shortcuts
@@ -553,3 +609,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 2.4 | 10/06/2026 — 20:34 ICT | **Refactor dispatcher.** Event Construct Then 4: bind `OnSelectionChanged` → `OnSelectionChangedMaterial` (XÓA bind OnMeshSelected + OnMeshDeselected). Thêm `OnSelectionChangedMaterial(Actors, Primary)` → Call OnMeshSelected(Primary). OnMeshSelected (internal): replace branch SET `MeshesToReplace` (array) thay MeshToReplace (single đã xóa); material branch thêm guard IsValid(SelectedActor) với False → collapse + None + SlotIndex=-1 (thay OnMeshDeselected). XÓA handler OnMeshDeselected. EnterReplaceMode: + Call EnsureExpanded đầu hàm (fix replace lúc minimize). |
 | 2.4 HỢP NHẤT | 11/06/2026 | **Merged doc** — tổng hợp v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch + notes về v2.4. File này incorporate đầy đủ v2.4 dispatcher changes. |
 | 2.5 | 17/06/2026 — Sprint D.T6 | WBP_FurnitureCard section: OnListItemObjectSet → BP_FurnitureItemView; Button_InforItem → OnCardInfoClicked(CardRowName). OnCardInfoClicked handler: nhận RowName thay DA. OnMeshSelected Replace branch: Branch RowName != "" → DT lookup MeshFolderPath (fallback DAPath save cũ). |
+| 2.6 | 18/06/2026 — TreeNode/Chip Highlight | Thêm `IsPathActive` (Pure function) + `UpdateFolderHighlights` (impure). 3 call sites: cuối CreateChipTagsForPath, OnChipTagClicked (2 nhánh merge), OnTreeNodeClicked sau FilterByFolderPath (cả 2 nhánh). BTN_FavoriteCategory/RecentCategory: thêm ClearChildren(VB_ChipTagArea) + Collapse TB_Breadcrumb đầu function. Fix Bug-Pagination: Int to Float trước Ceil (cả 2 nhánh Material/Furniture). |

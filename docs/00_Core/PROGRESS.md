@@ -1,6 +1,6 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
-**Cập nhật:** 17/06/2026 (Sprint D.T6)
+**Cập nhật:** 18/06/2026 (Sprint D DONE + TreeNode Highlight)
 
 ---
 
@@ -12,12 +12,12 @@ Sprint 2 — Box + Context Menu ████████████████
 Sprint 3 — Group cơ bản       ████████████████ 12/12 SHIPPED ✅  (+10 bug fix)
 Sprint 4 — Edit + Nested      ████████████████ 8/8  SHIPPED ✅  (+5 bug fix thêm)
 Gate 1                        ████████████████ 3/3  DONE ✅ (16/06)
-Sprint D — Data Layer v2      ██░░░░░░░░░░░    1/9  task (D.T6 DONE)
+Sprint D — Data Layer v2      ████████████████ 9/9  DONE ✅ (17/06)
 Sprint 5 — Combo Mesh         ░░░░░░░░         0/8  task
 Sprint 6 — Polish UX          ░░░░░░░░░░░░░    0/14 task
 Sprint 7 — Material v1.2      ░░░░░░░░░        0/9  task
 
-TỔNG: 45/91 task (thêm Sprint D 9 task)
+TỔNG: 53/91 task
 ```
 
 ---
@@ -136,9 +136,21 @@ T1-T15 shipped. Chi tiết: `Blueprints/BP_FurnitureInputManager.md`, `Blueprint
 
 ---
 
-## SPRINT D — Data Layer v2 (bắt đầu 17/06/2026)
+## SPRINT D — Data Layer v2 (17/06/2026) ✅ HOÀN THÀNH
 
-- [x] **D.T6** — Bỏ FurnitureDA (17/06/2026) ✅
+- [x] D.T1 — Single-instance inventory toggle Visibility + box-select guard
+      (Is In Viewport → Get Visibility)
+- [x] D.T2 — Data prep: S_FurnitureData +ThumbnailSoft (Soft Object Ref Texture2D)
+      + Python populate
+- [x] D.T3 — FilterFurnitureRows C++ (mirror FilterMaterialItems, cached FProperty
+      reflection, KHÔNG reinterpret_cast vì S_FurnitureData là UserDefinedStruct)
+      — verify PASS: rỗng → 2114 rows, "sofa" → 136 rows
+- [x] D.T4 — BP_FurnitureItemView (Object class, 10 field: RowName/VieName/EngName/
+      ThumbnailSoft/MeshSoft/MeshFolderPath/BoundingSize/Description/Link/Category)
+- [x] D.T5 — FilterBySearch nhánh Furniture rewire: FilterFurnitureRows →
+      AllFilteredFurnitureRows → DisplayPage. Recent/Favorite bypass C++ filter,
+      build trực tiếp từ BP_FurnitureUserPrefsManager.
+- [x] D.T6 — Bỏ FurnitureDA, Replace Mesh đọc RowName từ actor (17/06/2026) ✅
   - BP_FurnitureActor.md v1.2: thêm RowName SaveGame
   - WBP_DetailPopup.md v1.2: InitPopup(RowName), RowData
   - WBP_MeshControls.md v1.7: BTN_Info RowName, UpdateDetailPopup bound OnSelectionChanged
@@ -149,22 +161,79 @@ T1-T15 shipped. Chi tiết: `Blueprints/BP_FurnitureInputManager.md`, `Blueprint
   - FilterBySearch_Logic.md v1.3: FilterFurnitureRows + DisplayPage
   - BP_FurnitureInputManager.md v1.10: StartReplaceMode doc + RowName branch
   - Fix B-folder + B-stale-popup
-- [ ] D.T1 — Single-instance inventory toggle
-- [ ] D.T2 — AllFurnitureItems remove + Event Construct D.T7
-- [ ] D.T3 — DT_FurnitureCatalog editor setup
-- [ ] D.T4 — BP_FurnitureItemView wrapper
-- [ ] D.T5 — FilterFurnitureRows C++ (partially done — doc updated)
-- [ ] D.T7 — XÓA AllFurnitureItems khỏi Event Construct
-- [ ] D.T8 — DisplayPage Furniture mode
-- [ ] D.T9 — Integration test toàn bộ Furniture flow
+- [x] D.T7 — BuildFolderTree C++ source swap (DT_FurnitureCatalog thay
+      AllFurnitureItems) + xóa preload AllFurnitureItems khỏi Event Construct
+      Then 1. Bug phụ phát hiện & fix: substring/Contains sai khi tìm Folder
+      "Table" (Map_Find.Value chứ không phải ReturnValue/Found).
+- [x] D.T8 — WBP_FurnitureInventory dùng đầy đủ luồng DataTable+RowName (R5),
+      tích hợp xong qua D.T5+D.T6+D.T7.
+- [x] D.T9 — Regression toàn bộ (9/9 PASS) + dọn doc — xem mục D.T9 bên dưới.
+
+**Lưu ý:** bảng D.T1-D.T9 ở bản trước bị lệch nhãn (vd dòng "D.T2" ghi nhầm nội
+dung của D.T7, dòng "D.T5"/"D.T8" ghi nhầm nội dung D.T3) — bảng trên đã map lại
+đúng theo định nghĩa gốc trong `02_Current_Sprint.md`.
+
+### D.T9 — Regression 9 case (17/06/2026)
+
+| # | Case | Kết quả |
+|---|---|---|
+| 1 | Browse: search "sofa", folder Table, pagination, tab Material↔Furniture, Recent/Favorite | PASS |
+| 2 | Mở/đóng inventory 10 lần qua nút + BTN_Close, click trái chọn ngay lần đầu | PASS |
+| 3 | Drag-drop spawn 1 mesh + nhiều mesh liên tiếp | PASS |
+| 4 | Replace 1 mesh + multi-replace | PASS |
+| 5 | Popup ⓘ — tên/category/description đúng | PASS |
+| 6 | Save → Load → mesh đúng vị trí, RowName giữ nguyên | PASS |
+| 7 | Undo/Redo sau spawn, replace, group, multi-select | PASS |
+| 8 | Box select: đóng inventory không hiện khung; mở lại chạy bình thường | PASS |
+| 9 | PIE liên tiếp 3 lần, không crash VRAM bất thường | PASS |
+
+**2 bug phụ phát hiện trong lúc test case 1, đã fix:**
+
+- **Bug-Pagination:** Furniture dừng ở "7/8" dù hiển thị ban đầu đúng "1/8".
+  Root cause: `Ceil(LENGTH / PageSize)` ở nhánh check nút Next dùng Int Divide
+  (337÷48=7, mất phần dư) trong khi `DisplayPage` dùng Float Divide (337/48=7.02
+  → Ceil=8) — 2 chỗ tính `TotalPages` lệch nhau 1. Fix: chèn `Int to Float` giữa
+  LENGTH và input A của node `÷`, ở CẢ 2 nhánh Material và Furniture (cấu trúc
+  copy giống nhau). Verify: Next liên tục → đúng dừng ở "8/8".
+- **Bug-Maximize:** `BTN_Maximize` chỉ nở ngang từ vị trí cũ, không nhảy lên
+  góc trên-trái như Maximize chuẩn. Root cause: cả 2 nhánh Maximize/Restore chỉ
+  gọi `Set Size` trên Canvas Slot của `VerticalBox_0`, thiếu `Set Position` trên
+  CÙNG slot. Fix: thêm `Set Position` vào cùng node `Slot as Canvas Slot(VerticalBox_0)`,
+  ở cả 2 nhánh — Maximize: Position=(0,0); Restore: Position=Original Position.
+  Verify: Maximize đúng góc, Restore đúng vị trí/size cũ, drag sau Restore vẫn ổn.
+
+---
+
+## TÍNH NĂNG BỔ SUNG — TreeNode/Chip Active-Folder Highlight (18/06/2026) ✅
+
+Không nằm trong scope Sprint D gốc — phát sinh từ yêu cầu UX: category/folder
+đang chọn trong inventory phải đổi màu và giữ màu khi đi sâu vào folder con.
+
+- `WBP_TreeNode.RefreshDisplay` thêm param `bIsActive` → SetBackgroundColor.
+- `WBP_ChipTag` thêm Custom Event `SetHighlight(bIsActive)` tương tự.
+- Function Pure mới `IsPathActive(ThisPath)` trong `WBP_FurnitureInventory`:
+  `CurrentFolderPath==ThisPath OR CurrentFolderPath StartsWith(ThisPath+"/")`.
+- Function `UpdateFolderHighlights` (impure): loop cây TreeNode + loop chip rows,
+  gọi `IsPathActive` bằng FolderPath của TỪNG widget, set highlight tương ứng.
+  3 điểm gọi: cuối `CreateChipTagsForPath`, trong `OnChipTagClicked` (2 nhánh
+  merge), và SAU `FilterByFolderPath` ở cả 2 nhánh `OnTreeNodeClicked`.
+- Fix kèm: `BTN_FavoriteCategory`/`BTN_RecentCategory` không ẩn chip cũ khi
+  chuyển category đặc biệt — thêm `ClearChildren(VB_ChipTagArea)` +
+  `SetVisibility(TB_Breadcrumb, Collapsed)` đầu function.
+- Test full: chuyển tab, click cấp 1, vào sâu chip cấp 2/3, quay lại "All",
+  Recent/Favorite — tất cả PASS.
+
+Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + `WBP_ChipTag.md`.
+
+**Tiếp theo:** Sprint 5 — Combo Mesh, deadline 20/06/2026.
 
 ---
 
 ## GATE 1 + SPRINT D (kế hoạch chi tiết)
 
-**Gate 1:** fix B1 (bIsRestoring guard) + hợp nhất spawn → Đọc `02_Current_Sprint.md`
+**Gate 1:** fix B1 (bIsRestoring guard) + hợp nhất spawn → ✅ DONE (16/06)
 
-**Sprint D:** Data Layer v2 (Furniture mode nhân bản kiến trúc Material mode)
+**Sprint D:** Data Layer v2 (Furniture mode nhân bản kiến trúc Material mode) → ✅ DONE (17/06)
 
 ---
 

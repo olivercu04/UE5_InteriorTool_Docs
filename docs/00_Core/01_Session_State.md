@@ -1,13 +1,13 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 17/06/2026 — Sprint D.T6 | Lighting_Mnger UE5.5.4
+**Phiên bản:** 18/06/2026 — Sprint D DONE + TreeNode Highlight | Lighting_Mnger UE5.5.4
 
 ---
 
 ## TRẠNG THÁI HIỆN TẠI
 
-**Sprint D.T6 — COMPLETE ✅ (17/06/2026) — Bỏ FurnitureDA**
+**Sprint D — HOÀN THÀNH ✅ (17/06/2026) + TreeNode/Chip Highlight ✅ (18/06/2026)**
 
 ### Sprint 4 Bug Fix (F1–F4 + A12) — ĐẦY ĐỦ PASS
 
@@ -35,6 +35,8 @@
 | B-gizmo | Gizmo ẩn sau undo trong edit mode (pre-existing) | 🟢 Thấp | Known issue, chưa có timeline |
 | B-folder | ✅ FIXED (17/06, D.T6) — Replace folder sai khi group nhiều mesh | — | OnMeshSelected RowName→DT, fallback DAPath save cũ |
 | B-stale-popup | ✅ FIXED (17/06, D.T6) — Popup hiển thị đồ cũ | — | UpdateDetailPopup bound OnSelectionChanged |
+| Bug-Pagination | ✅ FIXED (17/06, D.T9) — Furniture pagination dừng sớm 1 trang | — | Int to Float trước Ceil ở Next-page check |
+| Bug-Maximize | ✅ FIXED (17/06, D.T9) — BTN_Maximize không nhảy về góc trên-trái | — | Set Position thêm vào Slot VerticalBox_0 |
 
 ---
 
@@ -48,6 +50,9 @@
 - Sprint 3 — Group cơ bản (12/12 + 10 bug fix) ✅
 - Sprint 4 — Edit Mode + Nested Group (T1-T8 + 2 bug fix) ✅
 - **Sprint 4 Bug Fix Session (F1-F4 + A12, 15/06/2026) ✅**
+- **Gate 1 (G1.1-G1.3, 16/06/2026) ✅**
+- **Sprint D — Data Layer v2 (D.T1-D.T9, 17/06/2026) ✅**
+- **TreeNode/Chip active-folder highlight (18/06/2026, tính năng bổ sung) ✅**
 
 ---
 
@@ -63,6 +68,10 @@
 **WBP_FurnitureInventory v2.5** — OnCardInfoClicked(RowName), OnMeshSelected RowName branch
 **FilterByCategory_Logic v1.3** — Recent/Favorite DT direct (bỏ inner loop AllFurnitureItems)
 **FilterBySearch_Logic v1.3** — FilterFurnitureRows + AllFilteredFurnitureRows → DisplayPage
+**WBP_FurnitureInventory v2.6** — IsPathActive (Pure) + UpdateFolderHighlights + Fix Bug-Pagination
+**WBP_TreeNode v1.1** — RefreshDisplay + bIsActive param → SetBackgroundColor
+**WBP_ChipTag v1.1** — SetHighlight(bIsActive) custom event → SetBackgroundColor
+**WBP_ResizeWindow v1.1** — Fix Bug-Maximize: Set Position thêm vào Slot VerticalBox_0
 
 **Snapshot version history:**
 - V1: single select (legacy)
@@ -77,9 +86,9 @@
 **Roadmap v3.1:**
 ```
 Gate 1 (fix B1 bIsRestoring + hợp nhất spawn)   ✅ DONE (16/06)
-Sprint D D.T6 (Bỏ FurnitureDA — 10 file)        ✅ DONE (17/06)
-→ Sprint D D.T1-D.T5, D.T7-D.T9                 ← TIẾP THEO
-→ Sprint 5 Combo (20/06 hard deadline)
+Sprint D (D.T1-D.T9, Furniture Data Layer v2)    ✅ DONE (17/06)
+TreeNode/Chip active-folder highlight            ✅ DONE (18/06, bổ sung)
+→ Sprint 5 Combo Mesh (20/06 hard deadline)
 → Sprint 7 Material v1.2
 → Sprint 6 Polish
 → Gate 2 (first packaged build)

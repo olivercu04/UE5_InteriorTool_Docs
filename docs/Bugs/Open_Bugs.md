@@ -12,6 +12,8 @@
 | B-gizmo | Gizmo ẩn sau undo trong edit mode (pre-existing) | 🟢 Thấp | Known issue, chưa có timeline |
 | B-folder | ✅ FIXED (17/06, D.T6) — Replace folder sai khi group nhiều mesh khác folder | — | OnMeshSelected nay đọc RowName→DT, không cần load DAPath. Xem WBP_FurnitureInventory.md v2.5 |
 | B-stale-popup | ✅ FIXED (17/06, D.T6) — Popup hiển thị thông tin đồ cũ | — | Xem mục bên dưới |
+| Bug-Pagination | ✅ FIXED (17/06, D.T9) — Furniture pagination dừng ở 7/8 thay vì 8/8 | — | Xem WBP_FurnitureInventory.md v2.6, mục Pagination |
+| Bug-Maximize | ✅ FIXED (17/06, D.T9) — BTN_Maximize không nhảy về góc trên-trái | — | Xem WBP_ResizeWindow.md v1.1 |
 
 ---
 
@@ -147,6 +149,62 @@ Bấm vào một đồ → BTN_Info hoặc UpdateDetailPopup hiển thị popup 
 
 ---
 
+## Bug-Pagination — Furniture pagination dừng sớm 1 trang
+
+**ID:** Bug-Pagination
+**Phát hiện:** Sprint D.T9 regression (17/06/2026) — test case 1
+**Ưu tiên:** 🟡 Trung bình (UX)
+
+### Triệu chứng
+Furniture: browse 337 item, PageSize=48 → kỳ vọng "8/8" trang. Thực tế: Next nút đúng 7 lần rồi dừng tại "7/8" — không qua trang 8 được.
+
+### Root Cause
+2 chỗ tính `TotalPages` dùng công thức khác nhau:
+- `DisplayPage`: `Int to Float → ÷ → Ceil` (Float divide, đúng): 337/48 = 7.02 → Ceil = 8
+- Next-page check: Int Divide trực tiếp (sai): 337÷48 = 7 (mất phần dư)
+
+2 chỗ lệch nhau 1 → Next bị block ở trang 7, DisplayPage hiển thị "8/8" nhưng Next không hoạt động.
+
+### Fix (Sprint D.T9)
+Chèn `Int to Float` giữa LENGTH và input A của node `÷` ở nhánh Next-page check,
+ở CẢ 2 nhánh Material và Furniture (cấu trúc copy giống nhau).
+
+```
+CŨ:  LENGTH ●→ ÷.A (Int) | PageSize ●→ ÷.B → Ceil
+MỚI: LENGTH ●→ Int to Float ●→ ÷.A (Float) | PageSize ●→ ÷.B → Ceil
+```
+
+### Trạng thái
+- **✅ RESOLVED — 17/06/2026 (Sprint D.T9).** Xem `WBP_FurnitureInventory.md` v2.6 mục Pagination.
+
+---
+
+## Bug-Maximize — BTN_Maximize không nhảy về góc trên-trái
+
+**ID:** Bug-Maximize
+**Phát hiện:** Sprint D.T9 regression (17/06/2026) — test case 1
+**Ưu tiên:** 🟡 Trung bình (UX)
+
+### Triệu chứng
+Bấm BTN_Maximize → cửa sổ nở đúng size nhưng vẫn ở vị trí cũ (không nhảy về góc trên-trái (0,0)).
+
+### Root Cause
+Cả 2 nhánh Maximize/Restore chỉ gọi `Set Size` trên Canvas Slot của `VerticalBox_0`.
+`Set Position in Viewport(self, ...)` không có tác dụng vì vị trí cửa sổ thật được điều
+khiển qua Canvas Slot Position của `VerticalBox_0` (theo logic drag title bar có từ trước).
+
+### Fix (Sprint D.T9)
+Thêm `Set Position` vào cùng node `Slot as Canvas Slot(VerticalBox_0)` đang nuôi `Set Size`:
+- Nhánh Maximize (True): Position = (0,0)
+- Nhánh Restore (False): Position = Original Position
+
+`Set Position in Viewport(self,...)` giữ nguyên — không xóa, không ảnh hưởng.
+
+### Trạng thái
+- **✅ RESOLVED — 17/06/2026 (Sprint D.T9).** Xem `WBP_ResizeWindow.md` v1.1.
+
+---
+
 ## Closed Bugs (reference nhanh)
 
 | # | Bug | Sprint | Fix |
@@ -160,3 +218,5 @@ Bấm vào một đồ → BTN_Info hoặc UpdateDetailPopup hiển thị popup 
 | A12 | Edit mode bar ẩn sau Undo | Sprint 4 BugFix | EditModeStack vào S_SceneSnapshot V=4 |
 | B-folder | Replace folder sai khi group nhiều mesh khác folder | Sprint D.T6 | OnMeshSelected RowName→DT thay DAPath. WBP_FurnitureInventory v2.5 |
 | B-stale-popup | Popup hiển thị đồ cũ sau click | Sprint D.T6 | UpdateDetailPopup bound to OnSelectionChanged. WBP_MeshControls v1.7 |
+| Bug-Pagination | Furniture pagination dừng sớm 1 trang (7/8 thay vì 8/8) | Sprint D.T9 | Int to Float trước Ceil ở Next-page check. WBP_FurnitureInventory v2.6 |
+| Bug-Maximize | BTN_Maximize không nhảy về góc trên-trái | Sprint D.T9 | Set Position thêm vào Slot VerticalBox_0. WBP_ResizeWindow v1.1 |

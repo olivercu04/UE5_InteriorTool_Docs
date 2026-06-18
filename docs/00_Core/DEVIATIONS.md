@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 15/06/2026
+**Cập nhật:** 18/06/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -135,6 +135,9 @@
 | 17/06 | D.T6 | StartReplaceMode: navigate folder dùng DAPath | Branch RowName != "" → DT lookup; False → fallback DAPath (save cũ) | Thống nhất với kiến trúc D: ưu tiên RowName, fallback DAPath | [PLAN-SAI] |
 | 17/06 | D.T6 | WBP_FurnitureCard document trong WBP_DragOverlay_FurnitureCard.md | Tạo file riêng WBP_FurnitureCard.md | Widget có đủ logic riêng để xứng đáng có file riêng | [SCOPE] |
 | 17/06 | D.T6 | Stale popup: UpdateDetailPopup ở Mouse Left Pressed | Step 11 xóa; UpdateDetailPopup bind OnSelectionChanged WBP_MeshControls | Bug phát hiện trong D.T6 — selection không resolve ở Mouse Pressed | [BUG] |
+| 17/06 | D.T9 | Regression trong plan gốc (9/9 PASS) | Phát hiện thêm 2 bug ngoài checklist: Bug-Pagination + Bug-Maximize — fix ngay cùng phiên | Bug phụ ngoài checklist gốc, fix ngay, không defer | [BUG] |
+| 18/06 | PROGRESS.md | Checklist D.T1-D.T9 đúng label | Bị lệch nhãn giữa các task — phát hiện và sửa lại khi làm doc update 18/06 (xem PROGRESS.md mục Sprint D) | Lỗi ghép doc, không phải lỗi code | [PLAN-SAI] |
+| 17-18/06 | TreeNode highlight | Phase 1: wire `==` trực tiếp cho cấp 1 | Kiến trúc tập trung `IsPathActive`/`UpdateFolderHighlights` — hỗ trợ cả chip cấp 2/3; dừng sửa từng phần | Bug học được: biến class trong loop gây tô sai tất cả → đổi sang đọc FolderPath của TỪNG widget | [BUG] |
 
 ---
 

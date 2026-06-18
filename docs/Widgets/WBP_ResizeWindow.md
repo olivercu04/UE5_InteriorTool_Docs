@@ -1,5 +1,5 @@
 # WBP_ResizeWindow — Resize Window 8 hướng
-**Phiên bản:** 1.0 | **Ngày:** 27/05/2026 — 10:30 ICT
+**Phiên bản:** 1.1 | **Ngày:** 27/05/2026 — 10:30 ICT | **Cập nhật:** 17/06/2026 — Fix Bug-Maximize
 **Widget:** WBP_FurnitureInventory | **Engine:** UE5.5.4
 
 ---
@@ -223,6 +223,17 @@ với hệ tọa độ của resize.
 
 ## Maximize / Minimize (cập nhật)
 
+> **Fix Bug-Maximize (17/06/2026 — D.T9):** Cả 2 nhánh Maximize/Restore chỉ gọi
+> `Set Size` trên Canvas Slot của `VerticalBox_0`, thiếu `Set Position` trên CÙNG
+> slot → cửa sổ nở size đúng nhưng không di chuyển, vẫn dính vị trí cũ.
+> Fix: thêm `Set Position` vào cùng node `Slot as Canvas Slot(VerticalBox_0)`:
+> - Maximize (True): Position = (0,0)
+> - Restore (False): Position = Original Position
+>
+> `Set Position in Viewport(self,...)` gọi trên `self` giữ nguyên — không xóa,
+> không ảnh hưởng vì vị trí cửa sổ thật do Canvas Slot Position của `VerticalBox_0`
+> điều khiển (theo logic drag title bar gốc).
+
 **BTN_Maximize — Nhánh True (Maximize):**
 ```
 ... [code maximize] ...
@@ -274,3 +285,4 @@ On Released (BTN_ResizeXXX):
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 27/05/2026 — 10:30 ICT | Khởi tạo — 8 hướng resize hoàn chỉnh |
+| 1.1 | 17/06/2026 — D.T9 | Fix Bug-Maximize: thêm `Set Position` vào `Slot as Canvas Slot(VerticalBox_0)` cho cả 2 nhánh Maximize/Restore — Maximize=(0,0), Restore=Original Position. |
