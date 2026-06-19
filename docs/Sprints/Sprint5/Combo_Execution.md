@@ -1,4 +1,30 @@
 # SPRINT 5 — COMBO MESH (EXECUTION step-by-step)
+
+> ⚠️ DEVIATION (19/06/2026) — ĐỌC TRƯỚC KHI THỰC THI
+>
+> Doc này (v1.1) viết với giả định MỌI combo event (SaveComboFromSelection,
+> CaptureComboThumbnail, LoadComboLibrary, SpawnComboByID...) nằm TRONG
+> BP_FurnitureInputManager và đọc trực tiếp class var của nó.
+>
+> THỰC TẾ TỪ 19/06: combo logic đã TÁCH sang Actor riêng BP_ComboManager.
+> Khi thực thi, phải DỊCH từng bước theo các luật sau — KHÔNG copy nguyên văn doc:
+>
+> 1. Mọi event combo sống trong BP_ComboManager, KHÔNG phải BP_FurnitureInputManager.
+> 2. ComboManager KHÔNG đọc class var của InputManager. Mọi data InputManager
+>    cần đưa cho ComboManager phải truyền qua PARAM của event.
+>    Ví dụ chữ ký mới:
+>       SaveComboFromSelection(SelectedActors: Array<BP_FurnitureActor>,
+>                              Center: Vector, ComboName: String, Description: String)
+> 3. InputManager lo phần guard (≥2 đồ), tính Center, lấy SelectedActors,
+>    rồi GỌI ComboManager với data đó.
+> 4. Hàm dùng chung như FindGroupData: ComboManager gọi thẳng BP_GroupsContainer
+>    qua Get All Actors Of Class → Get(0), KHÔNG qua InputManager.
+> 5. ComboManager KHÔNG giữ hard ref InputManager (R2). Nếu cần báo ngược
+>    (vd spawn xong cần select), dùng Event Dispatcher để InputManager lắng nghe.
+> 6. Đặt tên biến theo quy ước mới — xem AI_Implementation_Rules.md mục "Quy ước đặt tên biến".
+>
+> Chỗ nào doc ghi "đọc SelectedActors / class var" → hiểu là "đọc param tương ứng".
+
 **Phiên bản:** 1.1 | **Ngày:** 12/06/2026 | Lighting_Mnger UE5.5.4
 **Tác giả:** Fable 5 (plan gốc v1.0) + Q&A Sonnet 4.6 review → hợp nhất thành v1.1
 **Đối tượng đọc:** model thực thi (Opus/Sonnet) + cuhoang. Tuân thủ `09_AI_Implementation_Rules.md`.
@@ -625,3 +651,4 @@ Docs (version + ngày + giờ + phút):
 |---|---|---|
 | 1.0 | 12/06/2026 | Fable 5: schema v1, C++ đầy đủ, toán pivot, remap 2 vòng, 12 rủi ro |
 | 1.1 | 12/06/2026 | Hợp nhất Q&A Sonnet 4.6: sửa T2 bước 3 (selection-only), 8 class vars, guard double-click, trace 2 tầng, CTV riêng, thumbnail đồng bộ, path join Q4, giải thích Q10 race |
+| 1.2 | 19/06/2026 | Thêm DEVIATION block đầu file: BP_ComboManager tách riêng khỏi InputManager; luật dịch 6 điểm |

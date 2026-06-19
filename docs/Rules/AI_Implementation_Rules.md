@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.2 | **Cập nhật:** 19/06/2026
+**Phiên bản:** 2.3 | **Cập nhật:** 19/06/2026
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -423,6 +423,15 @@ Sau khi 1 sprint/task lớn xong:
 
 ---
 
+## Quy ước đặt tên biến (từ Sprint 5, 19/06/2026)
+- Class var dùng chung nhiều event trong 1 Actor → prefix viết tắt Actor đó.
+  Vd BP_ComboManager → `Cmb_` (Cmb_PendingComboData, Cmb_SpawnedComboActors...)
+- Biến tạm chỉ phục vụ 1 function/event → prefix = tên function/event đó.
+  Vd SaveComboFromSelection → `SaveCombo_` (SaveCombo_GroupIDs, SaveCombo_TokenMap...)
+- Param input của event/function → tên trần, không prefix (SelectedActors, ComboName, Center)
+
+---
+
 ## Lịch sử cập nhật
 
 | Phiên bản | Ngày | Nội dung |
@@ -431,3 +440,4 @@ Sau khi 1 sprint/task lớn xong:
 | 2.0 | 14/06/2026 | Q8 Self-Check Gate; mở rộng L9; mục Bàn giao Opus→Sonnet; checklist cập nhật |
 | 2.1 | 15/06/2026 | Q8 extended format (5 điểm visible); L2 CHECK (Sequence vs Event); Blueprint Export Method; Spawn Paths checklist; Runtime State vs Snapshot State |
 | 2.2 | 19/06/2026 | Thêm Is Valid Index vào bảng node; thêm key learning L11 latent aliasing |
+| 2.3 | 19/06/2026 | Thêm mục Quy ước đặt tên biến (Sprint 5 — BP_ComboManager prefix Cmb_, SaveCombo_) |

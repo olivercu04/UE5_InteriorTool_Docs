@@ -149,6 +149,7 @@
 | 19/06 | Fix 5.2 | Plan: NewActorCopy là class var | Thực tế: đổi sang local var trong SpawnFurnitureCopy | Hệ quả của aliasing fix — local var mỗi lần gọi là bản riêng | [BUG→FIX] |
 | 19/06 | VRAM | Ghi nhầm card là RTX 3060 12GB | Thực tế: RTX 3060 8GB | Budget UE = 7.26GB = 8GB - reserve, khớp crash log | [CORRECTION] |
 | 19/06 | Fix 5.3 | ApplyMaterial: Add Recent Mesh parse từ DAPath | Thực tế: đổi sang MeshPath | DAPath rỗng với đồ Sprint D (không dùng DA_FurnitureItem nữa) | [BUG→FIX] |
+| 19/06 | S5.T2 | Combo_Execution v1.1 đặt toàn bộ combo event trong BP_FurnitureInputManager, đọc trực tiếp class var (SelectedActors, Center) | Tách ra BP_ComboManager (Actor) riêng — combo event sống ở đây | Đồng nhất pattern "mỗi Actor một nhiệm vụ"; cô lập vùng combo sẽ sửa nhiều (thumbnail, B3 payment, share). ComboManager = dịch vụ thuần, nhận data qua param, KHÔNG hard ref InputManager (R2) | [SCOPE] |
 
 ---
 
@@ -193,3 +194,11 @@
 - Ghi ngay khi lệch, không đợi cuối sprint
 - Ghi cả "deviation tốt" (fix đúng) lẫn "deviation tạm" (scope cut)
 - Sau mỗi sprint: đọc lại, xem plan sprint sau có cần điều chỉnh không
+
+---
+
+## Lịch sử cập nhật
+
+| Ngày | Nội dung |
+|------|----------|
+| 19/06/2026 | Thêm section "SPRINT D — 19/06/2026": 4 dòng VRAM Fixes + Async Load. Thêm dòng S5.T2 BP_ComboManager tách riêng khỏi InputManager |
