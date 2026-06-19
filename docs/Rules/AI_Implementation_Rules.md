@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.1 | **Cập nhật:** 15/06/2026
+**Phiên bản:** 2.2 | **Cập nhật:** 19/06/2026
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -141,6 +141,13 @@ Khi nhiều Branch trong Sequence ghi cùng 1 biến:
 → False branch để TRỐNG (không ghi đè)
 ```
 
+### L11 — Latent Load — Aliasing qua shared class var (19/06/2026)
+BÀI HỌC: latent node (Async Load Asset) đặt trong Custom Event của InputManager → khi nhiều actor cùng load song song, các lần Completed chia sẻ CÙNG node graph → class var trung gian (MeshAsset, MID cache...) bị đè nhau → mesh/material set lên sai actor.
+
+FIX ĐÚNG: đặt Custom Event trong chính actor sở hữu asset (BP_FurnitureActor). Mỗi instance có graph riêng → Completed của actor nào set cho actor đó, không share.
+
+TỔNG QUÁT: Manager gọi hộ + latent + nhiều target đồng thời = aliasing. Giải pháp: "actor tự lo asset của nó".
+
 ---
 
 ## ⭐ Q8 — SELF-CHECK GATE (cổng bắt buộc trước khi đưa BẤT KỲ node flow nào)
@@ -223,6 +230,7 @@ Dùng đúng tên này, KHÔNG bịa tên khác:
 | Phím đang nhấn | `Is Input Key Down` (Player Controller) | |
 | Gizmo transform type | `ETransformationType` (None/Translation/Rotation/Scale) | |
 | Tạo object runtime | `Construct Object from Class` | |
+| Is Valid Index | Array → kiểm tra index có hợp lệ không (không out of bounds). Input: Array + Index. Return: bool. Dùng thay thế cho Branch Array.Length > Index. ✅ xác nhận 19/06/2026 | |
 
 ⚠️ Khi gặp node mới chưa có trong bảng → cuhoang xác nhận, rồi thêm vào bảng này.
 
@@ -422,3 +430,4 @@ Sau khi 1 sprint/task lớn xong:
 | 1.0 | 28/05/2026 | Q1-Q7, L1-L10, bảng node, quy trình task |
 | 2.0 | 14/06/2026 | Q8 Self-Check Gate; mở rộng L9; mục Bàn giao Opus→Sonnet; checklist cập nhật |
 | 2.1 | 15/06/2026 | Q8 extended format (5 điểm visible); L2 CHECK (Sequence vs Event); Blueprint Export Method; Spawn Paths checklist; Runtime State vs Snapshot State |
+| 2.2 | 19/06/2026 | Thêm Is Valid Index vào bảng node; thêm key learning L11 latent aliasing |

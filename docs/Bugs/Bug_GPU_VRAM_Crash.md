@@ -1,6 +1,6 @@
 # Bug — GPU Crash / D3D Device Removed sau 3-4 lần PIE
 
-**Phiên bản:** 1.0 | **Cập nhật:** 09/05/2026 — 08:30 ICT
+**Phiên bản:** 1.1 | **Cập nhật:** 19/06/2026 — Fix 5.2 + Fix 5.3 + Hardware confirm
 **Project:** Lighting_Mnger (UE5.5.4) | **Loại bug:** GPU VRAM exhaustion
 
 ---
@@ -344,6 +344,32 @@ r.Lumen.MemoryStats 1 → Lumen surface cache size
 
 ---
 
+## Cập nhật 19/06/2026
+
+### Xác nhận lại hardware
+- Card thực tế: RTX 3060 **8GB** (không phải 12GB như ghi ban đầu)
+- Budget UE: ~7.26GB = 8GB - ~0.77GB (Windows + driver reserve) — khớp hoàn toàn log crash
+- Peak VRAM lúc chạy thông thường: 7.2/8.0GB — margin chỉ ~800MB
+
+### Fix 5.1 — Đã apply trước đó (End Play clear)
+Giữ nguyên.
+
+### Fix 5.2 — Async Load (19/06/2026) ✅
+Chuyển Load Asset Blocking (mesh + material) trong SpawnFurnitureCopy sang async.
+Cách: Custom Event LoadMeshAsync(MeshPath) + LoadMaterialsAsync(Overrides, Index) đặt trong BP_FurnitureActor.
+Mỗi instance actor tự load → không aliasing, không share class var giữa các latent Completed.
+
+### Fix 5.3 — Material dedup (19/06/2026) ✅
+ApplyMaterial trong WBP_FurnitureInventory: guard Is Valid Index + Equal String trước LoadAndApplyMaterial.
+Nếu material trùng với slot hiện tại → bỏ qua, không fire Async Load.
+
+### Workaround dài hạn (đã xác nhận hoạt động)
+Dùng Standalone Game (Alt+P) thay PIE cho session dài.
+Peak VRAM ổn định ~7.2GB, không cộng dồn qua nhiều lần launch.
+DLSS/NIS/Reflex còn bật — cân nhắc disable nếu margin cần thêm (hỏi đồng nghiệp trước).
+
+---
+
 ## Tài liệu liên quan
 
 - `BP_UndoManager.md` — chi tiết snapshot system
@@ -356,3 +382,4 @@ r.Lumen.MemoryStats 1 → Lumen surface cache size
 | Phiên bản | Ngày | Người | Nội dung |
 |-----------|------|-------|----------|
 | 1.0 | 09/05/2026 — 08:30 ICT | Cuhoang | Tạo document đầu tiên — phân tích crash GPU sau 4 PIE |
+| 1.1 | 19/06/2026 | Cuhoang | Xác nhận RTX 3060 8GB (không phải 12GB). Fix 5.2 async load (LoadMeshAsync/LoadMaterialsAsync trong BP_FurnitureActor). Fix 5.3 material dedup (Equal String guard trước Async Load). Standalone Game workaround confirmed. |

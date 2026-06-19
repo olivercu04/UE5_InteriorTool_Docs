@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 18/06/2026 — Sprint D DONE + TreeNode Highlight | Lighting_Mnger UE5.5.4
+**Phiên bản:** 19/06/2026 — VRAM Fixes + Fix 5.2 + Fix 5.3 | Lighting_Mnger UE5.5.4
 
 ---
 
@@ -37,6 +37,7 @@
 | B-stale-popup | ✅ FIXED (17/06, D.T6) — Popup hiển thị đồ cũ | — | UpdateDetailPopup bound OnSelectionChanged |
 | Bug-Pagination | ✅ FIXED (17/06, D.T9) — Furniture pagination dừng sớm 1 trang | — | Int to Float trước Ceil ở Next-page check |
 | Bug-Maximize | ✅ FIXED (17/06, D.T9) — BTN_Maximize không nhảy về góc trên-trái | — | Set Position thêm vào Slot VerticalBox_0 |
+| Fix-5.2-async | ✅ FIXED (19/06) — aliasing shared latent khi spawn nhiều actor dồn | — | LoadMeshAsync/LoadMaterialsAsync đặt trong BP_FurnitureActor thay InputManager; NewActorCopy → local var |
 
 ---
 
@@ -54,11 +55,17 @@
 - **Sprint D — Data Layer v2 (D.T1-D.T9, 17/06/2026) ✅**
 - **TreeNode/Chip active-folder highlight (18/06/2026, tính năng bổ sung) ✅**
 
+### VRAM Fixes (19/06/2026)
+- Giai đoạn 1: Xác nhận card là RTX 3060 8GB (không phải 12GB). Budget UE = 7.26GB. Workaround: dùng Standalone Game (Alt+P) thay PIE cho session dài — mỗi lần tắt OS reclaim VRAM sạch 100%. Peak VRAM lúc chạy = 7.2/8.0GB, không cộng dồn qua nhiều lần launch. ✅ PASS
+- Fix 5.3: Material dedup trong ApplyMaterial (WBP_FurnitureInventory). Branch Is Valid Index + Equal String trước khi gọi LoadAndApplyMaterial — nếu material đã áp đúng slot thì bỏ qua, không fire Async Load lại. ✅ PASS
+- Việc 1: Add Recent Mesh trong SpawnFurnitureCopy đổi nguồn parse từ DAPath (rỗng với đồ Sprint D) sang MeshPath — parse theo '/' lấy phần cuối, tách '.' lấy index 0 = RowName. ✅ PASS
+- Fix 5.2: Async Load mesh + material trong SpawnFurnitureCopy. Chuyển từ Load Asset Blocking sang Custom Event LoadMeshAsync + LoadMaterialsAsync đặt TRONG BP_FurnitureActor (không phải InputManager). Mỗi actor tự load asset của chính nó — tránh aliasing shared class var/latent context khi nhiều actor spawn dồn. NewActorCopy đổi từ class var → local var trong SpawnFurnitureCopy. ✅ PASS
+
 ---
 
 ## KIẾN TRÚC HIỆN TẠI
 
-**BP_FurnitureInputManager v1.10** — StartReplaceMode doc (RowName branch), Step 11 XÓA (stale popup fix)
+**BP_FurnitureInputManager v2.1** — SpawnFurnitureCopy async load (LoadMeshAsync/LoadMaterialsAsync); NewActorCopy local var; Add Recent Mesh parse MeshPath
 **BP_UndoManager v1.10** — bIsRestoring guard + SpawnFurnitureCopy merge
 **BP_FurnitureActor v1.2** — RowName : Name (SaveGame), GroupID confirmed SaveGame
 **WBP_DetailPopup v1.2** — InitPopup(RowName), RowData : S_FurnitureData

@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 18/06/2026
+**Cập nhật:** 19/06/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -138,6 +138,17 @@
 | 17/06 | D.T9 | Regression trong plan gốc (9/9 PASS) | Phát hiện thêm 2 bug ngoài checklist: Bug-Pagination + Bug-Maximize — fix ngay cùng phiên | Bug phụ ngoài checklist gốc, fix ngay, không defer | [BUG] |
 | 18/06 | PROGRESS.md | Checklist D.T1-D.T9 đúng label | Bị lệch nhãn giữa các task — phát hiện và sửa lại khi làm doc update 18/06 (xem PROGRESS.md mục Sprint D) | Lỗi ghép doc, không phải lỗi code | [PLAN-SAI] |
 | 17-18/06 | TreeNode highlight | Phase 1: wire `==` trực tiếp cho cấp 1 | Kiến trúc tập trung `IsPathActive`/`UpdateFolderHighlights` — hỗ trợ cả chip cấp 2/3; dừng sửa từng phần | Bug học được: biến class trong loop gây tô sai tất cả → đổi sang đọc FolderPath của TỪNG widget | [BUG] |
+
+---
+
+## SPRINT D — 19/06/2026 — VRAM Fixes + Async Load
+
+| Ngày | Task | Plan nói | Thực tế làm | Lý do | Loại |
+|------|------|----------|-------------|-------|------|
+| 19/06 | Fix 5.2 | Plan: async load trong Custom Event ở InputManager | Thực tế: chuyển sang Custom Event trong BP_FurnitureActor | Bug aliasing — nhiều actor share cùng latent context + class var → mesh set sai actor. Fix: actor tự load (mỗi instance có graph riêng) | [BUG→FIX] |
+| 19/06 | Fix 5.2 | Plan: NewActorCopy là class var | Thực tế: đổi sang local var trong SpawnFurnitureCopy | Hệ quả của aliasing fix — local var mỗi lần gọi là bản riêng | [BUG→FIX] |
+| 19/06 | VRAM | Ghi nhầm card là RTX 3060 12GB | Thực tế: RTX 3060 8GB | Budget UE = 7.26GB = 8GB - reserve, khớp crash log | [CORRECTION] |
+| 19/06 | Fix 5.3 | ApplyMaterial: Add Recent Mesh parse từ DAPath | Thực tế: đổi sang MeshPath | DAPath rỗng với đồ Sprint D (không dùng DA_FurnitureItem nữa) | [BUG→FIX] |
 
 ---
 

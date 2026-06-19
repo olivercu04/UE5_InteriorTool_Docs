@@ -1,9 +1,10 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 1.10 | **Cập nhật:** 17/06/2026 — Sprint D.T6 | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 2.1 | **Cập nhật:** 19/06/2026 — SpawnFurnitureCopy async load | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 > **HỢP NHẤT TỪ:** base v1.6 + patch v1.7 + patch v1.8 + patch v1.9 (15/06/2026). Đây là bản đầy đủ, thay thế toàn bộ file gốc + patch trong import_raw.
 > **File canonical.** `BP_FurnitureInputManager_MERGED_v1.9.md` là bản duplicate — sẽ bị xóa (cuhoang 17/06/2026). Chỉ đọc file này.
 >
+> **v2.1 (19/06/2026):** `SpawnFurnitureCopy` — async load mesh + material qua `BP_FurnitureActor.LoadMeshAsync/LoadMaterialsAsync` (thay Load Asset Blocking). `NewActorCopy` đổi class var → local var. Add Recent Mesh parse `MeshPath` thay `DAPath`.
 > **v1.10 (Sprint D.T6):** Thêm `StartReplaceMode(Actors)` — document lần đầu. Primary actor → Branch RowName != "" → DT lookup MeshFolderPath (fallback DAPath). Mouse Left Pressed: ghi nhận + XÓA Step 11 (UpdateDetailPopup → stale popup bug).
 > **v1.9 (Sprint 4 Bug Fix F1-F4):** thêm `GetSelectionUnitLabel` (F1), `ComputeSelectionUnits` (F3); `CreateGroup` viết lại bottom-up (F3); `SpawnFurnitureCopy` auto-join edit scope (F4); `GroupNameCounter` chuyển sang `BP_GroupsContainer` (F2).
 > **v1.8 (Sprint 4 T6-T8):** `UngroupActors` viết lại peel-one-level; `PruneEmptyGroups` dùng `GetAllDescendantActors`.
@@ -762,6 +763,11 @@ GizmoController → OnMouseReleased
 - `DuplicateMesh` — CopyMesh → ForEach SelectedActors tính MaxRightEdge (**phần spawn nối COMPLETED, KHÔNG Loop Body**) → DeselectAll → CLEAR LocalSpawned → ForEach ClipboardActors spawn (bAutoSelect=False) → SelectActors(LocalSpawned) → CaptureSnapshot.
 - `SpawnFurnitureCopy(...) → NewActor` — **v1.6:** đoạn tail thay cụm select thủ công (SET SelectedFurnitureActor + Set Custom Depth Stencil + Set Render Custom Depth + Select/ActivateGizmo + Call OnMeshSelected) bằng `Deselect Mesh → SelectActors(Make Array(NewActorCopy)) → Return`. SelectActors tự lo outline (Stencil **255** chuẩn) + gizmo + fire OnSelectionChanged. Return Node nối NewActorCopy ở CẢ True và False branch.
   **v1.9 (F4 — auto-join edit scope):** trong **Sequence.Then 0**, ngay SAU `ADD "FurnitureSpawned" → SET Tags`: `GetCurrentEditScope() → Scope`; `Branch(Scope != "")`: True → `SET NewActorCopy.GroupID = Scope`; False → dead-end (HỢP LỆ vì trong Sequence.Then 0, Sequence tự fire Then 1). → đồ spawn khi đang edit group tự nhận GroupID của scope.
+  **v2.1 (19/06/2026 — async load):**
+  - Step 2: `Call NewActorCopy.LoadMeshAsync(MeshPath)` [thay Load Asset Blocking mesh]
+  - Step 4: `SET NewActorCopy.MaterialOverrides = MaterialOverrides` [giữ] → `Call NewActorCopy.LoadMaterialsAsync(Overrides=MaterialOverrides, Index=0)` [thay ForEach Load Asset Blocking material]
+  - **NewActorCopy:** local variable (không phải class var từ v2.1) — tránh aliasing khi RestoreSnapshot gọi SpawnFurnitureCopy trong ForEach
+  - **Add Recent Mesh:** parse MeshPath (không phải DAPath) — DAPath rỗng với đồ Sprint D
 
 ---
 
@@ -854,3 +860,4 @@ Branch LENGTH(Actors) == 1:
 | 1.8 | 12/06/2026 — 15:04 ICT | **Sprint 4 T6-T8 + Bug Fix.** **CreateGroup:** ParentGroupID=GetCurrentEditScope() (sau bị v1.9 thay). **PruneEmptyGroups viết lại** dùng GetAllDescendantActors. **UngroupActors viết lại peel-one-level** (scope→target→B1 actor về cha→B2 rebuild sub-groups→B3 xóa target). Local vars update (xóa FoundIdx/Root/LocalRemoveIDs, thêm target/parentGID/scope/LocalNewGroups/LocalKeep). Bug Fix cross-ref: GroupID preserved trong Replace Mesh (WBP_DragOverlay_FurnitureCard — Cast OldActor → GET GroupID → SET NewActor.GroupID TRƯỚC Destroy). |
 | 1.9 | 15/06/2026 — 20:30 ICT | **Sprint 4 Bug Fix F1-F4.** Thêm `GetSelectionUnitLabel` (F1), `ComputeSelectionUnits` (F3). `GroupNameCounter` chuyển sang BP_GroupsContainer (F2, default=1 SaveGame). **CreateGroup viết lại bottom-up** (F3 — ComputeSelectionUnits trước guard, Luật 6B). **SpawnFurnitureCopy** auto-join edit scope (F4). |
 | 1.10 | 17/06/2026 — Sprint D.T6 | Document `StartReplaceMode` + v1.10 update RowName branch. Ghi nhận + XÓA Step 11 Mouse Left Pressed (stale popup bug). |
+| 2.1 | 19/06/2026 — 19h ICT | Load mesh+material async qua BP_FurnitureActor.LoadMeshAsync/LoadMaterialsAsync; NewActorCopy đổi class var → local var; Add Recent Mesh parse MeshPath thay DAPath |
