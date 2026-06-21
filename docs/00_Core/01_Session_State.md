@@ -1,13 +1,27 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 19/06/2026 — VRAM Fixes + Fix 5.2 + Fix 5.3 | Lighting_Mnger UE5.5.4
+**Phiên bản:** 21/06/2026 — Sprint 5 S5.T1+S5.T2 DONE | Lighting_Mnger UE5.5.4
 
 ---
 
 ## TRẠNG THÁI HIỆN TẠI
 
 **Sprint D — HOÀN THÀNH ✅ (17/06/2026) + TreeNode/Chip Highlight ✅ (18/06/2026)**
+**Sprint 5 — Combo Mesh 🔄 IN PROGRESS (21/06/2026)**
+
+### Sprint 5 — S5.T1 + S5.T2 (21/06/2026)
+
+| Task | Nội dung | Status |
+|---|---|---|
+| S5.T1 | C++ ComboTypes + ComboSerializer — schema v1, round-trip JSON PASS | ✅ DONE |
+| S5.T2 | SaveComboFromSelection + CaptureComboThumbnail trong BP_ComboManager | ✅ DONE (core) |
+| CB_SaveCombo | Context menu "💾 Lưu thành Combo" hoạt động khi right-click đồ | ✅ DONE |
+
+**Pending T2:** WBP_SaveComboDialog (dialog nhập tên) — dời sau T5, không chặn spawn
+**Ghi chú kiến trúc:** BP_ComboManager đã spawn trong Level BP; InputManager guard (≥2 đồ, tính Center) → gọi ComboManager qua param (SelectedActors, Center, ComboName, Description)
+
+---
 
 ### Sprint 4 Bug Fix (F1–F4 + A12) — ĐẦY ĐỦ PASS
 
@@ -54,6 +68,7 @@
 - **Gate 1 (G1.1-G1.3, 16/06/2026) ✅**
 - **Sprint D — Data Layer v2 (D.T1-D.T9, 17/06/2026) ✅**
 - **TreeNode/Chip active-folder highlight (18/06/2026, tính năng bổ sung) ✅**
+- **Sprint 5 S5.T1 + S5.T2 core (21/06/2026) ✅** — ComboTypes C++, ComboSerializer, SaveComboFromSelection, BP_ComboManager
 
 ### VRAM Fixes (19/06/2026)
 - Giai đoạn 1: Xác nhận card là RTX 3060 8GB (không phải 12GB). Budget UE = 7.26GB. Workaround: dùng Standalone Game (Alt+P) thay PIE cho session dài — mỗi lần tắt OS reclaim VRAM sạch 100%. Peak VRAM lúc chạy = 7.2/8.0GB, không cộng dồn qua nhiều lần launch. ✅ PASS
@@ -79,6 +94,7 @@
 **WBP_TreeNode v1.1** — RefreshDisplay + bIsActive param → SetBackgroundColor
 **WBP_ChipTag v1.1** — SetHighlight(bIsActive) custom event → SetBackgroundColor
 **WBP_ResizeWindow v1.1** — Fix Bug-Maximize: Set Position thêm vào Slot VerticalBox_0
+**BP_ComboManager v1.0** — SaveComboFromSelection, CaptureComboThumbnail, OnComboLibraryChanged; spawn trong Level BP; nhận data qua param từ InputManager (không hard ref InputManager — R2)
 
 **Snapshot version history:**
 - V1: single select (legacy)
@@ -95,7 +111,15 @@
 Gate 1 (fix B1 bIsRestoring + hợp nhất spawn)   ✅ DONE (16/06)
 Sprint D (D.T1-D.T9, Furniture Data Layer v2)    ✅ DONE (17/06)
 TreeNode/Chip active-folder highlight            ✅ DONE (18/06, bổ sung)
-→ Sprint 5 Combo Mesh (20/06 hard deadline)
+Sprint 5 — Combo Mesh 🔄 IN PROGRESS
+  ✅ S5.T1 C++ structs + serializer (ComboTypes, ComboSerializer)
+  ✅ S5.T2 SaveComboFromSelection + CB_SaveCombo (core; dialog dời sau T5)
+  ⏳ S5.T3 LoadComboLibrary + BP_ComboItemView
+  ⏳ S5.T4 Tab Combo + WBP_ComboCard
+  ⏳ S5.T5 SpawnComboByID ⭐
+  ⏳ S5.T6 Pivot rotation
+  ⏳ S5.T7 Tương tác hệ thống
+  ⏳ S5.T8 Regression + Docs
 → Sprint 7 Material v1.2
 → Sprint 6 Polish
 → Gate 2 (first packaged build)

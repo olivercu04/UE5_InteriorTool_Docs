@@ -1,6 +1,6 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
-**Cập nhật:** 18/06/2026 (Sprint D DONE + TreeNode Highlight)
+**Cập nhật:** 21/06/2026 (Sprint 5 S5.T1 + S5.T2 DONE)
 
 ---
 
@@ -13,11 +13,11 @@ Sprint 3 — Group cơ bản       ███████████████
 Sprint 4 — Edit + Nested      ████████████████ 8/8  SHIPPED ✅  (+5 bug fix thêm)
 Gate 1                        ████████████████ 3/3  DONE ✅ (16/06)
 Sprint D — Data Layer v2      ████████████████ 9/9  DONE ✅ (17/06)
-Sprint 5 — Combo Mesh         ░░░░░░░░         0/8  task
+Sprint 5 — Combo Mesh         ██░░░░░░         2/8  task (T1✅ T2✅)
 Sprint 6 — Polish UX          ░░░░░░░░░░░░░    0/14 task
 Sprint 7 — Material v1.2      ░░░░░░░░░        0/9  task
 
-TỔNG: 53/91 task
+TỔNG: 55/91 task
 ```
 
 ---
@@ -237,4 +237,20 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 
 ---
 
-## SPRINT 5-7 — Chưa bắt đầu
+## SPRINT 5 — Combo Mesh 🔄 IN PROGRESS (21/06/2026)
+
+- [x] **S5.T1** — C++ ComboTypes + ComboSerializer (schema v1, round-trip JSON PASS). Build.cs: Json + JsonUtilities. ✅ 21/06/2026
+- [x] **S5.T2** — SaveComboFromSelection + CaptureComboThumbnail trong **BP_ComboManager** (Actor riêng, spawn Level BP). CB_SaveCombo hoạt động trong context menu right-click. ✅ 21/06/2026
+  - ⏳ **Pending T2:** WBP_SaveComboDialog (dialog nhập tên) — dời sau T5, không chặn flow
+- [ ] S5.T3 — LoadComboLibrary + BP_ComboItemView
+- [ ] S5.T4 — Tab 🧩 Combo + WBP_ComboCard
+- [ ] S5.T5 — SpawnComboByID ⭐ (trái tim sprint)
+- [ ] S5.T6 — Toán xoay quanh pivot
+- [ ] S5.T7 — Tương tác hệ thống
+- [ ] S5.T8 — Regression + Docs
+
+**Deviation:** combo event tách sang BP_ComboManager thay vì BP_FurnitureInputManager (xem DEVIATIONS.md 19/06 — [SCOPE]).
+
+---
+
+## SPRINT 6-7 — Chưa bắt đầu
