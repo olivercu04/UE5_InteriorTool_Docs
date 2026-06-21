@@ -1,42 +1,24 @@
 # SPRINT 5 — COMBO MESH (EXECUTION step-by-step)
 
-> ⚠️ DEVIATION (19/06/2026) — ĐỌC TRƯỚC KHI THỰC THI
->
-> Doc này (v1.1) viết với giả định MỌI combo event (SaveComboFromSelection,
-> CaptureComboThumbnail, LoadComboLibrary, SpawnComboByID...) nằm TRONG
-> BP_FurnitureInputManager và đọc trực tiếp class var của nó.
->
-> THỰC TẾ TỪ 19/06: combo logic đã TÁCH sang Actor riêng BP_ComboManager.
-> Khi thực thi, phải DỊCH từng bước theo các luật sau — KHÔNG copy nguyên văn doc:
->
-> 1. Mọi event combo sống trong BP_ComboManager, KHÔNG phải BP_FurnitureInputManager.
-> 2. ComboManager KHÔNG đọc class var của InputManager. Mọi data InputManager
->    cần đưa cho ComboManager phải truyền qua PARAM của event.
->    Ví dụ chữ ký mới:
->       SaveComboFromSelection(SelectedActors: Array<BP_FurnitureActor>,
->                              Center: Vector, ComboName: String, Description: String)
-> 3. InputManager lo phần guard (≥2 đồ), tính Center, lấy SelectedActors,
->    rồi GỌI ComboManager với data đó.
-> 4. Hàm dùng chung như FindGroupData: ComboManager gọi thẳng BP_GroupsContainer
->    qua Get All Actors Of Class → Get(0), KHÔNG qua InputManager.
-> 5. ComboManager KHÔNG giữ hard ref InputManager (R2). Nếu cần báo ngược
->    (vd spawn xong cần select), dùng Event Dispatcher để InputManager lắng nghe.
-> 6. Đặt tên biến theo quy ước mới — xem AI_Implementation_Rules.md mục "Quy ước đặt tên biến".
->
-> Chỗ nào doc ghi "đọc SelectedActors / class var" → hiểu là "đọc param tương ứng".
+> ⚠️ v2.0 (21/06/2026) — TÁI THIẾT KẾ DIỆN RỘNG. Đọc hết trước khi thực thi.
+> Sprint 5 mở rộng từ "combo cơ bản" thành HỆ THỐNG COMBO LIBRARY đầy đủ:
+> dialog lưu (tên/folder/thumbnail/tags/mô tả), folder tree, drag-drop,
+> replace cả cụm, tích hợp group nhiều cấp, material RowName.
+> Mọi quyết định cũ (D1–D4) bị thay bởi mục QUYẾT ĐỊNH v2.0 bên dưới.
 
-**Phiên bản:** 1.1 | **Ngày:** 12/06/2026 | Lighting_Mnger UE5.5.4
-**Tác giả:** Fable 5 (plan gốc v1.0) + Q&A Sonnet 4.6 review → hợp nhất thành v1.1
+**Phiên bản:** 2.1 | **Ngày:** 21/06/2026 | Lighting_Mnger UE5.5.4
+**Tác giả:** Fable 5 (v1.0) + Q&A Sonnet 4.6 (v1.1) + Kiến trúc 21/06 (v2.0) + Review patch (v2.1)
 **Đối tượng đọc:** model thực thi (Opus/Sonnet) + cuhoang. Tuân thủ `09_AI_Implementation_Rules.md`.
 **Làm TỪNG TASK, mỗi task có test, xong báo cuhoang.**
 
-> **THAY ĐỔI so với v1.0:**
-> - T2 bước 3: XÓA kéo-cả-cây. Thay bằng selection-only (Q2 + điểm kiến trúc LCA).
-> - Variables: thêm 8 class vars cho async spawn (Q8).
-> - SpawnComboByID: guard double-click đầu event (Q10), ValidItems array (Q7), trace 2 tầng (Q9).
-> - Chốt: CTV_ComboCard riêng (Q5), CaptureComboThumbnail đồng bộ (Q3).
-> - Path join: GetCombosDir + "/" + FileName tại caller (Q4).
-> - Backlog thêm 2 dòng.
+> **Lịch sử thay đổi lớn:**
+> - v1.1 (12/06): sửa T2 bước 3 selection-only, 8 class vars, guard double-click, trace 2 tầng.
+> - v1.2 (19/06): tách BP_ComboManager khỏi InputManager (xem DEVIATIONS.md).
+> - v2.0 (21/06): tái thiết kế diện rộng — nhóm cha SourceComboID, material RowName,
+>   drag-drop tái dùng, replace cả cụm, dialog đầy đủ. T2 nested fix (C0). C++ mở rộng (C1).
+> - v2.1 (21/06): patch review kiến trúc — C0→LCA (tránh lưu thừa cả room), C1 ghi nhận
+>   ItemView+persist, C2→3-phase bắt buộc, C3 folder-create, C5 BuildFolderTree nguồn mới,
+>   C8 DragOp_ComboCard+On Drop routing, C9 capture-after+rollback toast.
 
 ---
 
@@ -47,26 +29,64 @@
 **Nếu B1 còn sống: DỪNG.**
 
 ## 0b. PHẠM VI
+
 | Tính năng | S5 | B3a | B3b | Sau |
 |---|---|---|---|---|
 | Lưu bộ đồ + thumbnail + tên/tags | ✅ | | | |
-| Thư viện combo cá nhân, search | ✅ | | | |
+| Thư viện combo cá nhân, folder tree, search | ✅ | | | |
 | Spawn combo, undo, save scene | ✅ | | | |
 | Nested group trong combo | ✅ | | | |
+| Drag-drop combo (ghost 1 đại diện) | ✅ | | | |
+| Replace cả cụm combo | ✅ | | | |
 | Đăng chợ, người khác tải | | ✅ | | |
 | Giá tiền, mua, entitlement | | | ✅ | |
 | Preview 3D, AI gợi ý | | | | backlog |
 | Combo chứa đồ user import | schema chừa sourceType | | | Sprint G |
 
-**Quyết định mặc định (chốt — đổi được trước T1):**
-- D1: Lưu KÈM material overrides.
-- D2: Spawn yaw=0 tại điểm trace giữa màn hình; xoay sau bằng gizmo.
-- D3: Spawn khi đang Edit Mode → ExitEditModeFull trước.
-- D4: v1 KHÔNG drag-ghost N mesh — bấm nút → spawn ngay.
+## QUYẾT ĐỊNH KIẾN TRÚC v2.0 (thay D1–D4 cũ)
+
+**A. BP_ComboManager — Actor RIÊNG** chứa toàn bộ combo logic (tách từ 19/06).
+   Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2).
+   InputManager lo guard + tính Center + lấy SelectedActors → gọi ComboManager qua param.
+
+**B. Cụm combo = 1 GROUP CHA** (bỏ ý tưởng ComboInstanceID).
+   - `S_GroupData` thêm field `SourceComboID : String` (default "").
+     Group user tạo tay → "". Group cha cụm combo → = ComboID gốc.
+   - Spawn combo → wrap toàn cụm vào 1 group cha (SourceComboID=ComboID),
+     chứa các group con remap bên trong.
+   - Hệ quả: click 1 món chọn cả cụm, move/rotate cả cụm, edit nested —
+     tất cả kế thừa miễn phí từ group system. Không viết mới.
+
+**C. Save combo lưu NESTED ĐẦY ĐỦ** (sửa lỗi selection-only của T2 — xem C0).
+   - T2 hiện gom group bằng ForEach SelectedActors→GET GroupID → chỉ bắt group LÁ,
+     mất group cha trung gian → combo nested bị làm phẳng.
+   - SỬA (C0): dùng LCA (group chung gần nhất của các actor được chọn) thay vì leo root tuyệt đối —
+     tránh lưu thừa cả room khi chỉ chọn 1 nhánh. Chi tiết thuật toán xem C0.
+     Đồ lẻ (GroupID=="") → groupToken="" (thuộc group cha combo khi spawn).
+
+**D. Material override lưu ROWNAME** (mức A — combo portable cho cloud B3).
+   - Actor + snapshot + EMS GIỮ path (local, không đổi — tránh regression).
+   - CHỈ combo file đổi: `materialOverrides` = array RowName (không phải path).
+   - Cần C++ helper `FindMaterialRowNameByPath(Path)→RowName` (reverse lookup
+     từ DT_MaterialInstancesCatalog). Save dùng reverse; spawn dùng forward
+     (Get Data Table Row→path→apply, pattern ApplyMaterial sẵn có).
+   - Edge case: material ngoài catalog → reverse fail → lưu "" → spawn skip slot.
+
+**E. Drag-drop combo TÁI DÙNG khung furniture** (DragOperation→WBP_DragOverlay→
+   On Drag Over snap→On Drop). Khác biệt DUY NHẤT: ghost = 1 mesh ĐẠI DIỆN
+   (Items[0].RowName), KHÔNG ghost cả N mesh. On Drop → SpawnComboByID(ComboID,
+   DropLocation). Đây THAY thế D4 cũ: drop tại cursor thay vì giữa màn hình.
+
+**F. Replace combo = thay CẢ CỤM** (không phải 1 đổi 1 như replace mesh).
+   Chọn 1 actor → leo group cha (SourceComboID!="") → đọc SourceComboID +
+   FolderPath của combo → bật replace mode → folder tree combo navigate tới
+   FolderPath đó (pattern StartReplaceMode mesh) → card hiện nút replace →
+   click → destroy toàn member group cha → SpawnComboByID(comboMới, Center cũ).
+   Rotation v1 reset 0 (giữ rotation cụm cũ = backlog).
 
 ---
 
-## 1. SCHEMA JSON v1
+## 1. SCHEMA JSON v1 (v2.0 — thêm folderPath, materialOverrides = RowName)
 
 ```json
 {
@@ -76,8 +96,9 @@
   "description": "...",
   "tags": ["sofa", "bắc âu"],
   "category": "LivingRoom",
+  "folderPath": "LivingRoom/BacAu",
   "createdAt": "2026-07-01T10:00:00Z",
-  "appVersion": "1.1",
+  "appVersion": "2.0",
   "items": [{
       "rowName": "SM_Sofa_01",
       "sourceType": "catalog",
@@ -85,7 +106,7 @@
       "relRotation": {"pitch":0,"yaw":90,"roll":0},
       "scale": {"x":1,"y":1,"z":1},
       "surfaceType": "Floor",
-      "materialOverrides": ["", "/Game/.../MI_Blue", ""],
+      "materialOverrides": ["", "MI_Blue_01", ""],
       "groupToken": "g1"
   }],
   "groups": [
@@ -100,12 +121,16 @@
 - `relLocation` = ActorLocation − Center, trục world, không xoay.
 - `sourceType` chừa sẵn cho Sprint G (user import).
 - Tên file = comboID GUID (không dùng Name — mìn M10 ký tự lạ).
-- Schema version: field mới thêm → file cũ load OK (FJsonObjectConverter ignore field thừa). Field xóa → default value. Backward-compatible 1 chiều đủ cho v1.
+- **`folderPath`** (v2.0): dùng cho folder tree combo + navigate khi replace (quyết định F).
+- **`materialOverrides`** (v2.0): array **RowName** của material (vd `"MI_Blue_01"`), KHÔNG còn full path `/Game/...`.
+  Lý do: portable cloud (quyết định D). Snapshot/EMS actor vẫn giữ path — chỉ combo file đổi.
+  Material ngoài catalog → reverse lookup fail → lưu "" → spawn skip slot (không crash).
+- Schema version: field mới thêm → file cũ load OK (FJsonObjectConverter ignore field thừa). Backward-compatible 1 chiều.
 - Lưu: `<ProjectSavedDir>/Combos/<comboID>.json` | Thumb: `.../Combos/Thumbs/<comboID>.png`.
 
 ---
 
-## 2. C++ STRUCTS & SERIALIZER — T1
+## 2. C++ STRUCTS & SERIALIZER — T1 ✅ DONE (21/06/2026)
 
 ### ✅ Q1 (macro API)
 Mở FilterLibrary.h hiện có, copy macro ở dòng class declaration (dạng `FURNITURETOOLKIT_API`). Compile fail do macro sai: dán nguyên error cho cuhoang, không tự đoán. Gợi ý: macro = tên module trong `.Build.cs` (dòng `public class XXX`) + `_API`.
@@ -152,6 +177,7 @@ struct FComboData {
     UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<FComboGroupData> Groups;
 };
 ```
+> ⚠️ C1 sẽ thêm `FolderPath` vào FComboData — recompile sau C1.
 
 **`ComboSerializer.h`:**
 ```cpp
@@ -188,6 +214,7 @@ public:
     static bool DeleteFileAtPath(const FString& FilePath);
 };
 ```
+> ⚠️ C1 sẽ thêm `FindMaterialRowNameByPath` vào ComboSerializer — recompile sau C1.
 
 **`ComboSerializer.cpp`:**
 ```cpp
@@ -238,411 +265,315 @@ bool UComboSerializer::DeleteFileAtPath(const FString& FilePath) {
 Vẫn fail: dán nguyên error cho cuhoang, không đoán.
 
 **TEST T1:** Level BP test tạm — `Make FComboData` (1 item, name="Bộ sofa") → `ComboToJson` → Print → `JsonToCombo` → Print Name. Kết quả: JSON đúng, tiếng Việt không vỡ, round-trip khớp. Xóa test node sau pass.
+✅ DONE 21/06/2026
+
+---
+
+## 3. TASKS v2.0 — C0–C10
+
+> Format: mục tiêu + I/O + điểm mấu chốt. Chi tiết node sinh khi execute từng task, không ghi sẵn.
+
+---
+
+### C0 — Sửa SaveComboFromSelection: lưu nested đúng via LCA (BP_ComboManager)
+**Mục tiêu:** Bước 3 hiện chỉ gom group lá → nested bị phẳng. Patch dùng LCA (group chung gần nhất).
+**I/O:** Input = SelectedActors (param). Output = FComboData với Groups đúng cây (không thừa, không thiếu).
+
+**Thuật toán LCA (thay selection-only):**
+```
+CLEAR SaveCombo_LeafIDs; CLEAR SaveCombo_ComboGroups
+
+// Bước 1: thu leafGroupIDs duy nhất từ selection
+ForEach SelectedActors → GET GroupID → GroupID != "" → unique ADD SaveCombo_LeafIDs
+← đồ lẻ (GroupID=="") → lưu item với groupToken="" (thuộc group cha combo khi spawn, không mất)
+
+// Bước 2: tính LCA của tập leafGroupIDs
+// Nếu 1 leaf → LCA = leaf đó.
+// Nếu nhiều leaf → WalkUpUntilParent từng leaf → build path-to-root cho mỗi leaf
+//   → LCA = group sâu nhất có mặt trên PATH-LÊN-ROOT của MỌI leaf.
+// Nhiều cây không chung ancestor → nhiều LCA riêng (parentToken="" trong combo).
+// ⚠️ Helper LCA N-node cần viết mới. Chi tiết node sinh lúc execute C0.
+// ⚠️ +1 buổi code/test so với ROOT approach — đã chấp nhận (đúng ngữ nghĩa "lưu cái được chọn").
+
+// Bước 3: với mỗi LCA-root → GetGroupsInHierarchy(lcaID) gom subtree
+ForEach lcaRoots → GetGroupsInHierarchy(lcaID) → ForEach g:
+    NOT Contains(SaveCombo_ComboGroups) → ADD (tránh trùng)
+// Chỉ lấy subtree từ LCA XUỐNG, không leo thêm.
+// parentToken của LCA-root = "" (gốc trong combo). Các group con giữ quan hệ cha-con thực.
+```
+> Dùng `GetGroupsInHierarchy` + `WalkUpUntilParent` (Sprint 4 §9 — đã build sẵn, KHÔNG viết lại). Chỉ viết thêm helper tính LCA.
+
+**MaterialOverrides** (cùng task C0): thay `copy array` bằng:
+```
+ForEach MaterialOverrides slot (path):
+  FindMaterialRowNameByPath(path) → RowName → ADD (rỗng nếu fail → skip khi spawn)
+```
+> ⚠️ C1 phải xong TRƯỚC C0 để có node `FindMaterialRowNameByPath`.
+
+**TEST C0 (3 case — PASS hết mới tiếp):**
+- Case A: chọn actor trong 1 sub-group của room lớn → JSON groups = sub-group đó + con của nó (KHÔNG lấy root cả room).
+- Case B: chọn actor từ 2 nhánh khác nhau cùng root → LCA = group gần nhất chứa cả 2 nhánh.
+- Case C: combo nested 3 cấp (root→sub→leaf) → JSON groups đủ 3 entry, parentToken đúng cây.
+→ **Báo cuhoang + dán JSON cả 3 case.**
+
+---
+
+### C1 — Nền data + C++ mở rộng
+**Mục tiêu:** Chuẩn bị data foundation cho toàn bộ sprint.
+
+> ✅ **ĐÃ XONG (old T3 — KHÔNG làm lại):** BP_ComboItemView (Object, 5 var: ComboID/Name/
+> ThumbPath/ItemCount/Tags), AllComboViews array trong WBP_FurnitureInventory,
+> LoadComboLibrary (Custom Event, đã chạy "Loaded: 3 combos"), bind OnComboLibraryChanged.
+> C4/C5/C6 dùng lại trực tiếp — không tạo mới.
+
+**Các việc (thứ tự bắt buộc):**
+
+1. **FComboData thêm FolderPath** — mở `ComboTypes.h`, thêm:
+   `UPROPERTY(EditAnywhere, BlueprintReadWrite) FString FolderPath;`
+   Recompile. Backward-compat: file cũ không có field → default "".
+
+2. **FindMaterialRowNameByPath** — thêm vào `ComboSerializer.h/.cpp`:
+   ```
+   UFUNCTION(BlueprintCallable, Category="Combo")
+   static FString FindMaterialRowNameByPath(const UDataTable* MaterialDT,
+                                             const FString& Path);
+   ```
+   Logic: loop DT_MaterialInstancesCatalog, tìm row có MaterialPath==Path → return RowName.
+   Không tìm thấy → return "". ⚠️ Xác nhận tên field thực tế trong DT trước khi code.
+
+3. **S_GroupData thêm SourceComboID** — xác nhận S_GroupData là BP struct hay C++ struct.
+   Nếu BP struct: mở editor thêm field String `SourceComboID` default "".
+   Nếu C++: thêm UPROPERTY tương ứng + recompile.
+   **Persistence SourceComboID:**
+   - Runtime undo/redo: SourceComboID tự đi theo Groups (snapshot copy cả struct S_GroupData) → KHÔNG cần bump snapshot version. Không làm gì thêm.
+   - EMS disk: VERIFY load save cũ (không có field) → SourceComboID default "" không crash. Chỉ thêm migration NẾU test thấy mất dữ liệu — không assume trước.
+
+4. **BP_UserPreferencesSave thêm 2 array:**
+   `FavoriteComboIDs : Array<String>` | `RecentComboIDs : Array<String>` (SaveGame).
+
+**TEST C1:** Make FComboData với FolderPath="Test/Abc" → ToJson → FromJson → Print FolderPath = "Test/Abc". S_GroupData có SourceComboID field trong editor. Load save cũ → không crash, SourceComboID="". Compile xanh.
 → **Báo cuhoang.**
 
 ---
 
-## 3. TASKS
+### C2 — SpawnComboByID(ComboID, SpawnLocation) ⭐ TRÁI TIM SPRINT
+**Mục tiêu:** Custom Event trong BP_ComboManager. Spawn toàn cụm thành group cha.
+**I/O:** Input = ComboID (String), SpawnLocation (Vector). Output = dispatch OnComboSpawned(Array<BP_FurnitureActor>).
+**Điểm mấu chốt:**
+- Guard `Cmb_bSpawnInFlight` đầu event (double-click).
+- Bước 0b: EditModeStack.Length > 0 → ExitEditModeFull.
+- **3 PHASE bắt buộc — KHÔNG gộp Phase 1+2 (gộp = cha chưa có GUID khi con cần ParentGroupID → remap sai cây nested):**
+  - **Phase 1 (map GUIDs):** ForEach token trong Groups → GenerateGroupID → build FULL map `TokenToNewGUID`. PHẢI hoàn tất trước Phase 2.
+  - **Phase 2 (build groups):** GenerateGroupID → ParentGroupGUID (group cha combo, SourceComboID=ComboID, ParentGroupID=""). ForEach group: Make S_GroupData (ParentGroupID = map[parentToken]; group cấp cao nhất → ParentGroupGUID) → ADD Groups. SyncGroupsToContainer.
+  - **Phase 3 (spawn actors):** ForEach item → SpawnFurnitureCopy (ĐƯỜNG SPAWN DUY NHẤT). GroupID = map[groupToken]; đồ lẻ (groupToken="") → GroupID = ParentGroupGUID. Material: Get Data Table Row(DT_MaterialInstancesCatalog, RowName) → path → apply.
+- Warm async cache TRƯỚC spawn (pattern T5 v1.1, giữ nguyên).
+- Sau spawn: dispatch `OnComboSpawned(SpawnedActors)` → InputManager lắng nghe → SelectActors + CaptureSnapshot("SpawnCombo").
+- Class vars BẮT BUỘC với prefix `Cmb_`. CLEAR đầu event + End Play (R4).
 
-### S5.T2 — SaveComboFromSelection (Custom Event, BP_FurnitureInputManager)
-
-Entry: Context menu thêm `CB_SaveCombo "💾 Lưu thành Combo"` — enable khi SelectedActors ≥ 2. Mở dialog nhập tên → gọi `SaveComboFromSelection(ComboName, Description)`.
-
+**TEST C2 (bộ test chặt — PASS hết mới tiếp):**
 ```
-Bước 1 — Guard:
-  SelectedActors.Length < 2 → Return
-
-Bước 2 — Center:
-  CalculateCenter(SelectedActors) → Center
-
-★ Bước 3 — Thu thập groups (v1.1 — SELECTION-ONLY):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  NGUYÊN TẮC "chọn gì lưu nấy" (Q2):
-  (a) Góc người dùng: UX bất biến của Figma/Blender/Coohom —
-      bấm Lưu Combo mà file chứa thêm group cha không chọn = phản trực giác.
-  (b) Góc người bán: combo là sản phẩm — phải kiểm soát chính xác
-      món gì trong gói. "Chọn gì bán nấy" dễ giải thích.
-  (c) Góc kiến trúc: đơn giản hơn LCA, đúng trong mọi ca thực tế
-      vì ResolveSelectionUnit đã nở selection đúng scope trước khi tới đây.
-  KHÔNG GetGroupRoot, KHÔNG GetGroupsInHierarchy, KHÔNG leo cây.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  CLEAR LocalGroupIDs (Array<String>)
-  ForEach SelectedActors → Cast → GET GroupID
-    GroupID != "" AND NOT Contains(LocalGroupIDs, GroupID) → ADD
-  Completed:
-  CLEAR LocalComboGroups (Array<S_GroupData>)
-  ForEach LocalGroupIDs (gid):
-    FindGroupData(gid) → bFound True → ADD data
-  ← Chỉ group của actors được chọn.
-    Group cha không được chọn → cắt tại đó, thành root trong combo.
-
-Bước 4 — Token:
-  CLEAR TokenMap (Map<String,String>)
-  ForEach LocalComboGroups (g, idx): ADD TokenMap(g.GroupID, "g" + (idx+1))
-
-Bước 5 — Build FComboData:
-  ComboID = "c_" + (NewGuid → ToString)
-  Make FComboData: Version=1, ComboID, Name, Description,
-    CreatedAt=(Now→ToIsoString), Category="MyCombo"
-
-  ForEach LocalComboGroups → Make FComboGroupData:
-    Token       = TokenMap[g.GroupID]
-    Name        = g.GroupName
-    ParentToken = g.ParentGroupID=="" ? ""
-                  : Map_Find(TokenMap, g.ParentGroupID, Found) ? Found_Value : ""
-                  ← Cha ngoài bộ lưu → "" → thành root trong combo
-    ADD → ComboData.Groups
-
-  ForEach SelectedActors → Cast → Make FComboItemData:
-    RowName           = Actor.RowName (D.T8)
-    SourceType        = "catalog"
-    RelLocation       = ActorLocation − Center
-    RelRotation       = ActorRotation
-    Scale             = ActorScale3D
-    SurfaceType       = PlacementSurfaceType → ToString
-    MaterialOverrides = copy array
-    GroupToken        = GroupID=="" ? "" : TokenMap[GroupID]
-    ADD → ComboData.Items
-
-Bước 6 — Lưu:
-  ComboDir = GetCombosDir → CreateDirectory(ComboDir) nếu chưa có
-  FilePath = ComboDir + "/" + ComboID + ".json"
-  ComboToJson → SaveStringToFile(FilePath, Json)
-
-Bước 7 — Thumbnail (Q3 — ĐỒNG BỘ, gọi khi SelectedActors còn nguyên):
-  CaptureComboThumbnail(ComboID)
-
-Bước 8 — Kết thúc:
-  Toast "✅ Đã lưu combo"
-  Broadcast OnComboLibraryChanged   ← dispatcher mới trên InputManager
-```
-
-**T2b — CaptureComboThumbnail(ComboID) — Custom Event (Q3):**
-```
-⚠ ĐỒNG BỘ — không latent. CaptureScene() và Export Render Target đều đồng bộ.
-  Gọi ngay sau SaveStringToFile khi SelectedActors còn là bộ đồ vừa lưu → không có race.
-
-CalculateCenter(SelectedActors) → Center
-MaxBound = max BoundingSize của các actors → fallback 200
-CamOffset = Center + Vector(−MaxBound×1.5, −MaxBound×1.5, MaxBound×1.2)
-SET SceneCapture2D Location = CamOffset
-SET SceneCapture2D Rotation = FindLookAtRotation(CamOffset, Center)
-bCaptureEveryFrame = False → CaptureScene()
-ThumbDir = GetCombosDir + "/Thumbs" → CreateDirectory(ThumbDir)
-Export Render Target(RT_ComboThumb 256×256 RGBA8, ThumbDir + "/" + ComboID + ".png")
-
-─── Plan B (nếu Export Render Target fail — M5) ───
-SKIP thumbnail. Card hiện icon 🧩 + tên. Ghi DEVIATIONS 1 dòng. KHÔNG để thumbnail chặn sprint.
-```
-> SceneCapture2D spawn sẵn ở BeginPlay — tái dùng actor đó (giống pipeline material thumb).
-> Capture Source = **"Final Color (LDR) in RGB"** — fix đen đã trả giá.
-> RT format = RTF RGBA8 (Export node yêu cầu). Nếu ra .hdr → đổi format RT.
-
-**TEST T2:** lưu bộ 3 đồ có 1 group + 1 đồ lẻ → mở .json: items đủ 3, relLocation tổng ≈ 0, groups 1 entry, item lẻ groupToken="". Tiếng Việt không vỡ. File .png xuất hiện (hoặc DEVIATIONS).
-→ **Báo cuhoang + dán JSON.**
-
----
-
-### S5.T3 — LoadComboLibrary + BP_ComboItemView
-
-**BP_ComboItemView** (Object, mirror BP_FurnitureItemView):
-```
-Variables: ComboID (String), Name (String), ThumbPath (String),
-           ItemCount (Integer), Tags (Array<String>)
-```
-
-**LoadComboLibrary (Custom Event, WBP_FurnitureInventory):**
-```
-CLEAR AllComboViews   ← class var, CLEAR ĐẦU HÀM
-
-ListJsonFilesInDir(GetCombosDir) → FileNames   ← chỉ tên file
-ForEach FileNames (FileName):
-  FullPath = GetCombosDir + "/" + FileName      ← Q4: nối path tại đây, không trong C++
-  LoadStringFromFile(FullPath) → success:
-    True  → JsonToCombo → success:
-              True  → Construct BP_ComboItemView
-                       → SET ComboID, Name, Tags, ItemCount=Items.Length
-                       → ThumbPath = GetCombosDir + "/Thumbs/" + ComboID + ".png"
-                       → ADD → AllComboViews
-              False → Print "File lỗi/version lạ: " + FileName   (SKIP, không crash)
-    False → Print "Không đọc được: " + FileName
-
-⚠ JsonToCombo version lạ (vd version=2 tương lai):
-  FJsonObjectConverter đọc field biết, ignore field lạ → forward-compatible.
-  Chính sách: "không xóa field cũ khi bump schema version" — ghi vào Data.md.
-```
-
-**TEST T3:** 2 combo từ T2 → Length = 2. Bỏ 1 file rác .json → 2 + 1 warning, không crash.
-→ **Báo cuhoang.**
-
----
-
-### S5.T4 — Inventory tab 🧩 Combo + WBP_ComboCard
-
-**Chốt: CTV_ComboCard RIÊNG (Q5):**
-- Người dùng: card combo có badge "×6 món" khác biệt rõ với furniture card.
-- Người bán: B3 cần gắn giá/trạng thái published lên card này — riêng thì gắn sạch.
-- Kiến trúc: Replace mode + Favorite-mesh logic của FurnitureCard không áp dụng cho combo.
-
-**WBP_ComboCard:**
-```
-Interface: IUserObjectListEntry
-Variables: ComboItem (BP_ComboItemView), InventoryRef
-
-OnListItemObjectSet:
-  Cast → BP_ComboItemView → SET ComboItem
-  ⚠ Q6 — "Import File as Texture2D" node:
-    Search node trong editor TRƯỚC.
-    Thấy → load ThumbPath → Set Brush (xác nhận vào bảng 09).
-    Không thấy → Plan B: icon 🧩 cứng. Ghi DEVIATIONS. Backlog C++ load PNG (FImageUtils).
-  SET TXT_ComboName = ComboItem.Name
-  SET TXT_ItemCount = "×" + ComboItem.ItemCount + " món"
-
-BTN_SpawnCombo "📥 Đặt vào scene" OnClicked:
-  GET InventoryRef → SpawnComboByID(ComboItem.ComboID)
-
-BTN_DeleteCombo 🗑 OnClicked:
-  DeleteFileAtPath(GetCombosDir + "/" + ComboItem.ComboID + ".json")
-  DeleteFileAtPath(GetCombosDir + "/Thumbs/" + ComboItem.ComboID + ".png")
-  GET InventoryRef → LoadComboLibrary → RefreshComboTab
-```
-
-**Inventory — thêm tab Combo:**
-- BTN_Tab_Combo cạnh BTN_Tab_Material.
-- FilterBySearch nhánh Combo (ActiveSpecialCategory == "Combo"):
-  Lọc AllComboViews theo Name/Tags Contains SearchText (Blueprint thuần).
-  Clear List Items(CTV_ComboCard) → ForEach kết quả → Add Item.
-- Bind OnComboLibraryChanged → LoadComboLibrary ở Event Construct.
-
-**TEST T4:** 2 card đúng tên + số món. Xóa 1 → còn 1, file biến. Search "sofa" → lọc đúng.
-→ **Báo cuhoang.**
-
----
-
-### S5.T5 — SpawnComboByID ⭐ TRÁI TIM SPRINT (Custom Event, BP_FurnitureInputManager)
-
-**★ Variables mới — class vars (Q8):**
-```
-⚠ BẮT BUỘC là class vars vì Custom Event không có local variable,
-  và async callback cắt ngang luồng — state phải sống ở class level.
-  Tất cả CLEAR đầu event + Event End Play (R4).
-
-bComboSpawnInFlight : Boolean        (default False)
-PendingLoadCount    : Integer
-LoadedCount         : Integer
-PendingComboData    : FComboData     ← sống từ bước 1 tới bước 6
-PendingSpawnCenter  : Vector
-PendingValidItems   : Array<FComboItemData>
-TokenToNewID        : Map<String,String>
-SpawnedComboActors  : Array<BP_FurnitureActor>
-```
-
-```
-SpawnComboByID(ComboID : String):
-
-★ Bước 0 — Guard double-click + reset (Q10):
-  Branch bComboSpawnInFlight == True → Return   ← chặn double-click khi đang spawn
-  ⚠ Blueprint game thread đơn → async callback TUẦN TỰ, không song song.
-    LoadedCount tăng dần không có race. Guard này chặn LOGIC-RACE (double-click),
-    không phải thread-race.
-  CLEAR PendingValidItems, SpawnedComboActors, TokenToNewID
-  SET LoadedCount=0, PendingLoadCount=0, bComboSpawnInFlight=False
-
-Bước 0b — Thoát Edit Mode (D3):
-  EditModeStack.Length > 0 → ExitEditModeFull
-
-Bước 1 — Load:
-  FullPath = GetCombosDir + "/" + ComboID + ".json"
-  LoadStringFromFile → False: toast "Không tìm thấy combo", Return
-  JsonToCombo → SET PendingComboData → False: toast "File combo lỗi", Return
-
-★ Bước 2 — Điểm đặt (Q9 — trace 2 tầng vì cursor đang trên UI):
-  GetPlayerCameraManager → GetCameraLocation → CamLoc
-  GetPlayerCameraManager → GetCameraRotation → CamRot
-  Get Forward Vector(CamRot) → Fwd        ← xác nhận node vào bảng 09
-  ─ Tầng 1 ─
-  LineTraceByChannel(Visibility, CamLoc, CamLoc + Fwd×1500)
-    Hit  → SET PendingSpawnCenter = HitLocation
-    Miss → ─ Tầng 2 (thả xuống từ điểm trước camera) ─
-             Mid = CamLoc + Fwd×500
-             LineTraceByChannel(Visibility, Mid+(0,0,1000), Mid−(0,0,5000))
-               Hit  → SET PendingSpawnCenter = HitLocation
-               Miss → SET PendingSpawnCenter = Mid   ← fallback tuyệt đối
-
-★ Bước 3 — Kiểm item + build ValidItems (Q7):
-  CLEAR PendingValidItems; CLEAR LocalMissing
-  ForEach PendingComboData.Items (item):
-    GetDataTableRow(DT_FurnitureCatalog, item.RowName) → found:
-      True  → ADD item → PendingValidItems
-      False → ADD item.RowName → LocalMissing
-  LocalMissing.Length == PendingComboData.Items.Length → toast "Combo không dùng được", Return
-  LocalMissing.Length  > 0 → toast "Thiếu " + LocalMissing.Length + " món"
-  SET PendingLoadCount = PendingValidItems.Length
-
-Bước 4 — Warm async cache (R1):
-  SET bComboSpawnInFlight = True
-  ForEach PendingValidItems (item):
-    GetDataTableRow → MeshPath = Row.MeshFolderPath + "/" + item.RowName
-    MakeSoftObjectPath → AsyncLoadAsset:
-      Completed →
-        SET LoadedCount = LoadedCount + 1   ← OUTPUT PIN của SET
-        Branch (LoadedCount >= PendingLoadCount) AND bComboSpawnInFlight:
-          True → SET bComboSpawnInFlight = False → gọi Custom Event DoSpawnCombo
-          ← AND guard: chặn double-fire nếu 2 callback chạy sát nhau
-
-★ DoSpawnCombo (Custom Event riêng — tách để rõ ràng):
-
-Bước 5 — Remap GroupID (HAI VÒNG RIÊNG — Q giải thích tại sao):
-  ⚠ Vòng 1 sinh ĐỦ ID trước, vòng 2 mới nối cha-con.
-    Gộp 1 vòng: cha đứng sau con trong mảng → ParentToken chưa có → cây gãy.
-
-  Vòng 1 — sinh ID:
-  ForEach PendingComboData.Groups (g):
-    GenerateGroupID → NewID → ADD TokenToNewID(g.Token, NewID)
-
-  Vòng 2 — nối cây + thêm vào Groups:
-  ForEach PendingComboData.Groups (g):
-    Make S_GroupData:
-      GroupID       = TokenToNewID[g.Token]
-      GroupName     = g.Name
-      ParentGroupID = g.ParentToken=="" ? ""
-                      : Map_Find(TokenToNewID, g.ParentToken, Found) ? Found_Value : ""
-      bIsLocked     = False
-    ADD → InputManager.Groups
-  SyncGroupsToContainer
-
-Bước 6 — Spawn:
-  DeselectAll
-  ForEach PendingValidItems (item):
-    GetDataTableRow → MeshPath = Row.MeshFolderPath + "/" + item.RowName
-    SpawnFurnitureCopy(MeshPath, DAPath="",
-      Location        = PendingSpawnCenter + item.RelLocation,
-      Rotation        = item.RelRotation,
-      Scale           = item.Scale,
-      MaterialOverrides = item.MaterialOverrides,
-      SurfaceType     = item.SurfaceType → Enum,
-      bAutoSelect     = False,
-      RowName         = item.RowName) → NewActor
-    IsValid(NewActor) → Cast → SET GroupID = item.GroupToken=="" ? ""
-                                             : TokenToNewID[item.GroupToken]
-    ADD NewActor → SpawnedComboActors
-  ← Mesh đã cache bước 4 → Load Blocking trong SpawnFurnitureCopy trúng cache
-
-Bước 7 — Kết thúc:
-  SelectActors(SpawnedComboActors)
-  CaptureSnapshot("SpawnCombo")   ← 1 snapshot duy nhất
-  Toast "✅ Đã đặt: " + PendingComboData.Name
-  CLEAR SpawnedComboActors, PendingValidItems, TokenToNewID
-```
-
-**TEST T5 (PASS HẾT mới làm T6):**
-```
-1. Spawn combo 5 món có group → đủ 5, hình dạng đúng, select cả cụm, info bar hiện group
-2. ⭐ Spawn CÙNG combo LẦN 2 → 2 cụm ĐỘC LẬP: move cụm 1, cụm 2 đứng yên. Print GroupID → khác
-3. Undo → cả cụm biến 1 lần. Redo → quay lại đủ + group nguyên
+1. Spawn combo 5 món nested 2 cấp → group cha tồn tại, SourceComboID = ComboID gốc
+2. Spawn combo lần 2 → 2 cụm ĐỘC LẬP: move cụm 1, cụm 2 đứng yên. Print GroupID → khác
+3. Undo → cả cụm biến 1 lần. Redo → quay lại đủ + group cha nguyên
 4. Spawn khi Edit Mode → tự thoát rồi spawn
-5. Sửa tay RowName trong .json thành tên bậy → spawn N-1 món + toast
-6. Save EMS → Load → combo quay lại đúng
+5. RowName bậy trong JSON → spawn N-1 + toast. Không crash
+6. Save EMS → Load → combo + group cha + SourceComboID nguyên vẹn
 7. Spawn 20 món → không khựng quá 0.5s
 ```
 → **Báo cuhoang + bảng PASS/FAIL 7 case.**
 
 ---
 
-### S5.T6 — TOÁN XOAY QUANH PIVOT (trả nợ T15)
+### C3 — WBP_SaveComboDialog
+**Mục tiêu:** Dialog nhập thông tin combo trước khi lưu. Thay hardcode "MyCombo" hiện tại.
+**I/O:** Output = (ComboName, FolderPath, Description, Tags) qua dispatcher OnDialogConfirmed.
+**Các thành phần:**
+- TXT_ComboName (EditableText), TXT_Description (EditableText), TXT_Tags
+- **Folder path — bắt buộc hỗ trợ cả 2 chế độ:**
+  (a) Nhập text tự do (vd "LivingRoom/BacAu") — bắt buộc vì lần đầu lưu cây combo còn trống.
+  (b) Chọn từ dropdown/picker cây combo hiện có — khi thư viện đã có folder.
+  Validate: trim whitespace, chuẩn hóa "\\" → "/", không cho ký tự đặc biệt.
 
-**⚠ ĐỌC TRƯỚC KHI CODE (Q11, Q12):**
-- Mở `BP_PivotActor.md` + `T15_Multi_Rotate_Scale_Plan.md` + node graph thật.
-- Xác định: (a) actors đã attach vào pivot (UE tự orbit → T6 chỉ verify) hay (b) offset thủ công (→ cần code dưới).
-- Tên biến thật chứa danh sách actors trên BP_PivotActor (doc gọi AttachedActors — đối chiếu thực tế).
-- Node **RotateVector, CombineRotators**: search editor → cuhoang xác nhận → thêm bảng 09 TRƯỚC khi dùng (Q12).
+- Thumbnail preview: chụp runtime (CaptureComboThumbnail sau khi confirm) hoặc import file.
+  Search node "Import File as Texture2D" TRƯỚC. Không có → Plan B: chỉ chụp runtime, ghi DEVIATIONS.
+- BTN_Confirm → Broadcast OnDialogConfirmed → đóng dialog → BP_ComboManager.SaveComboFromSelection(params)
+- BTN_Cancel → đóng
 
-**Công thức (giải sẵn):**
-```
-Với mỗi actor i, pivot P, delta rotation R:
-  NewLoc_i = P + RotateVector(R, OldLoc_i − P)
-  NewRot_i = CombineRotators(OldRot_i, R)
-
-⚠ THỨ TỰ CombineRotators: OldRot TRƯỚC, Delta SAU.
-  Ngược lại: đồ chưa xoay trông đúng, đồ có rotation sẵn ≠ 0 sẽ "trôi". Test case 3 bắt lỗi này.
-```
-
-**Code nếu cần (trường hợp b):**
-```
-Function ApplyPivotRotationDelta(DeltaRot : Rotator)
-  P = GizmoPivotActor.GetActorLocation
-  ForEach [TÊN BIẾN THẬT] (actor): IsValid →
-    NewLoc = P + RotateVector(DeltaRot, GetActorLocation(actor) − P)
-    NewRot = CombineRotators(GetActorRotation(actor), DeltaRot)
-    SetActorLocation(actor, NewLoc)
-    SetActorRotation(actor, NewRot)
-  → RefreshOffsets (nếu cần)
-Gọi từ: BP_GizmoController, chỗ đang áp rotation delta mỗi frame (cùng chỗ SnapAngle).
-```
-
-**TEST T6:**
-```
-1. 2 đồ 2 bên pivot, rotate 90° → đổi chỗ, mặt hướng đúng
-2. Snap 15° mượt, không giật
-3. ⭐ Đồ có rotation sẵn 45° → xoay tiếp 90° → ra đúng 135° + vị trí đúng
-4. Undo sau xoay → về đúng
-```
+**TEST C3:** mở dialog, nhập tên + folder + tags, confirm → file JSON có đúng tên + folderPath + tags.
 → **Báo cuhoang.**
 
 ---
 
-### S5.T7 — Tương tác hệ thống (kiểm, ít code mới)
-1. Replace mode với combo-group: MeshesToReplace multi đã có → TEST.
-2. Delete combo trong scene: DeleteSelected + PruneEmptyGroups → TEST.
-3. RestoreSnapshot scene chứa combo: spawn combo → move → đổi material → Undo ×3 → Redo ×3.
-4. Box select nửa combo → ExpandSelectionWithGroups nở cả cụm → TEST.
-→ **Báo cuhoang + bảng PASS/FAIL 4 case.**
+### C4 — WBP_ComboCard
+**Mục tiêu:** Card combo trong tile view, layout riêng với badge số món.
+**Interface:** IUserObjectListEntry. Variables: `ComboItem (BP_ComboItemView)`, `InventoryRef`.
+**Điểm mấu chốt:**
+- Thumbnail: search "Import File as Texture2D" trước. Không có → icon 🧩. Ghi DEVIATIONS.
+- BTN_SpawnCombo "📥 Đặt vào scene": gọi C2 tại điểm giữa màn hình (fallback khi không drag).
+- BTN_Info ℹ: mở WBP_ComboDetailPopup (C7).
+- BTN_Delete 🗑: xóa file json + thumb → LoadComboLibrary → refresh tab.
+- Badge "×N món" hiển thị ItemCount.
+- `CTV_ComboCard` riêng (KHÔNG tái dùng CTV_FurnitureCard) — lý do xem DEVIATIONS.md 19/06 [SCOPE].
+
+**TEST C4:** 2 card đúng tên + số món. Xóa 1 → còn 1, file biến. Nút đặt → spawn đúng vị trí.
+→ **Báo cuhoang.**
 
 ---
 
-### S5.T8 — Regression + Docs
-Regression: R1-R8 Sprint D + 7 case T5 + 4 case T6 + 4 case T7.
+### C5 — Folder tree tab Combo
+**Mục tiêu:** Browse combo theo FolderPath, tái dùng WBP_TreeNode + WBP_ChipTag.
+**I/O:** Input = AllComboViews (list đã load). Output = FilteredComboViews theo folder chọn.
+**Điểm mấu chốt:**
+- Build folder tree từ FolderPath của AllComboViews. **KHÔNG dùng BuildFolderTree furniture** (nó đọc DT_FurnitureCatalog, không đọc combo array). Cần: overload C++ nhận `Array<FString> FolderPaths` → build tree, HOẶC build BP-level từ AllComboViews. Quyết định lúc C5 sau khi xem signature hàm cũ.
+- Tái dùng WBP_TreeNode + WBP_ChipTag (đã có IsPathActive + UpdateFolderHighlights từ Sprint D).
+- Filter combo theo CurrentFolderPath (pattern FilterByFolderPath furniture).
+- BTN_Tab_Combo cạnh BTN_Tab_Material trong WBP_FurnitureInventory.
+- Bind OnComboLibraryChanged → LoadComboLibrary ở Event Construct.
 
-Docs (version + ngày + giờ + phút):
-- `BP_FurnitureInputManager.md` → v1.8: 8 vars mới, SaveComboFromSelection, SpawnComboByID, DoSpawnCombo, OnComboLibraryChanged, ApplyPivotRotationDelta.
-- `WBP_FurnitureInventory.md` → v2.5: AllComboViews, LoadComboLibrary, tab Combo, WBP_ComboCard.
-- File mới `Combo_System.md`: schema v1, quy tắc naming, backward-compat, RowName là hợp đồng.
-- `09_AI_Implementation_Rules.md`: thêm node đã dùng thật (RotateVector, CombineRotators, Get Forward Vector, Export Render Target, CreateDirectory — cuhoang xác nhận từng node).
-- Session_State, PROGRESS, DEVIATIONS.
+**TEST C5:** 3 combo ở 2 folder khác nhau → click folder → chỉ thấy combo đó. Highlight folder đúng.
+→ **Báo cuhoang.**
+
+---
+
+### C6 — Favorite + Recent combo
+**Mục tiêu:** Clone pattern furniture. Dùng ComboID thay MeshPath.
+**I/O:** FavoriteComboIDs + RecentComboIDs từ BP_UserPreferencesSave (C1 đã thêm).
+**Điểm mấu chốt:**
+- BTN_Favorite trên WBP_ComboCard: toggle ComboID trong FavoriteComboIDs.
+- Recent: thêm vào RecentComboIDs khi spawn (trong OnComboSpawned listener của InputManager).
+- Tab Recent/Favorite combo: filter AllComboViews theo array IDs.
+
+**TEST C6:** favorite 1 combo → reload → vẫn favorite. Spawn → xuất hiện trong Recent.
+→ **Báo cuhoang.**
+
+---
+
+### C7 — WBP_ComboDetailPopup + Info button
+**Mục tiêu:** Popup hiển thị chi tiết combo (tên/số món/tags/mô tả/thumbnail/list món).
+**Điểm mấu chốt:**
+- Widget riêng, KHÔNG tái dùng WBP_DetailPopup (combo khác field hoàn toàn).
+- Hiển thị danh sách Items: ListView hoặc VerticalBox động với tên từng món (DT lookup VieName).
+- Thumbnail hiển thị tương tự WBP_ComboCard (Plan B: icon 🧩).
+
+**TEST C7:** click Info trên card → popup đúng tên/tags/số món/danh sách.
+→ **Báo cuhoang.**
+
+---
+
+### C8 — Drag-drop combo
+**Mục tiêu:** Kéo card combo ra scene, ghost 1 mesh đại diện, thả → spawn tại cursor (quyết định E).
+**Điểm mấu chốt:**
+- **DragDropOperation_ComboCard MỚI** (KHÔNG extend FurnitureCard — tránh đụng furniture đang chạy). Chứa field `ComboID : String`.
+- **WBP_DragOverlay.On Drop — thêm branch routing:**
+  - Cast to `DragDropOperation_ComboCard` → True: SpawnComboByID(ComboID, DropLocation).
+  - Cast to `DragDropOperation_FurnitureCard` → True: đường furniture cũ (giữ nguyên).
+  - ⚠️ Hiện On Drop chỉ có nhánh FurnitureCard — thả ComboCard mà không thêm branch = crash hoặc spawn sai.
+- **Ghost mesh:** async load mesh `Items[0].RowName` lúc drag bắt đầu (trễ 1-2 frame — chấp nhận). Nếu test tệ (giật/laggy trên máy yếu) → fallback thumbnail 2D làm ghost. KHÔNG preload trước (48 item/trang = nặng). Quyết sau khi sờ thực tế.
+- KHÔNG cần trace 2 tầng (C2 dùng DropLocation trực tiếp).
+
+**TEST C8:** kéo card combo → ghost xuất hiện → thả → combo spawn đúng chỗ thả. Kéo FurnitureCard vẫn hoạt động bình thường (regression).
+→ **Báo cuhoang.**
+
+---
+
+### C9 — Replace combo
+**Mục tiêu:** Thay cả cụm combo bằng combo khác (quyết định F).
+**Điểm mấu chốt:**
+- Entry: right-click actor thuộc cụm combo → CB_ReplaceCombo (enable khi actor có GroupID với SourceComboID!="").
+- Leo group cha: GetGroupRoot(actor.GroupID) → RootGID → FindGroupData(RootGID) → SourceComboID + FolderPath.
+- Mở replace mode combo: navigate folder tree combo tới FolderPath.
+- **Sequence thực thi (thứ tự BẮT BUỘC):**
+  1. Guard `Cmb_bSpawnInFlight` đầu event.
+  2. CalculateCenter(GetAllDescendantActors(RootGID)) → lưu `Center` (TRƯỚC khi destroy).
+  3. Destroy GetAllDescendantActors(RootGID) + RootGID group.
+  4. SpawnComboByID(newComboID, Center) → đợi OnComboSpawned callback.
+  5. **Spawn thành công:** CaptureSnapshot("ReplaceCombo"). Recent tự cập nhật (OnComboSpawned → C6 listener).
+  6. **Spawn thất bại** (JSON lỗi / RowName không tồn tại): KHÔNG capture + toast "Thay thế thất bại — Undo để khôi phục" (Undo restore combo cũ từ history qua RestoreSnapshot destroy+respawn).
+- Rotation v1 reset 0 (giữ rotation = backlog).
+- ⚠️ KHÔNG capture "PreReplace" riêng — state cũ đã ở history trước bước destroy.
+
+**TEST C9:**
+- Case A: spawn combo A → replace bằng B → cụm A biến, B ở Center cũ → Undo → A quay lại.
+- Case B: replace với combo có RowName bậy → toast, scene không có lỗ trống.
+→ **Báo cuhoang.**
+
+---
+
+### C10 — Regression + Docs
+**Mục tiêu:** Verify toàn hệ thống + cập nhật tài liệu.
+**Regression:**
+- R1-R8 Sprint D
+- 7 case C2 + 4 case C8 + 2 case C9
+- Scene save/load: group + SourceComboID nguyên vẹn sau restart
+- T6 pivot rotation: verify có TRÙNG group transform không — nếu trùng → bỏ T6, ghi DEVIATIONS
+
+**Docs (version + ngày + giờ + phút):**
+- `BP_ComboManager.md` (tạo mới): vars Cmb_, events C0/C2, dispatchers
+- `BP_FurnitureInputManager.md` → v2.2: guard CB_SaveCombo, listen OnComboSpawned
+- `WBP_FurnitureInventory.md` → v2.7: tab Combo, C5 folder tree, C6 Fav/Recent
+- `09_AI_Implementation_Rules.md`: thêm node xác nhận thật (RotateVector, CombineRotators, FindLookAtRotation...)
+- `Session_State.md`, `PROGRESS.md`, `DEVIATIONS.md`
 → **Báo cuhoang. SPRINT 5 HOÀN TẤT.**
 
 ---
 
-## 4. SỔ RỦI RO (12 tình huống + Plan B)
+## 4. TÍCH HỢP HỆ THỐNG CŨ
+
+**NHÓM A — tự động (combo=group+actor thường):**
+Box select, edit mode nested, replace mesh từng đồ, gizmo/nudge cả nhóm.
+Không viết gì — kế thừa miễn phí vì combo dùng group system.
+
+**NHÓM B — C2 lo:**
+- Undo/redo: CaptureSnapshot sau mỗi thao tác; snapshot đã lưu Groups+GroupID+MaterialPaths. SourceComboID tự vào snapshot (field của S_GroupData).
+- Material apply: qua SpawnFurnitureCopy.
+Không sửa hệ thống undo/material.
+
+**NHÓM C — nợ/quyết:**
+- Material RowName chỉ combo (mức A): snapshot/EMS giữ path, combo file đổi sang RowName — tránh regression actor thường.
+- Copy/paste cả cụm mất group: clipboard không lưu GroupID — v1 để vậy, backlog.
+- Scene save group persistence: verify C10.
+- T6 pivot: có thể thừa nếu group transform xử lý đủ — verify C10 rồi quyết.
+
+---
+
+## 5. SỔ RỦI RO (12 tình huống + Plan B)
 | # | Tình huống | Triệu chứng | Plan B |
 |---|---|---|---|
 | M1 | CombineRotators sai thứ tự | Đồ rotation sẵn xoay xong trôi | Đảo 2 input — chỉ có 2 khả năng |
-| M2 | Async double-fire | Spawn gấp đôi | Guard bComboSpawnInFlight + AND callback |
-| M3 | Remap 1 vòng | Cây nested gãy | Tách 2 vòng như bước 5 |
+| M2 | Async double-fire | Spawn gấp đôi | Guard Cmb_bSpawnInFlight + AND callback |
+| M3 | Phase 1+2 gộp thành 1 vòng | Cây nested gãy (cha chưa có GUID khi con cần ParentGroupID) | Tách 3 phase như C2 — Phase 1 PHẢI xong trước Phase 2 |
 | M4 | 2 lần spawn dính | Move cụm 1, cụm 2 chạy | Kiểm SET GroupID có qua TokenToNewID không |
 | M5 | Export Render Target fail | Không có .png | Icon 🧩 + tên. Ghi DEVIATIONS |
 | M6 | Import File as Texture2D không tồn tại | Node không thấy | Icon 🧩. Backlog C++ FImageUtils |
 | M7 | JSON tiếng Việt vỡ | Tên "???" | ForceUTF8WithoutBOM đã có. Kiểm app đọc encoding |
-| M8 | Trace miss hoàn toàn | Combo lơ lửng | Fallback 2 tầng đã có bước 2 |
-| M9 | Combo 50 món khựng | Đứng hình | Warm cache bước 4. Vẫn khựng → limit ≤30 món ở T2 |
+| M8 | Trace miss (fallback nút spawn) | Combo lơ lửng | Fallback 2 tầng trong C2 bước điểm đặt |
+| M9 | Combo 50 món khựng | Đứng hình | Warm cache bước 4. Vẫn khựng → limit ≤30 món ở C0 |
 | M10 | Tên combo ký tự lạ | File không tạo | Tên file = GUID. Đã xử lý |
-| M11 | Catalog đổi RowName sau lưu | Item thiếu | Bước 3 skip + toast. RowName = hợp đồng — ghi Data.md |
+| M11 | Catalog đổi RowName sau lưu | Item thiếu | C2 bước 3 skip + toast. RowName = hợp đồng — ghi Data.md |
 | M12 | Kẹt C++ không có Fable | Compile error lạ | Tra bảng T1 → fail 3 lần: gác, gom hỏi Opus 1 lần với error+file+dòng |
+| M13 | SourceComboID mất sau Undo/Load | Replace không nhận ra cụm | Verify S_GroupData trong snapshot capture/restore; xem C10 |
 
 ---
 
-## 5. ĐỊNH NGHĨA DONE
-✅ Lưu combo (nested group + material) → card tab 🧩 → spawn 2 lần độc lập → xoay pivot đúng toán → undo/redo/save/load nguyên vẹn → regression PASS → docs cập nhật.
+## 6. ĐỊNH NGHĨA DONE SPRINT 5 v2.0
+✅ Lưu combo (nested group đầy đủ + material RowName) → dialog tên/folder → card tab 🧩 → folder tree → spawn 2 lần độc lập với group cha SourceComboID → drag-drop tại cursor → replace cả cụm → undo/redo/save/load nguyên vẹn → regression PASS → docs cập nhật.
 ❌ Marketplace / giá tiền / đăng tải = B3, không thuộc Sprint 5.
 
 ---
 
-## 6. BACKLOG
-- "Chụp lại bìa combo" — nút cho phép set thumbnail từ góc camera tự chọn (B3 page người bán).
-- "Recent combo" — tab Recent hiện combo vừa spawn.
-- Ghost preview N mesh khi drag card (D4 defer).
-- Limit ≤30 món validate khi lưu (nếu M9 xảy ra).
-- C++ load PNG runtime FImageUtils (nếu M6 xảy ra).
+## 7. BACKLOG
+
+**Deferred v1 (chốt 21/06 — không làm Sprint 5):**
+- Filter-by-tag: tags v1 chỉ decorative (hiện info popup). Filter theo tag = deferred Sprint 6.
+- Giữ rotation cụm cũ khi replace (C9 v1 reset 0 — giữ rotation = backlog).
+- Copy/paste cả cụm giữ group (clipboard không lưu GroupID — v1 để vậy).
+- Material RowName cho actor/snapshot/EMS (v1 chỉ combo file đổi; snapshot/EMS giữ path — tránh regression).
+
+**Backlog kỹ thuật:**
+- "Chụp lại bìa combo" — nút set thumbnail từ góc camera tự chọn (B3 page người bán).
+- Ghost preview N mesh khi drag (C8 ghost 1 đại diện — full N ghost = backlog).
+- Limit ≤30 món validate khi lưu (nếu M9 xảy ra trong test).
+- C++ load PNG runtime FImageUtils (nếu M6 xảy ra — Import File as Texture2D không tồn tại).
 
 ---
 
@@ -652,3 +583,5 @@ Docs (version + ngày + giờ + phút):
 | 1.0 | 12/06/2026 | Fable 5: schema v1, C++ đầy đủ, toán pivot, remap 2 vòng, 12 rủi ro |
 | 1.1 | 12/06/2026 | Hợp nhất Q&A Sonnet 4.6: sửa T2 bước 3 (selection-only), 8 class vars, guard double-click, trace 2 tầng, CTV riêng, thumbnail đồng bộ, path join Q4, giải thích Q10 race |
 | 1.2 | 19/06/2026 | Thêm DEVIATION block đầu file: BP_ComboManager tách riêng khỏi InputManager; luật dịch 6 điểm |
+| 2.0 | 21/06/2026 | Tái thiết kế diện rộng: QUYẾT ĐỊNH v2.0 (A-F), schema thêm folderPath + materialOverrides→RowName, TASKS đổi C0–C10, thêm TÍCH HỢP HỆ THỐNG CŨ, group cha SourceComboID, C++ mở rộng C1, drag-drop C8, replace cả cụm C9 |
+| 2.1 | 21/06/2026 | Patch review kiến trúc: C0→LCA (tránh lưu thừa cả room), C1 ghi nhận ItemView+LoadComboLibrary đã xong+persist note, C2→3-phase bắt buộc, C3 folder-create mode, C5 BuildFolderTree nguồn mới, C8 DragOp_ComboCard+On Drop routing+ghost decision, C9 sequence+capture-after+rollback toast, BACKLOG deferred v1, M3 cập nhật |

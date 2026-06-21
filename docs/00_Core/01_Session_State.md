@@ -94,7 +94,8 @@
 **WBP_TreeNode v1.1** — RefreshDisplay + bIsActive param → SetBackgroundColor
 **WBP_ChipTag v1.1** — SetHighlight(bIsActive) custom event → SetBackgroundColor
 **WBP_ResizeWindow v1.1** — Fix Bug-Maximize: Set Position thêm vào Slot VerticalBox_0
-**BP_ComboManager v1.0** — SaveComboFromSelection, CaptureComboThumbnail, OnComboLibraryChanged; spawn trong Level BP; nhận data qua param từ InputManager (không hard ref InputManager — R2)
+**BP_ComboManager v1.0** — SaveComboFromSelection, CaptureComboThumbnail, OnComboLibraryChanged; spawn trong Level BP; nhận data qua param từ InputManager (không hard ref InputManager — R2). [C0 pending: patch nested save; C2 pending: SpawnComboByID + group cha SourceComboID]
+**S_GroupData (pending C1)** — sắp thêm field `SourceComboID : String` (default ""). Group cha cụm combo = ComboID gốc; group user tạo tay = "". Cần thêm vào snapshot capture/restore.
 
 **Snapshot version history:**
 - V1: single select (legacy)
@@ -106,20 +107,26 @@
 
 ## TIẾP THEO
 
-**Roadmap v3.1:**
+**Roadmap v3.2:**
 ```
 Gate 1 (fix B1 bIsRestoring + hợp nhất spawn)   ✅ DONE (16/06)
 Sprint D (D.T1-D.T9, Furniture Data Layer v2)    ✅ DONE (17/06)
 TreeNode/Chip active-folder highlight            ✅ DONE (18/06, bổ sung)
-Sprint 5 — Combo Mesh 🔄 IN PROGRESS
-  ✅ S5.T1 C++ structs + serializer (ComboTypes, ComboSerializer)
-  ✅ S5.T2 SaveComboFromSelection + CB_SaveCombo (core; dialog dời sau T5)
-  ⏳ S5.T3 LoadComboLibrary + BP_ComboItemView
-  ⏳ S5.T4 Tab Combo + WBP_ComboCard
-  ⏳ S5.T5 SpawnComboByID ⭐
-  ⏳ S5.T6 Pivot rotation
-  ⏳ S5.T7 Tương tác hệ thống
-  ⏳ S5.T8 Regression + Docs
+Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
+  ⚠️ Scope mở rộng 21/06 thành Combo Library đầy đủ. Deadline 25/06 sẽ trượt — báo cuhoang re-plan.
+  ✅ T1 — C++ ComboTypes + ComboSerializer (schema v1, round-trip PASS)
+  ✅ T2 core — SaveComboFromSelection + CB_SaveCombo (hệ thống cơ bản)
+  ⏳ C0 — Sửa nested: GetGroupRoot+GetGroupsInHierarchy (patch T2 selection-only)
+  ⏳ C1 — Nền data: FolderPath C++, FindMaterialRowNameByPath, SourceComboID, prefs favorites/recent
+  ⏳ C2 — SpawnComboByID + group cha SourceComboID ⭐ (trái tim sprint)
+  ⏳ C3 — WBP_SaveComboDialog (tên, folder, tags, mô tả)
+  ⏳ C4 — WBP_ComboCard (thumbnail, badge số món, Info/Delete/Spawn)
+  ⏳ C5 — Folder tree tab 🧩 Combo trong inventory
+  ⏳ C6 — Favorite + Recent combo
+  ⏳ C7 — WBP_ComboDetailPopup
+  ⏳ C8 — Drag-drop combo (ghost 1 đại diện, spawn tại cursor)
+  ⏳ C9 — Replace combo cả cụm (leo SourceComboID → destroy + respawn)
+  ⏳ C10 — Regression + Docs
 → Sprint 7 Material v1.2
 → Sprint 6 Polish
 → Gate 2 (first packaged build)
@@ -132,5 +139,13 @@ Sprint 5 — Combo Mesh 🔄 IN PROGRESS
 1. Đọc `01_Session_State.md` TRƯỚC
 2. Gate 1 → đọc `02_Current_Sprint.md` + `Rules/AI_Implementation_Rules.md`
 3. Sprint D → đọc `02_Current_Sprint.md` phần Sprint D
-4. Flow chi tiết → `Blueprints/BP_FurnitureInputManager.md` v1.9 + `Blueprints/BP_UndoManager.md` v1.8
+4. Flow chi tiết → `Blueprints/BP_FurnitureInputManager.md` v2.1 + `Blueprints/BP_UndoManager.md` v1.10
 5. Flow Sprint 1-3 → `Blueprints/Blueprint_Logic_NodeFlow.md`
+
+---
+
+## Lịch sử cập nhật
+
+| Ngày | Nội dung |
+|------|----------|
+| 21/06/2026 | Sprint 5 T1+T2 DONE. TIẾP THEO → Roadmap v3.2 với C0-C10. KIẾN TRÚC thêm BP_ComboManager note (C0/C2 pending) + S_GroupData.SourceComboID pending. NGUYÊN TẮC cập nhật version BP_FurnitureInputManager v2.1 + BP_UndoManager v1.10 |

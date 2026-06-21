@@ -153,6 +153,18 @@
 
 ---
 
+## SPRINT 5 — 21/06/2026 — Kiến trúc Combo v2.0
+
+| Ngày | Task | Plan nói | Thực tế làm | Lý do | Loại |
+|------|------|----------|-------------|-------|------|
+| 21/06 | S5.T2 | Combo lưu selection-only: ForEach SelectedActors → GET GroupID | Sửa C0: GetGroupRoot + GetGroupsInHierarchy gom cả cây (cha+con+cháu) | Selection-only mất group cha trung gian — nested combo bị làm phẳng thành group lá | [BUG] |
+| 21/06 | S5 | D4: bấm nút spawn combo tại điểm giữa màn hình | Drag-drop tái dùng khung furniture (DragOperation/DragOverlay/On Drop); ghost = 1 mesh đại diện Items[0]; On Drop → SpawnComboByID(DropLocation) | UX nhất quán với drag furniture; bấm nút giữa màn hình = không tự nhiên | [SCOPE] |
+| 21/06 | S5 | materialOverrides trong combo JSON lưu full path /Game/… | Đổi sang RowName (vd "MI_Blue_01") + C++ reverse helper FindMaterialRowNameByPath | Portable cloud (B3): path thay đổi giữa users, RowName = hợp đồng bền vững. Snapshot/EMS actor giữ path — không regression | [SCOPE] |
+| 21/06 | S5 | Đánh dấu cụm combo bằng ComboInstanceID riêng | Group cha wrapping + field SourceComboID : String trên S_GroupData (default "") | Tận dụng toàn bộ group system (move, edit, select, undo) miễn phí. Không viết mới | [SCOPE] |
+| 21/06 | S5 review | Plan v2.0 thiếu: ItemView task bị mất khi xóa T3, On Drop không phân biệt payload, C2 "2 vòng" gãy nested, V5 snapshot giả định | Patch v2.1: C0→LCA, ghi nhận ItemView đã xong, DragOp_ComboCard mới, C2→3-phase, C9 capture-after+toast, persist xác nhận thừa (V5 không cần) | Review kiến trúc bắt 10 điểm; 2 điểm (PreReplace snapshot, bump V5) phân tích thừa | [PLAN] |
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -202,3 +214,4 @@
 | Ngày | Nội dung |
 |------|----------|
 | 19/06/2026 | Thêm section "SPRINT D — 19/06/2026": 4 dòng VRAM Fixes + Async Load. Thêm dòng S5.T2 BP_ComboManager tách riêng khỏi InputManager |
+| 21/06/2026 | Thêm section "SPRINT 5 — 21/06/2026": 4 dòng kiến trúc Combo v2.0 (C0 nested fix, drag-drop→cursor, materialOverrides→RowName, SourceComboID group cha) + 1 dòng patch review v2.1 |
