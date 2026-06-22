@@ -6,7 +6,7 @@
 > replace cả cụm, tích hợp group nhiều cấp, material RowName.
 > Mọi quyết định cũ (D1–D4) bị thay bởi mục QUYẾT ĐỊNH v2.0 bên dưới.
 
-**Phiên bản:** 2.1 | **Ngày:** 21/06/2026 | Lighting_Mnger UE5.5.4
+**Phiên bản:** 2.2 | **Ngày:** 22/06/2026 | Lighting_Mnger UE5.5.4
 **Tác giả:** Fable 5 (v1.0) + Q&A Sonnet 4.6 (v1.1) + Kiến trúc 21/06 (v2.0) + Review patch (v2.1)
 **Đối tượng đọc:** model thực thi (Opus/Sonnet) + cuhoang. Tuân thủ `09_AI_Implementation_Rules.md`.
 **Làm TỪNG TASK, mỗi task có test, xong báo cuhoang.**
@@ -384,22 +384,57 @@ ForEach MaterialOverrides slot (path):
 
 ---
 
-### C3 — WBP_SaveComboDialog
-**Mục tiêu:** Dialog nhập thông tin combo trước khi lưu. Thay hardcode "MyCombo" hiện tại.
-**I/O:** Output = (ComboName, FolderPath, Description, Tags) qua dispatcher OnDialogConfirmed.
-**Các thành phần:**
-- TXT_ComboName (EditableText), TXT_Description (EditableText), TXT_Tags
-- **Folder path — bắt buộc hỗ trợ cả 2 chế độ:**
-  (a) Nhập text tự do (vd "LivingRoom/BacAu") — bắt buộc vì lần đầu lưu cây combo còn trống.
-  (b) Chọn từ dropdown/picker cây combo hiện có — khi thư viện đã có folder.
-  Validate: trim whitespace, chuẩn hóa "\\" → "/", không cho ký tự đặc biệt.
+### C3a — Nền data cho dialog (KHÔNG UI)
+**Mục tiêu:** Chuẩn bị data layer để dialog + folder tree + tag có nguồn chạy. Tách khỏi UI để cô lập lỗi.
+**Các việc (thứ tự):**
+1. **FComboData thêm 2 field C++** (`ComboTypes.h`):
+   `UPROPERTY(EditAnywhere, BlueprintReadWrite) FString AuthorID;` (default "")
+   `UPROPERTY(EditAnywhere, BlueprintReadWrite) FString Visibility = TEXT("Private");`
+   Recompile. **Category + FolderPath ĐÃ CÓ sẵn (T1/C1) — KHÔNG thêm lại.**
+   ⚠️ Field discovery DỪNG ở đây. KHÔNG thêm rating/downloadCount/popularity — đó là server-side state (Phase B), không phải nội dung combo.
+2. **BP_ComboItemView thêm field** `FolderPath : String`.
+3. **LoadComboLibrary**: đọc thêm `FolderPath` từ FComboData gán vào ComboItemView (Tags ItemView đã có sẵn; FolderPath là field mới).
+4. **SaveComboFromSelection (BP_ComboManager) mở rộng** — đây là event đã DONE ở C0/C2, chỉ nới thêm, KHÔNG làm lại logic LCA:
+   - Signature thêm 2 param: `FolderPath : String`, `Tags : Array<String>`.
+   - Bước 5e Make FComboData: nối thêm pin FolderPath + Tags. Set `CreatedAt` = Now → ToIso8601 (xác nhận tên node thực tế), `AppVersion` = chuỗi version hiện tại, `Visibility` = "Private", `AuthorID` = "".
+   - ⚠️ KIỂM: bước 5e hiện có set CreatedAt/AppVersion giá trị thật chưa hay đang để rỗng. Nếu rỗng → set luôn (cần để sort theo ngày sau này).
+5. **WBP_FurnitureInventory thêm 2 function vocabulary** (dùng CHUNG: dropdown C3b + tree C5 + tag filter sau):
+   - `GetExistingFolders() → Array<String>`: loop AllComboViews → gom FolderPath unique, bỏ rỗng. Chuẩn hóa khi gom: trim + "\\"→"/" + bỏ "/" thừa; so sánh case-insensitive (giữ bản viết xuất hiện đầu tiên).
+   - `GetAllUsedTags() → Array<String>`: loop AllComboViews → gom mọi tag → chuẩn hóa (trim + lowercase + collapse space) → dedupe → bỏ rỗng.
 
-- Thumbnail preview: chụp runtime (CaptureComboThumbnail sau khi confirm) hoặc import file.
-  Search node "Import File as Texture2D" TRƯỚC. Không có → Plan B: chỉ chụp runtime, ghi DEVIATIONS.
-- BTN_Confirm → Broadcast OnDialogConfirmed → đóng dialog → BP_ComboManager.SaveComboFromSelection(params)
-- BTN_Cancel → đóng
+**TEST C3a:** Lưu combo qua đường hardcode cũ → file JSON có đủ folderPath/tags/createdAt/authorID/visibility. Reload → ComboItemView có FolderPath. GetExistingFolders + GetAllUsedTags trả đúng list (Print String). Compile xanh.
+→ **Báo cuhoang.**
 
-**TEST C3:** mở dialog, nhập tên + folder + tags, confirm → file JSON có đúng tên + folderPath + tags.
+---
+
+### C3b — WBP_SaveComboDialog (UI)
+**Mục tiêu:** Dialog nhập thông tin combo, thay hardcode "MyCombo".
+**Layout:** Border overlay (đen ~0.6 opacity) + Vertical Box (~480×400, anchored center). Trong Vertical Box:
+- TXT_ComboName (EditableText) — **bắt buộc**.
+- Folder: ComboBox String (nguồn = ExistingFolders truyền vào) + nút "+ Tạo mới" → hiện EditableText để gõ path mới.
+- TXT_Description (EditableText, multi-line).
+- TXT_Tags (EditableText) — "ngăn cách bởi dấu phẩy".
+- Horizontal Box: BTN_Cancel + BTN_Confirm.
+- ⚠️ **KHÔNG có ô Category** — Category nhập ở Phase B (flow Publish), vì save private không cần metadata discovery.
+
+**Dispatcher:** `OnDialogConfirmed(ComboName, FolderPath, Description, Tags)`.
+**Input data nhận vào (R3):** `ExistingFolders : Array<String>`, `TagVocabulary : Array<String>` (truyền lúc mở). Event Destruct clear ref (R4).
+**Điểm mấu chốt:**
+- Validate: tên rỗng → disable/chặn BTN_Confirm.
+- Folder "Tạo mới": validate khi gõ — trim + "\\"→"/" + bỏ "/" thừa + chặn ký tự đặc biệt.
+- Tags: parse dấu phẩy → chuẩn hóa (trim + lowercase + dedupe + bỏ rỗng) → Array trước khi broadcast.
+- Autocomplete tag UI = **DEFER** (data đã chuẩn hóa, gắn sau không sửa schema). Filter-by-tag UI cũng defer (xem C5/C6).
+
+**Đường nối + đóng băng selection (CRITICAL — dialog là async):**
+- Chuyển điểm mở dialog về **WBP_FurnitureInventory** (vì nó nắm AllComboViews + vocabulary). CB_SaveCombo (InputManager) forward SelectedActors + Center sang inventory.
+- ⚠️ Xác nhận InputManager đã có ref tới inventory chưa — nếu chưa, thêm đường nối (ref sẵn có hoặc Get All Widgets Of Class).
+- Inventory **ĐÓNG BĂNG SelectedActors + Center vào biến tạm TRƯỚC khi mở dialog** — vì dialog async, selection/Center có thể đổi lúc user đang gõ.
+- Inventory tính ExistingFolders + TagVocabulary → truyền vào dialog → mở.
+- **Khóa input UI-only khi dialog mở; trả Game+UI khi đóng** — chặn click xuyên dialog xuống scene (deselect/chọn nhầm đồ).
+- OnDialogConfirmed → inventory gọi `ComboManager.SaveComboFromSelection(SelectedActors_tạm, Center_tạm, ComboName, Description, FolderPath, Tags)` → đóng dialog → trả input mode.
+- BTN_Cancel → đóng + trả input mode, không lưu.
+
+**TEST C3b:** right-click ≥2 đồ → dialog mở, dropdown hiện folder đã có + nút tạo mới → nhập tên+folder+tags → confirm → JSON đúng tên/folderPath/tags. Tên rỗng → không confirm được. Trong lúc dialog mở, click ra ngoài KHÔNG deselect. Cancel → không lưu.
 → **Báo cuhoang.**
 
 ---
@@ -414,6 +449,7 @@ ForEach MaterialOverrides slot (path):
 - BTN_Delete 🗑: xóa file json + thumb → LoadComboLibrary → refresh tab.
 - Badge "×N món" hiển thị ItemCount.
 - `CTV_ComboCard` riêng (KHÔNG tái dùng CTV_FurnitureCard) — lý do xem DEVIATIONS.md 19/06 [SCOPE].
+- Card **KHÔNG hiển thị tags** (giữ gọn: thumbnail + tên + badge số món). Tags chỉ ở detail popup C7.
 
 **TEST C4:** 2 card đúng tên + số món. Xóa 1 → còn 1, file biến. Nút đặt → spawn đúng vị trí.
 → **Báo cuhoang.**
@@ -429,6 +465,9 @@ ForEach MaterialOverrides slot (path):
 - Filter combo theo CurrentFolderPath (pattern FilterByFolderPath furniture).
 - BTN_Tab_Combo cạnh BTN_Tab_Material trong WBP_FurnitureInventory.
 - Bind OnComboLibraryChanged → LoadComboLibrary ở Event Construct.
+- Tree dựng từ **FolderPath** (folder user tự tạo), KHÔNG phải Category. (Phase B: tab thư viện chung sẽ duyệt theo Category taxonomy chuẩn — nguồn data KHÁC, nhưng tái dùng cùng widget WBP_TreeNode.)
+- Nguồn folder = **GetExistingFolders** (CHUNG với C3a) — KHÔNG viết hàm gom folder riêng, tránh dropdown (C3b) và tree (C5) lệch nhau.
+- Combo có **FolderPath rỗng → gom nhóm "Chưa phân loại" đặt ĐẦU tree** (combo cũ + combo user không chọn folder rơi vào đây — nếu không có nhóm này chúng biến mất khỏi tree).
 
 **TEST C5:** 3 combo ở 2 folder khác nhau → click folder → chỉ thấy combo đó. Highlight folder đúng.
 → **Báo cuhoang.**
@@ -454,6 +493,7 @@ ForEach MaterialOverrides slot (path):
 - Widget riêng, KHÔNG tái dùng WBP_DetailPopup (combo khác field hoàn toàn).
 - Hiển thị danh sách Items: ListView hoặc VerticalBox động với tên từng món (DT lookup VieName).
 - Thumbnail hiển thị tương tự WBP_ComboCard (Plan B: icon 🧩).
+- Thêm 1 dòng hiển thị **Category** — SetVisibility = Collapsed khi Category == "" (v1 luôn rỗng nên ẩn; Phase B có giá trị thì hiện). Chừa sẵn chỗ cho discovery.
 
 **TEST C7:** click Info trên card → popup đúng tên/tags/số món/danh sách.
 → **Báo cuhoang.**
@@ -499,6 +539,21 @@ ForEach MaterialOverrides slot (path):
 
 ---
 
+### C11 — Export / Import combo (chia sẻ thủ công)
+**Mục tiêu:** Share nhóm KHÔNG cần server — export file JSON gửi đi (Zalo/USB/Drive), import vào thư viện máy khác.
+**⚠️ Thứ tự thực thi:** C9 → **C11** → C10. C11 là feature mới nên phải chạy TRƯỚC C10 để regression test bao luôn.
+**Điểm mấu chốt:**
+- **Export:** chọn combo (card menu hoặc detail popup) → copy file `<comboID>.json` ra chỗ user chọn. Search node mở file-save dialog (Desktop platform) TRƯỚC. Không có → Plan B: copy ra 1 thư mục Export cố định + báo đường dẫn cho user. Ghi DEVIATIONS.
+- **Import:** chọn file JSON ngoài → LoadStringFromFile → JsonToCombo validate (bParseOK):
+  - Parse fail → toast "File combo không hợp lệ", bỏ. KHÔNG crash.
+  - OK → **sinh ComboID MỚI** (`combo_` + NewGuid) ghi đè field comboID (tránh đè combo cũ; trùng tên hiển thị thì user tự xóa) → SaveStringToFile vào Combos dir → Broadcast OnComboLibraryChanged → refresh tab.
+- **Ràng buộc:** combo chỉ dùng được khi máy đích CÙNG asset pool (RowName resolve được). Thiếu mesh → spawn skip + toast (như M11). Ghi rõ giới hạn này trong UI/doc.
+
+**TEST C11:** export combo A → file .json xuất hiện chỗ chọn. Xóa A khỏi thư viện → import file đó → A quay lại với ComboID mới. Import 2 lần cùng file → 2 combo (ID khác nhau). Import file rác → toast, không crash.
+→ **Báo cuhoang.**
+
+---
+
 ### C10 — Regression + Docs
 **Mục tiêu:** Verify toàn hệ thống + cập nhật tài liệu.
 **Regression:**
@@ -506,6 +561,8 @@ ForEach MaterialOverrides slot (path):
 - 7 case C2 + 4 case C8 + 2 case C9
 - Scene save/load: group + SourceComboID nguyên vẹn sau restart
 - T6 pivot rotation: verify có TRÙNG group transform không — nếu trùng → bỏ T6, ghi DEVIATIONS
+- C3 mới: dropdown folder hiện đúng list; tag chuẩn hóa (lowercase + dedupe); combo 2 field rỗng (AuthorID/Visibility) load không crash; combo FolderPath rỗng vào nhóm "Chưa phân loại"
+- 2 case C11: export → file đúng; import file → combo quay lại với ID mới (round-trip)
 
 **Docs (version + ngày + giờ + phút):**
 - `BP_ComboManager.md` (tạo mới): vars Cmb_, events C0/C2, dispatchers
@@ -552,6 +609,7 @@ Không sửa hệ thống undo/material.
 | M11 | Catalog đổi RowName sau lưu | Item thiếu | C2 bước 3 skip + toast. RowName = hợp đồng — ghi Data.md |
 | M12 | Kẹt C++ không có Fable | Compile error lạ | Tra bảng T1 → fail 3 lần: gác, gom hỏi Opus 1 lần với error+file+dòng |
 | M13 | SourceComboID mất sau Undo/Load | Replace không nhận ra cụm | Verify S_GroupData trong snapshot capture/restore; xem C10 |
+| M14 | Import file lỗi / trùng / thiếu mesh | Crash khi parse, đè combo cũ, hoặc spawn lỗ trống | Validate JsonToCombo trước khi nhận; import LUÔN sinh ComboID mới (không ghi đè); thiếu mesh skip + toast (như M11) |
 
 ---
 
@@ -559,12 +617,17 @@ Không sửa hệ thống undo/material.
 ✅ Lưu combo (nested group đầy đủ + material RowName) → dialog tên/folder → card tab 🧩 → folder tree → spawn 2 lần độc lập với group cha SourceComboID → drag-drop tại cursor → replace cả cụm → undo/redo/save/load nguyên vẹn → regression PASS → docs cập nhật.
 ❌ Marketplace / giá tiền / đăng tải = B3, không thuộc Sprint 5.
 
+**Context Phase B (KHÔNG làm Sprint 5 — ghi để định hướng):**
+- **Mô hình share lai:** v1 chỉ Private (lưu local). Public (thư viện chung) + Shared (share online) + Auth/AuthorID có nghĩa + sync cloud = Phase B. Schema đã chừa AuthorID/Visibility/Category. "Publish" = đổi Visibility Private→Public + điền Category/Tags discovery, KHÔNG copy combo.
+- **Chỗ lưu:** v1 `<ProjectSavedDir>/Combos`. Gate 2 cân nhắc `%LOCALAPPDATA%/[App]/Combos` cho bản packaged (sống qua update app). Phase B: thư viện thật ở R2, local thành cache.
+- **Category taxonomy:** code ở Phase B. Phác thảo nội dung dần — mượn cấu trúc ngành (trục phòng: Living/Bed/Kitchen/Bath/Dining/Office/Outdoor; trục loại đồ: Seating/Table/Storage/Lighting/Decor). FolderPath = tổ chức cá nhân; Category = discovery công khai — hai trục khác mục đích.
+
 ---
 
 ## 7. BACKLOG
 
 **Deferred v1 (chốt 21/06 — không làm Sprint 5):**
-- Filter-by-tag: tags v1 chỉ decorative (hiện info popup). Filter theo tag = deferred Sprint 6.
+- Filter-by-tag UI + autocomplete UI: defer Sprint 6. NHƯNG data layer chuẩn bị SẴN ở C3a (chuẩn hóa tag lowercase/dedupe + GetAllUsedTags). Tags KHÔNG còn "chỉ decorative" — có nền data để gắn filter + autocomplete sau mà không phải sửa schema.
 - Giữ rotation cụm cũ khi replace (C9 v1 reset 0 — giữ rotation = backlog).
 - Copy/paste cả cụm giữ group (clipboard không lưu GroupID — v1 để vậy).
 - Material RowName cho actor/snapshot/EMS (v1 chỉ combo file đổi; snapshot/EMS giữ path — tránh regression).
@@ -585,3 +648,4 @@ Không sửa hệ thống undo/material.
 | 1.2 | 19/06/2026 | Thêm DEVIATION block đầu file: BP_ComboManager tách riêng khỏi InputManager; luật dịch 6 điểm |
 | 2.0 | 21/06/2026 | Tái thiết kế diện rộng: QUYẾT ĐỊNH v2.0 (A-F), schema thêm folderPath + materialOverrides→RowName, TASKS đổi C0–C10, thêm TÍCH HỢP HỆ THỐNG CŨ, group cha SourceComboID, C++ mở rộng C1, drag-drop C8, replace cả cụm C9 |
 | 2.1 | 21/06/2026 | Patch review kiến trúc: C0→LCA (tránh lưu thừa cả room), C1 ghi nhận ItemView+LoadComboLibrary đã xong+persist note, C2→3-phase bắt buộc, C3 folder-create mode, C5 BuildFolderTree nguồn mới, C8 DragOp_ComboCard+On Drop routing+ghost decision, C9 sequence+capture-after+rollback toast, BACKLOG deferred v1, M3 cập nhật |
+| 2.2 | 22/06/2026 | Phiên bàn kế hoạch C3: tách C3a (data)+C3b (dialog UI); folder dropdown (GetExistingFolders)+nút tạo mới thay nhập text tự do; tags có data layer (chuẩn hóa+GetAllUsedTags), UI filter/autocomplete defer; thêm field C++ AuthorID+Visibility; bỏ ô Category khỏi dialog save (→Phase B Publish); thêm C11 export/import đặt trước C10; M14; đóng băng selection+khóa input dialog; mở dialog qua inventory; nhóm "Chưa phân loại"; context Phase B (mô hình lai/chỗ lưu/taxonomy) |

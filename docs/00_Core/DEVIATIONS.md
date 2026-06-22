@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 19/06/2026
+**Cập nhật:** 22/06/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -20,6 +20,26 @@
 - `[NODE]` — node UE5 khác plan giả định
 - `[PERF]` — đổi vì hiệu năng
 - `[BUG]` — đổi để fix bug phát sinh
+
+---
+
+## [22/06/2026] Sprint 5 C3 — mở rộng + thêm C11 [SCOPE]
+
+**Lệch so với:** Combo_Execution.md v2.1 (21/06).
+
+**Nội dung lệch:**
+- **C3 tách thành C3a (data layer) + C3b (dialog UI)** — C3 cũ gánh cả hai, tách để test-and-confirm từng nửa, cô lập lỗi data vs UI.
+- **Folder: dropdown (GetExistingFolders) + nút "Tạo mới"** — THAY "nhập text tự do" của plan v2.1. Lý do: chống phân mảnh folder ("LivingRoom" vs "Living Room" vs "phòng khách") với target user không rành kỹ thuật.
+- **Tags: từ "chỉ decorative" → có data layer** (chuẩn hóa lowercase/dedupe + GetAllUsedTags) ở C3a. UI filter + autocomplete vẫn defer Sprint 6. Lý do: yêu cầu chuẩn bị sẵn code cho filter sau, gắn vào không phải sửa schema.
+- **Thêm 2 field C++:** AuthorID + Visibility (String, default ""/"Private"). Chừa sẵn cho mô hình share lai Phase B (Private/Public/Shared). Category đã có sẵn (T1) — **bỏ ô Category khỏi dialog save v1**, nhập ở flow Publish Phase B (save private không cần metadata discovery).
+- **Thêm C11 — Export/Import combo** (chia sẻ thủ công, không cần server). Đặt TRƯỚC C10.
+- **Đường nối dialog:** mở dialog từ inventory (nắm AllComboViews/vocabulary) thay vì InputManager; ĐÓNG BĂNG SelectedActors+Center vào biến tạm trước khi mở (dialog async); khóa input UI-only khi mở.
+
+**Lý do tổng:** chuẩn bị đón mô hình lai cloud + folder dropdown + share nhóm sớm — đúng tinh thần "chuẩn bị 1 lần thay vì 2" (như quyết định Sprint D trước Sprint 5).
+
+**Ảnh hưởng:** task set thành C0–C11 (thêm C11 + tách C3→C3a/C3b). Deadline 25/06 trượt thêm — cần re-plan mốc thực tế.
+
+**KHÔNG đổi:** logic C0 (LCA) chỉ nới Make node thêm pin; C2 (SpawnComboByID) không đụng — thêm field FComboData không phá parse/spawn (backward-compat 1 chiều đã verify).
 
 ---
 
