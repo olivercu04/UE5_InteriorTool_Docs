@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 22/06/2026 — Sprint 5 T1+T2+T3+C1+C0 DONE | C2 pending | Lighting_Mnger UE5.5.4
+**Phiên bản:** 22/06/2026 — Sprint 5 T1+T2+T3+C1+C0+C2 DONE | C3 pending | Lighting_Mnger UE5.5.4
 
 ---
 
@@ -19,8 +19,10 @@
 | T3 | BP_ComboItemView, LoadComboLibrary, bind OnComboLibraryChanged | ✅ DONE |
 | C1 | FComboData.FolderPath (C++), FindMaterialRowNameByPath (C++), S_GroupData.SourceComboID (BP), FavoriteComboIDs/RecentComboIDs (UserPrefs) | ✅ DONE |
 | C0 | SaveComboFromSelection nested — LCA (CalculateLCAList_Combo + GetGroupsInHierarchy) + MaterialOverrides → RowName | ✅ DONE (22/06) — 3 case A/B/C PASS + RowName fallback (đồ cũ parse MeshPath) |
+| C2 | SpawnComboByID — Guard, F_LoadComboData, F_BuildTokenGUIDMap, F_RegisterComboGroups, F_ApplyMaterialOverrides, 4 sub-steps | ✅ DONE (22/06) — 7/7 PASS |
 
 **C0:** 3 case A/B/C PASS (22/06). RowName fallback (đồ cũ parse MeshPath) xác nhận OK.
+**C2:** 7/7 PASS (22/06). Group nesting: Case A (no groups→wrapper) / Case B (has groups→no wrapper, root nhận SourceComboID).
 **Pending T2:** WBP_SaveComboDialog (dialog nhập tên) — dời sau T5, không chặn spawn
 **Ghi chú kiến trúc:** BP_ComboManager đã spawn trong Level BP; InputManager guard (≥2 đồ, tính Center) → gọi ComboManager qua param (SelectedActors, Center, ComboName, Description)
 
@@ -97,7 +99,7 @@
 **WBP_TreeNode v1.1** — RefreshDisplay + bIsActive param → SetBackgroundColor
 **WBP_ChipTag v1.1** — SetHighlight(bIsActive) custom event → SetBackgroundColor
 **WBP_ResizeWindow v1.1** — Fix Bug-Maximize: Set Position thêm vào Slot VerticalBox_0
-**BP_ComboManager v1.2** — SaveComboFromSelection (LCA path), CaptureComboThumbnail, LoadComboLibrary, OnComboLibraryChanged; spawn trong Level BP; nhận data qua param từ InputManager. Functions mới: GetPathToRoot_Combo, FindLCA_TwoGroups_Combo, CalculateLCAList_Combo. Class vars mới: LeafGroupIDs_SaveCombo, LCARoots_SaveCombo, MaterialOverrides_SaveCombo, ItemRowName_SaveCombo. [C0: ✅ DONE (22/06), 3 case PASS; C2 pending: SpawnComboByID]
+**BP_ComboManager v1.3** — SaveComboFromSelection (LCA path) + SpawnComboByID; spawn trong Level BP; nhận data qua param từ InputManager. Functions: GetPathToRoot_Combo, FindLCA_TwoGroups_Combo, CalculateLCAList_Combo, F_LoadComboData, F_BuildTokenGUIDMap, F_RegisterComboGroups, F_ApplyMaterialOverrides. [C0 ✅ DONE + C2 ✅ DONE (22/06)]
 **BP_ComboItemView v1.0** — TẠO MỚI, hiển thị combo card trong library
 **S_GroupData** — ✅ field `SourceComboID : String` (default "") đã thêm (C1 DONE). Group cha cụm combo = ComboID gốc; group user tạo tay = "". Đã add vào snapshot capture/restore.
 **C++ FurnitureToolkit** — FComboData.FolderPath (field mới), FindMaterialRowNameByPath (function mới). Compile xanh. Full rebuild (Binaries/Intermediate xóa + rebuild) ✅
@@ -113,7 +115,7 @@
 ## TIẾP THEO
 
 **ĐẦU SESSION MỚI — Ưu tiên:**
-1. **C2 SpawnComboByID** (trái tim sprint) — C0 đã PASS (22/06).
+1. **C3 WBP_SaveComboDialog** — dialog nhập tên/folder/tags, dời từ T2.
 
 **Roadmap v3.2:**
 ```
@@ -126,7 +128,7 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
   ✅ T2 core — SaveComboFromSelection + CB_SaveCombo (hệ thống cơ bản)
   ✅ C0 — DONE (22/06) — 3 case A/B/C PASS + RowName fallback (đồ cũ parse MeshPath)
   ✅ C1 — FolderPath C++, FindMaterialRowNameByPath C++, SourceComboID BP, FavoriteComboIDs/RecentComboIDs (UserPrefs)
-  ⏳ C2 — SpawnComboByID + group cha SourceComboID ⭐ (trái tim sprint)
+  ✅ C2 — SpawnComboByID DONE (22/06) — 7/7 PASS, group nesting Case A/B fix
   ⏳ C3 — WBP_SaveComboDialog (tên, folder, tags, mô tả)
   ⏳ C4 — WBP_ComboCard (thumbnail, badge số món, Info/Delete/Spawn)
   ⏳ C5 — Folder tree tab 🧩 Combo trong inventory
@@ -159,3 +161,4 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 21/06/2026 | Sprint 5 T1+T2 DONE (sáng). |
 | 21/06/2026 EOD | Sprint 5 T3+C1 DONE. C0 impl xong chưa test (LCA nested + MaterialOverrides). BP_ComboManager → v1.1 (GetPathToRoot_Combo, FindLCA_TwoGroups_Combo, CalculateLCAList_Combo, LeafGroupIDs/LCARoots/MaterialOverrides_SaveCombo). C++ FurnitureToolkit: FComboData.FolderPath + FindMaterialRowNameByPath. Full rebuild xanh. TIẾP THEO: test C0 (3 case) → C2 SpawnComboByID. |
 | 22/06/2026 | C0 DONE — 3 case A/B/C PASS. RowName fallback (đồ cũ parse MeshPath) xác nhận OK. BP_ComboManager → v1.2 (thêm ItemRowName_SaveCombo). TIẾP THEO: C2 SpawnComboByID. |
+| 22/06/2026 | C2 SpawnComboByID DONE — 7/7 PASS. BP_ComboManager → v1.3 (5 class var mới, 4 functions: F_LoadComboData/F_BuildTokenGUIDMap/F_RegisterComboGroups/F_ApplyMaterialOverrides, Custom Event SpawnComboByID 4 sub-steps). Group nesting fix: Case A (no groups→wrapper) / Case B (has groups→no wrapper). TIẾP THEO: C3 WBP_SaveComboDialog. |
