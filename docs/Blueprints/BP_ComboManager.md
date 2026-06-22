@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.0 | **Ngày:** 21/06/2026 | **Actor class, không Tick**
+**Version:** 1.2 | **Ngày:** 22/06/2026 | **Actor class, không Tick**
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -21,6 +21,7 @@ Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, K
 | LeafGroupIDs_SaveCombo | Array String | Input cho CalculateLCAList_Combo (C0) |
 | LCARoots_SaveCombo | Array String | Output LCA roots (C0) |
 | MaterialOverrides_SaveCombo | Array String | Buffer RowName per actor (C0) |
+| ItemRowName_SaveCombo | String | Buffer RowName sau fallback parse MeshPath (Bước 5d, C0) |
 
 ## Functions (có local variable)
 ### GetPathToRoot_Combo(InGroupID → Path: Array String)
@@ -41,7 +42,7 @@ Guard Length==0 → return []. SET CurrentLCA = LeafIDs[0]. ForEach từ index 1
 **Bước 5a:** SET SaveCombo_ComboID = "combo_"+NewGuid  
 **Bước 5b:** CLEAR OutputGroups/Items  
 **Bước 5c:** ForEach ComboGroups → resolve ParentToken (via TokenMap, branch "")→ Make FComboGroupData → ADD OutputGroups  
-**Bước 5d:** ForEach SelectedActors → Cast → CLEAR MaterialOverrides_SaveCombo → ForEach MaterialPaths → FindMaterialRowNameByPath → ADD; Branch GroupToken → Make FComboItemData → ADD OutputItems  
+**Bước 5d:** ForEach SelectedActors → Cast → CLEAR MaterialOverrides_SaveCombo → ForEach MaterialPaths → FindMaterialRowNameByPath → ADD; SET ItemRowName_SaveCombo: Branch RowName.ToString=="None" → True: ParseIntoArray(MeshPath, ".") → Last Index → Get → SET ItemRowName_SaveCombo; False: SET ItemRowName_SaveCombo = RowName gốc; Branch GroupToken → Make FComboItemData(RowName=ItemRowName_SaveCombo) → ADD OutputItems  
 **Bước 5e:** Make FComboData (tất cả fields + Items + Groups)  
 **Bước 6:** GetCombosDir → MakeDirectory → ComboToJson → SaveStringToFile  
 **Bước 7:** (thumbnail — pending C3)  
@@ -51,3 +52,4 @@ Guard Length==0 → return []. SET CurrentLCA = LeafIDs[0]. ForEach từ index 1
 | Ngày | Version | Nội dung |
 |------|---------|----------|
 | 21/06/2026 | 1.0 | Tạo mới — T2 core + C0 LCA fix + C1 material RowName |
+| 22/06/2026 8:56 AM | 1.2 | C0 DONE — thêm class var ItemRowName_SaveCombo, Bước 5d: Branch RowName=="None" → fallback parse MeshPath (ParseIntoArray "."/LastIndex). 3 case A/B/C PASS. |

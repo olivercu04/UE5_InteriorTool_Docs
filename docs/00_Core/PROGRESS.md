@@ -242,7 +242,7 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 - [x] **T1** — C++ ComboTypes + ComboSerializer (schema v1, round-trip JSON PASS). Build.cs: Json + JsonUtilities. ✅ 21/06/2026
 - [x] **T2 core** — SaveComboFromSelection + CaptureComboThumbnail trong **BP_ComboManager** (Actor riêng, spawn Level BP). CB_SaveCombo hoạt động trong context menu right-click. ✅ 21/06/2026
   - ⏳ WBP_SaveComboDialog (dialog nhập tên/folder/tags) — dời C3, không chặn flow
-- [ ] **C0** — Sửa SaveComboFromSelection nested: GetGroupRoot+GetGroupsInHierarchy gom cả cây (patch T2 selection-only)
+- [x] **C0** — Sửa SaveComboFromSelection nested: GetGroupRoot+GetGroupsInHierarchy gom cả cây (patch T2 selection-only) ✅ 22/06/2026
 - [ ] **C1** — Nền data C++: FComboData.FolderPath, FindMaterialRowNameByPath, S_GroupData.SourceComboID, prefs favorites/recent
 - [ ] **C2** — SpawnComboByID + group cha SourceComboID ⭐ (trái tim sprint)
 - [ ] **C3** — WBP_SaveComboDialog (tên, folder, tags, mô tả, thumbnail)
@@ -268,3 +268,4 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | Ngày | Nội dung |
 |------|----------|
 | 21/06/2026 | Sprint 5 T1+T2 DONE. Thêm entry Sprint 5. Phiên kiến trúc v2.0: thay T3-T8 bằng C0-C10, tổng Sprint 5 = 13 task, TỔNG 55/96 |
+| 22/06/2026 | Sprint 5 C0 ✅ DONE — 3 case A/B/C PASS, RowName fallback xác nhận. |
