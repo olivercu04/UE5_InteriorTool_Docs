@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.2 | **Ngày:** 22/06/2026 | **Actor class, không Tick**
+**Version:** 1.3 | **Ngày:** 22/06/2026 | **Actor class, không Tick**
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -48,8 +48,223 @@ Guard Length==0 → return []. SET CurrentLCA = LeafIDs[0]. ForEach từ index 1
 **Bước 7:** (thumbnail — pending C3)  
 **Bước 8:** Broadcast OnComboLibraryChanged  
 
+---
+
+## C2 — SpawnComboByID (thêm vào v1.3 — 22/06/2026)
+
+---
+
+### Class Variables mới (C2)
+
+| Tên | Kiểu | Vai trò |
+|-----|------|---------|
+| Cmb_bSpawnInFlight | bool (default False) | Guard chống double-spawn |
+| InputManagerRef | BP_FurnitureInputManager | Set ở BeginPlay, clear End Play |
+| UndoManagerRef | BP_UndoManager | Set ở BeginPlay, clear End Play |
+| DT_Materials | DataTable | Hard ref DT_MaterialInstancesCatalog, gán trong defaults |
+| Cmb_SpawnedActors | Array BP_FurnitureActor | Accumulate Phase 3, CLEAR đầu event + End Play |
+
+---
+
+### BeginPlay (update)
+Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → SET InputManagerRef
+
+Get All Actors Of Class(BP_UndoManager) → Get(0) → SET UndoManagerRef
+
+### End Play (update)
+SET InputManagerRef = None
+
+SET UndoManagerRef = None
+
+SET Cmb_bSpawnInFlight = False
+
+CLEAR Cmb_SpawnedActors
+
+---
+
+### F_LoadComboData(ComboID: String → OutData: FComboData, bSuccess: bool)
+**Local vars:** FilePath (String), JsonString (String)
+
+GetCombosDir → Append "/" + ComboID + ".json" → SET FilePath
+
+LoadStringFromFile(FilePath, OutContent→SET JsonString) → bFileOK
+
+Branch bFileOK:
+
+- False → Return(bSuccess=False, OutData=default)
+- True  → JsonToCombo(JsonString, OutCombo) → bParseOK
+
+Branch bParseOK:
+
+- False → Return(bSuccess=False, OutData=default)
+- True  → Return(bSuccess=True, OutData=OutCombo)
+
+---
+
+### F_BuildTokenGUIDMap(InGroups: Array FComboGroupData → OutMap: Map String→String)
+**Local vars:** ResultMap (Map String→String), NewGUID (String)
+*(Local var reset mỗi lần call — không cần CLEAR)*
+
+ForEach InGroups:
+
+Loop Body:
+
+- New Guid → Guid To String → SET NewGUID
+- Break FComboGroupData → Token
+- Map Add(ResultMap, Key=Token, Value=NewGUID)
+
+Completed:
+
+- Return(OutMap = ResultMap)
+
+---
+
+### F_RegisterComboGroups(InGroups: Array FComboGroupData, TokenMap: Map String→String, ParentGroupGUID: String, ComboID: String)
+**Local vars:** LocalGroups (Array S_GroupData), ParentGD (S_GroupData), ChildGD (S_GroupData), ResolvedParentID (String), ResolvedSourceComboID (String), ChildGroupID (String), CurToken (String), CurParentToken (String), CurGroupName (String)
+
+GET InputManagerRef.Groups → SET LocalGroups
+
+Branch (InGroups.Length == 0):
+
+// Case A: combo không có group → tạo wrapper
+
+- True: Make S_GroupData(GroupID=ParentGroupGUID, GroupName="ComboGroup", ParentGroupID="", bIsLocked=False, SourceComboID=ComboID) → SET ParentGD → Array ADD(LocalGroups, ParentGD) → merge về SET+Sync
+
+// Case B: combo có group → không tạo wrapper, dùng structure gốc
+
+- False: ForEach InGroups:
+
+  Loop Body:
+
+  - Break FComboGroupData → SET CurToken, CurGroupName, CurParentToken
+  - Map Find(TokenMap, CurToken) → SET ChildGroupID
+  - Branch (CurParentToken == ""):
+    - True (root group): SET ResolvedParentID = ""; SET ResolvedSourceComboID = ComboID
+    - False (non-root group): Map Find(TokenMap, CurParentToken) → SET ResolvedParentID; SET ResolvedSourceComboID = ""
+    - (merge)
+  - Make S_GroupData(GroupID=ChildGroupID, GroupName=CurGroupName, ParentGroupID=ResolvedParentID, bIsLocked=False, SourceComboID=ResolvedSourceComboID) → SET ChildGD → Array ADD(LocalGroups, ChildGD)
+
+  Completed → merge về SET+Sync
+
+// Both cases merge here:
+
+SET InputManagerRef.Groups = LocalGroups
+
+InputManagerRef → SyncGroupsToContainer
+
+**Logic group nesting:**
+- Case A (InGroups rỗng): tạo 1 wrapper group bọc toàn bộ combo. SourceComboID trên wrapper.
+- Case B (có groups): root groups (ParentToken=="") nhận SourceComboID=ComboID, ParentGroupID="". Non-root nhận ParentGroupID=TokenMap[ParentToken], SourceComboID="". Không tạo wrapper thêm → tránh double nesting.
+
+---
+
+### F_ApplyMaterialOverrides(TargetActor: BP_FurnitureActor, MaterialRowNames: Array String)
+**Local vars:** ConvertedPaths (Array String), bFound (bool)
+
+ForEach MaterialRowNames:
+
+Loop Body:
+
+- Branch (Array Element == ""):
+  - True  → Array ADD(ConvertedPaths, "")
+  - False → Get Data Table Row(DT_Materials, String to Name(Array Element))
+    - Row Found: Break S_MaterialInstancesData → MaterialPath → Array ADD(ConvertedPaths, MaterialPath)
+    - Row Not Found: Array ADD(ConvertedPaths, "") ← giữ slot alignment
+  - (merge, loop tiếp)
+
+Completed:
+
+SET TargetActor.MaterialOverrides = ConvertedPaths
+
+TargetActor → LoadMaterialsAsync(Overrides=ConvertedPaths, Index=0)
+
+⚠️ Row Not Found ADD "" để giữ slot index alignment cho LoadMaterialsAsync.
+
+---
+
+### Custom Event SpawnComboByID(ComboID: String, SpawnLocation: Vector)
+
+#### Sub-step A — Guard + Load
+Branch(Cmb_bSpawnInFlight):
+
+- True  → dead-end
+- False → SET Cmb_bSpawnInFlight=True; CLEAR Cmb_SpawnedActors
+
+GET InputManagerRef.EditModeStack → Length > 0 → Branch:
+
+- True  → ExitEditModeFull → (merge)
+- False → (merge)
+
+F_LoadComboData(ComboID) → FComboData, bSuccess
+
+Branch(bSuccess):
+
+- False → SET Cmb_bSpawnInFlight=False → dead-end
+- True  → (Sub-step B)
+
+#### Sub-step B — Build maps + Register groups
+Break FComboData → Groups, Items
+
+F_BuildTokenGUIDMap(InGroups=Groups) → TokenToNewGUID
+
+New Guid → Guid To String → ParentGroupGUID
+
+F_RegisterComboGroups(InGroups=Groups, TokenMap=TokenToNewGUID, ParentGroupGUID=ParentGroupGUID, ComboID=ComboID)
+
+→ (Sub-step C)
+
+*Data pins từ Break FComboData, TokenToNewGUID, ParentGroupGUID được wire trực tiếp vào Sub-step C — stable vì computed 1 lần qua execution wire.*
+
+#### Sub-step C — Phase 3: ForEach spawn actors
+ForEach (Array = Items từ Break FComboData):
+
+Loop Body:
+
+- Break FComboItemData(Array Element) → RowName(String), RelLocation, RelRotation, Scale, SurfaceType(String), MaterialOverrides(Array String), GroupToken(String)
+- Get Data Table Row(DT_FurnitureCatalog, String to Name(RowName)) → bFound
+- Branch(bFound):
+  - False → dead-end (skip item)
+  - True  → Break S_FurnitureData → MeshFolderPath
+  - Construct MeshPath: Append(MeshFolderPath, "/", RowName, ".", RowName) → MeshPath
+  - InputManagerRef → SpawnFurnitureCopy(MeshPath=MeshPath, DAPath="", SpawnLocation=Vector Add(SpawnLocation input, RelLocation), SpawnRotation=RelRotation, SpawnScale=Scale, MaterialOverrides=Make Array(rỗng), SurfaceType=String to Name(SurfaceType), bAutoSelect=False) → NewActor
+  - IsValid(NewActor): False → dead-end; True → continue
+  - SET NewActor.RowName = String to Name(RowName)
+  - Branch(GroupToken == ""):
+    - True  → Branch(FComboData.Groups.Length == 0):
+      - True  → SET NewActor.GroupID = ParentGroupGUID ← Case A wrapper
+      - False → SET NewActor.GroupID = ""              ← Case B ungrouped
+    - False → Map Find(TokenToNewGUID, Key=GroupToken) → Value → SET NewActor.GroupID
+    - (merge)
+  - F_ApplyMaterialOverrides(TargetActor=NewActor, MaterialRowNames=MaterialOverrides từ Break FComboItemData)
+  - Array ADD(Cmb_SpawnedActors, NewActor)
+
+Completed → (Sub-step D)
+
+#### Sub-step D — Post-spawn
+Branch(Cmb_SpawnedActors.Length == 0):
+
+- True  → SET Cmb_bSpawnInFlight=False → dead-end
+- False →
+  - InputManagerRef → DeselectAll
+  - InputManagerRef → SelectActors(Cmb_SpawnedActors)
+  - UndoManagerRef  → CaptureSnapshot("SpawnCombo")
+  - SET Cmb_bSpawnInFlight = False
+  - CLEAR Cmb_SpawnedActors
+
+**Test C2 (7/7 PASS — 22/06/2026):**
+1. Spawn nested 2 cấp → group cha tồn tại, SourceComboID đúng ✅
+2. Spawn lần 2 → 2 cụm độc lập, GroupID khác nhau ✅
+3. Undo → cả cụm biến 1 lần; Redo → quay lại đủ ✅
+4. Spawn khi Edit Mode → tự thoát rồi spawn ✅
+5. RowName bậy → skip item, không crash ✅
+6. Save EMS → Load → combo + group + SourceComboID nguyên vẹn ✅
+7. Spawn 20 món → không khựng quá 0.5s ✅
+
+---
+
 ## Lịch sử cập nhật
 | Ngày | Version | Nội dung |
 |------|---------|----------|
 | 21/06/2026 | 1.0 | Tạo mới — T2 core + C0 LCA fix + C1 material RowName |
 | 22/06/2026 8:56 AM | 1.2 | C0 DONE — thêm class var ItemRowName_SaveCombo, Bước 5d: Branch RowName=="None" → fallback parse MeshPath (ParseIntoArray "."/LastIndex). 3 case A/B/C PASS. |
+| 22/06/2026 | 1.3 | C2 SpawnComboByID DONE — 5 class var mới, 4 functions (F_LoadComboData, F_BuildTokenGUIDMap, F_RegisterComboGroups, F_ApplyMaterialOverrides), Custom Event SpawnComboByID (4 sub-steps). 7/7 test PASS. Group nesting fix: Case A (no groups→wrapper) / Case B (has groups→no wrapper, root groups nhận SourceComboID). |

@@ -1,9 +1,21 @@
 # Session State
-**Cập nhật:** 12/06/2026 — 15:04 ICT | Lighting_Mnger UE5.5.4
+**Cập nhật:** 22/06/2026 | BP_ComboManager v1.3
 
 ---
 
 ## TRẠNG THÁI HIỆN TẠI
+
+**Sprint 5 — Combo System: IN PROGRESS**
+
+| Task | Status | Ghi chú |
+|---|---|---|
+| C0 — SaveComboFromSelection (LCA + material RowName) | ✅ DONE | v1.2, 22/06/2026 |
+| C2 — SpawnComboByID | ✅ DONE | v1.3, 7/7 PASS, 22/06/2026 |
+| C3 — Thumbnail | ⏳ PENDING | |
+| C4 — DeleteCombo | ⏳ PENDING | |
+| C5 — ReplaceCombo | ⏳ PENDING | |
+
+---
 
 **Sprint 4 — Edit Mode + Nested Group: SHIPPED ✅ (12/06/2026)**
 
@@ -47,6 +59,7 @@
 **WBP_MeshControls v1.5** — toolbar + info bar + edit mode bar (BTN_ExitOneLevel + BTN_ExitFull)
 **BP_GroupsContainer** — EMS save/load groups, singleton guard
 **WBP_DragOverlay_FurnitureCard** — Replace Mesh: preserve GroupID (v fix 12/06)
+**BP_ComboManager v1.3** — SaveComboFromSelection (C0) + SpawnComboByID (C2); 5 class var mới, 4 helper functions
 
 **Dispatcher selection:** `OnSelectionChanged` — DUY NHẤT
 **Dispatcher edit mode:** `OnEditModeChanged(bActive, GroupID)`
