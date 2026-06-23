@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.3 | **Ngày:** 22/06/2026 | **Actor class, không Tick**
+**Version:** 1.4 | **Ngày:** 23/06/2026 | **Actor class, không Tick**
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -34,7 +34,7 @@ PathA = GetPathToRoot(A). Walk up từ B: nếu Contains(PathA, CurrentB) → re
 Guard Length==0 → return []. SET CurrentLCA = LeafIDs[0]. ForEach từ index 1: FindLCA_TwoGroups(CurrentLCA, leaf) → nếu "" (khác cây) ADD CurrentLCA + SET CurrentLCA=leaf; nếu != "" SET CurrentLCA=lca. Completed: ADD CurrentLCA cuối → return Result.
 
 ## Custom Events
-### SaveComboFromSelection(SelectedActors, Center, ComboName, Description)
+### SaveComboFromSelection(SelectedActors, Center, ComboName, Description, FolderPath, Tags)
 **Bước 1:** Guard Length < 2 → dead-end  
 **Bước 3:** CLEAR LeafGroupIDs → ForEach SelectedActors → unique GroupID != "" → ADD  
 **Bước 3b (C0-LCA):** CLEAR SaveCombo_ComboGroups → CalculateLCAList → ForEach LCARoots → GetGroupsInHierarchy → ADD (unique)  
@@ -43,7 +43,19 @@ Guard Length==0 → return []. SET CurrentLCA = LeafIDs[0]. ForEach từ index 1
 **Bước 5b:** CLEAR OutputGroups/Items  
 **Bước 5c:** ForEach ComboGroups → resolve ParentToken (via TokenMap, branch "")→ Make FComboGroupData → ADD OutputGroups  
 **Bước 5d:** ForEach SelectedActors → Cast → CLEAR MaterialOverrides_SaveCombo → ForEach MaterialPaths → FindMaterialRowNameByPath → ADD; SET ItemRowName_SaveCombo: Branch RowName.ToString=="None" → True: ParseIntoArray(MeshPath, ".") → Last Index → Get → SET ItemRowName_SaveCombo; False: SET ItemRowName_SaveCombo = RowName gốc; Branch GroupToken → Make FComboItemData(RowName=ItemRowName_SaveCombo) → ADD OutputItems  
-**Bước 5e:** Make FComboData (tất cả fields + Items + Groups)  
+**Bước 5e:** Make FComboData — tất cả fields:
+- ComboID ← SaveCombo_ComboID
+- Name ← param ComboName
+- Description ← param Description
+- Tags ← param Tags (Array\<String\>)
+- Category = "MyCombo" (hardcode tạm — Phase B)
+- CreatedAt ← UTC Now → Convert Date Time To String
+- AppVersion = "1.0.0"
+- FolderPath ← param FolderPath
+- Items ← SaveCombo_OutputItems
+- Groups ← SaveCombo_OutputGroups
+- AuthorID = "" (default)
+- Visibility = "Private" (default)  
 **Bước 6:** GetCombosDir → MakeDirectory → ComboToJson → SaveStringToFile  
 **Bước 7:** (thumbnail — pending C3)  
 **Bước 8:** Broadcast OnComboLibraryChanged  
@@ -268,3 +280,4 @@ Branch(Cmb_SpawnedActors.Length == 0):
 | 21/06/2026 | 1.0 | Tạo mới — T2 core + C0 LCA fix + C1 material RowName |
 | 22/06/2026 8:56 AM | 1.2 | C0 DONE — thêm class var ItemRowName_SaveCombo, Bước 5d: Branch RowName=="None" → fallback parse MeshPath (ParseIntoArray "."/LastIndex). 3 case A/B/C PASS. |
 | 22/06/2026 | 1.3 | C2 SpawnComboByID DONE — 5 class var mới, 4 functions (F_LoadComboData, F_BuildTokenGUIDMap, F_RegisterComboGroups, F_ApplyMaterialOverrides), Custom Event SpawnComboByID (4 sub-steps). 7/7 test PASS. Group nesting fix: Case A (no groups→wrapper) / Case B (has groups→no wrapper, root groups nhận SourceComboID). |
+| 23/06/2026 | 1.4 | C3a: SaveComboFromSelection mở rộng signature (thêm FolderPath, Tags). Bước 5e: Make FComboData đầy đủ tất cả fields (Category hardcode "MyCombo" tạm, CreatedAt UTC Now, AppVersion 1.0.0, AuthorID/Visibility default, FolderPath+Tags từ param). |

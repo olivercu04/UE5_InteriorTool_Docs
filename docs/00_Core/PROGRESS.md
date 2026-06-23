@@ -244,6 +244,7 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 - [x] **C0** — Sửa SaveComboFromSelection nested: LCA + GetGroupsInHierarchy gom cả cây. 3 case A/B/C PASS. ✅ 22/06/2026
 - [x] **C1** — FComboData.FolderPath (C++), FindMaterialRowNameByPath (C++), S_GroupData.SourceComboID (BP), FavoriteComboIDs/RecentComboIDs (UserPrefs). ✅ 22/06/2026
 - [x] **C2** — SpawnComboByID + group cha SourceComboID. 7/7 PASS. ✅ 22/06/2026
+- [x] **C3a** — Data layer: 2 field C++ (AuthorID/Visibility), BP_ComboItemView.FolderPath, LoadComboLibrary wire, SaveComboFromSelection signature mở rộng, GetExistingFolders+GetAllUsedTags. ✅ 23/06/2026
 - [ ] **Fix K3** — SpawnFurnitureCopy thêm `bAddToRecent : Boolean = True`; spawn combo + RestoreSnapshot truyền False. (Áp lúc đụng C2/RestoreSnapshot)
 ──── **Giai đoạn 1 (~25/06): combo Tạo + Duyệt + Đặt qua nút** ────
 - [ ] **C3** — Save dialog + gộp P4 (GetCombosDir → `%LOCALAPPDATA%/InteriorFOFFTool/Combos`) + móc capture thumbnail sau SaveComboFromSelection thành công

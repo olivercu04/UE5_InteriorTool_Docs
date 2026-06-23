@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 2.6 | **Cập nhật:** 18/06/2026 — TreeNode/Chip Highlight + Fix Pagination
+**Phiên bản:** 2.7 | **Cập nhật:** 23/06/2026 — Combo Vocabulary Functions (C3a)
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -402,6 +402,48 @@ Branch CurrentInventoryMode == Material:
 
 ---
 
+## Combo Vocabulary Functions (C3a)
+
+### GetExistingFolders() → FolderResult: Array\<String\>
+**Local vars:** LocalFolders (Array String), TempFolder (String)
+
+CLEAR LocalFolders
+
+ForEach AllComboViews_Combo:
+
+Loop Body:
+- GET ArrayElement.FolderPath ●→ SET TempFolder
+- Branch(TempFolder == ""): True → dead-end (skip)
+- False → Replace(TempFolder, "\\" → "/") ●→ SET TempFolder
+  - Branch Contains(LocalFolders, TempFolder): True → dead-end (skip)
+  - False → ADD TempFolder ●→ LocalFolders
+
+Completed → Return(FolderResult = LocalFolders)
+
+### GetAllUsedTags() → TagsResult: Array\<String\>
+**Local vars:** LocalTags (Array String), TempTagArray (Array String), TempTag (String)
+
+CLEAR LocalTags
+
+ForEach AllComboViews_Combo (outer):
+
+Loop Body:
+- GET ArrayElement.Tags ●→ SET TempTagArray
+- ForEach TempTagArray (inner):
+  - Loop Body:
+    - ToLower(ArrayElement_inner) ●→ SET TempTag
+    - Branch(TempTag == ""): True → dead-end (skip)
+    - False → Branch Contains(LocalTags, TempTag): True → dead-end (skip)
+    - False → ADD TempTag ●→ LocalTags
+  - Completed → (trống)
+- Completed → (trống)
+
+Completed → Return(TagsResult = LocalTags)
+
+⚠ Cả 2 hàm dùng `AllComboViews_Combo` — class var Array\<BP_ComboItemView\> được populate bởi LoadComboLibrary (C4/C5). Gọi sau khi library load xong.
+
+---
+
 ## Events
 
 ### OnCardInfoClicked(RowName : Name) — v2.5 Sprint D.T6 (thay DA DA_FurnitureItem)
@@ -610,3 +652,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 2.4 HỢP NHẤT | 11/06/2026 | **Merged doc** — tổng hợp v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch + notes về v2.4. File này incorporate đầy đủ v2.4 dispatcher changes. |
 | 2.5 | 17/06/2026 — Sprint D.T6 | WBP_FurnitureCard section: OnListItemObjectSet → BP_FurnitureItemView; Button_InforItem → OnCardInfoClicked(CardRowName). OnCardInfoClicked handler: nhận RowName thay DA. OnMeshSelected Replace branch: Branch RowName != "" → DT lookup MeshFolderPath (fallback DAPath save cũ). |
 | 2.6 | 18/06/2026 — TreeNode/Chip Highlight | Thêm `IsPathActive` (Pure function) + `UpdateFolderHighlights` (impure). 3 call sites: cuối CreateChipTagsForPath, OnChipTagClicked (2 nhánh merge), OnTreeNodeClicked sau FilterByFolderPath (cả 2 nhánh). BTN_FavoriteCategory/RecentCategory: thêm ClearChildren(VB_ChipTagArea) + Collapse TB_Breadcrumb đầu function. Fix Bug-Pagination: Int to Float trước Ceil (cả 2 nhánh Material/Furniture). |
+| 2.7 | 23/06/2026 — Combo Vocabulary Functions (C3a) | Thêm `GetExistingFolders()` + `GetAllUsedTags()` — 2 hàm vocabulary cho dialog lưu combo (C3b): dedup folder paths + dedup tags lowercase từ AllComboViews_Combo. |
