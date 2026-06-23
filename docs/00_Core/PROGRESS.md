@@ -13,7 +13,7 @@ Sprint 3 — Group cơ bản       ███████████████
 Sprint 4 — Edit + Nested      ████████████████ 8/8  SHIPPED ✅  (+5 bug fix thêm)
 Gate 1                        ████████████████ 3/3  DONE ✅ (16/06)
 Sprint D — Data Layer v2      ████████████████ 9/9  DONE ✅ (17/06)
-Sprint 5 — Combo Mesh         ██░░░░░░░░░░░    2/13 task (T1✅ T2✅ core; C0–C10 ⏳)
+Sprint 5 — Combo Mesh         █████░░░░░░░░    5/17 task (T1/T2/C0/C1/C2 ✅; 12 còn lại + 3 task mới)
 Sprint 6 — Polish UX          ░░░░░░░░░░░░░    0/14 task
 Sprint 7 — Material v1.2      ░░░░░░░░░        0/9  task
 
@@ -237,25 +237,34 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 
 ---
 
-## SPRINT 5 — Combo Mesh 🔄 IN PROGRESS (21/06/2026)
+## SPRINT 5 — Combo Mesh 🔄 IN PROGRESS (cập nhật 23/06/2026)
 
 - [x] **T1** — C++ ComboTypes + ComboSerializer (schema v1, round-trip JSON PASS). Build.cs: Json + JsonUtilities. ✅ 21/06/2026
-- [x] **T2 core** — SaveComboFromSelection + CaptureComboThumbnail trong **BP_ComboManager** (Actor riêng, spawn Level BP). CB_SaveCombo hoạt động trong context menu right-click. ✅ 21/06/2026
-  - ⏳ WBP_SaveComboDialog (dialog nhập tên/folder/tags) — dời C3, không chặn flow
-- [x] **C0** — Sửa SaveComboFromSelection nested: GetGroupRoot+GetGroupsInHierarchy gom cả cây (patch T2 selection-only) ✅ 22/06/2026
-- [ ] **C1** — Nền data C++: FComboData.FolderPath, FindMaterialRowNameByPath, S_GroupData.SourceComboID, prefs favorites/recent
-- [ ] **C2** — SpawnComboByID + group cha SourceComboID ⭐ (trái tim sprint)
-- [ ] **C3** — WBP_SaveComboDialog (tên, folder, tags, mô tả, thumbnail)
-- [ ] **C4** — WBP_ComboCard (thumbnail, badge ×N món, Info/Delete/Spawn)
+- [x] **T2 core** — SaveComboFromSelection + CB_SaveCombo trong BP_ComboManager (Actor riêng, spawn Level BP). ✅ 21/06/2026
+- [x] **C0** — Sửa SaveComboFromSelection nested: LCA + GetGroupsInHierarchy gom cả cây. 3 case A/B/C PASS. ✅ 22/06/2026
+- [x] **C1** — FComboData.FolderPath (C++), FindMaterialRowNameByPath (C++), S_GroupData.SourceComboID (BP), FavoriteComboIDs/RecentComboIDs (UserPrefs). ✅ 22/06/2026
+- [x] **C2** — SpawnComboByID + group cha SourceComboID. 7/7 PASS. ✅ 22/06/2026
+- [ ] **Fix K3** — SpawnFurnitureCopy thêm `bAddToRecent : Boolean = True`; spawn combo + RestoreSnapshot truyền False. (Áp lúc đụng C2/RestoreSnapshot)
+──── **Giai đoạn 1 (~25/06): combo Tạo + Duyệt + Đặt qua nút** ────
+- [ ] **C3** — Save dialog + gộp P4 (GetCombosDir → `%LOCALAPPDATA%/InteriorFOFFTool/Combos`) + móc capture thumbnail sau SaveComboFromSelection thành công
+- [ ] **Thumbnail System C++ (P1)** — `SaveRenderTargetToPNG` + `LoadTexture2DFromFile`; SceneCapture2D theo góc camera → PNG. Gắn vào C3/C4.
+- [ ] **C4** — WBP_ComboCard (thumbnail thật via LoadTexture2DFromFile, badge ×N món, Info/Delete/Spawn)
 - [ ] **C5** — Folder tree tab 🧩 Combo trong WBP_FurnitureInventory
 - [ ] **C6** — Favorite + Recent combo
-- [ ] **C7** — WBP_ComboDetailPopup
-- [ ] **C8** — Drag-drop combo (ghost 1 mesh đại diện Items[0], spawn tại cursor)
-- [ ] **C9** — Replace combo cả cụm (leo SourceComboID → destroy → respawn)
-- [ ] **C10** — Regression + Docs
+- [ ] **C7** — WBP_ComboDetailPopup (thumbnail thật)
+──── **Giai đoạn 2: đặt/thay combo mượt** ────
+- [ ] **WBP_Toast (K1)** — TIÊN QUYẾT trước C8: text + tự ẩn 2-3s, FText
+- [ ] **C8** — Drag-drop + surface-snap kiểu khối (P2, KHÔNG snap từng món) + fix drop-anchor Lỗ14 + cache relLocation đại diện
+- [ ] **Xoay combo (P3)** — verify gizmo group xoay cả cụm; tùy chọn xoay-lúc-kéo (R/scroll)
+- [ ] **C9** — Replace combo (+ verify K2 EMS SourceComboID + CalculateCenter chung + auto-rollback spawn-fail)
+──── **Giai đoạn 3: share** ────
+- [ ] **C11** — Export/Import cả 2 hướng (K5): file-save dialog TRƯỚC, fallback thư mục cố định
+- [ ] **C10** — Regression (K4 nested-3 / P5-liên quan / VRAM stat rhi) + Docs
+→ **Sprint 7** — Material name-based slot (P5 triệt để — mở màn)
 
-**⚠️ Phiên 21/06:** Kiến trúc v2.0 chốt — scope mở rộng thành Combo Library đầy đủ (C0-C10). T3-T8 cũ thay bởi C0-C10. Tổng task tăng 8→13. Deadline 25/06 sẽ trượt.
-**Deviation:** combo event tách sang BP_ComboManager (19/06, [SCOPE]). SourceComboID group cha, RowName material, drag-drop (21/06, xem DEVIATIONS.md).
+**⚠️ Phiên 21/06:** Kiến trúc v2.0 chốt — scope mở rộng thành Combo Library đầy đủ.
+**⚠️ Phiên 23/06:** P1(thumbnail C++)+P2(surface snap)+P3(xoay) làm scope phình → chia 3 giai đoạn. Deadline 25/06 chỉ xong Giai đoạn 1. Xem DEVIATIONS.md 23/06 + Sprint5_Plan_v1.1.
+**Deviation:** xem DEVIATIONS.md Sprint 5 (21/06 + 23/06).
 
 ---
 
@@ -269,3 +278,4 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 |------|----------|
 | 21/06/2026 | Sprint 5 T1+T2 DONE. Thêm entry Sprint 5. Phiên kiến trúc v2.0: thay T3-T8 bằng C0-C10, tổng Sprint 5 = 13 task, TỔNG 55/96 |
 | 22/06/2026 | Sprint 5 C0 ✅ DONE — 3 case A/B/C PASS, RowName fallback xác nhận. |
+| 23/06/2026 | Sprint 5 C1+C2 ✅ DONE. Chốt 11 quyết định + 3 điều chỉnh (Sprint5_Plan_v1.1). Thêm task: Fix K3, Thumbnail System C++, WBP_Toast, Xoay combo P3, C11 (trước C10). Chia 3 giai đoạn. TỔNG Sprint 5: 5/17. |

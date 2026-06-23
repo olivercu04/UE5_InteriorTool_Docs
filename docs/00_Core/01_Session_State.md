@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 22/06/2026 — Sprint 5 T1+T2+T3+C1+C0+C2 DONE | C3 pending | Lighting_Mnger UE5.5.4
+**Phiên bản:** 23/06/2026 — Sprint 5 C0+C1+C2 ✅ PASS | 11 quyết định + 3 điều chỉnh chốt 23/06 | C3 kế tiếp | Lighting_Mnger UE5.5.4
 
 ---
 
@@ -115,29 +115,37 @@
 ## TIẾP THEO
 
 **ĐẦU SESSION MỚI — Ưu tiên:**
-1. **C3 WBP_SaveComboDialog** — dialog nhập tên/folder/tags, dời từ T2.
+1. **C3** — Save dialog + gộp P4 (GetCombosDir → %LOCALAPPDATA%) + capture thumbnail sau save.
 
-**Roadmap v3.2:**
+**Roadmap v3.3 (chia 3 giai đoạn — scope phình to sau 23/06):**
 ```
 Gate 1 (fix B1 bIsRestoring + hợp nhất spawn)   ✅ DONE (16/06)
 Sprint D (D.T1-D.T9, Furniture Data Layer v2)    ✅ DONE (17/06)
 TreeNode/Chip active-folder highlight            ✅ DONE (18/06, bổ sung)
 Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
-  ⚠️ Scope mở rộng 21/06 thành Combo Library đầy đủ. Deadline 25/06 sẽ trượt — báo cuhoang re-plan.
+  ⚠️ 23/06: P1+P2+P3 làm scope phình → chia 3 giai đoạn. Deadline 25/06 chỉ xong G1.
   ✅ T1 — C++ ComboTypes + ComboSerializer (schema v1, round-trip PASS)
   ✅ T2 core — SaveComboFromSelection + CB_SaveCombo (hệ thống cơ bản)
-  ✅ C0 — DONE (22/06) — 3 case A/B/C PASS + RowName fallback (đồ cũ parse MeshPath)
-  ✅ C1 — FolderPath C++, FindMaterialRowNameByPath C++, SourceComboID BP, FavoriteComboIDs/RecentComboIDs (UserPrefs)
-  ✅ C2 — SpawnComboByID DONE (22/06) — 7/7 PASS, group nesting Case A/B fix
-  ⏳ C3 — WBP_SaveComboDialog (tên, folder, tags, mô tả)
-  ⏳ C4 — WBP_ComboCard (thumbnail, badge số món, Info/Delete/Spawn)
-  ⏳ C5 — Folder tree tab 🧩 Combo trong inventory
+  ✅ C0 — 3 case A/B/C PASS + RowName fallback (22/06)
+  ✅ C1 — FolderPath C++, FindMaterialRowNameByPath C++, SourceComboID BP, Fav/Recent prefs
+  ✅ C2 — SpawnComboByID 7/7 PASS (22/06)
+  ⚠️ Fix K3 — SpawnFurnitureCopy bAddToRecent param (áp lúc đụng C2/RestoreSnapshot) — planned
+──── Giai đoạn 1 (~25/06) ────
+  ⏳ C3 — Save dialog + P4 (GetCombosDir→LOCALAPPDATA) + capture thumbnail sau save
+  ⏳ Thumbnail System C++ (P1) — SaveRenderTargetToPNG + LoadTexture2DFromFile
+  ⏳ C4 — WBP_ComboCard (thumbnail thật, badge ×N)
+  ⏳ C5 — Folder tree tab 🧩 Combo
   ⏳ C6 — Favorite + Recent combo
-  ⏳ C7 — WBP_ComboDetailPopup
-  ⏳ C8 — Drag-drop combo (ghost 1 đại diện, spawn tại cursor)
-  ⏳ C9 — Replace combo cả cụm (leo SourceComboID → destroy + respawn)
-  ⏳ C10 — Regression + Docs
-→ Sprint 7 Material v1.2
+  ⏳ C7 — WBP_ComboDetailPopup (thumbnail thật)
+──── Giai đoạn 2 ────
+  ⏳ WBP_Toast (K1) — TIÊN QUYẾT trước C8
+  ⏳ C8 — Drag-drop + surface-snap kiểu khối (P2) + fix drop-anchor Lỗ14
+  ⏳ Xoay combo (P3) — verify gizmo group + tùy chọn xoay-lúc-kéo
+  ⏳ C9 — Replace (+ verify K2 + CalculateCenter chung + auto-rollback)
+──── Giai đoạn 3 ────
+  ⏳ C11 — Export/Import cả 2 hướng (K5)
+  ⏳ C10 — Regression (K4/P5-liên quan/VRAM) + Docs
+→ Sprint 7 Material v1.2 (P5 material name-based — mở màn)
 → Sprint 6 Polish
 → Gate 2 (first packaged build)
 ```
@@ -162,3 +170,4 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 21/06/2026 EOD | Sprint 5 T3+C1 DONE. C0 impl xong chưa test (LCA nested + MaterialOverrides). BP_ComboManager → v1.1 (GetPathToRoot_Combo, FindLCA_TwoGroups_Combo, CalculateLCAList_Combo, LeafGroupIDs/LCARoots/MaterialOverrides_SaveCombo). C++ FurnitureToolkit: FComboData.FolderPath + FindMaterialRowNameByPath. Full rebuild xanh. TIẾP THEO: test C0 (3 case) → C2 SpawnComboByID. |
 | 22/06/2026 | C0 DONE — 3 case A/B/C PASS. RowName fallback (đồ cũ parse MeshPath) xác nhận OK. BP_ComboManager → v1.2 (thêm ItemRowName_SaveCombo). TIẾP THEO: C2 SpawnComboByID. |
 | 22/06/2026 | C2 SpawnComboByID DONE — 7/7 PASS. BP_ComboManager → v1.3 (5 class var mới, 4 functions: F_LoadComboData/F_BuildTokenGUIDMap/F_RegisterComboGroups/F_ApplyMaterialOverrides, Custom Event SpawnComboByID 4 sub-steps). Group nesting fix: Case A (no groups→wrapper) / Case B (has groups→no wrapper). TIẾP THEO: C3 WBP_SaveComboDialog. |
+| 23/06/2026 | Chốt 11 quyết định + 3 điều chỉnh (Sprint5_Plan_v1.1): P1 thumbnail C++ thật, P2 surface-snap khối, P3 xoay combo, P4 lưu LOCALAPPDATA, P5 dời Sprint7, K1 WBP_Toast, K3 bAddToRecent (planned), K5 export cả 2 hướng. Scope phình to → chia 3 giai đoạn. Roadmap v3.3. Việc kế = C3. |

@@ -14,6 +14,7 @@
 | B-stale-popup | ✅ FIXED (17/06, D.T6) — Popup hiển thị thông tin đồ cũ | — | Xem mục bên dưới |
 | Bug-Pagination | ✅ FIXED (17/06, D.T9) — Furniture pagination dừng ở 7/8 thay vì 8/8 | — | Xem WBP_FurnitureInventory.md v2.6, mục Pagination |
 | Bug-Maximize | ✅ FIXED (17/06, D.T9) — BTN_Maximize không nhảy về góc trên-trái | — | Xem WBP_ResizeWindow.md v1.1 |
+| K3 | SpawnFurnitureCopy gọi AddRecentMesh unconditional → spawn combo nhồi 20 mesh lẻ vào Recent + mỗi Undo cũng nhồi | 🟡 Trung bình | Planned — Sprint 5, áp lúc đụng C2/RestoreSnapshot. Fix: param bAddToRecent |
 
 ---
 
@@ -202,6 +203,31 @@ Thêm `Set Position` vào cùng node `Slot as Canvas Slot(VerticalBox_0)` đang 
 
 ### Trạng thái
 - **✅ RESOLVED — 17/06/2026 (Sprint D.T9).** Xem `WBP_ResizeWindow.md` v1.1.
+
+---
+
+## K3 — SpawnFurnitureCopy nhồi Recent khi spawn combo + Undo
+
+**ID:** K3 (bAddToRecent)
+**Phát hiện:** 23/06/2026 — phân tích C2 SpawnComboByID
+**Ưu tiên:** 🟡 Trung bình (UX)
+
+### Triệu chứng
+1. Spawn combo 5 món → Recent bị nhồi 5 mesh lẻ thành phần (không phải entry "combo", chỉ là các mesh con).
+2. Undo → Recent lại bị nhồi thêm (RestoreSnapshot gọi SpawnFurnitureCopy → AddRecentMesh).
+
+### Root Cause
+`SpawnFurnitureCopy` gọi `AddRecentMesh` unconditional. Không có gate để bỏ qua khi spawn trong context không cần Recent (combo spawn, Undo restore). Bug tồn tại từ trước Sprint 5, không chỉ ở combo.
+
+### Fix kế hoạch
+`SpawnFurnitureCopy` thêm param `bAddToRecent : Boolean = True`:
+- Trong thân: `Branch(bAddToRecent)` → True: gọi AddRecentMesh; False: bỏ qua.
+- Spawn combo (C2): truyền `bAddToRecent = False`.
+- RestoreSnapshot: truyền `bAddToRecent = False` (Undo không nên đụng Recent).
+- Paste/Duplicate: giữ `True` (hành vi đúng).
+
+### Trạng thái
+- **Planned.** Áp lúc đụng C2/RestoreSnapshot trong Sprint 5.
 
 ---
 

@@ -75,6 +75,8 @@ Tính năng: cập nhật thư viện sản phẩm KHÔNG cần build lại app.
 4. **DONE khi:** thêm 1 sản phẩm trên server → user mở app thấy sản phẩm mới không cần update app.
 
 ### B3 — COMBO MARKETPLACE 💰 (revenue; ~3-4 tuần)
+> ⚠️ **23/06/2026:** B3 chợ BỊ GÁC cho đến khi ownership rõ ràng (quyết định B1 Sprint5_Plan_v1.1). Schema combo đã chừa AuthorID/Visibility — không mất công sau khi ownership chốt.
+
 Tính năng: đăng combo lên chợ → người khác xem/mua → tải về dùng.
 1. **DB:** `combos` (metadata + data jsonb + price + status draft/published), `purchases` (log giao dịch), `entitlements` (quyền dùng — nguồn sự thật khi check), `favorites`.
 2. **Upload/publish:** từ app — serialize combo (S5) → insert `combos` + thumbnail lên Storage. Trạng thái `draft` → mày duyệt → `published` (moderation tay giai đoạn đầu, chợ nhỏ).
@@ -221,7 +223,7 @@ Quy tắc client:
 
 1. **Mô hình tiền:** bán combo lẻ? subscription thư viện? app trả phí 1 lần + chợ? → quyết định B3b xây gì. Đề xuất khởi điểm: app free + combo trả phí lẻ (đúng "combo = revenue chính").
 2. **Pháp lý nhận tiền:** cá nhân hay lập hộ KD/công ty? Quyết định cổng thanh toán dùng được. Kiểm tra điều kiện Lemon Squeezy/Paddle cho cá nhân VN TRƯỚC khi code B3b.
-3. **Ownership với đồng nghiệp** (nhắc lần 3): combo marketplace chạy trên asset của ai, doanh thu chia thế nào — chốt TRƯỚC khi Sprint 5 xong.
+3. **Ownership với đồng nghiệp** (nhắc lần 3 + quyết định 23/06): **B1 ownership — DEFAULT chốt: combo CHỈ local trong Sprint 5, KHÔNG bật chợ tới khi rõ ownership**. Schema đã chừa AuthorID/Visibility (Private default). KHÔNG thêm GlobalAssetID bây giờ (serializer đã tolerant với field mới). Giới hạn cross-catalog (combo chỉ dùng được khi máy đích cùng asset pool) = giới hạn Phase B, ghi rõ trong UI C11. Chốt phân chia doanh thu TRƯỚC khi làm B3a.
 4. **Tên app + domain** — cần từ B0 (email auth + checkout page).
 5. **Quy mô beta:** bao nhiêu người dùng thử đầu tiên, lấy từ đâu (cộng đồng nội thất VN? đồng nghiệp ngành?) — quyết định B3a có ý nghĩa hay không.
 
@@ -237,3 +239,4 @@ Quy tắc client:
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 11/06/2026 | Tạo mới — stack Supabase+R2, nguyên tắc S1-S6, phase B0-B5, schema v1, HTTP layer, chi phí, câu hỏi mở. |
+| 1.1 | 23/06/2026 | Ghi nhận quyết định B1 (23/06): combo chỉ local Sprint 5, chợ B3 gác đến khi rõ ownership. KHÔNG thêm GlobalAssetID. Cross-catalog giới hạn là Phase B. Cập nhật câu hỏi 3 + note đầu mục B3. |

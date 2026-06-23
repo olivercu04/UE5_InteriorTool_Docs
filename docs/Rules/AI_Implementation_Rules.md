@@ -432,6 +432,19 @@ Sau khi 1 sprint/task lớn xong:
 
 ---
 
+## Nodes chờ xác nhận (Thumbnail System — xác nhận tại C4)
+
+⚠️ Các node/class dưới đây CHƯA được xác nhận trong project. KHÔNG thêm vào bảng "NODE CHÍNH XÁC ĐÃ XÁC NHẬN" cho đến khi cuhoang xác nhận tại C4.
+
+| Node/Class | Dùng cho | Trạng thái |
+|---|---|---|
+| `SceneCapture2D` (Actor) | Capture thumbnail combo theo góc camera | ⏳ Cần xác nhận setup + cách đặt tại bounding box selection (C4) |
+| `Texture Render Target 2D` | RenderTarget cho SceneCapture2D | ⏳ Cần xác nhận cách tạo runtime (C4) |
+| `SaveRenderTargetToPNG` | C++ FurnitureToolkit — lưu RT→PNG (FImageUtils / FImageWrapperModule) | ⏳ Tên hàm xác nhận khi code C++ tại C4 |
+| `LoadTexture2DFromFile` | C++ FurnitureToolkit — load PNG→Texture2D runtime (IImageWrapperModule) | ⏳ Tên hàm xác nhận khi code C++ tại C4 |
+
+---
+
 ## Lịch sử cập nhật
 
 | Phiên bản | Ngày | Nội dung |
@@ -441,3 +454,4 @@ Sau khi 1 sprint/task lớn xong:
 | 2.1 | 15/06/2026 | Q8 extended format (5 điểm visible); L2 CHECK (Sequence vs Event); Blueprint Export Method; Spawn Paths checklist; Runtime State vs Snapshot State |
 | 2.2 | 19/06/2026 | Thêm Is Valid Index vào bảng node; thêm key learning L11 latent aliasing |
 | 2.3 | 19/06/2026 | Thêm mục Quy ước đặt tên biến (Sprint 5 — BP_ComboManager prefix Cmb_, SaveCombo_) |
+| 2.4 | 23/06/2026 | Thêm mục "Nodes chờ xác nhận" cho Thumbnail System (SceneCapture2D, Texture Render Target 2D, SaveRenderTargetToPNG, LoadTexture2DFromFile) — chờ xác nhận tại C4, chưa vào bảng node chính thức |

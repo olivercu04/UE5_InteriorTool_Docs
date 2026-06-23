@@ -185,6 +185,24 @@
 
 ---
 
+## SPRINT 5 — 23/06/2026 — Quyết định Sprint5_Plan_v1.1 (11 quyết định + 3 điều chỉnh)
+
+| Mục | Lệch so với plan | Lý do | Loại |
+|---|---|---|---|
+| P1 Thumbnail | Từ icon 🧩 fallback → C++ THẬT: `SaveRenderTargetToPNG` + `LoadTexture2DFromFile` + SceneCapture2D theo góc camera hiện tại | Đầu tư "làm 1 lần dùng 3 chỗ": combo / B4 user upload / nút chụp bìa. Gộp vào C3/C4 thay vì defer | [SCOPE] |
+| P2 Surface snap | Thêm surface-snap KIỂU KHỐI: snap cả combo (1 khối) xuống sàn, giữ bố cục rigid; KHÔNG snap từng món riêng lên bề mặt của nó | Snap từng món PHÁ combo ("TV tường + kệ + thảm": snap riêng → TV trôi xa kệ, vỡ bố cục) | [SCOPE] |
+| P3 Xoay combo | Thêm verify xoay combo cluster bằng gizmo + tùy chọn xoay-lúc-kéo (R/scroll) | Group rotation đã có Sprint 3/4 → xoay combo cluster bằng gizmo gần như miễn phí | [SCOPE] |
+| P5 Material name-based | DỜI sang Sprint 7 (mở màn ngay sau Sprint 5) | Đổi "theo index" → "theo tên slot" đụng 3 hệ thống (material, EMS, undo snapshot) — nhét giữa Sprint 5 đang xây combo = rủi ro sập cả 3. Sprint 7 có regression đầy đủ. Combo file chừa sẵn slot name để Sprint 7 không phải migrate. | [SCOPE] |
+| K1 WBP_Toast | Thêm widget toast TIÊN QUYẾT trước C8; dùng FText | Mọi toast (C8 spawn fail, C9 replace fail, C11 import rác, M11 thiếu mesh) đều cần 1 widget — build trước khi dùng | [SCOPE] |
+| K3 bAddToRecent | SpawnFurnitureCopy thêm param `bAddToRecent : Boolean = True`; spawn combo truyền False; RestoreSnapshot truyền False | Spawn combo nhồi 20 mesh lẻ vào Recent; mỗi Undo cũng nhồi → Recent vô nghĩa. Bug có sẵn không chỉ ở combo | [BUG] |
+| K5 Export C11 | Làm CẢ 2 hướng: file-save dialog (Desktop) TRƯỚC, nếu không chạy → fallback tự động copy thư mục cố định + báo path | Cả 2 hướng graceful — user luôn lấy được file; không phải "nếu có dialog thì dùng" | [SCOPE] |
+| P4 Chỗ lưu | `GetCombosDir()`: `FPaths::ProjectSavedDir()/Combos` → `FPlatformProcess::UserSettingsDir()/"InteriorFOFFTool/Combos"` (= `%LOCALAPPDATA%\InteriorFOFFTool\Combos` Windows). Tạo dir nếu chưa có. Gộp vào C3. | Combo sống qua update app (ProjectSaved xóa khi rebuild packaged) | [SCOPE] |
+| Scope + timeline | Sprint 5 phình to (P1+P2+P3 mới) → chia 3 giai đoạn: G1 (~25/06, C3→C7), G2 (Toast+C8+P3+C9), G3 (C11+C10). Deadline 25/06 chỉ xong G1. | 2 ngày không nhét hết P1+P2+P3+C8+C9+C11 — ép nhanh là cách chắc nhất để hỏng combo | [SCOPE] |
+
+**Quyết định GIỮ NGUYÊN:** B1 ownership = combo chỉ local Sprint 5 (DEFAULT, không bật chợ tới khi rõ ownership). K4 cap nesting = 3 cấp (test C10). K2 verify EMS SourceComboID = đầu C9.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -235,3 +253,4 @@
 |------|----------|
 | 19/06/2026 | Thêm section "SPRINT D — 19/06/2026": 4 dòng VRAM Fixes + Async Load. Thêm dòng S5.T2 BP_ComboManager tách riêng khỏi InputManager |
 | 21/06/2026 | Thêm section "SPRINT 5 — 21/06/2026": 4 dòng kiến trúc Combo v2.0 (C0 nested fix, drag-drop→cursor, materialOverrides→RowName, SourceComboID group cha) + 1 dòng patch review v2.1 |
+| 23/06/2026 | Thêm section "SPRINT 5 — 23/06/2026": 9 dòng quyết định Sprint5_Plan_v1.1 (P1 thumbnail C++ thật, P2 surface-snap khối, P3 xoay combo, P5 dời Sprint7, K1 WBP_Toast, K3 bAddToRecent, K5 cả 2 hướng export, P4 lưu LOCALAPPDATA, scope chia 3 giai đoạn) |

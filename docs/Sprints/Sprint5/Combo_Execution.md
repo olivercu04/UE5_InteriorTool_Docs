@@ -6,8 +6,8 @@
 > replace cả cụm, tích hợp group nhiều cấp, material RowName.
 > Mọi quyết định cũ (D1–D4) bị thay bởi mục QUYẾT ĐỊNH v2.0 bên dưới.
 
-**Phiên bản:** 2.2 | **Ngày:** 22/06/2026 | Lighting_Mnger UE5.5.4
-**Tác giả:** Fable 5 (v1.0) + Q&A Sonnet 4.6 (v1.1) + Kiến trúc 21/06 (v2.0) + Review patch (v2.1)
+**Phiên bản:** 2.3 | **Ngày:** 23/06/2026 10:30 | Lighting_Mnger UE5.5.4
+**Tác giả:** Fable 5 (v1.0) + Q&A Sonnet 4.6 (v1.1) + Kiến trúc 21/06 (v2.0) + Review patch (v2.1) + Sprint5_Plan_v1.1 (v2.3)
 **Đối tượng đọc:** model thực thi (Opus/Sonnet) + cuhoang. Tuân thủ `09_AI_Implementation_Rules.md`.
 **Làm TỪNG TASK, mỗi task có test, xong báo cuhoang.**
 
@@ -208,7 +208,7 @@ public:
     static TArray<FString> ListJsonFilesInDir(const FString& DirPath);
 
     UFUNCTION(BlueprintPure, Category="Combo")
-    static FString GetCombosDir();   // <ProjectSaved>/Combos
+    static FString GetCombosDir();   // C3 đổi → %LOCALAPPDATA%/InteriorFOFFTool/Combos (xem task C3a mục 0)
 
     UFUNCTION(BlueprintCallable, Category="Combo")
     static bool DeleteFileAtPath(const FString& FilePath);
@@ -245,6 +245,7 @@ TArray<FString> UComboSerializer::ListJsonFilesInDir(const FString& DirPath) {
     return Files;
 }
 FString UComboSerializer::GetCombosDir() {
+    // ⚠️ C3 (gộp P4): đổi sang FPlatformMisc::GetEnvironmentVariable("LOCALAPPDATA")/"InteriorFOFFTool/Combos"
     return FPaths::ProjectSavedDir() / TEXT("Combos");
 }
 bool UComboSerializer::DeleteFileAtPath(const FString& FilePath) {
@@ -272,6 +273,14 @@ Vẫn fail: dán nguyên error cho cuhoang, không đoán.
 ## 3. TASKS v2.0 — C0–C10
 
 > Format: mục tiêu + I/O + điểm mấu chốt. Chi tiết node sinh khi execute từng task, không ghi sẵn.
+
+**Thứ tự thực thi Sprint 5 (cập nhật 23/06/2026):**
+`C0 → C1 → C2 → Fix K3 → C3 → Thumbnail System C++ → C4 → C5 → C6 → C7 → WBP_Toast → C8 → Xoay combo (P3 verify) → C9 → C11 → C10`
+- C0/C1/C2 ✅ DONE
+- Fix K3 ✅ DONE (bAddToRecent param)
+- Thumbnail System C++ → C4 → ... : G1 (~25/06)
+- WBP_Toast → C8 → P3 → C9 : G2
+- C11 → C10 : G3
 
 ---
 
@@ -384,25 +393,47 @@ ForEach MaterialOverrides slot (path):
 
 ---
 
-### C3a — Nền data cho dialog (KHÔNG UI)
-**Mục tiêu:** Chuẩn bị data layer để dialog + folder tree + tag có nguồn chạy. Tách khỏi UI để cô lập lỗi.
+### Fix K3 — bAddToRecent (áp cùng lúc với C2/RestoreSnapshot)
+**Vấn đề:** `SpawnFurnitureCopy` gọi `AddRecentMesh` unconditional → spawn combo 5 món nhồi 5 mesh lẻ vào Recent; Undo cũng nhồi (RestoreSnapshot gọi SpawnFurnitureCopy). Bug có sẵn, không chỉ combo.
+**Fix:**
+- `SpawnFurnitureCopy` thêm param `bAddToRecent : Boolean = True`. Trong thân: `Branch(bAddToRecent)` → True: gọi AddRecentMesh; False: bỏ qua.
+- Spawn combo (C2): truyền `bAddToRecent = False`.
+- **Khuyến nghị kèm:** RestoreSnapshot cũng truyền `bAddToRecent = False` (Undo không nên đụng Recent — bug có sẵn).
+- Paste/Duplicate giữ `True` (hành vi đúng).
+
+---
+
+### C3a — Nền data cho dialog (KHÔNG UI) + Gộp P4 + móc thumbnail
+**Mục tiêu:** Chuẩn bị data layer. Đồng thời gộp P4 (đổi chỗ lưu combo) và móc thumbnail vào save flow.
 **Các việc (thứ tự):**
+0. **Gộp P4 — Đổi `GetCombosDir` (C++)** trong `ComboSerializer.cpp`:
+   ```cpp
+   FString UComboSerializer::GetCombosDir() {
+       FString Base = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
+       FString Dir  = Base / TEXT("InteriorFOFFTool") / TEXT("Combos");
+       IFileManager::Get().MakeDirectory(*Dir, true);
+       return Dir;
+   }
+   ```
+   ⚠️ Xác nhận `FPlatformMisc::GetEnvironmentVariable("LOCALAPPDATA")` trả đúng path Windows 11. Nếu rỗng → fallback `FPaths::ProjectSavedDir()/"Combos"` + báo cuhoang. Thêm `#include "HAL/PlatformMisc.h"` nếu chưa có.
+   Thumbnail .png lưu cùng `<CombosDir>/` (không cần subfolder Thumbs).
 1. **FComboData thêm 2 field C++** (`ComboTypes.h`):
    `UPROPERTY(EditAnywhere, BlueprintReadWrite) FString AuthorID;` (default "")
    `UPROPERTY(EditAnywhere, BlueprintReadWrite) FString Visibility = TEXT("Private");`
    Recompile. **Category + FolderPath ĐÃ CÓ sẵn (T1/C1) — KHÔNG thêm lại.**
-   ⚠️ Field discovery DỪNG ở đây. KHÔNG thêm rating/downloadCount/popularity — đó là server-side state (Phase B), không phải nội dung combo.
+   ⚠️ Field discovery DỪNG ở đây. KHÔNG thêm rating/downloadCount/popularity — server-side state (Phase B).
 2. **BP_ComboItemView thêm field** `FolderPath : String`.
-3. **LoadComboLibrary**: đọc thêm `FolderPath` từ FComboData gán vào ComboItemView (Tags ItemView đã có sẵn; FolderPath là field mới).
-4. **SaveComboFromSelection (BP_ComboManager) mở rộng** — đây là event đã DONE ở C0/C2, chỉ nới thêm, KHÔNG làm lại logic LCA:
+3. **LoadComboLibrary**: đọc thêm `FolderPath` từ FComboData gán vào ComboItemView.
+4. **SaveComboFromSelection (BP_ComboManager) mở rộng** — chỉ nới thêm, KHÔNG làm lại logic LCA:
    - Signature thêm 2 param: `FolderPath : String`, `Tags : Array<String>`.
-   - Bước 5e Make FComboData: nối thêm pin FolderPath + Tags. Set `CreatedAt` = Now → ToIso8601 (xác nhận tên node thực tế), `AppVersion` = chuỗi version hiện tại, `Visibility` = "Private", `AuthorID` = "".
-   - ⚠️ KIỂM: bước 5e hiện có set CreatedAt/AppVersion giá trị thật chưa hay đang để rỗng. Nếu rỗng → set luôn (cần để sort theo ngày sau này).
+   - Bước 5e Make FComboData: nối thêm FolderPath + Tags. Set `CreatedAt` = Now → ToIso8601 (xác nhận tên node), `AppVersion` = version hiện tại, `Visibility` = "Private", `AuthorID` = "".
+   - ⚠️ KIỂM: CreatedAt/AppVersion hiện có set giá trị thật chưa. Nếu rỗng → set luôn.
+   - **Móc thumbnail — PHẢI capture ngay sau `SaveStringToFile` thành công (lúc đồ còn trong scene):** → gọi capture thumbnail (xem mục "Thumbnail System C++" ngay bên dưới). KHÔNG defer — sau khi dialog đóng đồ có thể bị deselect hoặc xóa.
 5. **WBP_FurnitureInventory thêm 2 function vocabulary** (dùng CHUNG: dropdown C3b + tree C5 + tag filter sau):
-   - `GetExistingFolders() → Array<String>`: loop AllComboViews → gom FolderPath unique, bỏ rỗng. Chuẩn hóa khi gom: trim + "\\"→"/" + bỏ "/" thừa; so sánh case-insensitive (giữ bản viết xuất hiện đầu tiên).
+   - `GetExistingFolders() → Array<String>`: loop AllComboViews → gom FolderPath unique, bỏ rỗng. Chuẩn hóa: trim + "\\"→"/" + bỏ "/" thừa; so sánh case-insensitive.
    - `GetAllUsedTags() → Array<String>`: loop AllComboViews → gom mọi tag → chuẩn hóa (trim + lowercase + collapse space) → dedupe → bỏ rỗng.
 
-**TEST C3a:** Lưu combo qua đường hardcode cũ → file JSON có đủ folderPath/tags/createdAt/authorID/visibility. Reload → ComboItemView có FolderPath. GetExistingFolders + GetAllUsedTags trả đúng list (Print String). Compile xanh.
+**TEST C3a:** Lưu combo → file JSON ở `%LOCALAPPDATA%/InteriorFOFFTool/Combos/<comboID>.json` (Print path xác nhận). Có đủ folderPath/tags/createdAt/authorID/visibility. Thumbnail .png cùng thư mục. Reload → ComboItemView có FolderPath. GetExistingFolders + GetAllUsedTags đúng. Compile xanh.
 → **Báo cuhoang.**
 
 ---
@@ -439,11 +470,35 @@ ForEach MaterialOverrides slot (path):
 
 ---
 
+### Thumbnail System (C++ THẬT — P1) — xây cùng C4, capture nối vào C3
+**Đây là khoản đầu tư "làm 1 lần dùng 3 chỗ": combo / B4 user upload / nút chụp bìa tùy chỉnh.**
+**C++ trong FurnitureToolkit, 2 hàm lá (thêm vào `ComboSerializer.h/.cpp`):**
+- `SaveRenderTargetToPNG(UTextureRenderTarget2D* RT, const FString& FilePath) → bool`
+  Logic: dùng `FImageUtils` hoặc `IImageWrapperModule` để encode RT buffer thành PNG và ghi file.
+  ⚠️ Tên hàm chính xác cần xác nhận tại C4 — xem "Nodes chờ xác nhận" trong `AI_Implementation_Rules.md`.
+- `LoadTexture2DFromFile(const FString& FilePath) → UTexture2D*`
+  Logic: runtime PNG decode bằng `IImageWrapperModule` → tạo `UTexture2D` trong memory.
+  Lý do dùng C++ thay node "Import File as Texture2D": node BP chỉ chạy trong editor, không packaged.
+
+**Capture flow (gọi từ C3a bước 4 sau SaveStringToFile):**
+1. Tính bounding box của tất cả selection actors.
+2. Lấy hướng nhìn camera hiện tại của người dùng (PlayerCameraManager → GetCameraLocation + GetCameraRotation).
+3. Đặt `SceneCapture2D` actor tạm (hoặc dùng actor có sẵn) tại vị trí lùi ra đủ xa theo hướng camera để bounding box vừa khung.
+4. Capture vào `UTextureRenderTarget2D` (chuẩn hóa size + padding cho ảnh đẹp nhất quán).
+5. Gọi `SaveRenderTargetToPNG(RT, CombosDir + "/" + ComboID + ".png")`.
+6. Dọn SceneCapture2D tạm nếu đã spawn.
+
+**Display (C4/C7):** `LoadTexture2DFromFile(ThumbPath)` → set lên Image widget. Bỏ fallback icon 🧩.
+
+⚠️ SceneCapture2D + UTextureRenderTarget2D: cần xác nhận node/class setup tại C4 — CHƯA có trong bảng node chính thức. Xem mục "Nodes chờ xác nhận" trong `docs/Rules/AI_Implementation_Rules.md`.
+
+---
+
 ### C4 — WBP_ComboCard
 **Mục tiêu:** Card combo trong tile view, layout riêng với badge số món.
 **Interface:** IUserObjectListEntry. Variables: `ComboItem (BP_ComboItemView)`, `InventoryRef`.
 **Điểm mấu chốt:**
-- Thumbnail: search "Import File as Texture2D" trước. Không có → icon 🧩. Ghi DEVIATIONS.
+- Thumbnail: `LoadTexture2DFromFile(ThumbPath)` → set lên Image widget (xem "Thumbnail System C++" ở trên). ⚠️ Xác nhận node set Image từ UTexture2D runtime tại C4 (có thể là `Set Brush from Texture` — cuhoang verify tên node).
 - BTN_SpawnCombo "📥 Đặt vào scene": gọi C2 tại điểm giữa màn hình (fallback khi không drag).
 - BTN_Info ℹ: mở WBP_ComboDetailPopup (C7).
 - BTN_Delete 🗑: xóa file json + thumb → LoadComboLibrary → refresh tab.
@@ -492,64 +547,110 @@ ForEach MaterialOverrides slot (path):
 **Điểm mấu chốt:**
 - Widget riêng, KHÔNG tái dùng WBP_DetailPopup (combo khác field hoàn toàn).
 - Hiển thị danh sách Items: ListView hoặc VerticalBox động với tên từng món (DT lookup VieName).
-- Thumbnail hiển thị tương tự WBP_ComboCard (Plan B: icon 🧩).
+- Thumbnail hiển thị thật: `LoadTexture2DFromFile(ThumbPath)` → set lên Image widget (giống C4). Bỏ fallback icon 🧩.
 - Thêm 1 dòng hiển thị **Category** — SetVisibility = Collapsed khi Category == "" (v1 luôn rỗng nên ẩn; Phase B có giá trị thì hiện). Chừa sẵn chỗ cho discovery.
 
-**TEST C7:** click Info trên card → popup đúng tên/tags/số món/danh sách.
+**TEST C7:** click Info trên card → popup đúng tên/tags/số món/danh sách. Thumbnail thật hiện đúng.
 → **Báo cuhoang.**
 
 ---
 
-### C8 — Drag-drop combo
-**Mục tiêu:** Kéo card combo ra scene, ghost 1 mesh đại diện, thả → spawn tại cursor (quyết định E).
-**Điểm mấu chốt:**
-- **DragDropOperation_ComboCard MỚI** (KHÔNG extend FurnitureCard — tránh đụng furniture đang chạy). Chứa field `ComboID : String`.
-- **WBP_DragOverlay.On Drop — thêm branch routing:**
-  - Cast to `DragDropOperation_ComboCard` → True: SpawnComboByID(ComboID, DropLocation).
-  - Cast to `DragDropOperation_FurnitureCard` → True: đường furniture cũ (giữ nguyên).
-  - ⚠️ Hiện On Drop chỉ có nhánh FurnitureCard — thả ComboCard mà không thêm branch = crash hoặc spawn sai.
-- **Ghost mesh:** async load mesh `Items[0].RowName` lúc drag bắt đầu (trễ 1-2 frame — chấp nhận). Nếu test tệ (giật/laggy trên máy yếu) → fallback thumbnail 2D làm ghost. KHÔNG preload trước (48 item/trang = nặng). Quyết sau khi sờ thực tế.
-- KHÔNG cần trace 2 tầng (C2 dùng DropLocation trực tiếp).
+### WBP_Toast (K1 — TIÊN QUYẾT trước C8)
+**Mục tiêu:** Widget toast thông báo đơn giản; mọi chỗ báo lỗi/thành công trong Sprint 5 đều trỏ vào đây.
+**Thiết kế:**
+- 1 Text block + animation tự ẩn sau 2-3s.
+- Dùng `FText` (chuẩn bị i18n sau).
+- Custom Event `ShowToast(Message : FText, Duration : Float = 2.5)`: Set Text → Add to Viewport → Delay(Duration) → RemoveFromParent.
+- Spawn từ HUD hoặc viewport (không cần parent cụ thể). IsValid guard trước khi RemoveFromParent.
+- Mọi chỗ ghi "toast" trong Sprint 5 (C8 spawn fail, C9 replace fail, C11 import rác, M11 thiếu mesh) → gọi ShowToast này.
 
-**TEST C8:** kéo card combo → ghost xuất hiện → thả → combo spawn đúng chỗ thả. Kéo FurnitureCard vẫn hoạt động bình thường (regression).
+**TEST WBP_Toast:** gọi ShowToast("Kiểm tra 🧩") từ Level BP → text hiện, tự ẩn sau ~2.5s. Không crash. Gọi 2 lần liên tiếp → không kẹt.
+→ **Báo cuhoang. XONG mới làm C8.**
+
+---
+
+### C8 — Drag-drop combo + Surface-snap (P2) + Fix drop-anchor (Lỗ14)
+**Mục tiêu:** Kéo card combo ra scene, ghost 1 mesh đại diện, thả → spawn tại cursor đúng chỗ (quyết định E + điều chỉnh #2).
+**TIÊN QUYẾT:** WBP_Toast phải DONE trước C8 (toast "Spawn thất bại" dùng ở đây).
+**Điểm mấu chốt:**
+- **DragDropOperation_ComboCard MỚI** (KHÔNG extend FurnitureCard). Chứa:
+  - `ComboID : String`
+  - `RelLocation_Representative : Vector` — offset của món đại diện (Items[0]) so với Center, tính và cache lúc bắt đầu drag.
+- **WBP_DragOverlay.On Drop — thêm branch routing:**
+  - Cast to `DragDropOperation_ComboCard` → True: tính SpawnLocation (xem surface-snap dưới) → SpawnComboByID(ComboID, SpawnLocation). Branch này phải Return(true) + Remove From Parent.
+  - Cast to `DragDropOperation_FurnitureCard` → True: đường furniture cũ (giữ nguyên).
+  - ⚠️ Hiện On Drop chỉ có nhánh FurnitureCard — thêm branch ComboCard hoặc = crash/spawn sai.
+- **Surface-snap kiểu khối (điều chỉnh #2):**
+  - Trace sàn tại điểm chuột → lấy `DropPoint` (điểm chuột trên sàn, `ECC_WorldStatic` hoặc channel sàn).
+  - Lọc trace CHỈ ăn sàn (không trace vào mặt bàn, kệ — tránh snap cả combo trôi lên mặt bàn).
+  - `SpawnLocation = DropPoint − RelLocation_Representative` → đặt Center sao cho món đại diện (ghost) đáp đúng điểm chuột (fix Lỗ14 combo nhảy chỗ).
+  - Snap CẢ combo như 1 khối rigid xuống sàn: tất cả món giữ nguyên offset tương đối với Center — KHÔNG snap từng món riêng.
+  - Món loại Wall/Ceiling giữ offset tương đối so với neo sàn — KHÔNG tự tìm bề mặt mới.
+- **Ghost mesh:** async load mesh `Items[0].RowName` lúc drag bắt đầu. Nếu test tệ → fallback thumbnail 2D làm ghost. KHÔNG preload trước (48 item/trang = nặng). Quyết sau khi sờ thực tế.
+
+**TEST C8:** kéo card combo → ghost xuất hiện → thả → combo spawn đúng chỗ thả (ghost đáp đúng điểm chuột). Kéo FurnitureCard vẫn hoạt động bình thường (regression). Thả lên mặt bàn → combo KHÔNG nhảy lên bàn (lọc trace).
 → **Báo cuhoang.**
+
+---
+
+### Xoay combo (P3) — verify + tùy chọn
+**Mục tiêu:** Đảm bảo xoay được combo cluster sau khi đặt vào scene.
+**Chính — verify (gần như chắc chắn chạy sẵn):**
+- Spawn combo → chọn combo cluster → mở gizmo Rotate → xoay. Combo spawn ra là 1 group cha (SourceComboID!="") → group rotation đã có từ Sprint 3/4 → xoay group = xoay cả cụm.
+- Nếu OK → P3 coi như xong, không cần code mới.
+- Nếu KHÔNG OK → báo cuhoang, mô tả triệu chứng, đừng tự sửa.
+
+**Tùy chọn (polish — làm sau nếu muốn):** Xoay NGAY LÚC KÉO (ghost xoay bằng phím R / scroll wheel trước khi thả) — feature mới. Toán pivot:
+```
+NewLoc = Center + RotateVector(R, OldLoc − Center)
+NewRot = CombineRotators(OldRot, R)
+```
+⚠️ `RotateVector` và `CombineRotators` — tên node cần xác nhận tại thời điểm làm (xem bảng node AI_Implementation_Rules.md).
+
+**TEST Xoay combo:** chọn combo cluster đã đặt → gizmo Rotate → xoay cả cụm, bố cục bên trong không vỡ. TV vẫn đúng vị trí tương đối với kệ sau khi xoay.
+→ **Báo cuhoang kết quả verify (OK / KHÔNG OK).**
 
 ---
 
 ### C9 — Replace combo
 **Mục tiêu:** Thay cả cụm combo bằng combo khác (quyết định F).
+**⚠️ BẮT BUỘC verify EMS trước khi code C9:** spawn combo, save scene, load lại → Print SourceComboID của group root → phải còn đúng giá trị. Nếu mất → báo cuhoang ngay, KHÔNG code tiếp.
 **Điểm mấu chốt:**
 - Entry: right-click actor thuộc cụm combo → CB_ReplaceCombo (enable khi actor có GroupID với SourceComboID!="").
 - Leo group cha: GetGroupRoot(actor.GroupID) → RootGID → FindGroupData(RootGID) → SourceComboID + FolderPath.
 - Mở replace mode combo: navigate folder tree combo tới FolderPath.
+- **CalculateCenter** = hàm CHUNG dùng cả C3 (save) lẫn C9 (replace). Input: mảng actors của group; loại trừ pivot dummy và container actor trước khi tính average. Nếu chưa tồn tại hàm này → tạo 1 lần, dùng lại.
 - **Sequence thực thi (thứ tự BẮT BUỘC):**
   1. Guard `Cmb_bSpawnInFlight` đầu event.
   2. CalculateCenter(GetAllDescendantActors(RootGID)) → lưu `Center` (TRƯỚC khi destroy).
   3. Destroy GetAllDescendantActors(RootGID) + RootGID group.
   4. SpawnComboByID(newComboID, Center) → đợi OnComboSpawned callback.
   5. **Spawn thành công:** CaptureSnapshot("ReplaceCombo"). Recent tự cập nhật (OnComboSpawned → C6 listener).
-  6. **Spawn thất bại** (JSON lỗi / RowName không tồn tại): KHÔNG capture + toast "Thay thế thất bại — Undo để khôi phục" (Undo restore combo cũ từ history qua RestoreSnapshot destroy+respawn).
+  6. **Spawn thất bại** (JSON lỗi / RowName không tồn tại): TỰ ĐỘNG gọi RestoreSnapshot(đỉnh stack) để khôi phục combo cũ → sau đó ShowToast("Combo cũ đã khôi phục — thay thế thất bại"). KHÔNG dùng "Undo tay". KHÔNG capture.
 - Rotation v1 reset 0 (giữ rotation = backlog).
 - ⚠️ KHÔNG capture "PreReplace" riêng — state cũ đã ở history trước bước destroy.
 
 **TEST C9:**
 - Case A: spawn combo A → replace bằng B → cụm A biến, B ở Center cũ → Undo → A quay lại.
-- Case B: replace với combo có RowName bậy → toast, scene không có lỗ trống.
+- Case B: replace với combo có RowName bậy → RestoreSnapshot TỰ ĐỘNG chạy → combo A quay lại, scene không có lỗ trống → toast hiện.
 → **Báo cuhoang.**
 
 ---
 
-### C11 — Export / Import combo (chia sẻ thủ công)
+### C11 — Export / Import combo (chia sẻ thủ công) — CẢ 2 hướng
 **Mục tiêu:** Share nhóm KHÔNG cần server — export file JSON gửi đi (Zalo/USB/Drive), import vào thư viện máy khác.
 **⚠️ Thứ tự thực thi:** C9 → **C11** → C10. C11 là feature mới nên phải chạy TRƯỚC C10 để regression test bao luôn.
 **Điểm mấu chốt:**
-- **Export:** chọn combo (card menu hoặc detail popup) → copy file `<comboID>.json` ra chỗ user chọn. Search node mở file-save dialog (Desktop platform) TRƯỚC. Không có → Plan B: copy ra 1 thư mục Export cố định + báo đường dẫn cho user. Ghi DEVIATIONS.
+- **Export — CẢ 2 hướng graceful (K5):**
+  - Thử **hướng 1**: mở file-save dialog (Desktop platform) cho user chọn nơi lưu → copy `<comboID>.json` đến đó.
+  - Không chạy được (node không tồn tại / platform không hỗ trợ) → **tự động fallback hướng 2**: copy ra thư mục Export cố định (`%LOCALAPPDATA%/InteriorFOFFTool/Exports/`) → ShowToast("Đã xuất ra: [path]") để user biết chỗ lấy file.
+  - KHÔNG bắt user phải chọn tay xem hướng nào được dùng. KHÔNG hiện 2 nút. Ghi DEVIATIONS hướng nào thực sự chạy được.
 - **Import:** chọn file JSON ngoài → LoadStringFromFile → JsonToCombo validate (bParseOK):
   - Parse fail → toast "File combo không hợp lệ", bỏ. KHÔNG crash.
   - OK → **sinh ComboID MỚI** (`combo_` + NewGuid) ghi đè field comboID (tránh đè combo cũ; trùng tên hiển thị thì user tự xóa) → SaveStringToFile vào Combos dir → Broadcast OnComboLibraryChanged → refresh tab.
 - **Ràng buộc:** combo chỉ dùng được khi máy đích CÙNG asset pool (RowName resolve được). Thiếu mesh → spawn skip + toast (như M11). Ghi rõ giới hạn này trong UI/doc.
 
-**TEST C11:** export combo A → file .json xuất hiện chỗ chọn. Xóa A khỏi thư viện → import file đó → A quay lại với ComboID mới. Import 2 lần cùng file → 2 combo (ID khác nhau). Import file rác → toast, không crash.
+**TEST C11:** export combo A → file .json xuất hiện (dialog HOẶC auto-path). Xóa A khỏi thư viện → import file đó → A quay lại với ComboID mới. Import 2 lần cùng file → 2 combo (ID khác nhau). Import file rác → toast, không crash.
 → **Báo cuhoang.**
 
 ---
@@ -563,6 +664,9 @@ ForEach MaterialOverrides slot (path):
 - T6 pivot rotation: verify có TRÙNG group transform không — nếu trùng → bỏ T6, ghi DEVIATIONS
 - C3 mới: dropdown folder hiện đúng list; tag chuẩn hóa (lowercase + dedupe); combo 2 field rỗng (AuthorID/Visibility) load không crash; combo FolderPath rỗng vào nhóm "Chưa phân loại"
 - 2 case C11: export → file đúng; import file → combo quay lại với ID mới (round-trip)
+- **K4 nested-3 (cap):** spawn combo A → enter-edit A → spawn combo B bên trong → enter-edit B → spawn combo C bên trong → thử enter-edit C → phải bị chặn (cap = 3 cấp). Giao diện không crash.
+- **P5-liên quan (material slot — xác nhận giới hạn):** re-import mesh đổi tên material slot → spawn combo chứa mesh đó → check mesh vẫn nhận đúng material hay bị reset. Ghi kết quả vào DEVIATIONS (P5 gác Sprint 7 nhưng cần biết impact thực tế ngay Sprint 5).
+- **VRAM (stat rhi):** spawn combo + undo 10 lần liên tiếp → mở `stat rhi` → VRAM không tăng bất thường (không leak RenderTarget sau Thumbnail). Số cụ thể ghi vào DEVIATIONS để so sánh Sprint 7.
 
 **Docs (version + ngày + giờ + phút):**
 - `BP_ComboManager.md` (tạo mới): vars Cmb_, events C0/C2, dispatchers
@@ -649,3 +753,4 @@ Không sửa hệ thống undo/material.
 | 2.0 | 21/06/2026 | Tái thiết kế diện rộng: QUYẾT ĐỊNH v2.0 (A-F), schema thêm folderPath + materialOverrides→RowName, TASKS đổi C0–C10, thêm TÍCH HỢP HỆ THỐNG CŨ, group cha SourceComboID, C++ mở rộng C1, drag-drop C8, replace cả cụm C9 |
 | 2.1 | 21/06/2026 | Patch review kiến trúc: C0→LCA (tránh lưu thừa cả room), C1 ghi nhận ItemView+LoadComboLibrary đã xong+persist note, C2→3-phase bắt buộc, C3 folder-create mode, C5 BuildFolderTree nguồn mới, C8 DragOp_ComboCard+On Drop routing+ghost decision, C9 sequence+capture-after+rollback toast, BACKLOG deferred v1, M3 cập nhật |
 | 2.2 | 22/06/2026 | Phiên bàn kế hoạch C3: tách C3a (data)+C3b (dialog UI); folder dropdown (GetExistingFolders)+nút tạo mới thay nhập text tự do; tags có data layer (chuẩn hóa+GetAllUsedTags), UI filter/autocomplete defer; thêm field C++ AuthorID+Visibility; bỏ ô Category khỏi dialog save (→Phase B Publish); thêm C11 export/import đặt trước C10; M14; đóng băng selection+khóa input dialog; mở dialog qua inventory; nhóm "Chưa phân loại"; context Phase B (mô hình lai/chỗ lưu/taxonomy) |
+| 2.3 | 23/06/2026 10:30 | Sprint5_Plan_v1.1: gộp P4 vào C3a (GetCombosDir → %LOCALAPPDATA%); P1 Thumbnail System C++ (SaveRenderTargetToPNG + LoadTexture2DFromFile, node ⏳ chờ xác nhận C4); Fix K3 (bAddToRecent param + SpawnComboByID False); WBP_Toast (K1 tiên quyết C8); C8 surface-snap kiểu khối + fix Lỗ14 (SpawnLocation=DropPoint−RelLocation_Representative) + DragDropOperation_ComboCard mới; Xoay combo P3 (verify gizmo group + tùy chọn xoay-kéo); C9 thêm EMS verify SourceComboID đầu task + CalculateCenter hàm chung + spawn-fail → TỰ ĐỘNG RestoreSnapshot; C11 CẢ 2 hướng graceful (dialog TRƯỚC, auto-fallback); C10 thêm K4 nested-3 + P5 material-slot check + VRAM stat rhi; thứ tự thực thi G1/G2/G3; P5 material gác Sprint 7 ghi DEVIATIONS |
