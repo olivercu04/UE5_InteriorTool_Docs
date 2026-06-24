@@ -1,5 +1,5 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 2.1 | **Cập nhật:** 19/06/2026 — SpawnFurnitureCopy async load | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 2.2 | **Cập nhật:** 24/06/2026 — CB_SaveCombo → OpenSaveComboDialog | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 > **HỢP NHẤT TỪ:** base v1.6 + patch v1.7 + patch v1.8 + patch v1.9 (15/06/2026). Đây là bản đầy đủ, thay thế toàn bộ file gốc + patch trong import_raw.
 > **File canonical.** `BP_FurnitureInputManager_MERGED_v1.9.md` là bản duplicate — sẽ bị xóa (cuhoang 17/06/2026). Chỉ đọc file này.
@@ -714,7 +714,19 @@ CB_Undo       → UndoManager.UndoLastAction
 CB_Redo       → UndoManager.RedoLastAction
 CB_ChangeMaterial → [STUB — TODO, làm tiếp session sau]
 CB_Replace        → [STUB — TODO, làm tiếp session sau]
+CB_SaveCombo      → CB_SaveCombo_Handler
 ```
+
+### CB_SaveCombo_Handler (C3b — 24/06/2026)
+```
+Guard LENGTH(SelectedActors) < 2 → dead-end
+CalculateCenter(SelectedActors) → Center
+Get All Widgets Of Class(WBP_FurnitureInventory) → Get(0) → IsValid → Cast → InventoryRef
+Branch IsValid(InventoryRef):
+  True  → InventoryRef.OpenSaveComboDialog(SelectedActors=SelectedActors, Center=Center)
+  False → Print String "CB_SaveCombo: Inventory ref not found"
+```
+> Không gọi SaveComboFromSelection trực tiếp — delegate sang inventory để inventory đóng băng selection + quản lý dialog async.
 
 ### SelectSimilarMesh (T5)
 ```
@@ -861,3 +873,4 @@ Branch LENGTH(Actors) == 1:
 | 1.9 | 15/06/2026 — 20:30 ICT | **Sprint 4 Bug Fix F1-F4.** Thêm `GetSelectionUnitLabel` (F1), `ComputeSelectionUnits` (F3). `GroupNameCounter` chuyển sang BP_GroupsContainer (F2, default=1 SaveGame). **CreateGroup viết lại bottom-up** (F3 — ComputeSelectionUnits trước guard, Luật 6B). **SpawnFurnitureCopy** auto-join edit scope (F4). |
 | 1.10 | 17/06/2026 — Sprint D.T6 | Document `StartReplaceMode` + v1.10 update RowName branch. Ghi nhận + XÓA Step 11 Mouse Left Pressed (stale popup bug). |
 | 2.1 | 19/06/2026 — 19h ICT | Load mesh+material async qua BP_FurnitureActor.LoadMeshAsync/LoadMaterialsAsync; NewActorCopy đổi class var → local var; Add Recent Mesh parse MeshPath thay DAPath |
+| 2.2 | 24/06/2026 | C3b: CB_SaveCombo đổi luồng — KHÔNG gọi SaveComboFromSelection trực tiếp nữa. Guard ≥2 đồ → CalculateCenter → Get All Widgets WBP_FurnitureInventory → OpenSaveComboDialog (delegate sang inventory). |

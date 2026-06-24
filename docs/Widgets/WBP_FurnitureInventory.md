@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 2.7 | **Cập nhật:** 23/06/2026 — Combo Vocabulary Functions (C3a)
+**Phiên bản:** 2.8 | **Cập nhật:** 24/06/2026 — Save Combo Dialog flow (C3b)
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -87,8 +87,12 @@ Python 1: populate BoundingSize | Python 2: update MeshFolderPath | (Sprint D: P
 | `PendingRestoredActor` | BP_FurnitureActor | Chờ restore sau timer 0.1s ← SET None ở Destruct |
 | **— C2 Favorites —** | | |
 | `ActiveSpecialCategory` | Name | "" / "Recent" / "Favorite" |
+| **— C3b Combo Save Dialog —** | | |
+| `PendingSelectedActors` | Array BP_FurnitureActor | Buffer đóng băng selection trước khi mở dialog async |
+| `PendingCenter` | Vector | Buffer Center tương ứng với PendingSelectedActors |
+| `SaveComboDialogRef` | WBP_SaveComboDialog | Ref dialog đang mở — SET None ở Event Destruct (R4) |
 
-⚠️ **VRAM leak:** TargetFurnitureActor + PendingRestoredActor là hard ref → SET None ở Event Destruct.
+⚠️ **VRAM leak:** TargetFurnitureActor + PendingRestoredActor + SaveComboDialogRef là hard ref → SET None ở Event Destruct.
 
 ---
 
@@ -444,6 +448,42 @@ Completed → Return(TagsResult = LocalTags)
 
 ---
 
+## C3b — Save Combo Dialog Flow
+
+### OpenSaveComboDialog(SelectedActors : Array BP_FurnitureActor, Center : Vector) — Custom Event
+```
+SET PendingSelectedActors = SelectedActors
+SET PendingCenter = Center
+GetExistingFolders() → TempFolders
+GetAllUsedTags() → TempTags
+Create Widget(WBP_SaveComboDialog, ExistingFolders=TempFolders, TagVocabulary=TempTags) → SET SaveComboDialogRef
+Add to Viewport(SaveComboDialogRef, ZOrder=99)
+Bind OnDialogConfirmed(SaveComboDialogRef) → OnSaveComboConfirmed
+Bind OnDialogCancelled(SaveComboDialogRef) → OnSaveComboDialogClosed
+Get Player Controller → Set Input Mode UI Only(InWidgetToFocus=SaveComboDialogRef)
+```
+
+### OnSaveComboConfirmed(ComboName, FolderPath, Description : String; Tags : Array String) — Custom Event
+```
+← Bound từ SaveComboDialogRef.OnDialogConfirmed
+Get All Actors Of Class(BP_ComboManager) → Get(0) → Cast → ComboManagerRef
+IsValid(ComboManagerRef):
+  True → SaveComboFromSelection(PendingSelectedActors, PendingCenter, ComboName, Description, FolderPath, Tags)
+  False → Print String "OnSaveComboConfirmed: ComboManager not found"
+OnSaveComboDialogClosed    ← luôn đóng dialog, dù save fail
+```
+
+### OnSaveComboDialogClosed — Custom Event
+```
+← Bound từ SaveComboDialogRef.OnDialogCancelled + gọi cuối OnSaveComboConfirmed
+SET SaveComboDialogRef = None
+SET PendingSelectedActors = []     (Make Array rỗng)
+SET PendingCenter = (0, 0, 0)
+Get Player Controller → Set Input Mode Game And UI
+```
+
+---
+
 ## Events
 
 ### OnCardInfoClicked(RowName : Name) — v2.5 Sprint D.T6 (thay DA DA_FurnitureItem)
@@ -653,3 +693,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 2.5 | 17/06/2026 — Sprint D.T6 | WBP_FurnitureCard section: OnListItemObjectSet → BP_FurnitureItemView; Button_InforItem → OnCardInfoClicked(CardRowName). OnCardInfoClicked handler: nhận RowName thay DA. OnMeshSelected Replace branch: Branch RowName != "" → DT lookup MeshFolderPath (fallback DAPath save cũ). |
 | 2.6 | 18/06/2026 — TreeNode/Chip Highlight | Thêm `IsPathActive` (Pure function) + `UpdateFolderHighlights` (impure). 3 call sites: cuối CreateChipTagsForPath, OnChipTagClicked (2 nhánh merge), OnTreeNodeClicked sau FilterByFolderPath (cả 2 nhánh). BTN_FavoriteCategory/RecentCategory: thêm ClearChildren(VB_ChipTagArea) + Collapse TB_Breadcrumb đầu function. Fix Bug-Pagination: Int to Float trước Ceil (cả 2 nhánh Material/Furniture). |
 | 2.7 | 23/06/2026 — Combo Vocabulary Functions (C3a) | Thêm `GetExistingFolders()` + `GetAllUsedTags()` — 2 hàm vocabulary cho dialog lưu combo (C3b): dedup folder paths + dedup tags lowercase từ AllComboViews_Combo. |
+| 2.8 | 24/06/2026 — Save Combo Dialog flow (C3b) | Thêm 3 class var (PendingSelectedActors/PendingCenter/SaveComboDialogRef). Thêm 3 custom event: OpenSaveComboDialog (đóng băng selection, tạo WBP_SaveComboDialog, Set Input Mode UI Only), OnSaveComboConfirmed (gọi ComboManager.SaveComboFromSelection), OnSaveComboDialogClosed (clear buffer + trả Game+UI). Cập nhật VRAM note: +SaveComboDialogRef. |

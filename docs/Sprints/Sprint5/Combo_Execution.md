@@ -438,7 +438,7 @@ ForEach MaterialOverrides slot (path):
 
 ---
 
-### C3b — WBP_SaveComboDialog (UI)
+### C3b — WBP_SaveComboDialog (UI) ✅ DONE (24/06/2026)
 **Mục tiêu:** Dialog nhập thông tin combo, thay hardcode "MyCombo".
 **Layout:** Border overlay (đen ~0.6 opacity) + Vertical Box (~480×400, anchored center). Trong Vertical Box:
 - TXT_ComboName (EditableText) — **bắt buộc**.
