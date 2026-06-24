@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 2.8 | **Cập nhật:** 24/06/2026 — Save Combo Dialog flow (C3b)
+**Phiên bản:** 2.9 | **Cập nhật:** 24/06/2026 — CTV_ComboCard + LoadComboLibrary C4 wiring
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -444,7 +444,37 @@ Loop Body:
 
 Completed → Return(TagsResult = LocalTags)
 
-⚠ Cả 2 hàm dùng `AllComboViews_Combo` — class var Array\<BP_ComboItemView\> được populate bởi LoadComboLibrary (C4/C5). Gọi sau khi library load xong.
+⚠ Cả 2 hàm dùng `AllComboViews_Combo` — class var Array\<BP_ComboItemView\> được populate bởi LoadComboLibrary. Gọi sau khi library load xong.
+
+---
+
+## C4 — CTV_ComboCard + LoadComboLibrary
+
+### Widget Variable (thêm vào designer)
+```
+CTV_ComboCard : Tile View
+  Is Variable = True
+  Entry Widget Class = WBP_ComboCard
+  Visibility = Collapsed  ← mặc định; C5 show khi switch sang tab 🧩
+```
+
+### LoadComboLibrary — Custom Event (cập nhật C4)
+Bound tới `OnComboLibraryChanged` + gọi trực tiếp từ Event Construct.
+
+Cuối hàm (sau khi populate `AllComboViews_Combo`) thêm:
+```
+CTV_ComboCard.Clear List Items
+ForEach AllComboViews_Combo:
+  Loop Body: CTV_ComboCard.Add Item(ArrayElement)
+```
+
+**Test PASS (24/06/2026):** 19 combo hiện đúng tên + badge ×N món.
+
+### Event Construct (cập nhật C4 — thêm vào Sequence)
+```
+Then 5: Bind OnComboLibraryChanged → LoadComboLibrary
+        LoadComboLibrary  ← gọi ngay lần đầu để populate CTV khi mở inventory
+```
 
 ---
 
@@ -694,3 +724,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 2.6 | 18/06/2026 — TreeNode/Chip Highlight | Thêm `IsPathActive` (Pure function) + `UpdateFolderHighlights` (impure). 3 call sites: cuối CreateChipTagsForPath, OnChipTagClicked (2 nhánh merge), OnTreeNodeClicked sau FilterByFolderPath (cả 2 nhánh). BTN_FavoriteCategory/RecentCategory: thêm ClearChildren(VB_ChipTagArea) + Collapse TB_Breadcrumb đầu function. Fix Bug-Pagination: Int to Float trước Ceil (cả 2 nhánh Material/Furniture). |
 | 2.7 | 23/06/2026 — Combo Vocabulary Functions (C3a) | Thêm `GetExistingFolders()` + `GetAllUsedTags()` — 2 hàm vocabulary cho dialog lưu combo (C3b): dedup folder paths + dedup tags lowercase từ AllComboViews_Combo. |
 | 2.8 | 24/06/2026 — Save Combo Dialog flow (C3b) | Thêm 3 class var (PendingSelectedActors/PendingCenter/SaveComboDialogRef). Thêm 3 custom event: OpenSaveComboDialog (đóng băng selection, tạo WBP_SaveComboDialog, Set Input Mode UI Only), OnSaveComboConfirmed (gọi ComboManager.SaveComboFromSelection), OnSaveComboDialogClosed (clear buffer + trả Game+UI). Cập nhật VRAM note: +SaveComboDialogRef. |
+| 2.9 | 24/06/2026 — CTV_ComboCard + LoadComboLibrary (C4) | Thêm CTV_ComboCard (TileView, Visibility=Collapsed). LoadComboLibrary cập nhật: cuối hàm Clear List Items + ForEach AddItem. Event Construct Then 5: bind OnComboLibraryChanged + gọi LoadComboLibrary. Test PASS: 19 combo hiển thị đúng. |

@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.4 | **Ngày:** 23/06/2026 | **Actor class, không Tick**
+**Version:** 1.5 | **Ngày:** 24/06/2026 | **Actor class, không Tick**
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -22,6 +22,7 @@ Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, K
 | LCARoots_SaveCombo | Array String | Output LCA roots (C0) |
 | MaterialOverrides_SaveCombo | Array String | Buffer RowName per actor (C0) |
 | ItemRowName_SaveCombo | String | Buffer RowName sau fallback parse MeshPath (Bước 5d, C0) |
+| SaveCombo_BoundingExtent | Vector | Buffer tạm BoundingBoxExtent tính từ CalculateComboBoundingExtent (Bước 5e, C4) |
 
 ## Functions (có local variable)
 ### GetPathToRoot_Combo(InGroupID → Path: Array String)
@@ -33,6 +34,34 @@ PathA = GetPathToRoot(A). Walk up từ B: nếu Contains(PathA, CurrentB) → re
 ### CalculateLCAList_Combo(LeafIDs → Result: Array String)
 Guard Length==0 → return []. SET CurrentLCA = LeafIDs[0]. ForEach từ index 1: FindLCA_TwoGroups(CurrentLCA, leaf) → nếu "" (khác cây) ADD CurrentLCA + SET CurrentLCA=leaf; nếu != "" SET CurrentLCA=lca. Completed: ADD CurrentLCA cuối → return Result.
 
+### CalculateComboBoundingExtent(InActors: Array\<BP_FurnitureActor\> → ReturnVec: Vector)
+Branch(InActors.Length == 0):
+- True → Make Vector(0,0,0) → Return
+
+- False →
+  SET ActorsCopy = InActors
+  SET MinX=999999, MinY=999999, MinZ=999999
+  SET MaxX=-999999, MaxY=-999999, MaxZ=-999999
+
+  ForEach ActorsCopy → Loop Body:
+    Branch(IsValid(actor)):
+      False → dead-end
+      True  →
+        Get Actor Bounds(bOnlyCollidingComponents=False) → Origin, BoxExtent
+        Break Vector(Origin) → OX, OY, OZ
+        Break Vector(BoxExtent) → EX, EY, EZ
+        MinX = Min(float)(MinX, OX-EX)
+        MinY = Min(float)(MinY, OY-EY)
+        MinZ = Min(float)(MinZ, OZ-EZ)
+        MaxX = Max(float)(MaxX, OX+EX)
+        MaxY = Max(float)(MaxY, OY+EY)
+        MaxZ = Max(float)(MaxZ, OZ+EZ)
+
+  Completed →
+    Make Vector(X=(MaxX-MinX)/2, Y=(MaxY-MinY)/2, Z=(MaxZ-MinZ)/2) → Return
+
+---
+
 ## Custom Events
 ### SaveComboFromSelection(SelectedActors, Center, ComboName, Description, FolderPath, Tags)
 **Bước 1:** Guard Length < 2 → dead-end  
@@ -43,6 +72,9 @@ Guard Length==0 → return []. SET CurrentLCA = LeafIDs[0]. ForEach từ index 1
 **Bước 5b:** CLEAR OutputGroups/Items  
 **Bước 5c:** ForEach ComboGroups → resolve ParentToken (via TokenMap, branch "")→ Make FComboGroupData → ADD OutputGroups  
 **Bước 5d:** ForEach SelectedActors → Cast → CLEAR MaterialOverrides_SaveCombo → ForEach MaterialPaths → FindMaterialRowNameByPath → ADD; SET ItemRowName_SaveCombo: Branch RowName.ToString=="None" → True: ParseIntoArray(MeshPath, ".") → Last Index → Get → SET ItemRowName_SaveCombo; False: SET ItemRowName_SaveCombo = RowName gốc; Branch GroupToken → Make FComboItemData(RowName=ItemRowName_SaveCombo) → ADD OutputItems  
+**Bước 5e (C4 — trước Make FComboData):**
+`CalculateComboBoundingExtent(SelectedActors) → ReturnVec → SET SaveCombo_BoundingExtent`
+
 **Bước 5e:** Make FComboData — tất cả fields:
 - ComboID ← SaveCombo_ComboID
 - Name ← param ComboName
@@ -55,7 +87,8 @@ Guard Length==0 → return []. SET CurrentLCA = LeafIDs[0]. ForEach từ index 1
 - Items ← SaveCombo_OutputItems
 - Groups ← SaveCombo_OutputGroups
 - AuthorID = "" (default)
-- Visibility = "Private" (default)  
+- Visibility = "Private" (default)
+- BoundingBoxExtent ← SaveCombo_BoundingExtent  ← C4
 **Bước 6:** GetCombosDir → MakeDirectory → ComboToJson → SaveStringToFile  
 **Bước 7:** (thumbnail — pending C3)  
 **Bước 8:** Broadcast OnComboLibraryChanged  
@@ -281,3 +314,4 @@ Branch(Cmb_SpawnedActors.Length == 0):
 | 22/06/2026 8:56 AM | 1.2 | C0 DONE — thêm class var ItemRowName_SaveCombo, Bước 5d: Branch RowName=="None" → fallback parse MeshPath (ParseIntoArray "."/LastIndex). 3 case A/B/C PASS. |
 | 22/06/2026 | 1.3 | C2 SpawnComboByID DONE — 5 class var mới, 4 functions (F_LoadComboData, F_BuildTokenGUIDMap, F_RegisterComboGroups, F_ApplyMaterialOverrides), Custom Event SpawnComboByID (4 sub-steps). 7/7 test PASS. Group nesting fix: Case A (no groups→wrapper) / Case B (has groups→no wrapper, root groups nhận SourceComboID). |
 | 23/06/2026 | 1.4 | C3a: SaveComboFromSelection mở rộng signature (thêm FolderPath, Tags). Bước 5e: Make FComboData đầy đủ tất cả fields (Category hardcode "MyCombo" tạm, CreatedAt UTC Now, AppVersion 1.0.0, AuthorID/Visibility default, FolderPath+Tags từ param). |
+| 24/06/2026 | 1.5 | C4: thêm CalculateComboBoundingExtent function; class var SaveCombo_BoundingExtent; Bước 5e tính BoundingBoxExtent trước Make FComboData + gán vào field. |

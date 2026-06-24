@@ -1,6 +1,6 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
-**Cập nhật:** 21/06/2026 (Sprint 5 S5.T1 + S5.T2 DONE)
+**Cập nhật:** 24/06/2026 (Sprint 5 C3b ✅ + C4 ⏳ 80% + C8 MERGED)
 
 ---
 
@@ -13,11 +13,11 @@ Sprint 3 — Group cơ bản       ███████████████
 Sprint 4 — Edit + Nested      ████████████████ 8/8  SHIPPED ✅  (+5 bug fix thêm)
 Gate 1                        ████████████████ 3/3  DONE ✅ (16/06)
 Sprint D — Data Layer v2      ████████████████ 9/9  DONE ✅ (17/06)
-Sprint 5 — Combo Mesh         █████░░░░░░░░    5/17 task (T1/T2/C0/C1/C2 ✅; 12 còn lại + 3 task mới)
+Sprint 5 — Combo Mesh         ████████░░░░░    8/17 task (T1/T2/C0/C1/C2/C3a/C3b/C8 ✅; C4 ⏳80%; 8 còn lại)
 Sprint 6 — Polish UX          ░░░░░░░░░░░░░    0/14 task
 Sprint 7 — Material v1.2      ░░░░░░░░░        0/9  task
 
-TỔNG: 55/96 task
+TỔNG: 58/96 task
 ```
 
 ---
@@ -250,13 +250,13 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 ──── **Giai đoạn 1 (~25/06): combo Tạo + Duyệt + Đặt qua nút** ────
 - [ ] **C3** — Save dialog + gộp P4 (GetCombosDir → `%LOCALAPPDATA%/InteriorFOFFTool/Combos`) + móc capture thumbnail sau SaveComboFromSelection thành công
 - [ ] **Thumbnail System C++ (P1)** — `SaveRenderTargetToPNG` + `LoadTexture2DFromFile`; SceneCapture2D theo góc camera → PNG. Gắn vào C3/C4.
-- [ ] **C4** — WBP_ComboCard (thumbnail thật via LoadTexture2DFromFile, badge ×N món, Info/Delete/Spawn)
+- [ ] **C4** ⏳ 80% — WBP_ComboCard + BP_DragDropOperation_ComboCard + BP_ComboGhostActor + M_ComboGhost + CalculateComboAnchor + CTV_ComboCard wiring. Còn: fix B-ghost-offset + test PIE end-to-end.
 - [ ] **C5** — Folder tree tab 🧩 Combo trong WBP_FurnitureInventory
 - [ ] **C6** — Favorite + Recent combo
 - [ ] **C7** — WBP_ComboDetailPopup (thumbnail thật)
 ──── **Giai đoạn 2: đặt/thay combo mượt** ────
 - [ ] **WBP_Toast (K1)** — TIÊN QUYẾT trước C8: text + tự ẩn 2-3s, FText
-- [ ] **C8** — Drag-drop + surface-snap kiểu khối (P2, KHÔNG snap từng món) + fix drop-anchor Lỗ14 + cache relLocation đại diện
+- [x] **C8** — Drag-drop + surface-snap ✅ **MERGED vào C4** (24/06/2026)
 - [ ] **Xoay combo (P3)** — verify gizmo group xoay cả cụm; tùy chọn xoay-lúc-kéo (R/scroll)
 - [ ] **C9** — Replace combo (+ verify K2 EMS SourceComboID + CalculateCenter chung + auto-rollback spawn-fail)
 ──── **Giai đoạn 3: share** ────
@@ -281,3 +281,4 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 21/06/2026 | Sprint 5 T1+T2 DONE. Thêm entry Sprint 5. Phiên kiến trúc v2.0: thay T3-T8 bằng C0-C10, tổng Sprint 5 = 13 task, TỔNG 55/96 |
 | 22/06/2026 | Sprint 5 C0 ✅ DONE — 3 case A/B/C PASS, RowName fallback xác nhận. |
 | 23/06/2026 | Sprint 5 C1+C2 ✅ DONE. Chốt 11 quyết định + 3 điều chỉnh (Sprint5_Plan_v1.1). Thêm task: Fix K3, Thumbnail System C++, WBP_Toast, Xoay combo P3, C11 (trước C10). Chia 3 giai đoạn. TỔNG Sprint 5: 5/17. |
+| 24/06/2026 | C3b ✅ DONE. C4 ⏳ 80%: WBP_ComboCard + ghost + drag-drop flow + CalculateComboAnchor + CTV_ComboCard (19 combo PASS). C8 ✅ MERGED vào C4. Bug OPEN: B-ghost-offset. TỔNG Sprint 5: 8/17 (C3a+C3b+C8 done). |

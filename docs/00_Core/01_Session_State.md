@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 23/06/2026 — Sprint 5 C0+C1+C2 ✅ PASS | 11 quyết định + 3 điều chỉnh chốt 23/06 | C3 kế tiếp | Lighting_Mnger UE5.5.4
+**Phiên bản:** 24/06/2026 — C4/C8 spawn DONE ⏳ 80% | ghost offset BUG OPEN | C3b ✅ | CTV_ComboCard 19 combo PASS
 
 ---
 
@@ -22,6 +22,8 @@
 | C2 | SpawnComboByID — Guard, F_LoadComboData, F_BuildTokenGUIDMap, F_RegisterComboGroups, F_ApplyMaterialOverrides, 4 sub-steps | ✅ DONE (22/06) — 7/7 PASS |
 | C3a | Data layer: AuthorID+Visibility (C++), BP_ComboItemView.FolderPath, LoadComboLibrary wire FolderPath, SaveComboFromSelection mở rộng (FolderPath+Tags+AppVersion), GetExistingFolders+GetAllUsedTags (WBP_FurnitureInventory) | ✅ DONE (23/06) |
 | C3b | WBP_SaveComboDialog: Expose on Spawn (ExistingFolders, TagVocabulary), bIsCreatingNewFolder, dispatcher OnDialogConfirmed/OnDialogCancelled, ValidateComboName, ParseTags, BTN_NewFolder toggle. CB_SaveCombo → OpenSaveComboDialog (inventory đóng băng selection + Set Input Mode UI). OnSaveComboConfirmed → SaveComboFromSelection → OnSaveComboDialogClosed (trả Game+UI). | ✅ DONE (24/06) |
+| C4 | WBP_ComboCard (layout, OnListItemObjectSet, OnDragDetected → ghost), BP_DragDropOperation_ComboCard (ComboID+ComboExtent), BP_ComboGhostActor (InitGhost), M_ComboGhost, CalculateComboAnchor (BP_FurnitureInputManager v2.3), WBP_DragOverlay v1.7 (combo On Drop → ghost location), CTV_ComboCard (WBP_FurnitureInventory v2.9) — 19 combo PASS. **BUG OPEN: ghost offset** (đáy cube chìm sàn). | ⏳ 80% |
+| C8 | Drag-drop + surface-snap → **MERGED vào C4** | ✅ MERGED (24/06) |
 
 **C0:** 3 case A/B/C PASS (22/06). RowName fallback (đồ cũ parse MeshPath) xác nhận OK.
 **C2:** 7/7 PASS (22/06). Group nesting: Case A (no groups→wrapper) / Case B (has groups→no wrapper, root nhận SourceComboID).
@@ -56,6 +58,7 @@
 | B-gizmo | Gizmo ẩn sau undo trong edit mode (pre-existing) | 🟢 Thấp | Known issue, chưa có timeline |
 | B-folder | ✅ FIXED (17/06, D.T6) — Replace folder sai khi group nhiều mesh | — | OnMeshSelected RowName→DT, fallback DAPath save cũ |
 | B-stale-popup | ✅ FIXED (17/06, D.T6) — Popup hiển thị đồ cũ | — | UpdateDetailPopup bound OnSelectionChanged |
+| B-ghost-offset | Ghost preview chìm dưới sàn — đáy cube sunk below HitLocation (BasicShapes/Cube pivot = center). InitGhost Set Relative Location Z=50 chưa fix được. | 🔴 Cao (chặn C4 100%) | Approach B: On Drag Over set = HitLocation + (0,0,Extent.Z). Investigation pending. |
 | Bug-Pagination | ✅ FIXED (17/06, D.T9) — Furniture pagination dừng sớm 1 trang | — | Int to Float trước Ceil ở Next-page check |
 | Bug-Maximize | ✅ FIXED (17/06, D.T9) — BTN_Maximize không nhảy về góc trên-trái | — | Set Position thêm vào Slot VerticalBox_0 |
 | Fix-5.2-async | ✅ FIXED (19/06) — aliasing shared latent khi spawn nhiều actor dồn | — | LoadMeshAsync/LoadMaterialsAsync đặt trong BP_FurnitureActor thay InputManager; NewActorCopy → local var |
@@ -101,8 +104,15 @@
 **WBP_TreeNode v1.1** — RefreshDisplay + bIsActive param → SetBackgroundColor
 **WBP_ChipTag v1.1** — SetHighlight(bIsActive) custom event → SetBackgroundColor
 **WBP_ResizeWindow v1.1** — Fix Bug-Maximize: Set Position thêm vào Slot VerticalBox_0
-**BP_ComboManager v1.3** — SaveComboFromSelection (LCA path) + SpawnComboByID; spawn trong Level BP; nhận data qua param từ InputManager. Functions: GetPathToRoot_Combo, FindLCA_TwoGroups_Combo, CalculateLCAList_Combo, F_LoadComboData, F_BuildTokenGUIDMap, F_RegisterComboGroups, F_ApplyMaterialOverrides. [C0 ✅ DONE + C2 ✅ DONE (22/06)]
-**BP_ComboItemView v1.0** — TẠO MỚI, hiển thị combo card trong library
+**BP_ComboManager v1.5** — SaveComboFromSelection (LCA path) + SpawnComboByID + CalculateComboBoundingExtent; spawn trong Level BP. [C0 ✅ + C2 ✅ + C4 ✅ (22-24/06)]
+**BP_FurnitureInputManager v2.3** — CalculateComboAnchor (center-bottom sàn / center-top trần); CB_SaveCombo_Handler đổi từ CalculateCenter → CalculateComboAnchor
+**BP_ComboItemView v1.1** — BoundingBoxExtent : Vector (C4)
+**WBP_DragOverlay_FurnitureCard v1.7** — PreviewActorRef → Actor; On Drag Over Cast branch; On Drop combo = GetActorLocation(PreviewActorRef) → SpawnComboByID (không trace)
+**WBP_FurnitureInventory v2.9** — CTV_ComboCard (TileView Collapsed); LoadComboLibrary + CTV wiring (24/06)
+**WBP_ComboCard** — TẠO MỚI (24/06): OnListItemObjectSet, OnDragDetected → spawn BP_ComboGhostActor + BP_DragDropOperation_ComboCard
+**BP_DragDropOperation_ComboCard** — TẠO MỚI (24/06): ComboID : String, ComboExtent : Vector
+**BP_ComboGhostActor** — TẠO MỚI (24/06): InitGhost(Extent) — ⚠️ BUG ghost offset OPEN
+**M_ComboGhost** — TẠO MỚI (24/06): Translucent Unlit xanh trong
 **S_GroupData** — ✅ field `SourceComboID : String` (default "") đã thêm (C1 DONE). Group cha cụm combo = ComboID gốc; group user tạo tay = "". Đã add vào snapshot capture/restore.
 **C++ FurnitureToolkit** — FComboData.FolderPath (field mới), FindMaterialRowNameByPath (function mới). Compile xanh. Full rebuild (Binaries/Intermediate xóa + rebuild) ✅
 
@@ -117,7 +127,9 @@
 ## TIẾP THEO
 
 **ĐẦU SESSION MỚI — Ưu tiên:**
-1. ⏳ **C4** — WBP_ComboCard (thumbnail thật via LoadTexture2DFromFile, badge ×N món, Info/Delete/Spawn)
+1. 🐛 **B-ghost-offset** — ghost preview chìm dưới sàn. Thử **Approach B**: On Drag Over set location = `HitLocation + Make Vector(0, 0, Extent.Z)` (Extent lấy từ DragOperation.ComboExtent). Xem [BP_ComboGhostActor.md](../Blueprints/BP_ComboGhostActor.md).
+2. ⏳ **C4 hoàn tất** — sau khi fix ghost: test PIE end-to-end (drag combo card → ghost đúng chỗ → spawn combo đúng vị trí).
+3. ⏳ **C3 còn lại** — GetCombosDir → `%LOCALAPPDATA%\InteriorFOFFTool\Combos` (P4) + capture thumbnail sau SaveComboFromSelection (P1 hook).
 
 **Roadmap v3.3 (chia 3 giai đoạn — scope phình to sau 23/06):**
 ```
@@ -173,3 +185,4 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 22/06/2026 | C0 DONE — 3 case A/B/C PASS. RowName fallback (đồ cũ parse MeshPath) xác nhận OK. BP_ComboManager → v1.2 (thêm ItemRowName_SaveCombo). TIẾP THEO: C2 SpawnComboByID. |
 | 22/06/2026 | C2 SpawnComboByID DONE — 7/7 PASS. BP_ComboManager → v1.3 (5 class var mới, 4 functions: F_LoadComboData/F_BuildTokenGUIDMap/F_RegisterComboGroups/F_ApplyMaterialOverrides, Custom Event SpawnComboByID 4 sub-steps). Group nesting fix: Case A (no groups→wrapper) / Case B (has groups→no wrapper). TIẾP THEO: C3 WBP_SaveComboDialog. |
 | 23/06/2026 | Chốt 11 quyết định + 3 điều chỉnh (Sprint5_Plan_v1.1): P1 thumbnail C++ thật, P2 surface-snap khối, P3 xoay combo, P4 lưu LOCALAPPDATA, P5 dời Sprint7, K1 WBP_Toast, K3 bAddToRecent (planned), K5 export cả 2 hướng. Scope phình to → chia 3 giai đoạn. Roadmap v3.3. Việc kế = C3. |
+| 24/06/2026 | C3b ✅ DONE (WBP_SaveComboDialog + OpenSaveComboDialog flow). C4 ⏳ 80%: WBP_ComboCard + BP_DragDropOperation_ComboCard + BP_ComboGhostActor + M_ComboGhost; CalculateComboAnchor (InputManager v2.3); CTV_ComboCard (Inventory v2.9) — 19 combo PASS. C8 ✅ MERGED vào C4. BUG OPEN: B-ghost-offset (đáy cube chìm sàn, Z=50 chưa fix). |

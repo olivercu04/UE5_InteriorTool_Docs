@@ -1,5 +1,5 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 2.2 | **Cập nhật:** 24/06/2026 — CB_SaveCombo → OpenSaveComboDialog | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 2.3 | **Cập nhật:** 24/06/2026 — CalculateComboAnchor (C4) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 > **HỢP NHẤT TỪ:** base v1.6 + patch v1.7 + patch v1.8 + patch v1.9 (15/06/2026). Đây là bản đầy đủ, thay thế toàn bộ file gốc + patch trong import_raw.
 > **File canonical.** `BP_FurnitureInputManager_MERGED_v1.9.md` là bản duplicate — sẽ bị xóa (cuhoang 17/06/2026). Chỉ đọc file này.
@@ -283,6 +283,39 @@ Completed:
 
 ### CalculateCenter(Actors) → Vector (T4)
 Tính trung bình vị trí các actor → tâm nhóm.
+
+### CalculateComboAnchor(InActors : Array\<BP_FurnitureActor\>) → Vector (C4)
+Anchor điểm đặt combo: center XY + anchorZ. Dùng thay CalculateCenter trong CB_SaveCombo_Handler.
+anchorZ = MinZ khi có đồ Floor/Wall; MaxZ khi ALL đồ là Ceiling.
+**Local vars:** ActorsCopy, SumX, SumY (Float=0), MinZ (Float=99999999), MaxZ (Float=-99999999), Count (Integer=0), bAllCeiling (Boolean=true)
+```
+Entry
+  ▶→ Branch(Length(InActors) == 0)
+       True  ▶→ Make Vector(0,0,0) → Return
+       False ▶→ SET ActorsCopy=InActors, SumX=0, SumY=0, MinZ=99999999, MaxZ=-99999999, Count=0, bAllCeiling=true
+             ▶→ ForEach(ActorsCopy)
+
+Loop Body (actor):
+  Branch(IsValid(actor))
+    False ▶→ dead-end
+    True  ▶→ GetActorLocation → Break Vector → X, Y, Z
+          ▶→ SET SumX = SumX+X
+          ▶→ SET SumY = SumY+Y
+          ▶→ SET MinZ = Min(float)(MinZ, Z)
+          ▶→ SET MaxZ = Max(float)(MaxZ, Z)
+          ▶→ SET Count = Count+1
+          ▶→ GET actor.PlacementSurfaceType → st
+          ▶→ Branch(st == "Ceiling")
+                False ▶→ SET bAllCeiling=false ▶→ dead-end
+                True  ▶→ dead-end
+
+Completed:
+  ▶→ avgX = SumX / ToFloat(Count)
+  ▶→ avgY = SumY / ToFloat(Count)
+  ▶→ Select(Pick=bAllCeiling, True=MaxZ, False=MinZ) ●→ anchorZ
+  ▶→ Make Vector(avgX, avgY, anchorZ) ●→ ReturnVec → Return
+```
+> **Bài học C4:** anchor center-bottom (sàn) / center-top (trần) → relLocation.z ≈ 0 cho đồ đặt trên sàn → spawn đúng chỗ. CalculateCenter (centroid) dùng cho gizmo multi-select + copy/paste — giữ nguyên.
 
 ### SpawnOrUpdatePivot (T4)
 ```
@@ -717,10 +750,10 @@ CB_Replace        → [STUB — TODO, làm tiếp session sau]
 CB_SaveCombo      → CB_SaveCombo_Handler
 ```
 
-### CB_SaveCombo_Handler (C3b — 24/06/2026)
+### CB_SaveCombo_Handler (C3b — 24/06/2026; C4: CalculateComboAnchor)
 ```
 Guard LENGTH(SelectedActors) < 2 → dead-end
-CalculateCenter(SelectedActors) → Center
+CalculateComboAnchor(SelectedActors) → Center  ← C4: đổi từ CalculateCenter để anchor z≈0
 Get All Widgets Of Class(WBP_FurnitureInventory) → Get(0) → IsValid → Cast → InventoryRef
 Branch IsValid(InventoryRef):
   True  → InventoryRef.OpenSaveComboDialog(SelectedActors=SelectedActors, Center=Center)
@@ -874,3 +907,4 @@ Branch LENGTH(Actors) == 1:
 | 1.10 | 17/06/2026 — Sprint D.T6 | Document `StartReplaceMode` + v1.10 update RowName branch. Ghi nhận + XÓA Step 11 Mouse Left Pressed (stale popup bug). |
 | 2.1 | 19/06/2026 — 19h ICT | Load mesh+material async qua BP_FurnitureActor.LoadMeshAsync/LoadMaterialsAsync; NewActorCopy đổi class var → local var; Add Recent Mesh parse MeshPath thay DAPath |
 | 2.2 | 24/06/2026 | C3b: CB_SaveCombo đổi luồng — KHÔNG gọi SaveComboFromSelection trực tiếp nữa. Guard ≥2 đồ → CalculateCenter → Get All Widgets WBP_FurnitureInventory → OpenSaveComboDialog (delegate sang inventory). |
+| 2.3 | 24/06/2026 | C4: Thêm `CalculateComboAnchor` — center XY + anchorZ (MinZ sàn / MaxZ trần). CB_SaveCombo_Handler: đổi `CalculateCenter` → `CalculateComboAnchor`. |

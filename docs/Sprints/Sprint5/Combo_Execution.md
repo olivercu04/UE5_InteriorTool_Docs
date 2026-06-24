@@ -6,7 +6,7 @@
 > replace cả cụm, tích hợp group nhiều cấp, material RowName.
 > Mọi quyết định cũ (D1–D4) bị thay bởi mục QUYẾT ĐỊNH v2.0 bên dưới.
 
-**Phiên bản:** 2.3 | **Ngày:** 23/06/2026 10:30 | Lighting_Mnger UE5.5.4
+**Phiên bản:** 2.4 | **Ngày:** 24/06/2026 | Lighting_Mnger UE5.5.4
 **Tác giả:** Fable 5 (v1.0) + Q&A Sonnet 4.6 (v1.1) + Kiến trúc 21/06 (v2.0) + Review patch (v2.1) + Sprint5_Plan_v1.1 (v2.3)
 **Đối tượng đọc:** model thực thi (Opus/Sonnet) + cuhoang. Tuân thủ `09_AI_Implementation_Rules.md`.
 **Làm TỪNG TASK, mỗi task có test, xong báo cuhoang.**
@@ -173,11 +173,16 @@ struct FComboData {
     UPROPERTY(EditAnywhere, BlueprintReadWrite) FString Category;
     UPROPERTY(EditAnywhere, BlueprintReadWrite) FString CreatedAt;
     UPROPERTY(EditAnywhere, BlueprintReadWrite) FString AppVersion;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) FString FolderPath;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) FString AuthorID;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite) FString Visibility = TEXT("Private");
     UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<FComboItemData>  Items;
     UPROPERTY(EditAnywhere, BlueprintReadWrite) TArray<FComboGroupData> Groups;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combo")
+    FVector BoundingBoxExtent = FVector::ZeroVector;
 };
 ```
-> ⚠️ C1 sẽ thêm `FolderPath` vào FComboData — recompile sau C1.
+> ✅ C1 (FolderPath, AuthorID, Visibility) + C3a (CreatedAt, AppVersion) ĐÃ THÊM. C4 thêm BoundingBoxExtent — recompile ComboTypes.h sau khi update.
 
 **`ComboSerializer.h`:**
 ```cpp
@@ -274,12 +279,15 @@ Vẫn fail: dán nguyên error cho cuhoang, không đoán.
 
 > Format: mục tiêu + I/O + điểm mấu chốt. Chi tiết node sinh khi execute từng task, không ghi sẵn.
 
-**Thứ tự thực thi Sprint 5 (cập nhật 23/06/2026):**
-`C0 → C1 → C2 → Fix K3 → C3 → Thumbnail System C++ → C4 → C5 → C6 → C7 → WBP_Toast → C8 → Xoay combo (P3 verify) → C9 → C11 → C10`
+**Thứ tự thực thi Sprint 5 (cập nhật 24/06/2026):**
+`C0 → C1 → C2 → Fix K3 → C3 → Thumbnail System C++ → C4 [C8 gộp] → C5 → C6 → C7 → WBP_Toast → Xoay combo (P3 verify) → C9 → C11 → C10`
 - C0/C1/C2 ✅ DONE
 - Fix K3 ✅ DONE (bAddToRecent param)
-- Thumbnail System C++ → C4 → ... : G1 (~25/06)
-- WBP_Toast → C8 → P3 → C9 : G2
+- C3a/C3b ✅ DONE
+- C4 ⏳ 80% — OnDragDetected + ghost box + On Drop combo branch xong. Còn lại: CTV_ComboCard setup trong WBP_FurnitureInventory + test PIE
+- C8 ✅ MERGED vào C4 (xem DEVIATIONS trong mục C4)
+- Thumbnail System C++ → C4 (còn 20%) → ... : G1 (~25/06)
+- WBP_Toast → P3 → C9 : G2
 - C11 → C10 : G3
 
 ---
@@ -494,19 +502,160 @@ ForEach MaterialOverrides slot (path):
 
 ---
 
-### C4 — WBP_ComboCard
-**Mục tiêu:** Card combo trong tile view, layout riêng với badge số món.
-**Interface:** IUserObjectListEntry. Variables: `ComboItem (BP_ComboItemView)`, `InventoryRef`.
-**Điểm mấu chốt:**
-- Thumbnail: `LoadTexture2DFromFile(ThumbPath)` → set lên Image widget (xem "Thumbnail System C++" ở trên). ⚠️ Xác nhận node set Image từ UTexture2D runtime tại C4 (có thể là `Set Brush from Texture` — cuhoang verify tên node).
-- BTN_SpawnCombo "📥 Đặt vào scene": gọi C2 tại điểm giữa màn hình (fallback khi không drag).
-- BTN_Info ℹ: mở WBP_ComboDetailPopup (C7).
-- BTN_Delete 🗑: xóa file json + thumb → LoadComboLibrary → refresh tab.
-- Badge "×N món" hiển thị ItemCount.
-- `CTV_ComboCard` riêng (KHÔNG tái dùng CTV_FurnitureCard) — lý do xem DEVIATIONS.md 19/06 [SCOPE].
-- Card **KHÔNG hiển thị tags** (giữ gọn: thumbnail + tên + badge số món). Tags chỉ ở detail popup C7.
+### C4 — WBP_ComboCard + Drag-drop combo (gộp C8)
 
-**TEST C4:** 2 card đúng tên + số món. Xóa 1 → còn 1, file biến. Nút đặt → spawn đúng vị trí.
+> **DEVIATIONS (24/06/2026):**
+> | Ngày | Điều chỉnh | Plan gốc | Thực tế | Lý do |
+> |---|---|---|---|---|
+> | 24/06/2026 | C4+C8 gộp | Plan tách C4/C8 riêng | Gộp C8 vào C4 | BTN_SpawnCombo = throwaway code; drag-drop là UX chính. Tiết kiệm thời gian, không phá plan |
+> | 24/06/2026 | BoundingBoxExtent | Combo cũ = ZeroVector | Ghost tàng hình với combo cũ | Migration Phase B: SchemaVersion + re-save khi spawn lần đầu |
+> | 24/06/2026 | WBP_DragOverlay branch | Tạo WBP_ComboDragOverlay riêng | Branch trong WBP_DragOverlay existing | Ít file hơn, tái dùng On Drag Over surface trace |
+
+**Mục tiêu:** Card combo trong tile view với drag-drop ghost + spawn tại cursor.
+
+---
+
+#### WBP_ComboCard — Layout (duplicate từ WBP_FurnitureCard, v1.0)
+```
+Canvas Panel
+├── Overlay
+│   ├── Image_Thumbnail (fill, tạm xám)
+│   ├── VB_Info (anchor bottom, fill ngang)
+│   │   ├── TextBlock_ComboName (font 13, AutoWrap=True)
+│   │   └── TextBlock_Badge (font 11)
+│   └── HB_Buttons (anchor top-right)
+│       ├── BTN_DeleteCombo
+│       ├── BTN_InforCombo
+│       ├── BTN_ChangeCombo
+│       └── BTN_FavoriteCombo
+├── LazyImage_ThumbCombo
+└── Overlay
+    ├── LazyImage_favorite
+    └── BTN_FavoriteCombo
+```
+
+**Variables:**
+```
+ComboItem      : BP_ComboItemView (Object Ref)
+PreviewActor   : Actor (Object Ref)  ← generic Actor, KHÔNG phải BP_FurnitureActor
+DragOverlayRef : WBP_DragOverlay (Object Ref)
+```
+**Interface:** IUserObjectListEntry
+
+---
+
+#### OnListItemObjectSet
+```
+Event OnListItemObjectSet (List Item Object)
+  ▶→ Cast To BP_ComboItemView
+        CastFailed  ▶→ Print "ComboCard: Cast fail" ▶→ dead-end
+        CastSuccess ▶→ SET ComboItem (output pin từ cast node)
+                    ▶→ Branch(IsValid(ComboItem))
+                          False ▶→ dead-end
+                          True
+                            ▶→ SET TextBlock_ComboName.Text = To Text(ComboItem.ComboName)
+                            ▶→ SET TextBlock_Badge.Text = Format Text("×{Count} món",
+                                                           Count=ComboItem.ItemCount)
+```
+
+#### Event Destruct
+```
+▶→ SET ComboItem = None
+▶→ SET PreviewActor = None
+▶→ SET DragOverlayRef = None
+```
+
+---
+
+#### OnDragDetected
+```
+Entry
+  ▶→ Create Widget(WBP_DragVisual) → SET Visibility=HitTestInvisible
+  ▶→ Create BP_DragDropOperation_ComboCard
+        DefaultDragVisual = WBP_DragVisual output
+        Pivot = MouseDown
+  ▶→ SET ComboID (target=Operation) = GET ComboItem.ComboID
+  ▶→ SET ComboExtent (target=Operation) = GET ComboItem.BoundingBoxExtent
+  ▶→ Get All Actors Of Class(BP_FurnitureInputManager) → GET[0]
+        → GET GizmoControllerRef → DeactivateGizmo
+  ▶→ Spawn Actor(BP_ComboGhostActor, Location=0,0,0)
+  ▶→ Call InitGhost(Target=SpawnActor output, Extent=ComboItem.BoundingBoxExtent)
+  ▶→ SET PreviewActor = SpawnActor output
+  ▶→ Create Widget(WBP_DragOverlay) → Add to Viewport
+  ▶→ SET DragOverlayRef = WBP_DragOverlay output
+  ▶→ SET WBP_DragOverlay.PreviewActorRef = PreviewActor
+  ▶→ Return Node (Operation = BP_DragDropOperation_ComboCard output)
+```
+
+#### On Drag Cancelled
+```
+▶→ IsValid(DragOverlayRef) → Remove From Parent → SET None
+▶→ IsValid(PreviewActor)   → Destroy Actor      → SET None
+```
+
+---
+
+#### WBP_FurnitureInventory — LoadComboLibrary (thêm 1 dây — C4)
+Sau khi gán các field khác của ComboItemView, thêm:
+```
+GET FComboData.BoundingBoxExtent ●→ SET ComboItemView.BoundingBoxExtent
+```
+
+---
+
+#### BP_DragDropOperation_ComboCard — class mới
+Parent: DragDropOperation
+Variables:
+```
+ComboID     : String
+ComboExtent : Vector (default 0,0,0)
+```
+
+---
+
+#### BP_ComboGhostActor — class mới
+Parent: Actor
+Components:
+```
+GhostMesh : Static Mesh Component
+  Static Mesh = /Engine/BasicShapes/Cube
+  Collision   = NoCollision
+  Material[0] = M_ComboGhost
+```
+
+Custom Event `InitGhost(Extent : Vector)`:
+```
+▶→ Set Actor Scale 3D(Target=self, NewScale3D = Extent / 50.0)
+```
+> ⚠️ Cube BasicShape = 100×100×100 unit → Scale = Extent/50 → actor size = Extent×2 = full bounding box. BoundingBoxExtent=ZeroVector (combo cũ) → ghost tàng hình, không crash.
+
+---
+
+#### M_ComboGhost — Material mới
+```
+Blend Mode    = Translucent
+Shading Model = Unlit
+Constant3Vector(0.2, 0.6, 1.0) ●→ Emissive Color
+Constant(0.3)                   ●→ Opacity
+```
+
+---
+
+#### WBP_DragOverlay v1.7 — Thay đổi đi kèm C4
+Xem [WBP_DragOverlay_FurnitureCard.md](../../Widgets/WBP_DragOverlay_FurnitureCard.md) v1.7:
+- `PreviewActorRef` đổi từ `BP_FurnitureActor` → `Actor` (tương thích BP_ComboGhostActor)
+- On Drag Over: Cast To BP_FurnitureActor sau Set Actor Location — combo ghost skip PlacementSurfaceType
+- On Drop: thêm CastFailed → Cast To BP_DragDropOperation_ComboCard → `GetActorLocation(PreviewActorRef)` → SpawnComboByID (KHÔNG trace lại — ghost đã ở đúng chỗ)
+
+---
+
+**TEST C4:**
+- OnListItemObjectSet: 2 card hiện đúng tên + số món.
+- Kéo combo card → ghost box xanh (BP_ComboGhostActor) xuất hiện đúng kích thước.
+- Thả lên sàn → combo spawn tại cursor (đúng Out Hit.Location).
+- Kéo FurnitureCard vẫn hoạt động bình thường (regression).
+- Combo BoundingBoxExtent=ZeroVector (combo cũ) → ghost tàng hình (không crash).
+- On Drag Cancelled: ghost + overlay destroy đúng.
 → **Báo cuhoang.**
 
 ---
@@ -569,8 +718,11 @@ ForEach MaterialOverrides slot (path):
 
 ---
 
-### C8 — Drag-drop combo + Surface-snap (P2) + Fix drop-anchor (Lỗ14)
-**Mục tiêu:** Kéo card combo ra scene, ghost 1 mesh đại diện, thả → spawn tại cursor đúng chỗ (quyết định E + điều chỉnh #2).
+### C8 — ✅ MERGED VÀO C4 (24/06/2026)
+> Toàn bộ drag-drop combo (BP_DragDropOperation_ComboCard, BP_ComboGhostActor, M_ComboGhost, WBP_DragOverlay On Drop routing) đã thực hiện trong C4. Xem mục C4 ở trên.
+> Spec gốc giữ lại bên dưới để tham chiếu — không thực thi lại.
+
+~~**Mục tiêu:** Kéo card combo ra scene, ghost 1 mesh đại diện, thả → spawn tại cursor đúng chỗ (quyết định E + điều chỉnh #2).~~
 **TIÊN QUYẾT:** WBP_Toast phải DONE trước C8 (toast "Spawn thất bại" dùng ở đây).
 **Điểm mấu chốt:**
 - **DragDropOperation_ComboCard MỚI** (KHÔNG extend FurnitureCard). Chứa:
@@ -754,3 +906,4 @@ Không sửa hệ thống undo/material.
 | 2.1 | 21/06/2026 | Patch review kiến trúc: C0→LCA (tránh lưu thừa cả room), C1 ghi nhận ItemView+LoadComboLibrary đã xong+persist note, C2→3-phase bắt buộc, C3 folder-create mode, C5 BuildFolderTree nguồn mới, C8 DragOp_ComboCard+On Drop routing+ghost decision, C9 sequence+capture-after+rollback toast, BACKLOG deferred v1, M3 cập nhật |
 | 2.2 | 22/06/2026 | Phiên bàn kế hoạch C3: tách C3a (data)+C3b (dialog UI); folder dropdown (GetExistingFolders)+nút tạo mới thay nhập text tự do; tags có data layer (chuẩn hóa+GetAllUsedTags), UI filter/autocomplete defer; thêm field C++ AuthorID+Visibility; bỏ ô Category khỏi dialog save (→Phase B Publish); thêm C11 export/import đặt trước C10; M14; đóng băng selection+khóa input dialog; mở dialog qua inventory; nhóm "Chưa phân loại"; context Phase B (mô hình lai/chỗ lưu/taxonomy) |
 | 2.3 | 23/06/2026 10:30 | Sprint5_Plan_v1.1: gộp P4 vào C3a (GetCombosDir → %LOCALAPPDATA%); P1 Thumbnail System C++ (SaveRenderTargetToPNG + LoadTexture2DFromFile, node ⏳ chờ xác nhận C4); Fix K3 (bAddToRecent param + SpawnComboByID False); WBP_Toast (K1 tiên quyết C8); C8 surface-snap kiểu khối + fix Lỗ14 (SpawnLocation=DropPoint−RelLocation_Representative) + DragDropOperation_ComboCard mới; Xoay combo P3 (verify gizmo group + tùy chọn xoay-kéo); C9 thêm EMS verify SourceComboID đầu task + CalculateCenter hàm chung + spawn-fail → TỰ ĐỘNG RestoreSnapshot; C11 CẢ 2 hướng graceful (dialog TRƯỚC, auto-fallback); C10 thêm K4 nested-3 + P5 material-slot check + VRAM stat rhi; thứ tự thực thi G1/G2/G3; P5 material gác Sprint 7 ghi DEVIATIONS |
+| 2.4 | 24/06/2026 | C4 gộp C8: WBP_ComboCard đầy đủ spec (layout/vars/OnListItemObjectSet/EventDestruct/OnDragDetected/OnDragCancelled); BP_DragDropOperation_ComboCard + BP_ComboGhostActor + M_ComboGhost; FComboData thêm FolderPath/AuthorID/Visibility (C1/C3a retroactive) + BoundingBoxExtent (C4); LoadComboLibrary thêm BoundingBoxExtent; WBP_DragOverlay v1.7 (PreviewActorRef→Actor, On Drag Over Cast branch, On Drop combo routing); C8 MERGED; DEVIATIONS ghi inline C4; thứ tự thực thi cập nhật 24/06 |

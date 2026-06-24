@@ -1,6 +1,6 @@
 # WBP_FurnitureCard (+ WBP_DragOverlay) — Drag & Drop + Replace Mesh
 **HỢP NHẤT TỪ 3 file:** v1.3 base (25/05) → v1.4 base (10/06) + Blueprint_Logic GroupID fix (12/06) + v1.5_patch (15/06)
-**Phiên bản:** 1.6 | **Cập nhật:** 17/06/2026 — Sprint D.T6
+**Phiên bản:** 1.7 | **Cập nhật:** 24/06/2026 — Sprint 5 C4/C8
 
 > **v1.6 (Sprint D.T6):** Bỏ `FurnitureDA` khỏi WBP_FurnitureCard (biến xóa). F_ExecuteReplace: dùng `RowData` (Get DataTable Row từ `CardRowName`) thay `FurnitureDA.*`. On Drop WBP_DragOverlay: `PendingFurnitureDA` → `PendingRowName : Name`; SET `PreviewActorRef.RowName = PendingRowName`. Button_InforItem → `OnCardInfoClicked(CardRowName)` thay FurnitureDA. AddRecentMesh dùng CardRowName.
 
@@ -172,7 +172,7 @@ Widget trong suốt phủ toàn màn hình
 
 ## Variables
 ```
-PreviewActorRef : BP_FurnitureActor
+PreviewActorRef : Actor              ← v1.7: đổi từ BP_FurnitureActor (tương thích BP_ComboGhostActor)
 PendingRowName  : Name              ← v1.6 Sprint D (thay PendingFurnitureDA đã xóa)
 ```
 
@@ -187,52 +187,69 @@ PendingRowName  : Name              ← v1.6 Sprint D (thay PendingFurnitureDA �
 2. Branch ReturnValue == True AND IsValid(PreviewActorRef):
    Set Actor Location = Hit Location
 
-   SURFACE ROTATION + PlacementSurfaceType (v1.2):
-   Break Normal → Normal.Z
-   Normal.Z < -0.5 (ceiling) → Rotator 0,0,0
-                               SET PlacementSurfaceType = "Ceiling"
-   Normal.Z > 0.5 (floor)   → Rotator 0,0,0
-                               SET PlacementSurfaceType = "Floor"
-   Wall → Make Rot from X(Normal) → Break → Make Rotator(Roll, Pitch, Yaw-90)
-          SET PlacementSurfaceType = "Wall"
+   Cast To BP_FurnitureActor (Object = PreviewActorRef):  ← v1.7
+     CastFailed  → dead-end  ← combo ghost, không cần PlacementSurfaceType
+     CastSuccess →
+       SURFACE ROTATION + PlacementSurfaceType (v1.2):
+       Break Normal → Normal.Z
+       Normal.Z < -0.5 (ceiling) → Rotator 0,0,0
+                                   SET (As BP_FurnitureActor).PlacementSurfaceType = "Ceiling"
+       Normal.Z > 0.5 (floor)   → Rotator 0,0,0
+                                   SET (As BP_FurnitureActor).PlacementSurfaceType = "Floor"
+       Wall → Make Rot from X(Normal) → Break → Make Rotator(Roll, Pitch, Yaw-90)
+              SET (As BP_FurnitureActor).PlacementSurfaceType = "Wall"
 ```
 
 ---
 
-## On Drop — v1.6: Sprint D.T6 (RowName thay FurnitureDA)
+## On Drop — v1.7: Sprint 5 C4/C8 (thêm combo branch)
 
 **Exec flow đầy đủ:**
 ```
 Entry
 → Get All Actors Of Class(BP_FurnitureInputManager) → GET[0] → GizmoControllerRef → DeactivateGizmo
-→ Cast Operation → BP_DragDropOperation_FurnitureCard → GET RowName → SET PendingRowName
-→ Line Trace Single (screen pos, ignore PreviewActorRef)
-→ Branch(Hit):
-    True →
-      Cast PreviewActorRef → BP_FurnitureActor
-      Get Data Table Row(DT_FurnitureCatalog, PendingRowName) → Row Found → Break S_FurnitureData
-        → Static Mesh ●→ Load Asset Blocking .Asset → Return Value (StaticMesh)
-      → GET FurnitureMesh(PreviewActorRef) → Set Static Mesh
-      → SET MeshPath = (Object Path of Return Value)
-      → SET RowName = PendingRowName    ← v1.6: thay DAPath
-      → ADD "FurnitureSpawned" (Tags)
+→ Cast To BP_DragDropOperation_FurnitureCard (Object = Operation):
+    CastSuccess → GET RowName → SET PendingRowName
+      → Line Trace Single (screen pos, ignore PreviewActorRef)
+      → Branch(Hit):
+          True →
+            Cast PreviewActorRef → BP_FurnitureActor
+            Get Data Table Row(DT_FurnitureCatalog, PendingRowName) → Row Found → Break S_FurnitureData
+              → Static Mesh ●→ Load Asset Blocking .Asset → Return Value (StaticMesh)
+            → GET FurnitureMesh(PreviewActorRef) → Set Static Mesh
+            → SET MeshPath = (Object Path of Return Value)
+            → SET RowName = PendingRowName
+            → ADD "FurnitureSpawned" (Tags)
 
-      ← [v1.5 F4 INSERT — 15/06/2026]:
-        Get All Actors Of Class(InputManager) → GET[0] → Cast → InputRef
-        InputRef.GetCurrentEditScope() → Scope
-        Branch(Scope != ""):
-          True  → SET PreviewActorRef.GroupID = Scope → [merge]
-          False →                                        [merge]   ← PHẢI merge — không dead-end
-        [merge] →
+            ← [v1.5 F4 INSERT — 15/06/2026]:
+              Get All Actors Of Class(InputManager) → GET[0] → Cast → InputRef
+              InputRef.GetCurrentEditScope() → Scope
+              Branch(Scope != ""):
+                True  → SET PreviewActorRef.GroupID = Scope → [merge]
+                False →                                        [merge]   ← PHẢI merge — không dead-end
+              [merge] →
 
-      → Get All Actors Of Class(BP_UndoManager) → GET[0] → CaptureSnapshot("Spawn")
-      → Get All Actors Of Class(BP_FurnitureUserPrefsManager) → GET[0] → AddRecentMesh(PendingRowName)
-      → Remove From Parent
-      → Return(true)
-    False → dead-end
+            → Get All Actors Of Class(BP_UndoManager) → GET[0] → CaptureSnapshot("Spawn")
+            → Get All Actors Of Class(BP_FurnitureUserPrefsManager) → GET[0] → AddRecentMesh(PendingRowName)
+            → Remove From Parent
+            → Return(true)
+          False → dead-end
+    CastFailed  →  ← v1.7: combo branch
+      Cast To BP_DragDropOperation_ComboCard (Object = Operation):
+        CastFailed  → Return(false)
+        CastSuccess →
+          GET As BP_DragDropOperation_ComboCard → GET ComboID
+          GetActorLocation(PreviewActorRef) ●→ SpawnLocation
+          ← ⚠️ KHÔNG trace lại. On Drag Over đã Set Actor Location lên ghost mỗi frame
+          ←   → ghost đúng chỗ rồi → đọc location trực tiếp, 1 đường thẳng tới Return.
+          Get All Actors Of Class(BP_ComboManager) → GET[0] → IsValid → Cast
+          SpawnComboByID(ComboID, SpawnLocation)
+          IsValid(PreviewActorRef) → Destroy Actor → SET PreviewActorRef=None
+          Remove From Parent
+          Return(true)
 ```
 
-> ⚠️ **L2 CRITICAL:** Nhánh False của Branch(Scope != "") PHẢI merge về CaptureSnapshot — KHÔNG dead-end. False dead-end → On Drop không reach Return Node → trả false → UMG gọi On Drag Cancelled → Destroy PreviewActorRef → mesh biến mất (bug N5 trả giá 15/06).
+> ⚠️ **L2 CRITICAL:** Nhánh False của Branch(Scope != "") trong furniture branch PHẢI merge về CaptureSnapshot — KHÔNG dead-end. False dead-end → On Drop không reach Return Node → trả false → UMG gọi On Drag Cancelled → Destroy PreviewActorRef → mesh biến mất (bug N5 trả giá 15/06).
 
 ---
 
@@ -257,3 +274,4 @@ Entry
 | 1.4b | 12/06/2026 | **BugFix GroupID:** F_ExecuteReplace: GET OldActor.GroupID → SET NewActor.GroupID TRƯỚC Destroy OldActor (từ Blueprint_Logic v1.4 BugFix). |
 | 1.5 | 15/06/2026 — 20:30 ICT | **F4: On Drop auto-join edit scope.** Sau ADD "FurnitureSpawned": get InputManager → GetCurrentEditScope → Branch(Scope!="") → SET PreviewActorRef.GroupID. Merge cả 2 nhánh về CaptureSnapshot (L2: False dead-end gây mesh biến mất — bug N5). |
 | 1.6 | 17/06/2026 — Sprint D.T6 | Bỏ FurnitureDA. WBP_FurnitureCard: var → CardRowName; OnListItemObjectSet cast BP_FurnitureItemView + DT lookup ThumbnailSoft; UpdateFavTint/Button_Favorite dùng CardRowName; Button_InforItem → OnCardInfoClicked(CardRowName); On Drag Detected SET Operation.RowName. F_ExecuteReplace: RowData từ DT, load RowData.Mesh, SET NewActor.RowName, AddRecentMesh(CardRowName). WBP_DragOverlay: PendingFurnitureDA→PendingRowName; On Drop DT lookup RowData, SET PreviewActor.RowName. |
+| 1.7 | 24/06/2026 — Sprint 5 C4/C8 | WBP_DragOverlay: PreviewActorRef BP_FurnitureActor → Actor generic (tương thích BP_ComboGhostActor); On Drag Over thêm Cast To BP_FurnitureActor sau Set Actor Location (combo ghost skip PlacementSurfaceType); On Drop cấu trúc lại — Cast FurnitureCard CastSuccess giữ logic cũ, CastFailed → Cast ComboCard → SpawnComboByID(Out Hit.Location) + destroy ghost + Remove From Parent. |

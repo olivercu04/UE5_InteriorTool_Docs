@@ -203,6 +203,17 @@
 
 ---
 
+## SPRINT 5 — 24/06/2026 — C4/C8 Merge + Kiến trúc On Drop
+
+| Ngày | Task | Plan nói | Thực tế làm | Lý do | Loại |
+|------|------|----------|-------------|-------|------|
+| 24/06 | C8 | Task riêng Giai đoạn 2: drag-drop + surface-snap + fix Lỗ14 | **MERGED vào C4** — OnDragDetected + ghost box + On Drop implement ngay trong C4 | Drag-drop là prerequisite để test C4; surface-snap logic (ghost follows cursor) đơn giản hơn dự kiến; không cần delay sang Giai đoạn 2 | [SCOPE] |
+| 24/06 | On Drop combo | Plan: combo branch dùng Line Trace (screen pos → deproject → trace → bBlockingHit → HitLocation) | **Thực tế: KHÔNG trace**. On Drag Over đã `Set Actor Location` lên ghost mỗi frame → ghost ở đúng chỗ khi On Drop fire. On Drop chỉ cần `GetActorLocation(PreviewActorRef)` → SpawnComboByID — 1 đường thẳng | Plan copy nhầm pattern "trace trong On Drop" nhưng furniture On Drop CŨNG không trace (location đã set qua Drag Over). Bắt kịp từ Opus delta session. | [PLAN-SAI] |
+| 24/06 | CalculateComboAnchor | Plan: CB_SaveCombo_Handler dùng CalculateCenter → Center làm SpawnLocation anchor | Tạo hàm mới **CalculateComboAnchor** (center XY + MinZ khi sàn / MaxZ khi all-ceiling). CalculateCenter giữ nguyên cho gizmo + copy/paste | CalculateCenter cho floor items → centroid z ≈ chiều cao / 2 → combo spawn nổi giữa không khí. Anchor bottom = z ≈ 0 → spawn đúng sàn | [BUG→FIX] |
+| 24/06 | Ghost offset | InitGhost: `Set Relative Location Z=50` sau `Set Actor Scale 3D` để bù đáy cube lên sàn | **BUG OPEN**: ghost preview vẫn chìm — đáy cube dưới HitLocation. Z=50 chưa đủ / thứ tự node sai | Approach B (On Drag Over: set = HitLocation + (0,0,Extent.Z)) chưa thử — investigation pending | [BUG] |
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -254,3 +265,4 @@
 | 19/06/2026 | Thêm section "SPRINT D — 19/06/2026": 4 dòng VRAM Fixes + Async Load. Thêm dòng S5.T2 BP_ComboManager tách riêng khỏi InputManager |
 | 21/06/2026 | Thêm section "SPRINT 5 — 21/06/2026": 4 dòng kiến trúc Combo v2.0 (C0 nested fix, drag-drop→cursor, materialOverrides→RowName, SourceComboID group cha) + 1 dòng patch review v2.1 |
 | 23/06/2026 | Thêm section "SPRINT 5 — 23/06/2026": 9 dòng quyết định Sprint5_Plan_v1.1 (P1 thumbnail C++ thật, P2 surface-snap khối, P3 xoay combo, P5 dời Sprint7, K1 WBP_Toast, K3 bAddToRecent, K5 cả 2 hướng export, P4 lưu LOCALAPPDATA, scope chia 3 giai đoạn) |
+| 24/06/2026 | Thêm section "SPRINT 5 — 24/06/2026": C8 MERGED vào C4; On Drop combo KHÔNG trace (ghost location); CalculateComboAnchor fix anchor z; ghost offset BUG OPEN |
