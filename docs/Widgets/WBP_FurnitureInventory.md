@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.0 | **Cập nhật:** 25/06/2026 — C5.0 Combo Folder Tree + Filter (tree hiển thị đúng, fix card render pending)
+**Phiên bản:** 3.1 | **Cập nhật:** 25/06/2026 — C5.0 Tree 2 cấp + Chip Nav (Round 3 delta)
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -524,8 +524,8 @@ Get Player Controller → Set Input Mode Game And UI
 
 ## C5.0 — Combo Folder Tree + Filter
 
-> **Trạng thái 25/06/2026:** Tree hiển thị đúng (All / Chưa phân loại / folder cấp 1 phẳng).
-> Filter logic xong. **ĐANG FIX:** CTV_ComboCard không render card — đang thử Set List Items thay Add Item (deviation D3).
+> **Trạng thái 25/06/2026:** Tree 2 cấp + chip cấp 3+ đã implement (delta Round 3). Filter logic xong.
+> **ĐANG FIX:** CTV_ComboCard không render card — đang thử Set List Items thay Add Item (deviation D3).
 
 ### AddFolderPathToTree(FullPath : String) — Function
 Tách path đa cấp → add cặp cha→con vào `ComboFolderTree`.
@@ -564,7 +564,7 @@ ForEach Completed: [dead-end]
 ```
 
 ### PopulateComboTreeColumn() — Function
-Dựng WBP_TreeNode vào `VerticalBox_44` (cột tree CHUNG với furniture/material).
+Dựng WBP_TreeNode vào `VerticalBox_44` (cột tree CHUNG với furniture/material). Render 2 cấp: cấp 1 (IndentLevel=0) + cấp 2 (IndentLevel=1, con của cấp 1 lồng ngay bên dưới).
 ```
 Clear Children(VerticalBox_44)
 
@@ -585,19 +585,31 @@ Branch(bHasUncategorized)
            Add Child | Bind OnNodeSelected → OnComboTreeNodeClicked
   False → [dead-end]
 
-// Folder cấp 1 từ Map[""]
-Map Find(ComboFolderTree, Key="") → Value, bFound
+// Cấp 1 từ Map[""] — IndentLevel = 0
+Map Find(ComboFolderTree, Key="") → Lvl1CSV, bFound
 Branch(bFound)
   False → [dead-end]
-  True  → Parse Into Array(Value, ",") → FolderNames
-           ForEach FolderNames (element):
-             Create Widget(WBP_TreeNode) → FolderNode
-             SET FolderNode.FolderPath = element | FolderName = element | IndentLevel = 1
-             RefreshDisplay(bIsActive = (CurrentComboFolderPath == element))
-             Add Child | Bind OnNodeSelected → OnComboTreeNodeClicked
-           Completed: [dead-end]
+  True  → Parse Into Array(Lvl1CSV, ",") → Lvl1Names
+           ForEach Lvl1Names (lvl1):
+             Create Widget(WBP_TreeNode) → Node1
+             SET Node1.FolderPath = lvl1 | FolderName = lvl1 | IndentLevel = 0
+             RefreshDisplay(bIsActive = (CurrentComboFolderPath == lvl1))
+             Add Child(VerticalBox_44, Node1) | Bind OnNodeSelected → OnComboTreeNodeClicked
+             // Cấp 2: con của lvl1 — IndentLevel = 1
+             Map Find(ComboFolderTree, lvl1) → Lvl2CSV, bFound2
+             Branch(bFound2)
+               False → [dead-end]
+               True  → Parse Into Array(Lvl2CSV, ",") → Lvl2Names
+                        ForEach Lvl2Names (lvl2):
+                          FullPath2 = lvl1 + "/" + lvl2
+                          Create Widget(WBP_TreeNode) → Node2
+                          SET Node2.FolderPath = FullPath2 | FolderName = lvl2 | IndentLevel = 1
+                          RefreshDisplay(bIsActive = (CurrentComboFolderPath == FullPath2))
+                          Add Child(VerticalBox_44, Node2) | Bind OnNodeSelected → OnComboTreeNodeClicked
+                        Completed: [dead-end]
+           ForEach Lvl1Names Completed: [dead-end]
 ```
-> Tree TỐI GIẢN: chỉ render cấp 1 phẳng + filter cha-hiện-con (nested folder vẫn lọc đúng qua StartsWith). Expand cấp 2/3 trong tree = polish C5 sau.
+> **v3.1 (25/06 Round 3):** 2 cấp đầy đủ. Cấp 1 = IndentLevel 0; cấp 2 = IndentLevel 1 (lồng trong tree). Cấp 3+ = WBP_ChipTag trong VB_ChipTagArea qua OnComboChipTagClicked.
 
 ### FilterComboByFolder(FolderPath : String) — Function
 ```
@@ -635,10 +647,62 @@ Branch(CurrentComboFolderPath == "__ALL__")
 > Check `__ALL__` và `""` riêng vì 2 sentinel KHÔNG nằm trong ComboFolderTree (Map Contains = False → sẽ nhầm về __ALL__).
 
 ### OnComboTreeNodeClicked(SelectedPath : String, IndentLevel : Integer) — Custom Event
-Bound từ mọi WBP_TreeNode trong PopulateComboTreeColumn.
+Bound từ mọi WBP_TreeNode trong PopulateComboTreeColumn. Branch theo IndentLevel.
 ```
-FilterComboByFolder(FolderPath = SelectedPath)
-PopulateComboTreeColumn   ← SAU Filter → CurrentComboFolderPath đúng → highlight đúng
+SET CurrentComboFolderPath = SelectedPath
+Branch(IndentLevel == 0):
+  True  → ClearChildren(VB_ChipTagArea)
+           FilterComboByFolder(SelectedPath)
+           PopulateComboTreeColumn()      ← repopulate → highlight đúng, không sinh chip
+  False → // IndentLevel == 1 (cấp 2): generate chip cho cấp 3 con
+           ClearChildren(VB_ChipTagArea)
+           FilterComboByFolder(SelectedPath)
+           Map Find(ComboFolderTree, SelectedPath) → ChildCSV, bFound
+           Branch(bFound):
+             False → [merge → PopulateComboTreeColumn()]   ← leaf folder cấp 2, không có con
+             True  → Create Widget(WBP_ChipRow) → NewRow
+                      SET NewRow.RowIndentLevel = 2
+                      Parse Into Array(ChildCSV, ",") → ChildNames
+                      ForEach ChildNames (element):
+                        FullChild = SelectedPath + "/" + element
+                        Create Widget(WBP_ChipTag) → NewChip
+                        SET NewChip.FolderPath_ChipTag = FullChild
+                        SET NewChip.FolderName_ChipTag = element
+                        SET NewChip.IndentLevel_ChipTag = 2
+                        Bind OnChipSelected(NewChip) → OnComboChipTagClicked(self)
+                        AddChild(NewRow.HBox_ChipRow, NewChip)
+                      Completed: AddChild(VB_ChipTagArea, NewRow)
+           PopulateComboTreeColumn()
+```
+
+### OnComboChipTagClicked(SelectedPath : String, IndentLevel : Integer) — Custom Event
+Clone của `OnChipTagClicked` (furniture). Bound từ WBP_ChipTag trong VB_ChipTagArea (combo tree).
+```
+SET CurrentComboFolderPath = SelectedPath
+
+// TRIM: xóa chip row sâu hơn vị trí click (từ dưới lên)
+GetChildrenCount(VB_ChipTagArea) → RowCount
+RowsToRemove = RowCount - (IndentLevel - 1) - 1   ← số row cần xóa (≥0)
+ForLoop (Index 0 to RowsToRemove-1):
+  RemoveChildAt(VB_ChipTagArea, RowCount - 1 - Index)  ← xóa từ dưới lên
+Completed:
+  FilterComboByFolder(SelectedPath)
+  Map Find(ComboFolderTree, SelectedPath) → ChildCSV, bFound
+  Branch(bFound):
+    False → [merge → PopulateComboTreeColumn()]   ← leaf folder, không gen chip mới
+    True  → Create Widget(WBP_ChipRow) → NewRow
+             SET NewRow.RowIndentLevel = IndentLevel
+             Parse Into Array(ChildCSV, ",") → ChildNames
+             ForEach ChildNames (element):
+               FullChild = SelectedPath + "/" + element
+               Create Widget(WBP_ChipTag) → NewChip
+               SET NewChip.FolderPath_ChipTag = FullChild
+               SET NewChip.FolderName_ChipTag = element
+               SET NewChip.IndentLevel_ChipTag = IndentLevel + 1
+               Bind OnChipSelected(NewChip) → OnComboChipTagClicked(self)
+               AddChild(NewRow.HBox_ChipRow, NewChip)
+             Completed: AddChild(VB_ChipTagArea, NewRow)
+  PopulateComboTreeColumn()
 ```
 
 ---
@@ -854,4 +918,5 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 2.7 | 23/06/2026 — Combo Vocabulary Functions (C3a) | Thêm `GetExistingFolders()` + `GetAllUsedTags()` — 2 hàm vocabulary cho dialog lưu combo (C3b): dedup folder paths + dedup tags lowercase từ AllComboViews_Combo. |
 | 2.8 | 24/06/2026 — Save Combo Dialog flow (C3b) | Thêm 3 class var (PendingSelectedActors/PendingCenter/SaveComboDialogRef). Thêm 3 custom event: OpenSaveComboDialog (đóng băng selection, tạo WBP_SaveComboDialog, Set Input Mode UI Only), OnSaveComboConfirmed (gọi ComboManager.SaveComboFromSelection), OnSaveComboDialogClosed (clear buffer + trả Game+UI). Cập nhật VRAM note: +SaveComboDialogRef. |
 | 2.9 | 24/06/2026 — CTV_ComboCard + LoadComboLibrary (C4) | Thêm CTV_ComboCard (TileView, Visibility=Collapsed). LoadComboLibrary cập nhật: cuối hàm Clear List Items + ForEach AddItem. Event Construct Then 5: bind OnComboLibraryChanged + gọi LoadComboLibrary. Test PASS: 19 combo hiển thị đúng. |
-| 3.0 | 25/06/2026 — C5.0 Combo Folder Tree + Filter | E_InventoryMode +Combo; 3 class var C5 (CurrentComboFolderPath/ComboFolderTree/bHasUncategorized); BTN_Tab_Combo; SwitchInventoryMode +nhánh Combo (TRƯỚC Material); 6 function mới: AddFolderPathToTree, BuildComboFolderTree, PopulateComboTreeColumn, FilterComboByFolder, RefreshComboFolderUI, OnComboTreeNodeClicked. Tree PASS. Card render ⏳ đang fix. |
+| 3.0 | 25/06/2026 — C5.0 Combo Folder Tree + Filter | E_InventoryMode +Combo; 3 class var C5 (CurrentComboFolderPath/ComboFolderTree/bHasUncategorized); BTN_Tab_Combo; SwitchInventoryMode +nhánh Combo (TRƯỚC Material); 6 function mới: AddFolderPathToTree, BuildComboFolderTree, PopulateComboTreeColumn (cấp 1 phẳng), FilterComboByFolder, RefreshComboFolderUI, OnComboTreeNodeClicked (đơn giản). Superseded bởi v3.1 cùng ngày. |
+| 3.1 | 25/06/2026 — C5.0 Tree 2 cấp + Chip Nav (Round 3 delta) | PopulateComboTreeColumn: render 2 cấp (cấp 1 IndentLevel=0, cấp 2 IndentLevel=1 lồng). OnComboTreeNodeClicked: REWRITE branch IndentLevel (0→clear+filter+repopulate; 1→filter+gen WBP_ChipRow cấp 3). OnComboChipTagClicked: NEW event (clone OnChipTagClicked furniture) — TRIM chip sâu hơn + filter + gen chip cấp kế. |

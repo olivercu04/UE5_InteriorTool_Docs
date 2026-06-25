@@ -222,6 +222,66 @@ Then 2: BuildFolderTree → SET FurnitureFolderTree = FolderTree → PopulateTre
 Then 3: GetAllActors(BP_UndoManager)[0] → SET UndoManagerRef → Bind OnRestoreCompleted → OnSceneRestored
 ```
 
+### C5.0 — Combo Folder Tree + Chip Nav (v3.1 — 25/06/2026)
+
+> Full doc: **WBP_FurnitureInventory.md §C5.0**. Đây là tóm tắt node-flow để tra cứu nhanh.
+
+#### PopulateComboTreeColumn() — Function
+```
+Clear Children(VerticalBox_44)
+// "Tat ca" (IndentLevel=0) | "Chua phan loai" (IndentLevel=0, if bHasUncategorized)
+// Cấp 1 từ Map[""] → IndentLevel=0
+Map Find(ComboFolderTree, "") → Lvl1CSV, bFound
+Branch bFound:
+  True → ForEach ParseIntoArray(Lvl1CSV, ",") (lvl1):
+           Create WBP_TreeNode Node1 (FolderPath=lvl1, FolderName=lvl1, IndentLevel=0)
+           Add Child | Bind OnNodeSelected → OnComboTreeNodeClicked
+           // Cấp 2 từ Map[lvl1] → IndentLevel=1 (lồng ngay sau Node1)
+           Map Find(ComboFolderTree, lvl1) → Lvl2CSV, bFound2
+           Branch bFound2:
+             True → ForEach ParseIntoArray(Lvl2CSV, ",") (lvl2):
+                      FullPath2 = lvl1 + "/" + lvl2
+                      Create WBP_TreeNode Node2 (FolderPath=FullPath2, FolderName=lvl2, IndentLevel=1)
+                      Add Child | Bind → OnComboTreeNodeClicked
+```
+
+#### OnComboTreeNodeClicked(SelectedPath, IndentLevel) — Custom Event
+```
+SET CurrentComboFolderPath = SelectedPath
+Branch(IndentLevel == 0):
+  True  → ClearChildren(VB_ChipTagArea) → FilterComboByFolder(SelectedPath) → PopulateComboTreeColumn()
+  False → ClearChildren(VB_ChipTagArea) → FilterComboByFolder(SelectedPath)
+           Map Find(ComboFolderTree, SelectedPath) → ChildCSV, bFound
+           Branch bFound:
+             False → [merge] → PopulateComboTreeColumn()   ← leaf folder, không gen chip
+             True  → Create WBP_ChipRow(RowIndentLevel=2)
+                      ForEach ParseIntoArray(ChildCSV, ",") (element):
+                        Create WBP_ChipTag (FolderPath=SelectedPath+"/"+element, IndentLevel=2)
+                        Bind OnChipSelected → OnComboChipTagClicked | AddChild(Row.HBox_ChipRow)
+                      Completed: AddChild(VB_ChipTagArea, Row)
+           PopulateComboTreeColumn()
+```
+
+#### OnComboChipTagClicked(SelectedPath, IndentLevel) — Custom Event (clone OnChipTagClicked)
+```
+SET CurrentComboFolderPath = SelectedPath
+// TRIM: xóa chip row sâu hơn click (từ dưới lên)
+GetChildrenCount(VB_ChipTagArea) → RowCount
+ForLoop 0 to (RowCount - (IndentLevel-1) - 2):
+  RemoveChildAt(VB_ChipTagArea, RowCount - 1 - Index)
+Completed:
+  FilterComboByFolder(SelectedPath)
+  Map Find(ComboFolderTree, SelectedPath) → ChildCSV, bFound
+  Branch bFound:
+    False → [merge] → PopulateComboTreeColumn()
+    True  → Create WBP_ChipRow(RowIndentLevel=IndentLevel)
+             ForEach ParseIntoArray(ChildCSV, ",") (element):
+               Create WBP_ChipTag (FolderPath=SelectedPath+"/"+element, IndentLevel=IndentLevel+1)
+               Bind OnChipSelected → OnComboChipTagClicked | AddChild(Row.HBox_ChipRow)
+             Completed: AddChild(VB_ChipTagArea, Row)
+  PopulateComboTreeColumn()
+```
+
 ---
 
 ## WBP_MaterialCard

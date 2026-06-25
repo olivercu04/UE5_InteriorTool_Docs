@@ -224,6 +224,9 @@
 | 25/06 | D3 — FilterComboByFolder render | Loop Add Item trực tiếp vào CTV_ComboCard | **Collect → local FilteredItems → Set List Items 1 lần** ở Completed | TileView render ổn định hơn với Set List Items (1 phát) so với N lần Add Item. Đang test fix B-C5-card | [BUG→FIX] |
 | 25/06 | D4 — Tree layout | Hỏi C-1 về cột riêng/chung | **Dùng CHUNG VerticalBox_44** với furniture/material | C-1 xác nhận: combo dùng chung cột tree, switch tab clear + populate lại | [CONFIRM] |
 | 25/06 | D5 — bHasUncategorized | Local var trong BuildComboFolderTree | **Class var** (sống xuyên 2 hàm BuildComboFolderTree → PopulateComboTreeColumn) | PopulateComboTreeColumn đọc nó SAU Build — local var chết ngay sau ForEach Completed | [SCOPE] |
+| 25/06 | D6 — C5.0 tree depth | Plan: "cấp 1 phẳng, nested polish C5 sau" | **Render full 2 cấp ngay** (cấp 1 IndentLevel=0 + cấp 2 IndentLevel=1 lồng trong tree) + chip cấp 3+ qua OnComboChipTagClicked | UX nhất quán: 3-cấp folder cần browse ngay; defer nested = không bao giờ làm | [PLAN-SAI] |
+| 25/06 | D7 — OnComboTreeNodeClicked | Plan: chỉ FilterComboByFolder + PopulateComboTreeColumn (đơn giản) | **REWRITE branch IndentLevel**: 0 → clear chip + filter + repopulate tree; 1 → filter + gen WBP_ChipRow cho cấp 3 con của SelectedPath | Cấp 2 click PHẢI sinh chip — không thể chỉ repopulate tree vì tree chỉ hiện 2 cấp | [SCOPE] |
+| 25/06 | D8 — OnComboChipTagClicked | Không có trong plan | **NEW custom event, clone OnChipTagClicked furniture**: TRIM chip row sâu hơn IndentLevel click + filter + sinh chip cấp kế tiếp | Pattern chip navigation giống hệt furniture — clone + đổi data source ComboFolderTree | [SCOPE] |
 
 **Quyết định kiến trúc C5 (không bàn lại):**
 - **Copy folder GÁC backlog** — phải nhân bản ComboID mới + copy PNG, lệch hẳn pattern chỉ-viết-text. Hiếm dùng.
@@ -285,4 +288,4 @@
 | 21/06/2026 | Thêm section "SPRINT 5 — 21/06/2026": 4 dòng kiến trúc Combo v2.0 (C0 nested fix, drag-drop→cursor, materialOverrides→RowName, SourceComboID group cha) + 1 dòng patch review v2.1 |
 | 23/06/2026 | Thêm section "SPRINT 5 — 23/06/2026": 9 dòng quyết định Sprint5_Plan_v1.1 (P1 thumbnail C++ thật, P2 surface-snap khối, P3 xoay combo, P5 dời Sprint7, K1 WBP_Toast, K3 bAddToRecent, K5 cả 2 hướng export, P4 lưu LOCALAPPDATA, scope chia 3 giai đoạn) |
 | 24/06/2026 | Thêm section "SPRINT 5 — 24/06/2026": C8 MERGED vào C4; On Drop combo KHÔNG trace (ghost location); CalculateComboAnchor fix anchor z; ghost offset BUG OPEN |
-| 25/06/2026 | Thêm section "SPRINT 5 — 25/06/2026": C5 scope mở rộng full folder management; D1-D5 (dedup exact/signature/Set List Items/cột chung/class var); quyết định kiến trúc C5 |
+| 25/06/2026 | Thêm section "SPRINT 5 — 25/06/2026": C5 scope mở rộng full folder management; D1-D5 (dedup exact/signature/Set List Items/cột chung/class var); quyết định kiến trúc C5. Round 3: thêm D6-D8 (tree 2 cấp, OnComboTreeNodeClicked rewrite, OnComboChipTagClicked new). |
