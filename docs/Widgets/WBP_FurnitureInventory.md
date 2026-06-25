@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 2.9 | **Cập nhật:** 24/06/2026 — CTV_ComboCard + LoadComboLibrary C4 wiring
+**Phiên bản:** 3.0 | **Cập nhật:** 25/06/2026 — C5.0 Combo Folder Tree + Filter (tree hiển thị đúng, fix card render pending)
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -77,7 +77,7 @@ Python 1: populate BoundingSize | Python 2: update MeshFolderPath | (Sprint D: P
 | `ResizeDirection` | Integer | 0=None,1=Top,2=Bottom,3=Left,4=Right,5=TL,6=TR,7=BL,8=BR |
 | `ResizeStartMousePos` / `ResizeStartSize` / `ResizeStartPosition` | Vector2D | State lúc bắt đầu kéo |
 | **— v1.1 Material —** | | |
-| `CurrentInventoryMode` | E_InventoryMode | Furniture/Material (default Furniture) |
+| `CurrentInventoryMode` | E_InventoryMode | Furniture/Material/Combo (default Furniture) ← C5.0 thêm value Combo |
 | `TargetFurnitureActor` | BP_FurnitureActor | Actor đang chỉnh material ← SET None ở Event Destruct (R2/R4) |
 | `SelectedSlotIndex` | Integer | Slot đang chọn, default -1 |
 | `AllFilteredMaterialRows` | Array of Name | Cache RowNames sau FilterMaterialItems |
@@ -91,6 +91,10 @@ Python 1: populate BoundingSize | Python 2: update MeshFolderPath | (Sprint D: P
 | `PendingSelectedActors` | Array BP_FurnitureActor | Buffer đóng băng selection trước khi mở dialog async |
 | `PendingCenter` | Vector | Buffer Center tương ứng với PendingSelectedActors |
 | `SaveComboDialogRef` | WBP_SaveComboDialog | Ref dialog đang mở — SET None ở Event Destruct (R4) |
+| **— C5.0 Combo Folder Tree —** | | |
+| `CurrentComboFolderPath` | String | `__ALL__` = xem tất cả; `""` = Chưa phân loại; path thường = filter folder đó + con |
+| `ComboFolderTree` | Map\<String, String\> | Cây folder combo: Key=path cha (hoặc ""), Value=CSV tên con cấp trực tiếp |
+| `bHasUncategorized` | Boolean | false — có combo FolderPath="" → PopulateComboTreeColumn hiện node "Chưa phân loại" |
 
 ⚠️ **VRAM leak:** TargetFurnitureActor + PendingRestoredActor + SaveComboDialogRef là hard ref → SET None ở Event Destruct.
 
@@ -101,7 +105,7 @@ Python 1: populate BoundingSize | Python 2: update MeshFolderPath | (Sprint D: P
 Canvas Panel (root = Not Hit-Testable Self Only)
 ├── HB_TitleBar: BTN_TitleBar (drag) + BTN_Minimize/Maximize/Close
 ├── BackgroundBlur_246 → VerticalBox
-│   ├── HB_TabBar (v1.1): BTN_Tab_Furniture | BTN_Tab_Material
+│   ├── HB_TabBar: BTN_Tab_Furniture | BTN_Tab_Material | BTN_Tab_Combo ← C5.0 (OnClicked → SwitchInventoryMode(Combo))
 │   ├── HB_Recent_Favorite (C2): BTN_RecentCategory | BTN_FavoriteCategory
 │   └── HB_MainContent
 │       ├── ScrollBox trái → VerticalBox_44 (folder tree)
@@ -234,15 +238,19 @@ Branch CurrentInventoryMode == Material:
       ⚠ Sprint D D.T5: đổi thành FilterFurnitureRows → AllFilteredFurnitureRows → DisplayPage
 ```
 
-### SwitchInventoryMode(NewMode) — v1.1
+### SwitchInventoryMode(NewMode) — v1.1 / C5.0 update
 ```
 SET CurrentPage = 0, SET CurrentInventoryMode = NewMode
-Branch NewMode == Material:
-  T → Visible CTV_MaterialCard + SlotSwatches nếu có actor
-      PopulateMaterialGrid; BuildMaterialFolderTree nếu chưa có
-      SET FolderTree = MaterialFolderTree; PopulateTreeColumn
-  F → Visible CTV_FurnitureCard; SET FolderTree = FurnitureFolderTree; PopulateTreeColumn
-      Call FilterBySearch(CurrentSearchText, CurrentCategory)   ← BẮT BUỘC cuối (populate ngay khi switch)
+Collapse: CTV_FurnitureCard, CTV_MaterialCard, HB_SlotSwatches, CTV_ComboCard  ← C5.0 thêm CTV_ComboCard
+Branch(NewMode == Combo):  ← C5.0: kiểm tra TRƯỚC nhánh Material
+  True  → Visible CTV_ComboCard
+           BuildComboFolderTree → PopulateComboTreeColumn → FilterComboByFolder("__ALL__")
+  False → Branch NewMode == Material:
+            T → Visible CTV_MaterialCard + SlotSwatches nếu có actor
+                PopulateMaterialGrid; BuildMaterialFolderTree nếu chưa có
+                SET FolderTree = MaterialFolderTree; PopulateTreeColumn
+            F → Visible CTV_FurnitureCard; SET FolderTree = FurnitureFolderTree; PopulateTreeColumn
+                Call FilterBySearch(CurrentSearchText, CurrentCategory)   ← BẮT BUỘC cuối
 ```
 
 ### PopulateMaterialGrid — v1.1
@@ -514,6 +522,127 @@ Get Player Controller → Set Input Mode Game And UI
 
 ---
 
+## C5.0 — Combo Folder Tree + Filter
+
+> **Trạng thái 25/06/2026:** Tree hiển thị đúng (All / Chưa phân loại / folder cấp 1 phẳng).
+> Filter logic xong. **ĐANG FIX:** CTV_ComboCard không render card — đang thử Set List Items thay Add Item (deviation D3).
+
+### AddFolderPathToTree(FullPath : String) — Function
+Tách path đa cấp → add cặp cha→con vào `ComboFolderTree`.
+**Local vars:** ParentPath (String, ""), CurrentPath (String, "")
+```
+Parse Into Array(FullPath, "/") → Segments
+ForEach Segments (element):
+  Branch(CurrentPath == "")
+    True  → SET CurrentPath = element
+    False → SET CurrentPath = CurrentPath + "/" + element
+  Map Find(ComboFolderTree, Key=ParentPath) → Value, bFound
+  Branch(bFound)
+    True  → Parse Into Array(Value, ",") → CSV_Array
+             Branch( NOT Array Contains(CSV_Array, element) )   ← exact match (KHÔNG String Contains)
+               True  → Map Add(Key=ParentPath, Value=Value + "," + element)
+               False → [dead-end]
+    False → Map Add(Key=ParentPath, Value=element)
+  SET ParentPath = CurrentPath   ← 3 nhánh exec merge vào 1 SET node
+ForEach Completed: [dead-end]
+```
+> **D1:** dùng Parse Into Array + Array Contains (exact), KHÔNG String Contains (substring match sai).
+
+### BuildComboFolderTree() — Function
+```
+Map Clear(ComboFolderTree)
+SET bHasUncategorized = false
+Local: LocalViews = AllComboViews_Combo
+ForEach LocalViews (element):
+  IsValid(element) Branch
+    False → [dead-end]
+    True  → GET element.FolderPath → fp
+             Branch(fp == "")
+               True  → SET bHasUncategorized = true → [dead-end]
+               False → AddFolderPathToTree(fp)
+ForEach Completed: [dead-end]
+```
+
+### PopulateComboTreeColumn() — Function
+Dựng WBP_TreeNode vào `VerticalBox_44` (cột tree CHUNG với furniture/material).
+```
+Clear Children(VerticalBox_44)
+
+// Node "Tất cả" (luôn có)
+Create Widget(WBP_TreeNode) → AllNode
+  SET AllNode.FolderPath = "__ALL__"
+  SET AllNode.FolderName = "Tat ca"          ← D2: SET var trực tiếp TRƯỚC RefreshDisplay
+  SET AllNode.IndentLevel = 0
+  RefreshDisplay(bIsActive = (CurrentComboFolderPath == "__ALL__"))
+  Add Child(VerticalBox_44, AllNode)
+  Bind OnNodeSelected(AllNode) → Create Event → OnComboTreeNodeClicked(self)
+
+// Node "Chưa phân loại" (nếu bHasUncategorized)
+Branch(bHasUncategorized)
+  True  → Create Widget(WBP_TreeNode) → UncatNode
+           SET UncatNode.FolderPath = "" | FolderName = "Chua phan loai" | IndentLevel = 0
+           RefreshDisplay(bIsActive = (CurrentComboFolderPath == ""))
+           Add Child | Bind OnNodeSelected → OnComboTreeNodeClicked
+  False → [dead-end]
+
+// Folder cấp 1 từ Map[""]
+Map Find(ComboFolderTree, Key="") → Value, bFound
+Branch(bFound)
+  False → [dead-end]
+  True  → Parse Into Array(Value, ",") → FolderNames
+           ForEach FolderNames (element):
+             Create Widget(WBP_TreeNode) → FolderNode
+             SET FolderNode.FolderPath = element | FolderName = element | IndentLevel = 1
+             RefreshDisplay(bIsActive = (CurrentComboFolderPath == element))
+             Add Child | Bind OnNodeSelected → OnComboTreeNodeClicked
+           Completed: [dead-end]
+```
+> Tree TỐI GIẢN: chỉ render cấp 1 phẳng + filter cha-hiện-con (nested folder vẫn lọc đúng qua StartsWith). Expand cấp 2/3 trong tree = polish C5 sau.
+
+### FilterComboByFolder(FolderPath : String) — Function
+```
+SET CurrentComboFolderPath = FolderPath
+Clear List Items(CTV_ComboCard)                    ← D3: Clear trước
+Local: LocalViews = AllComboViews_Combo
+Local: FilteredItems (Array<BP_ComboItemView>)
+ForEach LocalViews (element):
+  IsValid(element) Branch
+    False → [dead-end]
+    True  → GET element.FolderPath → fp
+             Branch(FolderPath == "__ALL__")
+               True  → Add FilteredItems(element)
+               False → Branch(FolderPath == "")
+                         True  → Branch(fp == "") → True: Add FilteredItems(element)
+                         False → Branch( (fp == FolderPath) OR (fp StartsWith FolderPath+"/") )
+                                   True → Add FilteredItems(element)
+ForEach Completed:
+  Set List Items(CTV_ComboCard, FilteredItems)     ← D3: 1 lần, stable render
+```
+> ⚠️ **ĐANG FIX (25/06):** Set List Items chưa hiện card — investigation pending. Thử thay bằng Clear + ForEach Add Item xem có khác không.
+
+### RefreshComboFolderUI() — Function (lớp refresh duy nhất cho C5.2→C5.6)
+```
+LoadComboLibrary
+BuildComboFolderTree → PopulateComboTreeColumn
+Branch(CurrentComboFolderPath == "__ALL__")
+  True  → FilterComboByFolder("__ALL__")
+  False → Branch(CurrentComboFolderPath == "")
+            True  → FilterComboByFolder("")
+            False → Map Contains(ComboFolderTree, CurrentComboFolderPath) → bExists
+                    Branch(bExists) True → FilterComboByFolder(CurrentComboFolderPath)
+                                   False → FilterComboByFolder("__ALL__")  ← folder xóa rồi
+```
+> Check `__ALL__` và `""` riêng vì 2 sentinel KHÔNG nằm trong ComboFolderTree (Map Contains = False → sẽ nhầm về __ALL__).
+
+### OnComboTreeNodeClicked(SelectedPath : String, IndentLevel : Integer) — Custom Event
+Bound từ mọi WBP_TreeNode trong PopulateComboTreeColumn.
+```
+FilterComboByFolder(FolderPath = SelectedPath)
+PopulateComboTreeColumn   ← SAU Filter → CurrentComboFolderPath đúng → highlight đúng
+```
+
+---
+
 ## Events
 
 ### OnCardInfoClicked(RowName : Name) — v2.5 Sprint D.T6 (thay DA DA_FurnitureItem)
@@ -725,3 +854,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 2.7 | 23/06/2026 — Combo Vocabulary Functions (C3a) | Thêm `GetExistingFolders()` + `GetAllUsedTags()` — 2 hàm vocabulary cho dialog lưu combo (C3b): dedup folder paths + dedup tags lowercase từ AllComboViews_Combo. |
 | 2.8 | 24/06/2026 — Save Combo Dialog flow (C3b) | Thêm 3 class var (PendingSelectedActors/PendingCenter/SaveComboDialogRef). Thêm 3 custom event: OpenSaveComboDialog (đóng băng selection, tạo WBP_SaveComboDialog, Set Input Mode UI Only), OnSaveComboConfirmed (gọi ComboManager.SaveComboFromSelection), OnSaveComboDialogClosed (clear buffer + trả Game+UI). Cập nhật VRAM note: +SaveComboDialogRef. |
 | 2.9 | 24/06/2026 — CTV_ComboCard + LoadComboLibrary (C4) | Thêm CTV_ComboCard (TileView, Visibility=Collapsed). LoadComboLibrary cập nhật: cuối hàm Clear List Items + ForEach AddItem. Event Construct Then 5: bind OnComboLibraryChanged + gọi LoadComboLibrary. Test PASS: 19 combo hiển thị đúng. |
+| 3.0 | 25/06/2026 — C5.0 Combo Folder Tree + Filter | E_InventoryMode +Combo; 3 class var C5 (CurrentComboFolderPath/ComboFolderTree/bHasUncategorized); BTN_Tab_Combo; SwitchInventoryMode +nhánh Combo (TRƯỚC Material); 6 function mới: AddFolderPathToTree, BuildComboFolderTree, PopulateComboTreeColumn, FilterComboByFolder, RefreshComboFolderUI, OnComboTreeNodeClicked. Tree PASS. Card render ⏳ đang fix. |

@@ -231,6 +231,12 @@ Dùng đúng tên này, KHÔNG bịa tên khác:
 | Gizmo transform type | `ETransformationType` (None/Translation/Rotation/Scale) | |
 | Tạo object runtime | `Construct Object from Class` | |
 | Is Valid Index | Array → kiểm tra index có hợp lệ không (không out of bounds). Input: Array + Index. Return: bool. Dùng thay thế cho Branch Array.Length > Index. ✅ xác nhận 19/06/2026 | |
+| String → Array | `Parse Into Array(SourceString, Delimiter)` → Array\<String\>. Chia chuỗi theo separator. ✅ C5 25/06 | |
+| Array exact match | `Array Contains(Array, Item)` — so sánh EXACT STRING. **KHÁC** `String Contains` (substring). Dùng để dedup CSV array. ✅ C5 25/06 | `String Contains` (substring match sai) |
+| Map thao tác | `Map Clear(Map)` · `Map Find(Map, Key → Value, bFound)` · `Map Add(Map, Key, Value)` · `Map Contains(Map, Key → bool)`. ✅ C5 25/06 | |
+| TileView bulk set | `Set List Items(TileView, Array)` — set toàn bộ 1 lần (stable render, thay N lần Add Item). ✅ C5 25/06 | Add Item lặp nhiều lần |
+| String prefix check | `String Starts With(SourceString, InPrefix)` → bool. ✅ C5 25/06 | |
+| Bind TreeNode event | `Bind Event to On Node Selected(Widget)` + `Create Event(HandlerFunc, self)` — binding dispatch từ WBP_TreeNode lên inventory. ✅ C5 25/06 | |
 
 ⚠️ Khi gặp node mới chưa có trong bảng → cuhoang xác nhận, rồi thêm vào bảng này.
 

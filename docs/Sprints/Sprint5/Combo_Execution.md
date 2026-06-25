@@ -217,9 +217,27 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="Combo")
     static bool DeleteFileAtPath(const FString& FilePath);
+
+    // === C5 Folder Management (25/06/2026) ===
+
+    // Sửa FolderPath của 1 combo. Đọc <ComboID>.json → set FolderPath → ghi lại.
+    // NewFolderPath="" = đẩy về "Chưa phân loại". Trả true nếu OK.
+    UFUNCTION(BlueprintCallable, Category="Combo|Folder")
+    static bool UpdateComboFolder(const FString& ComboID, const FString& NewFolderPath);
+
+    // Đổi prefix folder cho MỌI combo — dùng cho rename folder VÀ move folder.
+    // FolderPath == OldPrefix HOẶC StartsWith(OldPrefix+"/") → thay prefix bằng NewPrefix.
+    // Cascade tự động cho folder con. Trả số combo đã đổi.
+    UFUNCTION(BlueprintCallable, Category="Combo|Folder")
+    static int32 RenameFolderPrefix(const FString& OldPrefix, const FString& NewPrefix);
+
+    // Xóa folder: mọi combo FolderPath == Prefix HOẶC StartsWith(Prefix+"/") → set "".
+    // Combo KHÔNG bị xóa. Viết RIÊNG (không dùng RenameFolderPrefix("")) để tránh lỗi "/Sofa".
+    UFUNCTION(BlueprintCallable, Category="Combo|Folder")
+    static int32 ClearFolderPrefix(const FString& Prefix);
 };
 ```
-> ⚠️ C1 sẽ thêm `FindMaterialRowNameByPath` vào ComboSerializer — recompile sau C1.
+> ✅ C1 — `FindMaterialRowNameByPath` đã thêm (22/06/2026). C5 thêm 3 folder helpers (25/06/2026).
 
 **`ComboSerializer.cpp`:**
 ```cpp
@@ -255,6 +273,70 @@ FString UComboSerializer::GetCombosDir() {
 }
 bool UComboSerializer::DeleteFileAtPath(const FString& FilePath) {
     return IFileManager::Get().Delete(*FilePath);
+}
+
+// C5 — Folder Management (25/06/2026)
+bool UComboSerializer::UpdateComboFolder(const FString& ComboID, const FString& NewFolderPath) {
+    FString FilePath = GetCombosDir() / ComboID + TEXT(".json");
+    FString Json;
+    if (!FFileHelper::LoadFileToString(Json, *FilePath)) return false;
+    FComboData Combo;
+    if (!FJsonObjectConverter::JsonObjectStringToUStruct(Json, &Combo, 0, 0)) return false;
+    Combo.FolderPath = NewFolderPath;
+    FString OutJson;
+    FJsonObjectConverter::UStructToJsonObjectString(Combo, OutJson, 0, 0);
+    return FFileHelper::SaveStringToFile(OutJson, *FilePath,
+        FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+}
+int32 UComboSerializer::RenameFolderPrefix(const FString& OldPrefix, const FString& NewPrefix) {
+    TArray<FString> Files;
+    IFileManager::Get().FindFiles(Files, *(GetCombosDir() / TEXT("*.json")), true, false);
+    int32 Count = 0;
+    const FString OldWithSlash = OldPrefix + TEXT("/");
+    for (const FString& FileName : Files) {
+        FString FilePath = GetCombosDir() / FileName;
+        FString Json; FComboData Combo;
+        if (!FFileHelper::LoadFileToString(Json, *FilePath)) continue;
+        if (!FJsonObjectConverter::JsonObjectStringToUStruct(Json, &Combo, 0, 0)) continue;
+        bool bChanged = false;
+        if (Combo.FolderPath.Equals(OldPrefix, ESearchCase::IgnoreCase)) {
+            Combo.FolderPath = NewPrefix; bChanged = true;
+        } else if (Combo.FolderPath.StartsWith(OldWithSlash, ESearchCase::IgnoreCase)) {
+            Combo.FolderPath = NewPrefix + TEXT("/") + Combo.FolderPath.RightChop(OldWithSlash.Len());
+            bChanged = true;
+        }
+        if (bChanged) {
+            FString OutJson;
+            FJsonObjectConverter::UStructToJsonObjectString(Combo, OutJson, 0, 0);
+            FFileHelper::SaveStringToFile(OutJson, *FilePath,
+                FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+            Count++;
+        }
+    }
+    return Count;
+}
+int32 UComboSerializer::ClearFolderPrefix(const FString& Prefix) {
+    // Viết riêng (không tái dùng RenameFolderPrefix với NewPrefix="") để tránh "/Sofa" thừa dấu.
+    TArray<FString> Files;
+    IFileManager::Get().FindFiles(Files, *(GetCombosDir() / TEXT("*.json")), true, false);
+    int32 Count = 0;
+    const FString WithSlash = Prefix + TEXT("/");
+    for (const FString& FileName : Files) {
+        FString FilePath = GetCombosDir() / FileName;
+        FString Json; FComboData Combo;
+        if (!FFileHelper::LoadFileToString(Json, *FilePath)) continue;
+        if (!FJsonObjectConverter::JsonObjectStringToUStruct(Json, &Combo, 0, 0)) continue;
+        if (Combo.FolderPath.Equals(Prefix, ESearchCase::IgnoreCase) ||
+            Combo.FolderPath.StartsWith(WithSlash, ESearchCase::IgnoreCase)) {
+            Combo.FolderPath = TEXT("");
+            FString OutJson;
+            FJsonObjectConverter::UStructToJsonObjectString(Combo, OutJson, 0, 0);
+            FFileHelper::SaveStringToFile(OutJson, *FilePath,
+                FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+            Count++;
+        }
+    }
+    return Count;
 }
 ```
 

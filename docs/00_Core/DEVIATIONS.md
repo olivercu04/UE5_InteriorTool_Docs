@@ -214,6 +214,25 @@
 
 ---
 
+## SPRINT 5 — 25/06/2026 — C5 Folder Management + Kiến trúc
+
+| Ngày | Task | Plan nói | Thực tế làm | Lý do | Loại |
+|------|------|----------|-------------|-------|------|
+| 25/06 | C5 scope | Plan C5 = "Browse Combo Folder Tree" (browse-only, C5 gốc Combo_Execution) | C5 mở rộng thành full folder management: browse + move combo + tạo/rename/move/xóa folder (C5.0→C5.6) | Scope phình có chủ đích — thao tác folder là atomic unit, split thành nhiều sprint gây doc/code lộn xộn | [SCOPE] |
+| 25/06 | D1 — AddFolderPathToTree dedup | `String Contains` để dedup tên con trong CSV | **Parse Into Array(",") + Array Contains** (exact match) | String Contains = substring → "Phòng" match "Phòng khách" = false positive dedup sai | [PLAN-SAI] |
+| 25/06 | D2 — RefreshDisplay signature | `RefreshDisplay(FolderName, IndentLevel, bIsActive)` — 3 param | **RefreshDisplay chỉ nhận 1 param `bIsActive`**. FolderName + IndentLevel SET trực tiếp lên widget var TRƯỚC khi gọi RefreshDisplay | WBP_TreeNode.RefreshDisplay thực tế chỉ có 1 param (Sprint D). Plan ghi sai signature | [PLAN-SAI] |
+| 25/06 | D3 — FilterComboByFolder render | Loop Add Item trực tiếp vào CTV_ComboCard | **Collect → local FilteredItems → Set List Items 1 lần** ở Completed | TileView render ổn định hơn với Set List Items (1 phát) so với N lần Add Item. Đang test fix B-C5-card | [BUG→FIX] |
+| 25/06 | D4 — Tree layout | Hỏi C-1 về cột riêng/chung | **Dùng CHUNG VerticalBox_44** với furniture/material | C-1 xác nhận: combo dùng chung cột tree, switch tab clear + populate lại | [CONFIRM] |
+| 25/06 | D5 — bHasUncategorized | Local var trong BuildComboFolderTree | **Class var** (sống xuyên 2 hàm BuildComboFolderTree → PopulateComboTreeColumn) | PopulateComboTreeColumn đọc nó SAU Build — local var chết ngay sau ForEach Completed | [SCOPE] |
+
+**Quyết định kiến trúc C5 (không bàn lại):**
+- **Copy folder GÁC backlog** — phải nhân bản ComboID mới + copy PNG, lệch hẳn pattern chỉ-viết-text. Hiếm dùng.
+- **Folder ops KHÔNG vào Undo (Alt+Z)** — metadata thư viện, không phải scene action. Confirm dialog (C5.6) thay thế Undo.
+- **1 combo = 1 FolderPath** (không thuộc nhiều folder). Tags = multi-label nếu cần.
+- **Context menu = Menu Anchor built-in** (C5.2+) — đóng tự động khi click ngoài, né mép màn hình.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -266,3 +285,4 @@
 | 21/06/2026 | Thêm section "SPRINT 5 — 21/06/2026": 4 dòng kiến trúc Combo v2.0 (C0 nested fix, drag-drop→cursor, materialOverrides→RowName, SourceComboID group cha) + 1 dòng patch review v2.1 |
 | 23/06/2026 | Thêm section "SPRINT 5 — 23/06/2026": 9 dòng quyết định Sprint5_Plan_v1.1 (P1 thumbnail C++ thật, P2 surface-snap khối, P3 xoay combo, P5 dời Sprint7, K1 WBP_Toast, K3 bAddToRecent, K5 cả 2 hướng export, P4 lưu LOCALAPPDATA, scope chia 3 giai đoạn) |
 | 24/06/2026 | Thêm section "SPRINT 5 — 24/06/2026": C8 MERGED vào C4; On Drop combo KHÔNG trace (ghost location); CalculateComboAnchor fix anchor z; ghost offset BUG OPEN |
+| 25/06/2026 | Thêm section "SPRINT 5 — 25/06/2026": C5 scope mở rộng full folder management; D1-D5 (dedup exact/signature/Set List Items/cột chung/class var); quyết định kiến trúc C5 |

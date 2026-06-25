@@ -1,6 +1,6 @@
 # WBP_FurnitureCard (+ WBP_DragOverlay) — Drag & Drop + Replace Mesh
 **HỢP NHẤT TỪ 3 file:** v1.3 base (25/05) → v1.4 base (10/06) + Blueprint_Logic GroupID fix (12/06) + v1.5_patch (15/06)
-**Phiên bản:** 1.7 | **Cập nhật:** 24/06/2026 — Sprint 5 C4/C8
+**Phiên bản:** 1.8 | **Cập nhật:** 25/06/2026 — ghost offset fix (Approach B, C4 100%)
 
 > **v1.6 (Sprint D.T6):** Bỏ `FurnitureDA` khỏi WBP_FurnitureCard (biến xóa). F_ExecuteReplace: dùng `RowData` (Get DataTable Row từ `CardRowName`) thay `FurnitureDA.*`. On Drop WBP_DragOverlay: `PendingFurnitureDA` → `PendingRowName : Name`; SET `PreviewActorRef.RowName = PendingRowName`. Button_InforItem → `OnCardInfoClicked(CardRowName)` thay FurnitureDA. AddRecentMesh dùng CardRowName.
 
@@ -188,7 +188,11 @@ PendingRowName  : Name              ← v1.6 Sprint D (thay PendingFurnitureDA �
    Set Actor Location = Hit Location
 
    Cast To BP_FurnitureActor (Object = PreviewActorRef):  ← v1.7
-     CastFailed  → dead-end  ← combo ghost, không cần PlacementSurfaceType
+     CastFailed  → Cast To BP_ComboGhostActor (Object = PreviewActorRef):  ← v1.8: fix ghost offset (Approach B)
+       CastFailed  → dead-end
+       CastSuccess → GET GhostExtentZ
+                     Set Actor Location(PreviewActorRef, HitLocation + Make Vector(0,0,GhostExtentZ))
+                     ← OVERRIDE location set trước đó: đáy cube khớp sàn (half-height = GhostExtentZ)
      CastSuccess →
        SURFACE ROTATION + PlacementSurfaceType (v1.2):
        Break Normal → Normal.Z
@@ -239,9 +243,10 @@ Entry
         CastFailed  → Return(false)
         CastSuccess →
           GET As BP_DragDropOperation_ComboCard → GET ComboID
-          GetActorLocation(PreviewActorRef) ●→ SpawnLocation
-          ← ⚠️ KHÔNG trace lại. On Drag Over đã Set Actor Location lên ghost mỗi frame
-          ←   → ghost đúng chỗ rồi → đọc location trực tiếp, 1 đường thẳng tới Return.
+          GetActorLocation(PreviewActorRef) ●→ AnchorWithOffset
+          Cast To BP_ComboGhostActor(PreviewActorRef) → GET GhostExtentZ
+          AnchorWithOffset - Make Vector(0,0,GhostExtentZ) ●→ SpawnLocation
+          ← On Drag Over set ghost center = HitLocation+(0,0,GhostExtentZ) → trừ ngược = floor pos
           Get All Actors Of Class(BP_ComboManager) → GET[0] → IsValid → Cast
           SpawnComboByID(ComboID, SpawnLocation)
           IsValid(PreviewActorRef) → Destroy Actor → SET PreviewActorRef=None
@@ -274,4 +279,5 @@ Entry
 | 1.4b | 12/06/2026 | **BugFix GroupID:** F_ExecuteReplace: GET OldActor.GroupID → SET NewActor.GroupID TRƯỚC Destroy OldActor (từ Blueprint_Logic v1.4 BugFix). |
 | 1.5 | 15/06/2026 — 20:30 ICT | **F4: On Drop auto-join edit scope.** Sau ADD "FurnitureSpawned": get InputManager → GetCurrentEditScope → Branch(Scope!="") → SET PreviewActorRef.GroupID. Merge cả 2 nhánh về CaptureSnapshot (L2: False dead-end gây mesh biến mất — bug N5). |
 | 1.6 | 17/06/2026 — Sprint D.T6 | Bỏ FurnitureDA. WBP_FurnitureCard: var → CardRowName; OnListItemObjectSet cast BP_FurnitureItemView + DT lookup ThumbnailSoft; UpdateFavTint/Button_Favorite dùng CardRowName; Button_InforItem → OnCardInfoClicked(CardRowName); On Drag Detected SET Operation.RowName. F_ExecuteReplace: RowData từ DT, load RowData.Mesh, SET NewActor.RowName, AddRecentMesh(CardRowName). WBP_DragOverlay: PendingFurnitureDA→PendingRowName; On Drop DT lookup RowData, SET PreviewActor.RowName. |
-| 1.7 | 24/06/2026 — Sprint 5 C4/C8 | WBP_DragOverlay: PreviewActorRef BP_FurnitureActor → Actor generic (tương thích BP_ComboGhostActor); On Drag Over thêm Cast To BP_FurnitureActor sau Set Actor Location (combo ghost skip PlacementSurfaceType); On Drop cấu trúc lại — Cast FurnitureCard CastSuccess giữ logic cũ, CastFailed → Cast ComboCard → SpawnComboByID(Out Hit.Location) + destroy ghost + Remove From Parent. |
+| 1.7 | 24/06/2026 — Sprint 5 C4/C8 | WBP_DragOverlay: PreviewActorRef BP_FurnitureActor → Actor generic (tương thích BP_ComboGhostActor); On Drag Over thêm Cast To BP_FurnitureActor (combo ghost skip PlacementSurfaceType); On Drop thêm CastFailed → Cast ComboCard → GetActorLocation(ghost) → SpawnComboByID. ⚠️ "Out Hit.Location" trong plan gốc là SAI — đã fix cùng phiên bởi Opus delta. |
+| 1.8 | 25/06/2026 — ghost offset fix (C4 100%) | On Drag Over: CastFailed BP_FurnitureActor → Cast To BP_ComboGhostActor → GET GhostExtentZ → Set Actor Location = HitLocation+(0,0,GhostExtentZ) (Approach B, đáy cube khớp sàn). On Drop combo: GetActorLocation − (0,0,GhostExtentZ) = SpawnLocation floor. C4/C8 → 100% DONE. |
