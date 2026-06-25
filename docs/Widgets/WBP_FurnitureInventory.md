@@ -724,10 +724,35 @@ Call InitPopup(RowName, bFromScene=False)
 
 ### OnTreeNodeClicked(SelectedPath, IndentLevel)
 ```
-Indent==0: ClearChildren(VB_ChipTagArea) → SET ActiveLevel1Path → PopulateTreeColumn
-           → FilterByFolderPath → SetText(TB_Breadcrumb, ""=="All product")
-Indent==1: ClearChildren → Create ChipRow → ForEach ParseIntoArray(FolderTree[Path], ","):
-           Create ChipTag → Bind OnChipSelected → AddChild → AddChild(VB_ChipTagArea) → FilterByFolderPath
+Entry
+  ▶→ SET "Selected Path" = SelectedPath          (class var)
+  ▶→ SET "Indent Level" = IndentLevel            (class var)
+  ▶→ SetText(TB_Breadcrumb, To Text(SelectedPath))
+  ▶→ Branch( IndentLevel == 0 )                  ← IfThenElse_3
+       True  → SET ActiveLevel1Path = "Selected Path"
+                ▶→ ClearChildren(VB_ChipTagArea)
+                ▶→ PopulateTreeColumn()
+                ▶→ FilterByFolderPath("Selected Path")
+                ▶→ UpdateFolderHighlights()
+                ▶→ Branch( "Selected Path" == "" )  ← IfThenElse_1 (set breadcrumb)
+                     True  → SetText(TB_Breadcrumb, "All product")
+                     False → SetText(TB_Breadcrumb, To Text("Selected Path"))
+       False → Branch( IndentLevel == 1 )         ← IfThenElse_4
+                 True → ClearChildren(VB_ChipTagArea)
+                        ▶→ SetText(TB_Breadcrumb, To Text("Selected Path"))
+                        ▶→ Map Find(FolderTree, Key="Selected Path") → Value
+                        ▶→ ParseIntoArray(Value, Delimiter=",") → ChildArray
+                        ▶→ Create Widget(WBP_ChipRow) → NewRow
+                            SET NewRow.RowIndentLevel = (Indent Level)
+                        ▶→ ForEach ChildArray (element):
+                             Create Widget(WBP_ChipTag) → NewChip
+                             SET NewChip.FolderPath_ChipTag = "Selected Path" + "/" + element
+                             SET NewChip.FolderName_ChipTag = element
+                             SET NewChip.IndentLevel_ChipTag = 2   ← (default pin = 2)
+                             Bind NewChip.OnChipSelected → OnChipTagClicked
+                             AddChild(NewChip → NewRow.HorizontalBox_ChipRow)
+                           Completed → AddChild(NewRow → VB_ChipTagArea)
+                 False → [dead-end]
 ```
 
 ### OnChipTagClicked(Path, Indent)
