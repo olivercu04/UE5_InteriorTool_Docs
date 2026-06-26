@@ -228,6 +228,15 @@
 | 25/06 | D7 — OnComboTreeNodeClicked | Plan: chỉ FilterComboByFolder + PopulateComboTreeColumn (đơn giản) | **REWRITE branch IndentLevel**: 0 → clear chip + filter + repopulate tree; 1 → filter + gen WBP_ChipRow cho cấp 3 con của SelectedPath | Cấp 2 click PHẢI sinh chip — không thể chỉ repopulate tree vì tree chỉ hiện 2 cấp | [SCOPE] |
 | 25/06 | D8 — OnComboChipTagClicked | Không có trong plan | **NEW custom event, clone OnChipTagClicked furniture**: TRIM chip row sâu hơn IndentLevel click + filter + sinh chip cấp kế tiếp | Pattern chip navigation giống hệt furniture — clone + đổi data source ComboFolderTree | [SCOPE] |
 
+## SPRINT 5 — 26/06/2026 — C5.0 Tree Nested + WBP_LibraryContextMenu
+
+| Ngày | ID | Mô tả | Plan nói | Thực tế | Lý do | Loại |
+|---|---|---|---|---|---|---|
+| 26/06 | D9 | PopulateComboTreeColumn cấp 2 visibility | Render cấp 2 luôn trong ForEach | **Branch guard** `(CurrentPath==lvl1 OR StartsWith(lvl1+"/"))` trước Map Find; trong **Loop Body** (KHÔNG Completed) | UX: cấp 2 không nên hiện sẵn khi mở tab Combo. Bug Completed: lvl1=phần tử cuối, check sai cả tree | [PLAN-SAI] |
+| 26/06 | D10 | Branch guard vị trí | Nối sau ForEach Lvl1Names (Completed pin) | Nối trong **Loop Body** của ForEach Lvl1Names | Completed → thoát loop → lvl1 stale = phần tử cuối → Branch check sai 1 lần duy nhất | [BUG→FIX] |
+| 26/06 | D11 | WBP_LibraryContextMenu close mechanism | Plan: dùng Menu Anchor built-in (C5.2+) | Dùng **Btn_Background** (full screen, Z thấp, alpha=0) — clone từ WBP_ContextMenu | Đơn giản hơn, pattern đã tested, không cần Menu Anchor positioning logic | [PLAN-SAI] |
+| 26/06 | D12 | Canvas Panel Z-order | Không đề cập | **Btn_Background index 0, Border_Menu index 1** (phải đúng thứ tự) | UMG render từ index 0 lên — index cao hơn nhận hit trước. Sai order → Btn_Background che Border_Menu → click nút menu không được | [NODE] |
+
 **Quyết định kiến trúc C5 (không bàn lại):**
 - **Copy folder GÁC backlog** — phải nhân bản ComboID mới + copy PNG, lệch hẳn pattern chỉ-viết-text. Hiếm dùng.
 - **Folder ops KHÔNG vào Undo (Alt+Z)** — metadata thư viện, không phải scene action. Confirm dialog (C5.6) thay thế Undo.
@@ -289,3 +298,4 @@
 | 23/06/2026 | Thêm section "SPRINT 5 — 23/06/2026": 9 dòng quyết định Sprint5_Plan_v1.1 (P1 thumbnail C++ thật, P2 surface-snap khối, P3 xoay combo, P5 dời Sprint7, K1 WBP_Toast, K3 bAddToRecent, K5 cả 2 hướng export, P4 lưu LOCALAPPDATA, scope chia 3 giai đoạn) |
 | 24/06/2026 | Thêm section "SPRINT 5 — 24/06/2026": C8 MERGED vào C4; On Drop combo KHÔNG trace (ghost location); CalculateComboAnchor fix anchor z; ghost offset BUG OPEN |
 | 25/06/2026 | Thêm section "SPRINT 5 — 25/06/2026": C5 scope mở rộng full folder management; D1-D5 (dedup exact/signature/Set List Items/cột chung/class var); quyết định kiến trúc C5. Round 3: thêm D6-D8 (tree 2 cấp, OnComboTreeNodeClicked rewrite, OnComboChipTagClicked new). |
+| 26/06/2026 | Thêm section "SPRINT 5 — 26/06/2026": D9 Branch guard cấp 2 (UX + bug Loop Body/Completed); D10 bug guard position; D11 WBP_LibraryContextMenu clone Btn_Background thay Menu Anchor; D12 Canvas Panel Z-order. |

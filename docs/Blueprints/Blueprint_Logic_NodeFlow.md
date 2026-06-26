@@ -262,24 +262,33 @@ Branch(IndentLevel == 0):
            PopulateComboTreeColumn()
 ```
 
-#### OnComboChipTagClicked(SelectedPath, IndentLevel) — Custom Event (clone OnChipTagClicked)
+#### OnComboChipTagClicked(SelectedPath_ChipTag, IndentLevel_ChipTag) — Custom Event (clone OnChipTagClicked)
 ```
-SET CurrentComboFolderPath = SelectedPath
-// TRIM: xóa chip row sâu hơn click (từ dưới lên)
-GetChildrenCount(VB_ChipTagArea) → RowCount
-ForLoop 0 to (RowCount - (IndentLevel-1) - 2):
-  RemoveChildAt(VB_ChipTagArea, RowCount - 1 - Index)
-Completed:
-  FilterComboByFolder(SelectedPath)
-  Map Find(ComboFolderTree, SelectedPath) → ChildCSV, bFound
-  Branch bFound:
-    False → [merge] → PopulateComboTreeColumn()
-    True  → Create WBP_ChipRow(RowIndentLevel=IndentLevel)
-             ForEach ParseIntoArray(ChildCSV, ",") (element):
-               Create WBP_ChipTag (FolderPath=SelectedPath+"/"+element, IndentLevel=IndentLevel+1)
-               Bind OnChipSelected → OnComboChipTagClicked | AddChild(Row.HBox_ChipRow)
-             Completed: AddChild(VB_ChipTagArea, Row)
-  PopulateComboTreeColumn()
+SET CurrentComboFolderPath = SelectedPath_ChipTag
+SET RowCount = GetChildrenCount(VB_ChipTagArea)
+ForLoop(0, RowCount - IndentLevel_ChipTag - 1):
+  RemoveChildAt(VB_ChipTagArea, RowCount - 1 - Index)   ← xóa từ dưới lên
+Completed → FilterComboByFolder(SelectedPath_ChipTag)
+Map Find(ComboFolderTree, SelectedPath_ChipTag) → ChildCSV, bFound
+Branch bFound:
+  False → dead-end
+  True  → Create WBP_ChipRow(RowIndentLevel=IndentLevel_ChipTag+1)
+           ForEach ParseIntoArray(ChildCSV, ",") (element):
+             Create WBP_ChipTag (FolderPath=Append(SelectedPath_ChipTag,"/",element), IndentLevel=IndentLevel_ChipTag+1)
+             Bind OnChipSelected → OnComboChipTagClicked | AddChild(Row.HorizontalBox_ChipRow)
+           Completed: AddChild(VB_ChipTagArea, Row)
+```
+
+#### OnComboTreeNodeRightClicked(FolderPath) — Custom Event
+```
+Print String("RightClick: " + FolderPath)   [DEBUG]
+Branch(FolderPath == "__ALL__" OR FolderPath == ""):
+  True  → dead-end   ← sentinel guard
+  False → Create WBP_LibraryContextMenu → LibMenu
+           SET LibMenu.MenuMode="Folder" | TargetFolderPath=FolderPath
+           Bind OnRequestRenameFolder/MoveFolder/DeleteFolder → stubs
+           AddMenuItem("✏️ Đổi tên","") | AddMenuItem("📁 Chuyển vào…","") | AddMenuItem("🗑️ Xóa","")
+           Set Input Mode UI Only | LibMenu.ShowAt(Get Mouse Position on Viewport)
 ```
 
 ---

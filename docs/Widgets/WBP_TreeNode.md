@@ -1,5 +1,5 @@
 # WBP_TreeNode — Folder Tree Node
-**Phiên bản:** 1.1 | **Tạo:** 27/05/2026 | **Cập nhật:** 18/06/2026 — TreeNode highlight
+**Phiên bản:** 1.2 | **Tạo:** 27/05/2026 | **Cập nhật:** 26/06/2026 — OnNodeRightClicked dispatcher + On Mouse Button Down
 
 ---
 
@@ -25,8 +25,10 @@ folder đang active (phối hợp với `IsPathActive`/`UpdateFolderHighlights`)
 
 ```
 OnNodeSelected(SelectedPath: String, IndentLevel: Integer)
+OnNodeRightClicked(FolderPath: String)
 ```
-Fire khi `Button_58.OnClicked`. Bind trong `WBP_FurnitureInventory.PopulateTreeColumn`.
+- `OnNodeSelected` — fire khi `Button_58.OnClicked`. Bind trong `WBP_FurnitureInventory.PopulateTreeColumn`.
+- `OnNodeRightClicked` — fire khi right-click. Bind trong `PopulateComboTreeColumn` → `OnComboTreeNodeRightClicked`.
 
 ---
 
@@ -46,9 +48,25 @@ nếu không cần thiết — debug đặt ở `UpdateFolderHighlights` là cal
 
 ---
 
+## On Mouse Button Down (v1.2)
+
+Override để bắt right-click. **Trả về Handled nếu right-click** để UMG không propagate lên parent.
+
+```
+On Mouse Button Down(MyGeometry, MouseEvent):
+  Get Effecting Button(MouseEvent) → ReturnValue
+  Branch(ReturnValue == Right Mouse Button)
+    True  → Broadcast OnNodeRightClicked(GET FolderPath)
+             Return Node ← Make Event Reply(Handled)
+    False → Return Node ← Make Event Reply(Unhandled)
+```
+
+---
+
 ## Lịch sử cập nhật
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 27/05/2026 | Khởi tạo — FolderPath/FolderName/IndentLevel, Dispatcher OnNodeSelected(Path, Indent) |
 | 1.1 | 18/06/2026 — TreeNode Highlight | `RefreshDisplay` thêm param `bIsActive: Boolean` → `SetBackgroundColor(Button_58)`. Phối hợp với `UpdateFolderHighlights` + `IsPathActive` trong `WBP_FurnitureInventory`. |
+| 1.2 | 26/06/2026 — Right-click dispatcher | Thêm `OnNodeRightClicked(FolderPath: String)` dispatcher. Override `On Mouse Button Down`: branch Right Mouse Button → Broadcast dispatcher → Handled; False → Unhandled. |
