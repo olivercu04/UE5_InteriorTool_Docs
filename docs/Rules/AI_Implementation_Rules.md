@@ -237,6 +237,15 @@ Dùng đúng tên này, KHÔNG bịa tên khác:
 | TileView bulk set | `Set List Items(TileView, Array)` — set toàn bộ 1 lần (stable render, thay N lần Add Item). ✅ C5 25/06 | Add Item lặp nhiều lần |
 | String prefix check | `String Starts With(SourceString, InPrefix)` → bool. ✅ C5 25/06 | |
 | Bind TreeNode event | `Bind Event to On Node Selected(Widget)` + `Create Event(HandlerFunc, self)` — binding dispatch từ WBP_TreeNode lên inventory. ✅ C5 25/06 | |
+| `Find Substring (SearchFromEnd=True)` | Tìm vị trí ký tự từ cuối chuỗi → idx. idx==-1 nếu không tìm thấy. Dùng để parse "/" cuối trong path. ✅ C5.2 27/06 | |
+| `Left(String, Count)` | Lấy Count ký tự đầu chuỗi. Dùng cùng FindSubstring để cắt phần trước "/". ✅ C5.2 27/06 | |
+| `RightChop(String, Count)` | Bỏ Count ký tự đầu → lấy phần còn lại. Dùng cùng FindSubstring để cắt phần sau "/". ✅ C5.2 27/06 | |
+| `Trim` | Bỏ khoảng trắng đầu/cuối chuỗi. Bắt buộc validate trước khi dùng làm tên folder. ✅ C5.2 27/06 | |
+| `Select All Text When Focused` | Property trên EditableTextBox (KHÔNG phải node riêng) — set trong Details panel. ✅ C5.2 27/06 | |
+| `Set Keyboard Focus(Widget)` | Force focus về EditBox sau Delay(0.0). Phải dùng với Delay(0.0) khi Hide menu cùng frame. ✅ C5.2 27/06 | `Focus Widget` (sai tên) |
+| `Switch on ETextCommit` | Branch theo enum ETextCommit. **Selection pin PHẢI nối CommitMethod** — không nối → mọi commit vào Default → event không fire. ✅ C5.2 27/06 | Default pin (nếu Selection không nối) |
+| `ForEachLoopWithBreak` | ForEach có thêm Break output pin để thoát sớm. Dùng để tìm node theo FolderPath. ✅ C5.2 27/06 | ForEach (thiếu Break) |
+| `Remove Item(Array, Item)` | Xóa 1 element khỏi array theo value. Dùng để loại self ra khỏi SiblingNames. ✅ C5.2 27/06 | |
 
 ⚠️ Khi gặp node mới chưa có trong bảng → cuhoang xác nhận, rồi thêm vào bảng này.
 

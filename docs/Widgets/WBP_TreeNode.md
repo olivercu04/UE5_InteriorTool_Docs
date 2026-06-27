@@ -1,5 +1,5 @@
 # WBP_TreeNode — Folder Tree Node
-**Phiên bản:** 1.2 | **Tạo:** 27/05/2026 | **Cập nhật:** 26/06/2026 — OnNodeRightClicked dispatcher + On Mouse Button Down
+**Phiên bản:** 1.3 | **Tạo:** 27/05/2026 | **Cập nhật:** 27/06/2026 — C5.2 EditableLabel_Name + OnNodeRenameCommitted
 
 ---
 
@@ -26,15 +26,29 @@ folder đang active (phối hợp với `IsPathActive`/`UpdateFolderHighlights`)
 ```
 OnNodeSelected(SelectedPath: String, IndentLevel: Integer)
 OnNodeRightClicked(FolderPath: String)
+OnNodeRenameCommitted(OldPath: String, NewName: String)
 ```
 - `OnNodeSelected` — fire khi `Button_58.OnClicked`. Bind trong `WBP_FurnitureInventory.PopulateTreeColumn`.
 - `OnNodeRightClicked` — fire khi right-click. Bind trong `PopulateComboTreeColumn` → `OnComboTreeNodeRightClicked`.
+- `OnNodeRenameCommitted` — fire khi WBP_EditableLabel confirm rename. Bind trong `PopulateComboTreeColumn` → `OnRenameFolderCommitted`.
+
+---
+
+## Layout — v1.3
+
+```
+Button_58 (Button, root)
+└── HorizontalBox
+    ├── EditableLabel_Name   (WBP_EditableLabel) ← v1.3: thay TextBlock_71
+    └── [...]
+```
+> Thay TextBlock_71 bằng WBP_EditableLabel — additive. Furniture/material tree KHÔNG bị ảnh hưởng (chỉ Combo mode gọi `EnterRenameMode`).
 
 ---
 
 ## RefreshDisplay(FolderName, IndentLevel, bIsActive: Boolean) — v1.1
 
-v1.1 thêm param `bIsActive`. Sau logic SetText/SetPadding hiện có:
+v1.1 thêm param `bIsActive`. **v1.3:** `Set Text(TextBlock_71, FolderName)` đổi thành `EditableLabel_Name.SetLabel(FolderName)`. Sau logic SetLabel/SetPadding:
 
 ```
 Branch(bIsActive):
@@ -63,6 +77,25 @@ On Mouse Button Down(MyGeometry, MouseEvent):
 
 ---
 
+## EnterRenameMode(Siblings : Array\<String\>) — Custom Event (v1.3)
+
+```
+EditableLabel_Name.EnterEditMode(Siblings)
+```
+
+## Event Construct — v1.3 (binding thêm)
+
+```
+Bind EditableLabel_Name.OnLabelRenameCommitted → HandleLabelCommitted
+```
+
+### HandleLabelCommitted(NewName : String) — Local Custom Event
+```
+Broadcast OnNodeRenameCommitted(GET FolderPath, NewName)
+```
+
+---
+
 ## Lịch sử cập nhật
 
 | Phiên bản | Ngày | Nội dung |
@@ -70,3 +103,4 @@ On Mouse Button Down(MyGeometry, MouseEvent):
 | 1.0 | 27/05/2026 | Khởi tạo — FolderPath/FolderName/IndentLevel, Dispatcher OnNodeSelected(Path, Indent) |
 | 1.1 | 18/06/2026 — TreeNode Highlight | `RefreshDisplay` thêm param `bIsActive: Boolean` → `SetBackgroundColor(Button_58)`. Phối hợp với `UpdateFolderHighlights` + `IsPathActive` trong `WBP_FurnitureInventory`. |
 | 1.2 | 26/06/2026 — Right-click dispatcher | Thêm `OnNodeRightClicked(FolderPath: String)` dispatcher. Override `On Mouse Button Down`: branch Right Mouse Button → Broadcast dispatcher → Handled; False → Unhandled. |
+| 1.3 | 27/06/2026 — C5.2 Inline Rename | TextBlock_71→`EditableLabel_Name` (WBP_EditableLabel). Dispatcher `OnNodeRenameCommitted(OldPath, NewName)`. Custom Event `EnterRenameMode(Siblings)` → relay vào `EditableLabel_Name.EnterEditMode`. Event Construct: Bind `EditableLabel_Name.OnLabelRenameCommitted` → `HandleLabelCommitted` → Broadcast `OnNodeRenameCommitted`. RefreshDisplay: `SetText(TextBlock_71)` → `EditableLabel_Name.SetLabel`. Additive — furniture/material unaffected. |

@@ -1,6 +1,6 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
-**Cập nhật:** 25/06/2026 (C4/C8 ✅ 100% + C5.1 ✅ + C5.0 ⏳ ~90%)
+**Cập nhật:** 27/06/2026 (C5.0 ✅ + WBP_LibraryContextMenu ✅ + C5.2 ✅ DONE)
 
 ---
 
@@ -13,11 +13,11 @@ Sprint 3 — Group cơ bản       ███████████████
 Sprint 4 — Edit + Nested      ████████████████ 8/8  SHIPPED ✅  (+5 bug fix thêm)
 Gate 1                        ████████████████ 3/3  DONE ✅ (16/06)
 Sprint D — Data Layer v2      ████████████████ 9/9  DONE ✅ (17/06)
-Sprint 5 — Combo Mesh         █████████░░░░   10/17 task (T1/T2/C0/C1/C2/C3a/C3b/C4/C8/C5.1 ✅; C5.0 ⏳90%; 6 còn lại)
+Sprint 5 — Combo Mesh         ███████████░░   12/17 task (T1/T2/C0/C1/C2/C3a/C3b/C4/C8/C5.1/C5.0/C5.2 ✅; 5 còn lại)
 Sprint 6 — Polish UX          ░░░░░░░░░░░░░    0/14 task
 Sprint 7 — Material v1.2      ░░░░░░░░░        0/9  task
 
-TỔNG: 60/96 task
+TỔNG: 62/96 task
 ```
 
 ---
@@ -253,12 +253,11 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 - [x] **C4** — WBP_ComboCard + ghost + drag-drop + CalculateComboAnchor + CTV_ComboCard. Ghost offset FIXED (Approach B). ✅ 25/06/2026
 - [ ] **C5** ⏳ IN PROGRESS — 7 sub-task:
   - [x] C5.1 — C++ 3 helper (UpdateComboFolder/RenameFolderPrefix/ClearFolderPrefix) ✅ 25/06
-  - [ ] C5.0 — tree + filter browse ⏳ ~90% (fix card render B-C5-card)
-  - [ ] WBP_LibraryContextMenu — Menu Anchor context menu
-  - [ ] C5.2 — move combo (right-click card)
-  - [ ] C5.3 — tạo folder mới
-  - [ ] C5.4 — rename folder (RenameFolderPrefix cascade)
-  - [ ] C5.5 — move folder
+  - [x] C5.0 — tree + filter browse ✅ DONE (26/06)
+  - [x] WBP_LibraryContextMenu — Clone WBP_ContextMenu; Z-order fix D12 ✅ DONE (26/06)
+  - [x] C5.2 — Inline rename folder: WBP_EditableLabel + WBP_TreeNode v1.3 + Inventory v3.3 ✅ DONE (27/06)
+  - [ ] C5.4 — move folder
+  - [ ] C5.5 — rename/tag combo card (C5.3 scope re-eval)
   - [ ] C5.6 — xóa folder (ClearFolderPrefix + confirm dialog)
 - [ ] **C5** — Folder tree tab 🧩 Combo trong WBP_FurnitureInventory
 - [ ] **C6** — Favorite + Recent combo
@@ -292,3 +291,5 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 23/06/2026 | Sprint 5 C1+C2 ✅ DONE. Chốt 11 quyết định + 3 điều chỉnh (Sprint5_Plan_v1.1). Thêm task: Fix K3, Thumbnail System C++, WBP_Toast, Xoay combo P3, C11 (trước C10). Chia 3 giai đoạn. TỔNG Sprint 5: 5/17. |
 | 24/06/2026 | C3b ✅ DONE. C4 ⏳ 80%: WBP_ComboCard + ghost + drag-drop flow + CalculateComboAnchor + CTV_ComboCard (19 combo PASS). C8 ✅ MERGED vào C4. Bug OPEN: B-ghost-offset. TỔNG Sprint 5: 8/17 (C3a+C3b+C8 done). |
 | 25/06/2026 | B-ghost-offset ✅ FIXED. C4 ✅ 100% DONE. C5.1 ✅: 3 C++ folder helpers. C5.0 ⏳ ~90%: tree PASS, card render bug open. TỔNG Sprint 5: 10/17 (C4+C5.1 done). |
+| 26/06/2026 | C5.0 ✅ DONE: PopulateComboTreeColumn 2-cấp+D9 guard, OnComboTreeNodeRightClicked, WBP_LibraryContextMenu (Z-order D12). B-C5-card ✅ FIXED (Entry Widget Class verify). TỔNG Sprint 5: 12/17. |
+| 27/06/2026 | C5.2 ✅ DONE: WBP_EditableLabel v1.0 (inline rename component). WBP_TreeNode v1.3 + WBP_FurnitureInventory v3.3. BUG FIX RefreshComboFolderUI +PopulateComboTreeColumn. 6 test PASS. TỔNG Sprint 5: 12/17 (task count unchanged — C5.0+WBP_LibraryContextMenu bundled). |

@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 26/06/2026 — C5.0 ✅ DONE | WBP_LibraryContextMenu ✅ | C5.2 TIẾP THEO
+**Phiên bản:** 27/06/2026 — C5.2 ✅ DONE | WBP_EditableLabel v1.0 + WBP_TreeNode v1.3 + WBP_FurnitureInventory v3.3
 
 ---
 
@@ -26,6 +26,7 @@
 | C8 | Drag-drop + surface-snap → **MERGED vào C4** | ✅ MERGED (24/06) |
 | C5.1 | C++ 3 helper folder: UpdateComboFolder / RenameFolderPrefix / ClearFolderPrefix (ComboSerializer). Test PASS: UpdateComboFolder→true, Rename→1, Clear→1. JSON folderPath đổi đúng, tiếng Việt OK. | ✅ DONE (25/06) |
 | C5.0 | Folder tree + filter browse: BuildComboFolderTree, PopulateComboTreeColumn (2 cấp + D9 guard), FilterComboByFolder, OnComboTreeNodeClicked (branch IndentLevel), OnComboChipTagClicked, OnComboTreeNodeRightClicked → WBP_LibraryContextMenu. WBP_TreeNode v1.2 (OnNodeRightClicked + On Mouse Button Down). Test end-to-end PASS 26/06. | ✅ DONE (26/06) |
+| C5.2 | Inline rename folder: WBP_EditableLabel v1.0 (component Overlay+validate+EnterEditMode+ExitEditMode+OnEditBoxCommitted). WBP_TreeNode v1.3 (EditableLabel_Name + OnNodeRenameCommitted + EnterRenameMode). WBP_FurnitureInventory v3.3 (3 helpers ParentOf/LastSegmentOf/GetSiblingFolderNames; OnRequestRenameFolder implement; OnRenameFolderCommitted; CB_RenameFolder; 3 class vars). BUG FIX: RefreshComboFolderUI +PopulateComboTreeColumn (C5.0 thiếu nối). 6 test PASS. | ✅ DONE (27/06/2026) |
 
 **C0:** 3 case A/B/C PASS (22/06). RowName fallback (đồ cũ parse MeshPath) xác nhận OK.
 **C2:** 7/7 PASS (22/06). Group nesting: Case A (no groups→wrapper) / Case B (has groups→no wrapper, root nhận SourceComboID).
@@ -121,6 +122,9 @@
 **WBP_FurnitureInventory v3.2** — C5.0 DONE: PopulateComboTreeColumn 2-cấp+D9 guard, OnComboTreeNodeClicked rewrite, OnComboChipTagClicked (params mới), OnComboTreeNodeRightClicked NEW, 3 stubs (C5.2/C5.4/C5.5)
 **WBP_TreeNode v1.2** — OnNodeRightClicked dispatcher + On Mouse Button Down override (Handled/Unhandled)
 **WBP_LibraryContextMenu v1.0** — TẠO MỚI (26/06): clone WBP_ContextMenu; 3 vars + 4 dispatchers; Btn_Background Z-order fix (index 0)
+**WBP_EditableLabel v1.0** — TẠO MỚI (27/06): component inline rename. Overlay TextBlock_Label+EditBox+Border_Error. ValidateName (empty/slash/dupe). EnterEditMode+Delay(0.0). ExitEditMode guard bIsEditing. OnEditBoxCommitted Switch.Selection pin critical.
+**WBP_TreeNode v1.3** — C5.2: TextBlock_71→EditableLabel_Name; OnNodeRenameCommitted dispatcher; EnterRenameMode; HandleLabelCommitted relay; RefreshDisplay SetText→SetLabel. Additive.
+**WBP_FurnitureInventory v3.3** — C5.2: 3 helpers (ParentOf/LastSegmentOf/GetSiblingFolderNames); OnRequestRenameFolder implement; OnRenameFolderCommitted; CB_RenameFolder; class vars RenameTargetNode/NewFullPrefix/LibraryMenuRef. PopulateComboTreeColumn: bind OnNodeRenameCommitted. BUG FIX: RefreshComboFolderUI +PopulateComboTreeColumn.
 **S_GroupData** — ✅ field `SourceComboID : String` (default "") đã thêm (C1 DONE). Group cha cụm combo = ComboID gốc; group user tạo tay = "". Đã add vào snapshot capture/restore.
 **C++ FurnitureToolkit** — FComboData.FolderPath (field mới), FindMaterialRowNameByPath (function mới). Compile xanh. Full rebuild (Binaries/Intermediate xóa + rebuild) ✅
 
@@ -135,9 +139,8 @@
 ## TIẾP THEO
 
 **ĐẦU SESSION MỚI — Ưu tiên:**
-1. 🔲 **C5.2 — Rename folder** — Wire `OnRequestRenameFolder` stub → show input dialog → `ComboSerializer.RenameFolderPrefix(OldPrefix, NewName)` → `RefreshComboFolderUI()`.
+1. 🔲 **C5.4 — Move folder** — Kéo folder tree node vào target → `ComboSerializer.UpdateComboFolder(OldPrefix, NewFolder)` → `RefreshComboFolderUI()`. WBP_ChipTag rename tái dùng WBP_EditableLabel.
 2. ⏳ **C3 còn lại** — GetCombosDir → `%LOCALAPPDATA%\InteriorFOFFTool\Combos` (P4) + capture thumbnail sau SaveComboFromSelection (P1 hook).
-3. ⚠️ **Debug Print String** trong `OnComboTreeNodeRightClicked` chưa gate `bDebugMode` — xóa hoặc gate trước C5.2 ship.
 
 **BUG OPEN (nhỏ, defer):**
 - WBP_ChipTag right-click chưa có (C5.4+)

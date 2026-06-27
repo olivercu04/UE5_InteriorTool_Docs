@@ -237,6 +237,17 @@
 | 26/06 | D11 | WBP_LibraryContextMenu close mechanism | Plan: dùng Menu Anchor built-in (C5.2+) | Dùng **Btn_Background** (full screen, Z thấp, alpha=0) — clone từ WBP_ContextMenu | Đơn giản hơn, pattern đã tested, không cần Menu Anchor positioning logic | [PLAN-SAI] |
 | 26/06 | D12 | Canvas Panel Z-order | Không đề cập | **Btn_Background index 0, Border_Menu index 1** (phải đúng thứ tự) | UMG render từ index 0 lên — index cao hơn nhận hit trước. Sai order → Btn_Background che Border_Menu → click nút menu không được | [NODE] |
 
+## SPRINT 5 — 27/06/2026 — C5.2 Inline Rename Folder
+
+| Ngày | ID | Mô tả | Plan nói | Thực tế | Lý do | Loại |
+|---|---|---|---|---|---|---|
+| 27/06 | D13 | C5.2 approach | WBP_RenameFolderDialog (dialog popup) | **WBP_EditableLabel** component inline: Overlay Label+EditBox+Border_Error | UX nhất quán Content Browser; tái dùng cho WBP_ChipTag C5.4+ | [SCOPE] |
+| 27/06 | D14 | Validate timing | Validate sau Enter | ValidateName live trong OnTextChanged → Border_Error (feedback tức thì) | User thấy lỗi trước khi Enter, không bị reject sau | [SCOPE] |
+| 27/06 | D15 | Click ngoài | Không rõ trong plan | `OnUserMovedFocus` = **revert** (không commit) | An toàn: không rename ngẫu nhiên khi focus out; Enter = confirm | [SCOPE] |
+| 27/06 | D16 | Folder ops Undo | Không rõ | **KHÔNG CaptureSnapshot** cho rename/move/delete folder | Folder ops = metadata thư viện, không phải scene action (UX8). Confirm dialog C5.6 thay thế Undo | [SCOPE] |
+
+---
+
 **Quyết định kiến trúc C5 (không bàn lại):**
 - **Copy folder GÁC backlog** — phải nhân bản ComboID mới + copy PNG, lệch hẳn pattern chỉ-viết-text. Hiếm dùng.
 - **Folder ops KHÔNG vào Undo (Alt+Z)** — metadata thư viện, không phải scene action. Confirm dialog (C5.6) thay thế Undo.
