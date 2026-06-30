@@ -260,6 +260,9 @@
 **Nguyên nhân:** 2 Branch cập nhật CurrentComboFolderPath (match đúng path / StartsWith path con) có nhánh True dead-end (không nối tiếp sang RenameFolderPrefix) — chỉ nhánh False (qua reroute) mới tới được. Bug CHỈ lộ khi đang XEM ĐÚNG folder bị move lúc confirm — dễ lọt qua test nếu không cố tình test đúng kịch bản đó.
 **Bài học:** mọi nhánh "cập nhật biến rồi tiếp tục logic chính" PHẢI merge về đúng 1 điểm tiếp theo — kể cả nhánh True, không chỉ nhánh False (luật cũ chỉ nhấn mạnh False, lần này lỗi nằm ở True).
 
+### Learning_System — Quy trình dạy học bị bỏ qua (Sprint 5 deadline-rush)
+| 30/06 | Learning_System | Quy tắc dạy học (file Rules/Learning_System.md) bị bỏ hoàn toàn trong giai đoạn deadline-rush Sprint 5 (21/06→30/06) — Claude tự đọc export/log, tự kết luận, tự sửa mà không giải thích/kiểm tra hiểu. Học viên tự nhận ra (cảm thấy "quá phụ thuộc"), yêu cầu khôi phục. Khắc phục: 3 điều chỉnh quy trình ghi trong Learning_System.md v1.2 + bảng "Nợ kiểm tra hiểu" liệt kê minh bạch phần đã bỏ qua, không tick khống. |
+
 ---
 
 **Quyết định kiến trúc C5 (không bàn lại):**
@@ -325,4 +328,4 @@
 | 25/06/2026 | Thêm section "SPRINT 5 — 25/06/2026": C5 scope mở rộng full folder management; D1-D5 (dedup exact/signature/Set List Items/cột chung/class var); quyết định kiến trúc C5. Round 3: thêm D6-D8 (tree 2 cấp, OnComboTreeNodeClicked rewrite, OnComboChipTagClicked new). |
 | 26/06/2026 | Thêm section "SPRINT 5 — 26/06/2026": D9 Branch guard cấp 2 (UX + bug Loop Body/Completed); D10 bug guard position; D11 WBP_LibraryContextMenu clone Btn_Background thay Menu Anchor; D12 Canvas Panel Z-order. |
 | 27/06/2026 | Thêm section "SPRINT 5 — 27/06/2026 — C5.2 Inline Rename Folder": D13 WBP_EditableLabel component inline (thay dialog popup); D14 validate live OnTextChanged; D15 click ngoài = revert; D16 folder ops KHÔNG vào Undo. |
-| 30/06/2026 | Thêm section "SPRINT 5 — 30/06/2026 — C5.4 Move Folder": D-C5.4-1 Array_Append ngược TargetArray/SourceArray trong CollectFolderTargets (kết quả đệ quy không tích lũy được); D-C5.4-2 dead-end thiếu merge nhánh True trong HandleMoveFolderConfirmed (bug CHỈ lộ khi đang xem đúng folder bị move). |
+| 30/06/2026 | Thêm section "SPRINT 5 — 30/06/2026 — C5.4 Move Folder": D-C5.4-1 Array_Append ngược TargetArray/SourceArray trong CollectFolderTargets (kết quả đệ quy không tích lũy được); D-C5.4-2 dead-end thiếu merge nhánh True trong HandleMoveFolderConfirmed (bug CHỈ lộ khi đang xem đúng folder bị move). Thêm note Learning_System: quy trình dạy học bị bỏ qua giai đoạn deadline-rush 21/06→30/06, đã khôi phục trong v1.2. |

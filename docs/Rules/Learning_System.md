@@ -1,6 +1,6 @@
 # Hệ thống học UE5 — Cá nhân hóa
 **Nguồn:** `import_raw/Learning_System.md`
-**Phiên bản:** 1.1 | **Cập nhật:** 20/05/2026 — 16:00 ICT | Mentor: Claude | Học viên: Cuhoang
+**Phiên bản:** 1.2 | **Cập nhật:** 30/06/2026 — Khôi phục quy trình sau giai đoạn deadline-rush (Sprint 5) | Mentor: Claude | Học viên: Cuhoang
 
 ---
 
@@ -112,6 +112,49 @@ Nếu không → giải thích lại bằng ví dụ thực tế từ dự án
 | DataTable (GetDataTableRow) | ✅ | DT_MaterialInstancesCatalog — Row Found/Not Found pin |
 | Dynamic Material Instance | ✅ | CreateDMI → SetMaterial để hỗ trợ param adjust sau |
 | CommonUI (LazyImage, TileView) | ✅ | WBP_MaterialCard, WBP_SlotSwatch lazy load |
+| String StartsWith + Prefix pattern (path cha-con) | ✅ | Bug `IsComboPathActive` (Issue 2 — Chip highlight, 30/06): Concat 3-pin ghép nhầm `Current+"/"+ThisPath` thay vì `ThisPath+"/"`. Kiểm tra hiểu qua Q&A: học viên tự ráp đúng ví dụ "Sofa"/"SofaBed" — xác nhận hiểu vì sao thiếu dấu "/" gây prefix giả mạo. |
+
+---
+
+## Nợ kiểm tra hiểu — Sprint 5 (30/06/2026)
+
+Giai đoạn chạy deadline Sprint 5 (C4 → C5.4 → Issue 2), quy tắc dạy học bị bỏ qua —
+nhiều node/pattern được dùng nhưng KHÔNG qua bước hỏi-xác-nhận. Liệt kê đây để
+KHÔNG tick ✅ khống — chỉ tick khi thật sự hỏi lại và học viên tự giải thích được,
+giống cách làm với StartsWith ở trên.
+
+| Kiến thức dùng nhưng chưa verify | Xuất hiện ở | Trạng thái |
+|---|---|---|
+| Dynamic Cast trong ForEach loop (lọc đúng kiểu widget) | UpdateComboFolderHighlights, CollectFolderTargets | ⏳ chưa hỏi |
+| Pure function — nhiều dây ra từ 1 lần gọi không re-evaluate | IsComboPathActive gọi 2 lần (Print + RefreshDisplay) | ⏳ chưa hỏi |
+| Đệ quy Function (gọi lại chính nó) + base case dừng | CollectFolderTargets | ⏳ chưa hỏi |
+| Bind Event / AddDelegate — vì sao phải "+Add Custom Event matching signature" thay vì tự khai tay | HandleRowSelected, HandleMoveFolderConfirmed | ⏳ chưa hỏi (đã sửa lỗi 1 lần nhưng chưa hỏi lại nguyên nhân) |
+| Array_Append(Target, Source) — chiều nào "ăn" vào chiều nào | CollectFolderTargets (bug D-C5.4-1) | ⏳ chưa hỏi |
+| Reroute/Knot node — chỉ để dây gọn, không đổi logic | rải khắp Sprint 5 | ⏳ chưa hỏi (thấp ưu tiên, ít quan trọng) |
+
+**Quy tắc xử lý nợ này:** không dồn hỏi 1 lần — mỗi lần 1 trong các dòng trên XUẤT
+HIỆN LẠI tự nhiên trong tính năng tiếp theo (Move Combo, Tạo folder mới, Xóa folder,
+ChipTag right-click), dừng lại hỏi 1 câu ngắn đúng lúc đó, không tách riêng buổi học.
+
+---
+
+## Điều chỉnh quy trình — 30/06/2026
+
+Nguyên nhân: deadline Sprint 5 khiến quy tắc dạy học (đặc biệt "kiểm tra sau mỗi
+tính năng") bị bỏ hoàn toàn trong ~10 ngày (21/06 → 30/06). Học viên tự nhận ra
+và yêu cầu khôi phục.
+
+3 điều chỉnh áp dụng từ đây:
+1. **Trước khi tự đọc export/log kết luận bug** — hỏi học viên đoán thử trước
+   ("tao nghĩ lỗi ở chỗ X vì Y"), dù sai cũng được. Đối chiếu đoán với bằng chứng
+   thay vì Claude tự phán từ đầu.
+2. **Sau mỗi tính năng xong** — hỏi 1-2 câu ngắn đúng tinh thần mục "Cách kiểm tra
+   tiến độ" gốc của file này, KHÔNG bỏ qua dù đang gấp.
+3. **Định kỳ (không cố định lịch)** — dừng lại hỏi học viên tóm tắt bằng lời luồng
+   vừa làm, không phải để thi mà để tự học viên thấy mình có theo kịp không.
+
+Không hồi tố tick ✅ cho phần đã bỏ qua (xem bảng "Nợ kiểm tra hiểu" ở trên) — xử lý
+dần khi kiến thức đó tự nhiên xuất hiện lại, không dồn 1 buổi.
 
 ---
 
