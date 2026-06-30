@@ -567,6 +567,13 @@ ForEach LocalViews (element):
 ForEach Completed: [dead-end]
 ```
 
+> **Known behavior (không phải bug, 30/06/2026):** Folder KHÔNG tồn tại độc lập —
+> nó là cái bóng suy ra từ FolderPath của combo hiện có (BuildComboFolderTree quét
+> AllComboViews mỗi lần). Move/xóa hết combo + folder con ra khỏi 1 folder cha →
+> folder cha tự biến mất khỏi tree khi RefreshComboFolderUI build lại (không gì để
+> suy ra nó tồn tại). Nhất quán với C5.6 (xóa folder cũng gây hiện tượng y hệt với
+> con của nó). Persist folder rỗng độc lập = thay đổi kiến trúc lớn, ngoài scope C5.
+
 ### PopulateComboTreeColumn() — Function
 Dựng WBP_TreeNode vào `VerticalBox_44` (cột tree CHUNG với furniture/material). Render 2 cấp: cấp 1 (IndentLevel=0) + cấp 2 (IndentLevel=1, chỉ khi cấp 1 đang active — D9).
 ```
@@ -1054,3 +1061,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.1 | 25/06/2026 — C5.0 Tree 2 cấp + Chip Nav (Round 3 delta) | PopulateComboTreeColumn: render 2 cấp (cấp 1 IndentLevel=0, cấp 2 IndentLevel=1 lồng). OnComboTreeNodeClicked: REWRITE branch IndentLevel (0→clear+filter+repopulate; 1→filter+gen WBP_ChipRow cấp 3). OnComboChipTagClicked: NEW. Superseded bởi v3.2 (26/06). |
 | 3.2 | 26/06/2026 — C5.0 Tree Nested + Right-click + WBP_LibraryContextMenu | PopulateComboTreeColumn: D9 Branch guard (cấp 2 CHỈ hiện khi active) + Bind OnNodeRightClicked 4 node. OnComboTreeNodeClicked: rewrite (ClearChildren chung trước Branch, Append(), HorizontalBox_ChipRow). OnComboChipTagClicked: đổi params (SelectedPath_ChipTag/IndentLevel_ChipTag), fix ForLoop formula. OnComboTreeNodeRightClicked: NEW (spawn WBP_LibraryContextMenu, guard sentinel). OnRequestRenameFolder/MoveFolder/DeleteFolder: STUB C5.2/C5.4/C5.5. Test end-to-end PASS 26/06. |
 | 3.3 | 27/06/2026 — C5.2 Inline Rename Folder | 3 Pure helpers (ParentOf/LastSegmentOf/GetSiblingFolderNames). OnRequestRenameFolder: implement (ForEachLoopWithBreak tìm node + EnterRenameMode). OnRenameFolderCommitted: NEW (cascade CurrentComboFolderPath + RenameFolderPrefix + RefreshComboFolderUI). CB_RenameFolder: NEW (Hide menu → OnRequestRenameFolder). OnComboTreeNodeRightClicked: AddMenuItem → capture return → bind OnItemClicked → CB_X; SET LibraryMenuRef; xóa Print String debug. PopulateComboTreeColumn: bind OnNodeRenameCommitted → OnRenameFolderCommitted (Node1+Node2). Class vars: RenameTargetNode/NewFullPrefix/LibraryMenuRef. BUG FIX: RefreshComboFolderUI confirmed PopulateComboTreeColumn. FilterComboByFolder ⚠️→✅ FIXED. |
+| 3.4 | 30/06/2026 — C5.4 Move Folder | Class var MovingFolderPath (String). CollectFolderTargets(ParentPath, IndentLevel, MovingPath) — đệ quy, trả Array<S_FolderTargetEntry>, loại MovingPath + con cháu (Branch StartsWith). BuildMoveFolderTargetList(MovingPath) — wrap + thêm entry "(Gốc)". OnRequestMoveFolder implement (đã STUB từ C5.0). CB_MoveFolderClick implement (đã STUB). HandleMoveFolderConfirmed NEW — tính NewFullPrefix (tái dùng var C5.2), guard no-op, cập nhật CurrentComboFolderPath, gọi RenameFolderPrefix + RefreshComboFolderUI. BUG FIX D-C5.4-1 (Array_Append ngược Target/Source), D-C5.4-2 (dead-end thiếu merge nhánh True). |

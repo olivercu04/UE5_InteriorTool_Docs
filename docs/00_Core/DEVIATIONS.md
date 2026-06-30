@@ -248,6 +248,20 @@
 
 ---
 
+## SPRINT 5 — 30/06/2026 — C5.4 Move Folder
+
+### D-C5.4-1 — Array_Append nối ngược TargetArray/SourceArray (CollectFolderTargets)
+**Phát hiện:** 30/06/2026, lúc test list move folder trả về thiếu entries con cháu (chỉ 1 entry/cấp).
+**Nguyên nhân:** node Array_Append cuối Loop Body đệ quy bị nối: TargetArray=ChildEntries (sai), SourceArray=LocalResult (sai) — ngược hoàn toàn so với ý đồ (TargetArray=LocalResult, SourceArray=ChildEntries). Hệ quả: kết quả đệ quy bị append vào biến sẽ bị vứt, LocalResult thật không bao giờ nhận gì từ con.
+**Bài học:** Array_Append(Target, Source) — luôn double-check chiều TargetArray là biến SỐNG SÓT sau hàm (LocalResult ở đây), không phải biến tạm.
+
+### D-C5.4-2 — Dead-end thiếu merge ở 2 nhánh True (HandleMoveFolderConfirmed)
+**Phát hiện:** 30/06/2026, lúc soát lại node flow qua text export.
+**Nguyên nhân:** 2 Branch cập nhật CurrentComboFolderPath (match đúng path / StartsWith path con) có nhánh True dead-end (không nối tiếp sang RenameFolderPrefix) — chỉ nhánh False (qua reroute) mới tới được. Bug CHỈ lộ khi đang XEM ĐÚNG folder bị move lúc confirm — dễ lọt qua test nếu không cố tình test đúng kịch bản đó.
+**Bài học:** mọi nhánh "cập nhật biến rồi tiếp tục logic chính" PHẢI merge về đúng 1 điểm tiếp theo — kể cả nhánh True, không chỉ nhánh False (luật cũ chỉ nhấn mạnh False, lần này lỗi nằm ở True).
+
+---
+
 **Quyết định kiến trúc C5 (không bàn lại):**
 - **Copy folder GÁC backlog** — phải nhân bản ComboID mới + copy PNG, lệch hẳn pattern chỉ-viết-text. Hiếm dùng.
 - **Folder ops KHÔNG vào Undo (Alt+Z)** — metadata thư viện, không phải scene action. Confirm dialog (C5.6) thay thế Undo.
@@ -310,3 +324,5 @@
 | 24/06/2026 | Thêm section "SPRINT 5 — 24/06/2026": C8 MERGED vào C4; On Drop combo KHÔNG trace (ghost location); CalculateComboAnchor fix anchor z; ghost offset BUG OPEN |
 | 25/06/2026 | Thêm section "SPRINT 5 — 25/06/2026": C5 scope mở rộng full folder management; D1-D5 (dedup exact/signature/Set List Items/cột chung/class var); quyết định kiến trúc C5. Round 3: thêm D6-D8 (tree 2 cấp, OnComboTreeNodeClicked rewrite, OnComboChipTagClicked new). |
 | 26/06/2026 | Thêm section "SPRINT 5 — 26/06/2026": D9 Branch guard cấp 2 (UX + bug Loop Body/Completed); D10 bug guard position; D11 WBP_LibraryContextMenu clone Btn_Background thay Menu Anchor; D12 Canvas Panel Z-order. |
+| 27/06/2026 | Thêm section "SPRINT 5 — 27/06/2026 — C5.2 Inline Rename Folder": D13 WBP_EditableLabel component inline (thay dialog popup); D14 validate live OnTextChanged; D15 click ngoài = revert; D16 folder ops KHÔNG vào Undo. |
+| 30/06/2026 | Thêm section "SPRINT 5 — 30/06/2026 — C5.4 Move Folder": D-C5.4-1 Array_Append ngược TargetArray/SourceArray trong CollectFolderTargets (kết quả đệ quy không tích lũy được); D-C5.4-2 dead-end thiếu merge nhánh True trong HandleMoveFolderConfirmed (bug CHỈ lộ khi đang xem đúng folder bị move). |

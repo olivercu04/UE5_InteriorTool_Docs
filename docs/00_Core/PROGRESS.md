@@ -13,7 +13,7 @@ Sprint 3 — Group cơ bản       ███████████████
 Sprint 4 — Edit + Nested      ████████████████ 8/8  SHIPPED ✅  (+5 bug fix thêm)
 Gate 1                        ████████████████ 3/3  DONE ✅ (16/06)
 Sprint D — Data Layer v2      ████████████████ 9/9  DONE ✅ (17/06)
-Sprint 5 — Combo Mesh         ███████████░░   12/17 task (T1/T2/C0/C1/C2/C3a/C3b/C4/C8/C5.1/C5.0/C5.2 ✅; 5 còn lại)
+Sprint 5 — Combo Mesh         ████████████░   13/17 task (T1/T2/C0/C1/C2/C3a/C3b/C4/C8/C5.1/C5.0/C5.2/C5.4 ✅; 4 còn lại)
 Sprint 6 — Polish UX          ░░░░░░░░░░░░░    0/14 task
 Sprint 7 — Material v1.2      ░░░░░░░░░        0/9  task
 
@@ -256,7 +256,7 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
   - [x] C5.0 — tree + filter browse ✅ DONE (26/06)
   - [x] WBP_LibraryContextMenu — Clone WBP_ContextMenu; Z-order fix D12 ✅ DONE (26/06)
   - [x] C5.2 — Inline rename folder: WBP_EditableLabel + WBP_TreeNode v1.3 + Inventory v3.3 ✅ DONE (27/06)
-  - [ ] C5.4 — move folder
+  - [x] C5.4 — Move Folder: WBP_MoveToFolderDialog + WBP_MoveFolderRow (mới) + S_FolderTargetEntry + WBP_FurnitureInventory v3.4 ✅ DONE (30/06)
   - [ ] C5.5 — rename/tag combo card (C5.3 scope re-eval)
   - [ ] C5.6 — xóa folder (ClearFolderPrefix + confirm dialog)
 - [ ] **C5** — Folder tree tab 🧩 Combo trong WBP_FurnitureInventory
@@ -293,3 +293,4 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 25/06/2026 | B-ghost-offset ✅ FIXED. C4 ✅ 100% DONE. C5.1 ✅: 3 C++ folder helpers. C5.0 ⏳ ~90%: tree PASS, card render bug open. TỔNG Sprint 5: 10/17 (C4+C5.1 done). |
 | 26/06/2026 | C5.0 ✅ DONE: PopulateComboTreeColumn 2-cấp+D9 guard, OnComboTreeNodeRightClicked, WBP_LibraryContextMenu (Z-order D12). B-C5-card ✅ FIXED (Entry Widget Class verify). TỔNG Sprint 5: 12/17. |
 | 27/06/2026 | C5.2 ✅ DONE: WBP_EditableLabel v1.0 (inline rename component). WBP_TreeNode v1.3 + WBP_FurnitureInventory v3.3. BUG FIX RefreshComboFolderUI +PopulateComboTreeColumn. 6 test PASS. TỔNG Sprint 5: 12/17 (task count unchanged — C5.0+WBP_LibraryContextMenu bundled). |
+| 30/06/2026 | C5.4 ✅ DONE: Move Folder — WBP_MoveToFolderDialog + WBP_MoveFolderRow (mới). S_FolderTargetEntry struct mới. WBP_FurnitureInventory v3.4 (MovingFolderPath + CollectFolderTargets + BuildMoveFolderTargetList + OnRequestMoveFolder implement + CB_MoveFolderClick implement + HandleMoveFolderConfirmed NEW). BUG FIX D-C5.4-1 (Array_Append ngược) + D-C5.4-2 (dead-end nhánh True). Backlog reorder: Issue 2 → Move Combo → NewFolder → Xóa folder → ChipTag. TỔNG Sprint 5: 13/17. |

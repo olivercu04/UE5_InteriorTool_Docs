@@ -52,7 +52,16 @@ docs/
 │   ├── WBP_DragOverlay_FurnitureCard.md
 │   ├── WBP_BoxSelectOverlay.md
 │   ├── WBP_DetailPopup.md
-│   └── WBP_ResizeWindow.md
+│   ├── WBP_ResizeWindow.md
+│   ├── WBP_TreeNode.md                    ← Sprint 5 (C5.0)
+│   ├── WBP_ChipTag.md                     ← Sprint 5 (C5.0)
+│   ├── WBP_LibraryContextMenu.md          ← Sprint 5 (C5.0)
+│   ├── WBP_EditableLabel.md               ← Sprint 5 (C5.2)
+│   ├── WBP_ComboCard.md                   ← Sprint 5 (C4)
+│   ├── WBP_DragOverlay_ComboCard.md       ← Sprint 5 (C4, nếu tách riêng file)
+│   ├── WBP_SaveComboDialog.md             ← Sprint 5 (C3b)
+│   ├── WBP_MoveToFolderDialog.md          ← Sprint 5 (C5.4) — MỚI 30/06
+│   └── WBP_MoveFolderRow.md               ← Sprint 5 (C5.4) — MỚI 30/06
 ├── Data/
 │   ├── Data_Structures.md
 │   ├── Data_Overview.md
@@ -87,7 +96,7 @@ docs/
 │   ├── Sprint3/      (Plan, Regression_DualDispatcher_Log)
 │   ├── Sprint4/      (Plan, Execution, BugFix_Execution)
 │   ├── SprintD/      (Gate1_Execution)
-│   └── Sprint5/      (Combo_Execution — UPCOMING, chưa làm)
+│   └── Sprint5/      (Combo_Execution + Combo_C5_FolderManagement_Plan — đang thực thi, xem 00_Core/02_Current_Sprint.md để biết task hiện tại)
 └── Bugs/
     ├── Open_Bugs.md          ← TẠO MỚI (extract từ Session_State)
     └── Bug_GPU_VRAM_Crash.md

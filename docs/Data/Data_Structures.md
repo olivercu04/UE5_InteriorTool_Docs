@@ -58,6 +58,14 @@
 | SurfaceType | Name | "Floor" | |
 | GroupID | String | "" | Sprint 3+ |
 
+### S_FolderTargetEntry — TẠO MỚI 30/06/2026 (C5.4)
+Dùng cho list chọn folder đích trong WBP_MoveToFolderDialog.
+| Field | Kiểu | Ghi chú |
+|---|---|---|
+| Path | String | Path đầy đủ. "" = "(Gốc)" |
+| DisplayLabel | String | Tên hiển thị (segment cuối hoặc "(Gốc)") |
+| IndentLevel | Integer | Cấp thụt lề khi vẽ trong ScrollBox |
+
 ### S_ComboMeshData (mới — Sprint 5)
 
 DataTable Row struct cho DT_ComboMeshCatalog.

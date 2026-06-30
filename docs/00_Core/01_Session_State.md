@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 27/06/2026 — C5.2 ✅ DONE | WBP_EditableLabel v1.0 + WBP_TreeNode v1.3 + WBP_FurnitureInventory v3.3
+**Phiên bản:** 30/06/2026 — C5.4 ✅ DONE | WBP_MoveToFolderDialog v1.0 + WBP_MoveFolderRow v1.0 + S_FolderTargetEntry + WBP_FurnitureInventory v3.4
 
 ---
 
@@ -27,6 +27,7 @@
 | C5.1 | C++ 3 helper folder: UpdateComboFolder / RenameFolderPrefix / ClearFolderPrefix (ComboSerializer). Test PASS: UpdateComboFolder→true, Rename→1, Clear→1. JSON folderPath đổi đúng, tiếng Việt OK. | ✅ DONE (25/06) |
 | C5.0 | Folder tree + filter browse: BuildComboFolderTree, PopulateComboTreeColumn (2 cấp + D9 guard), FilterComboByFolder, OnComboTreeNodeClicked (branch IndentLevel), OnComboChipTagClicked, OnComboTreeNodeRightClicked → WBP_LibraryContextMenu. WBP_TreeNode v1.2 (OnNodeRightClicked + On Mouse Button Down). Test end-to-end PASS 26/06. | ✅ DONE (26/06) |
 | C5.2 | Inline rename folder: WBP_EditableLabel v1.0 (component Overlay+validate+EnterEditMode+ExitEditMode+OnEditBoxCommitted). WBP_TreeNode v1.3 (EditableLabel_Name + OnNodeRenameCommitted + EnterRenameMode). WBP_FurnitureInventory v3.3 (3 helpers ParentOf/LastSegmentOf/GetSiblingFolderNames; OnRequestRenameFolder implement; OnRenameFolderCommitted; CB_RenameFolder; 3 class vars). BUG FIX: RefreshComboFolderUI +PopulateComboTreeColumn (C5.0 thiếu nối). 6 test PASS. | ✅ DONE (27/06/2026) |
+| C5.4 | Move Folder: S_FolderTargetEntry struct mới (Path/DisplayLabel/IndentLevel). WBP_MoveFolderRow (Horizontal Box + Spacer_Indent + Button_Row; SetRow/SetHighlight/OnRowClicked). WBP_MoveToFolderDialog (Canvas + Border_Dim full-screen + Border_Content; PopulateRows/HandleRowSelected; dispatcher OnMoveFolderConfirmed). WBP_FurnitureInventory v3.4: MovingFolderPath class var; CollectFolderTargets đệ quy + loại MovingPath+con cháu; BuildMoveFolderTargetList (wrap + entry "(Gốc)"); OnRequestMoveFolder implement; CB_MoveFolderClick implement; HandleMoveFolderConfirmed NEW (tính NewFullPrefix, guard no-op, cập nhật CurrentComboFolderPath, RenameFolderPrefix+RefreshComboFolderUI). BUG FIX D-C5.4-1 (Array_Append ngược) + D-C5.4-2 (dead-end nhánh True). | ✅ DONE (30/06/2026) |
 
 **C0:** 3 case A/B/C PASS (22/06). RowName fallback (đồ cũ parse MeshPath) xác nhận OK.
 **C2:** 7/7 PASS (22/06). Group nesting: Case A (no groups→wrapper) / Case B (has groups→no wrapper, root nhận SourceComboID).
@@ -125,6 +126,10 @@
 **WBP_EditableLabel v1.0** — TẠO MỚI (27/06): component inline rename. Overlay TextBlock_Label+EditBox+Border_Error. ValidateName (empty/slash/dupe). EnterEditMode+Delay(0.0). ExitEditMode guard bIsEditing. OnEditBoxCommitted Switch.Selection pin critical.
 **WBP_TreeNode v1.3** — C5.2: TextBlock_71→EditableLabel_Name; OnNodeRenameCommitted dispatcher; EnterRenameMode; HandleLabelCommitted relay; RefreshDisplay SetText→SetLabel. Additive.
 **WBP_FurnitureInventory v3.3** — C5.2: 3 helpers (ParentOf/LastSegmentOf/GetSiblingFolderNames); OnRequestRenameFolder implement; OnRenameFolderCommitted; CB_RenameFolder; class vars RenameTargetNode/NewFullPrefix/LibraryMenuRef. PopulateComboTreeColumn: bind OnNodeRenameCommitted. BUG FIX: RefreshComboFolderUI +PopulateComboTreeColumn.
+**S_FolderTargetEntry** — TẠO MỚI struct: Path (String), DisplayLabel (String), IndentLevel (Integer). Dùng cho list chọn folder đích.
+**WBP_MoveFolderRow** — TẠO MỚI (30/06): Horizontal Box [Spacer_Indent + Button_Row[TextBlock_Row]]. SetRow(Path, DisplayLabel, Indent) — indent = Indent×20px. SetHighlight(bSelected). Dispatcher OnRowClicked(TargetPath).
+**WBP_MoveToFolderDialog** — TẠO MỚI (30/06): Canvas [Border_Dim full-screen + Border_Content center ~420×480 → Vertical Box[Title + ScrollBox_FolderList + Cancel/Confirm]]. PopulateRows(Entries) đổ WBP_MoveFolderRow vào ScrollBox. Chọn 1 dòng → highlight + enable Confirm. Dispatcher OnMoveFolderConfirmed(TargetParentPath). BTN_Cancel tự trả Input Mode Game+UI.
+**WBP_FurnitureInventory v3.4** — class var mới: MovingFolderPath (String). Function mới: CollectFolderTargets(ParentPath, IndentLevel, MovingPath) — đệ quy, trả Array<S_FolderTargetEntry>, loại MovingPath + con cháu. BuildMoveFolderTargetList(MovingPath) — wrap CollectFolderTargets + thêm entry "(Gốc)" đầu list. OnRequestMoveFolder(FolderPath) — implement (đã STUB từ C5.0): build list → mở dialog → bind OnMoveFolderConfirmed → HandleMoveFolderConfirmed. CB_MoveFolderClick — implement (đã STUB): Hide menu → OnRequestMoveFolder. HandleMoveFolderConfirmed(TargetParentPath) — NEW: tính NewFullPrefix (tái dùng var có sẵn từ C5.2) → guard no-op → cập nhật CurrentComboFolderPath (2 nhánh: match đúng path / là con của path) → RenameFolderPrefix (C++) → RefreshComboFolderUI.
 **S_GroupData** — ✅ field `SourceComboID : String` (default "") đã thêm (C1 DONE). Group cha cụm combo = ComboID gốc; group user tạo tay = "". Đã add vào snapshot capture/restore.
 **C++ FurnitureToolkit** — FComboData.FolderPath (field mới), FindMaterialRowNameByPath (function mới). Compile xanh. Full rebuild (Binaries/Intermediate xóa + rebuild) ✅
 
@@ -138,13 +143,26 @@
 
 ## TIẾP THEO
 
-**ĐẦU SESSION MỚI — Ưu tiên:**
-1. 🔲 **C5.4 — Move folder** — Kéo folder tree node vào target → `ComboSerializer.UpdateComboFolder(OldPrefix, NewFolder)` → `RefreshComboFolderUI()`. WBP_ChipTag rename tái dùng WBP_EditableLabel.
-2. ⏳ **C3 còn lại** — GetCombosDir → `%LOCALAPPDATA%\InteriorFOFFTool\Combos` (P4) + capture thumbnail sau SaveComboFromSelection (P1 hook).
+**ĐẦU SESSION MỚI — Ưu tiên (backlog C5, thứ tự đã chốt 30/06/2026):**
+1. 🔲 **Issue 2 — Chip highlight on selection**: mở rộng `UpdateFolderHighlights`
+   thêm loop `VB_ChipTagArea` → cast `WBP_ChipTag` → `SetHighlight(IsPathActive(...))`.
+   ~10 node, vá vào hàm đã có.
+2. 🔲 **Move Combo** (right-click `WBP_ComboCard` → "Chuyển vào folder…"): tái dùng
+   `WBP_MoveToFolderDialog`/`WBP_MoveFolderRow` (C5.4) — build list KHÔNG loại gì
+   (combo không có con), gọi `UpdateComboFolder(ComboID, path)` C++ (đã có từ C5.1)
+   thay vì `RenameFolderPrefix`. `OnRequestMoveCombo` dispatcher đã khai báo sẵn
+   trong `WBP_LibraryContextMenu` từ C5.0, chưa wire.
+3. 🔲 **Tạo folder mới** (NewFolder action riêng trong context menu, KHÔNG qua
+   nhánh dialog move như plan gốc): 1 ô nhập text + validate tái dùng logic của
+   `WBP_EditableLabel`/C3b.
+4. 🔲 **Xóa folder** (C5.6 gốc): cần `WBP_ConfirmDialog` mới (tối giản, tái dùng
+   được về sau) + `ClearFolderPrefix` C++ (đã có từ C5.1).
+5. 🔲 **ChipTag right-click + embed WBP_EditableLabel**: right-click `WBP_ChipTag`
+   → mở `WBP_LibraryContextMenu` (giống TreeNode). Nhúng `WBP_EditableLabel` vào
+   `WBP_ChipTag` để rename chip tái dùng đúng component C5.2 — KHÔNG viết lại logic.
+   Nặng nhất, để cuối cùng.
 
-**BUG OPEN (nhỏ, defer):**
-- WBP_ChipTag right-click chưa có (C5.4+)
-- Chip highlight chưa update khi select (Issue 2, polish sau)
+Sau #5: C5 HOÀN TẤT → C6/C7 (defer) hoặc WBP_Toast → C9.
 
 **Roadmap v3.3 (chia 3 giai đoạn — scope phình to sau 23/06):**
 ```
@@ -203,3 +221,4 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 24/06/2026 | C3b ✅ DONE (WBP_SaveComboDialog + OpenSaveComboDialog flow). C4 ⏳ 80%: WBP_ComboCard + BP_DragDropOperation_ComboCard + BP_ComboGhostActor + M_ComboGhost; CalculateComboAnchor (InputManager v2.3); CTV_ComboCard (Inventory v2.9) — 19 combo PASS. C8 ✅ MERGED vào C4. BUG OPEN: B-ghost-offset (đáy cube chìm sàn, Z=50 chưa fix). |
 | 25/06/2026 | B-ghost-offset ✅ FIXED (Approach B, BP_ComboGhostActor v1.1, DragOverlay v1.8). C4/C8 ✅ 100% DONE. C5.1 ✅ DONE: 3 C++ folder helpers (ComboSerializer). C5.0 ⏳ ~90%: tree PASS, card render BUG OPEN (B-C5-card). |
 | 26/06/2026 | C5.0 ✅ DONE: B-C5-card FIXED, tree 2 cấp + D9 guard, OnComboChipTagClicked, OnComboTreeNodeRightClicked, 3 stubs. WBP_LibraryContextMenu v1.0 ✅: clone ContextMenu, Btn_Background Z-order (D12), test PASS. WBP_TreeNode v1.2: OnNodeRightClicked dispatcher + On Mouse Button Down. WBP_FurnitureInventory v3.2. TIẾP THEO: C5.2 Rename folder. |
+| 30/06/2026 | C5.4 ✅ DONE — Move Folder: S_FolderTargetEntry struct mới. WBP_MoveFolderRow v1.0 (Spacer_Indent indent ảo, SetRow/SetHighlight/OnRowClicked). WBP_MoveToFolderDialog v1.0 (PopulateRows/HandleRowSelected/OnMoveFolderConfirmed). WBP_FurnitureInventory v3.4: MovingFolderPath; CollectFolderTargets đệ quy (loại moving+con cháu); BuildMoveFolderTargetList; OnRequestMoveFolder implement; CB_MoveFolderClick implement; HandleMoveFolderConfirmed NEW. BUG FIX D-C5.4-1 (Array_Append ngược) + D-C5.4-2 (dead-end nhánh True thiếu merge). Backlog reorder: Issue 2 → Move Combo → NewFolder → Xóa folder → ChipTag right-click. |
