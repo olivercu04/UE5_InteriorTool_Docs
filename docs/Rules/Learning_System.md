@@ -1,6 +1,6 @@
 # Hệ thống học UE5 — Cá nhân hóa
 **Nguồn:** `import_raw/Learning_System.md`
-**Phiên bản:** 1.2 | **Cập nhật:** 30/06/2026 — Khôi phục quy trình sau giai đoạn deadline-rush (Sprint 5) | Mentor: Claude | Học viên: Cuhoang
+**Phiên bản:** 1.3 | **Cập nhật:** 01/07/2026 — thêm chuẩn định dạng giải thích (sơ đồ + ví dụ đời thường, tránh đoạn văn dài) | Mentor: Claude | Học viên: Cuhoang
 
 ---
 
@@ -155,6 +155,26 @@ và yêu cầu khôi phục.
 
 Không hồi tố tick ✅ cho phần đã bỏ qua (xem bảng "Nợ kiểm tra hiểu" ở trên) — xử lý
 dần khi kiến thức đó tự nhiên xuất hiện lại, không dồn 1 buổi.
+
+---
+
+## Điều chỉnh quy trình — 01/07/2026 (định dạng giải thích)
+
+3 điều chỉnh 30/06 vẫn giữ nguyên. Thay đổi thêm từ đây: CÁCH trình bày, không đổi TẦN SUẤT.
+
+1. **Ưu tiên sơ đồ thay đoạn văn** — khi giải thích một luồng có nhiều bước hoặc một khái niệm
+   có quan hệ nhiều chiều (A → B → C, hoặc A gây ra B và C), dùng ASCII/bảng/gạch đầu dòng ngắn.
+   Đoạn văn xuôi chỉ dùng khi số bước ≤ 2 và không có nhánh.
+
+2. **Kèm ví dụ đời thường cho khái niệm trừu tượng** — mỗi lần giải thích node/pattern lần
+   đầu, thêm 1 ví dụ ngoài UE5:
+   - Object Reference = "tờ giấy ghi địa chỉ nhà" (không phải cái nhà, chỉ là địa chỉ)
+   - Bind Event = "hẹn người giao hàng gọi khi đến" (không chờ ngồi đó, chỉ đăng ký callback)
+   - ForEachLoopWithBreak Completed pin = "chạy xong hàng → tính tiền" (Loop Body = đang tính
+     từng món, Completed = sau khi xong tất cả)
+
+3. **Không hồi tố** — 3 điều chỉnh 30/06 + 2 điều chỉnh trên áp từ 01/07 trở đi. Không
+   thay đổi cách giải thích các phần đã giải thích trước đó trừ khi học viên hỏi lại.
 
 ---
 

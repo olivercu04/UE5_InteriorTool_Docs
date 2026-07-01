@@ -265,6 +265,28 @@
 
 ---
 
+## SPRINT 5 — 01/07/2026 — C5.5 Move Combo (Bug fixes phát sinh)
+
+### D-C5.5-1 — ParseIntoArray delimiter mismatch (PopulateComboTreeColumn) [BUG FIX 4.1]
+**Phát hiện:** 01/07/2026, lúc test Move Combo thấy tree render sai sau refresh.
+**Nguyên nhân:** `AddFolderPathToTree` viết CSV với `","` (không cách — `Append(OldCSV, ",", child)`), nhưng `ParseIntoArray` trong `PopulateComboTreeColumn` đọc lại với `", "` (có cách sau phẩy). Hệ quả: `"Phòng khách,Phòng ngủ"` được parse thành 1 phần tử `"Phòng khách,Phòng ngủ"` thay vì 2 phần tử riêng — nhiều tên con bị gộp thành 1 node.
+**Fix:** Đổi delimiter trong `ParseIntoArray(Lvl1CSV, ",")` và `ParseIntoArray(Lvl2CSV, ",")` về `","` (không cách) — khớp 100% với delimiter viết.
+**Bài học:** Delimiter phải khớp tuyệt đối giữa bên viết (AddFolderPathToTree) và bên đọc (PopulateComboTreeColumn). Kiểm tra bằng Print String giá trị CSV thô để confirm delimiter thực tế.
+
+### D-C5.5-2 — Map_Contains sai với leaf folder (RefreshComboFolderUI) [BUG FIX 4.2]
+**Phát hiện:** 01/07/2026, Move Combo xong nhưng refresh không hiện đúng folder.
+**Nguyên nhân:** `ComboFolderTree` là `Map<ParentPath, ChildCSV>` — key là path CHA, không phải path lá. Folder lá (không có con trong tree) → `Map_Contains(path_lá)` trả False → fallback về `"__ALL__"` sai. VD: folder "Phòng khách/Sofa" (lá) không là key → Map_Contains = False → hiển thị tất cả thay vì filter đúng.
+**Fix:** Bỏ nhánh `Map_Contains`, luôn gọi `FilterComboByFolder(CurrentComboFolderPath)` cho path thật (không phải sentinel). `FilterComboByFolder` tự lọc đúng bất kể path có là key hay không.
+**Bài học:** Kiến trúc ComboFolderTree = key là cha. Mọi logic check "folder có tồn tại?" không nên dùng `Map_Contains` — dùng `FilterComboByFolder` và xem kết quả.
+
+### D-C5.5-3 — Thiếu UpdateComboFolderHighlights sau RefreshComboFolderUI (RefreshComboFolderUI) [BUG FIX 4.3]
+**Phát hiện:** 01/07/2026, sau Move Combo tree/chip không sáng đúng folder.
+**Nguyên nhân:** `RefreshComboFolderUI` gọi `FilterComboByFolder` rồi kết thúc — không gọi `UpdateComboFolderHighlights()`. Sau refresh, tree re-render nhưng `RefreshDisplay` được gọi với param cũ từ `PopulateComboTreeColumn` (trước khi `CurrentComboFolderPath` có thể đã đổi bởi Move Combo).
+**Fix:** Sau merge 3 nhánh (`__ALL__` / `""` / path thật), thêm `UpdateComboFolderHighlights()`.
+**Bài học:** Mỗi lần `CurrentComboFolderPath` thay đổi hoặc tree re-render → phải gọi `UpdateComboFolderHighlights` để sync màu highlight. Không để highlight update phụ thuộc vào `PopulateComboTreeColumn` vì hàm đó chạy TRƯỚC khi path mới được set.
+
+---
+
 **Quyết định kiến trúc C5 (không bàn lại):**
 - **Copy folder GÁC backlog** — phải nhân bản ComboID mới + copy PNG, lệch hẳn pattern chỉ-viết-text. Hiếm dùng.
 - **Folder ops KHÔNG vào Undo (Alt+Z)** — metadata thư viện, không phải scene action. Confirm dialog (C5.6) thay thế Undo.
@@ -329,3 +351,4 @@
 | 26/06/2026 | Thêm section "SPRINT 5 — 26/06/2026": D9 Branch guard cấp 2 (UX + bug Loop Body/Completed); D10 bug guard position; D11 WBP_LibraryContextMenu clone Btn_Background thay Menu Anchor; D12 Canvas Panel Z-order. |
 | 27/06/2026 | Thêm section "SPRINT 5 — 27/06/2026 — C5.2 Inline Rename Folder": D13 WBP_EditableLabel component inline (thay dialog popup); D14 validate live OnTextChanged; D15 click ngoài = revert; D16 folder ops KHÔNG vào Undo. |
 | 30/06/2026 | Thêm section "SPRINT 5 — 30/06/2026 — C5.4 Move Folder": D-C5.4-1 Array_Append ngược TargetArray/SourceArray trong CollectFolderTargets (kết quả đệ quy không tích lũy được); D-C5.4-2 dead-end thiếu merge nhánh True trong HandleMoveFolderConfirmed (bug CHỈ lộ khi đang xem đúng folder bị move). Thêm note Learning_System: quy trình dạy học bị bỏ qua giai đoạn deadline-rush 21/06→30/06, đã khôi phục trong v1.2. |
+| 01/07/2026 | Thêm section "SPRINT 5 — 01/07/2026 — C5.5 Move Combo": D-C5.5-1 ParseIntoArray delimiter mismatch "," vs ", " (nhiều tên con gộp 1 node); D-C5.5-2 Map_Contains sai với leaf folder (không là key trong ComboFolderTree → fallback sai __ALL__); D-C5.5-3 thiếu UpdateComboFolderHighlights call sau RefreshComboFolderUI (highlight không sync sau Move Combo). |
