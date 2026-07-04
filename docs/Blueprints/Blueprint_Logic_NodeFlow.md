@@ -1,6 +1,6 @@
 # Blueprint Logic — Node Flow Reference
 **HỢP NHẤT TỪ 3 file:** v1.3 base (07/06) + v1.4_patch (12/06) + v1.5_patch (15/06)
-**Phiên bản:** 1.5 | **Cập nhật:** 15/06/2026 — 20:30 ICT
+**Phiên bản:** 1.6 | **Cập nhật:** 04/07/2026 — 22:10 ICT — NF (New Folder) node flow
 **Mục đích:** Ghi lại thứ tự node logic để không cần chụp ảnh lại Blueprint. Full flows sống trong file BP_*.md / WBP_*.md tương ứng — file này ghi node-by-node diff và cross-BP flows.
 
 ---
@@ -290,6 +290,59 @@ Branch(FolderPath == "__ALL__" OR FolderPath == ""):
            AddMenuItem("✏️ Đổi tên","") | AddMenuItem("📁 Chuyển vào…","") | AddMenuItem("🗑️ Xóa","")
            Set Input Mode UI Only | LibMenu.ShowAt(Get Mouse Position on Viewport)
 ```
+
+### NF — New Folder (context menu, 04/07/2026)
+
+> Full doc: **WBP_FurnitureInventory.md §NF**. Tóm tắt node-flow tra cứu nhanh.
+> Context-menu part DONE. Nút "+" đầu cột tree (dùng `GetNewFolderParent`) còn nợ.
+
+#### GetChildFolderNames(ParentPath) → Array\<String\> — Pure
+```
+Map Find(ComboFolderTree, ParentPath) → CSV, bFound
+Branch bFound:
+  True  → Parse Into Array(CSV, ",") → Return
+  False → Return Make Array (rỗng)
+```
+
+#### GetUniqueNewFolderName(ParentPath) → String — Function
+```
+SET Existing = GetChildFolderNames(ParentPath)
+SET Candidate = "New Folder" | SET Counter = 2
+Branch Array_Contains(Existing, Candidate)==false:
+  True  → Return Candidate
+  False → While[Array_Contains(Existing, Candidate)]:
+            Body: SET Candidate = "New Folder (" + IntToString(Counter) + ")" → SET Counter+1
+            Completed: Return Candidate
+```
+
+#### GetNewFolderParent() → String — Pure
+```
+Branch(CurrentComboFolderPath=="" OR StartsWith("__")):
+  True  → Return ""
+  False → Return CurrentComboFolderPath
+```
+
+#### OnRequestNewFolder(ParentPath) — Custom Event
+```
+GetUniqueNewFolderName(ParentPath) → NewName
+Branch(ParentPath==""): True → FullPath=NewName | False → FullPath=ParentPath+"/"+NewName
+[merge] → ComboSerializer::CreateEmptyFolder(FullPath) → bOK
+Branch bOK:
+  True  → RefreshComboFolderUI() → OnRequestRenameFolder(FullPath)   ← tái dùng C5.2 rename phase
+  False → Print "Không tạo được: "+FullPath
+```
+> KHÔNG CaptureSnapshot, KHÔNG đổi CurrentComboFolderPath (no-navigate).
+
+#### CB_CreateNewFolder — Custom Event (bound Item0.OnItemClicked, đầu chuỗi menu trong OnComboTreeNodeRightClicked)
+```
+IsValid(LibraryMenuRef):
+  True → SET LocalTargetPath = LibraryMenuRef.TargetFolderPath   ← cache TRƯỚC Hide
+       → LibraryMenuRef.Hide → SET LibraryMenuRef = None
+       → ParentOf(LocalTargetPath) → ParentPath   ← CÙNG CẤP, không phải con
+       → OnRequestNewFolder(ParentPath)
+  False → [dead-end]
+```
+> OnComboTreeNodeRightClicked thêm `AddMenuItem("Create New Folder")` ĐẦU chuỗi (trước "Đổi tên"), nối tiếp — KHÔNG 2 nhánh song song từ Entry.
 
 ---
 
@@ -938,3 +991,4 @@ ComputeSelectionUnits(SelectedActors) → (GroupUnits, LooseActors)
 | 1.3 | 07/06/2026 — 22:40 ICT | **Sprint 2:** Box Select flows (Mouse Pressed defer, Tick, OnLMBReleased, FinishBoxSelect); ghi fix CLEAR TempSelectedIndices đầu CaptureSnapshot; đánh dấu flow cũ là v1.1 single |
 | 1.4 | 12/06/2026 — 15:04 ICT | **Sprint 3 group final + Sprint 4 đầy đủ:** Sprint 3 flows (GenerateGroupID, GetGroupChildren, FindGroupData, CreateGroup, SyncGroupsToContainer, Snapshot v3). Sprint 4: 7 helpers, GetEditBreadcrumb, Enter/Exit edit, TryEnterEdit, WBP_MeshControls T5, CreateGroup nested T6, PruneEmptyGroups + UngroupActors peel-one-level T7, ValidateEditMode T8, Replace GroupID fix, LƯU Ý quan trọng. |
 | 1.5 | 15/06/2026 — 20:30 ICT | **Sprint 4 Bug Fix Learnings:** L-NEW-1 (Branch dead-end Sequence vs Event), L-NEW-2 (output pins + Temp buffer), L-NEW-3 (ComputeSelectionUnits trước guard), L-NEW-4 (Blueprint export text debug), L-NEW-5 (EditModeStack runtime → snapshot), L-NEW-6 (ValidateEditMode restore order). NODE FLOW ĐÃ CONFIRM table. |
+| 1.6 | 04/07/2026 — 22:10 ICT | **NF — New Folder (context menu, dưới §C5.0 combo):** node flow GetChildFolderNames, GetUniqueNewFolderName, GetNewFolderParent, OnRequestNewFolder, CB_CreateNewFolder + ghi chú OnComboTreeNodeRightClicked thêm menu item đầu chuỗi. Full doc: WBP_FurnitureInventory.md v3.6. |

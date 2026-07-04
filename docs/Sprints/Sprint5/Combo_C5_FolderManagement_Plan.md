@@ -1,5 +1,5 @@
 # Combo C5 — Folder Management Plan
-**Phiên bản:** 1.0 | **Tạo:** 30/06/2026
+**Phiên bản:** 1.1 | **Tạo:** 30/06/2026 | **Cập nhật:** 04/07/2026 — 22:10 ICT
 
 > File này ghi kế hoạch và thứ tự thực thi các sub-task C5 (Folder Management) trong Sprint 5.
 > Xem `Combo_Execution.md` để biết chi tiết node-flow từng task.
@@ -27,12 +27,18 @@ C5 mở rộng từ "browse folder tree" thành full folder management:
 | 4 | Inline Rename Folder (WBP_EditableLabel) | "Rename folder" gốc | ✅ DONE (27/06) |
 | 5 | Move Folder (WBP_MoveToFolderDialog + WBP_MoveFolderRow) | "Move folder" gốc | ✅ DONE (30/06) |
 | 6 | Chip highlight on selection (Issue 2 từ C5.0) | — (polish, ngoài plan gốc) | 🔲 KẾ TIẾP |
-| 7 | Move Combo (right-click card → "Chuyển vào folder…") | "Move combo" gốc | 🔲 chờ (tái dùng WBP_MoveToFolderDialog) |
-| 8 | Tạo folder mới (NewFolder action trong context menu) | "Tạo folder mới" gốc, nhưng đổi route: context menu riêng thay vì nhánh trong dialog move | 🔲 chờ |
+| 7 | Move Combo (right-click card → "Chuyển vào folder…") | "Move combo" gốc | ✅ DONE (01/07) |
+| 8 | Tạo folder mới (NewFolder action trong context menu) | "Tạo folder mới" gốc, nhưng đổi route: context menu riêng thay vì nhánh trong dialog move | ✅ DONE context-menu part (04/07) — nút "+" đầu cột tree 🔲 CÒN NỢ (xem mục 4) |
 | 9 | Xóa folder (WBP_ConfirmDialog mới + ClearFolderPrefix) | "Xóa folder" gốc | 🔲 chờ |
 | 10 | ChipTag right-click + embed WBP_EditableLabel | — (ngoài plan gốc, phát sinh từ C5.0) | 🔲 chờ (nặng nhất, để cuối) |
 
-→ Sau #10: C5 HOÀN TẤT → C6/C7 (defer) hoặc WBP_Toast → C9.
+→ Nút "+" (còn nợ của #8) → Sau đó #9 → #10: C5 HOÀN TẤT → C6/C7 (defer) hoặc WBP_Toast → C9.
+
+**#8 thực thi (04/07/2026):** đổi từ dialog (NF.G2-G5 gốc) sang inline — tạo folder rỗng
+ngay tên mặc định "New Folder" (auto hậu tố trùng qua `GetUniqueNewFolderName`), tự vào
+rename mode tại chỗ (tái dùng `WBP_EditableLabel`/C5.2 qua `OnRequestRenameFolder`).
+Right-click tạo CÙNG CẤP (sibling) node bị click — KHÔNG phải con. Chi tiết: xem
+`DEVIATIONS.md` (D-NF-1/D-NF-2/D-NF-3) + `WBP_FurnitureInventory.md` v3.6.
 
 **Lý do reorder (#7 lên trước #8/#9, 30/06/2026):** Move Combo tái dùng gần 100%
 `WBP_MoveToFolderDialog` vừa build cho Move Folder (chỉ khác: build list không cần
@@ -52,6 +58,9 @@ cuối cùng — dùng thay cho bảng cũ, không đối chiếu ngược lại
 
 - **D-C5.4-1:** Array_Append nối ngược TargetArray/SourceArray trong CollectFolderTargets — xem DEVIATIONS.md
 - **D-C5.4-2:** Dead-end thiếu merge ở nhánh True trong HandleMoveFolderConfirmed — xem DEVIATIONS.md
+- **D-NF-1:** NF dialog (plan gốc NF.G2-G5) → SUPERSEDED bởi inline rename — xem DEVIATIONS.md 04/07
+- **D-NF-2:** Right-click "Tạo folder mới" = tạo CÙNG CẤP (sibling), không phải CON — xem DEVIATIONS.md 04/07
+- **D-NF-3:** Không cần dispatcher OnRequestNewFolder riêng trên WBP_LibraryContextMenu — xem DEVIATIONS.md 04/07
 
 ---
 
@@ -59,3 +68,4 @@ cuối cùng — dùng thay cho bảng cũ, không đối chiếu ngược lại
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 30/06/2026 | Khởi tạo — C5.4 DONE, reorder backlog, section 2 cập nhật |
+| 1.1 | 04/07/2026 | #7 Move Combo ✅ DONE (01/07). #8 Tạo folder mới ✅ DONE context-menu part (04/07) — nút "+" đầu cột tree còn nợ. Thêm D-NF-1/2/3 vào mục 3. |

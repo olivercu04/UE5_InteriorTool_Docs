@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 22/06/2026
+**Cập nhật:** 04/07/2026 — 22:10 ICT
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -295,6 +295,41 @@
 
 ---
 
+## SPRINT 5 — 04/07/2026 — NF (New Folder, context-menu part)
+
+### D-NF-1 — NF chuyển từ DIALOG sang INLINE RENAME (bỏ WBP_NewFolderDialog)
+Plan v2 gốc (NF.G2–G5) thiết kế tạo folder qua popup dialog WBP_NewFolderDialog
+(nhập tên trước rồi tạo). Thực thi ĐỔI HẲN sang UX kiểu Windows Explorer:
+tạo folder rỗng NGAY với tên mặc định "New Folder" (GetUniqueNewFolderName tự
+thêm hậu tố (2),(3)... nếu trùng), rồi tự vào rename mode tại chỗ bằng cách
+gọi lại OnRequestRenameFolder có sẵn (tái dùng WBP_EditableLabel của C5.2).
+**Lý do:** UX quen thuộc hơn, tái dùng 100% cơ chế inline rename đã build, KHÔNG
+cần dựng widget dialog mới + validate riêng. **Hệ quả:** WBP_NewFolderDialog.md
+KHÔNG tạo (hủy khỏi doc-update list của plan v2); các gate NF.G2–G5 gốc
+(dialog wiring) không còn áp dụng. `[SCOPE]`
+
+### D-NF-2 — Right-click "Tạo folder mới" = tạo CÙNG CẤP node bị click (không phải CON)
+Thảo luận ban đầu (Entry Point 3) định là "tạo folder CON của node right-click".
+Chốt lại (G3' #1): tạo CÙNG CẤP (sibling) kiểu Windows — ParentPath = ParentOf(node
+bị right-click). **Lý do kỹ thuật:** node cùng cấp với node đang thấy LUÔN render trên
+tree → OnRequestRenameFolder luôn tìm thấy node để vào rename mode. Tạo con của node
+có thể rơi vào cấp chưa render (tree 2 cấp) → rename mode thất bại. Nút "+" (part còn
+nợ) thì ngược lại: tạo TRONG folder đang xem (GetNewFolderParent), chấp nhận edge
+cấp sâu bỏ qua auto-rename (sửa khi C5.7 xong). `[SCOPE]`
+
+### D-NF-3 — Không cần dispatcher OnRequestNewFolder trên WBP_LibraryContextMenu
+Ban đầu định thêm Event Dispatcher OnRequestNewFolder vào class WBP_LibraryContextMenu
+(giống 4 dispatcher cũ). Bỏ: CB_CreateNewFolder gọi THẲNG Custom Event OnRequestNewFolder
+nằm trong chính WBP_FurnitureInventory (đúng pattern CB_MoveFolderClick → OnRequestMoveFolder),
+không qua Broadcast/dispatcher của context menu. WBP_LibraryContextMenu KHÔNG đổi (vẫn 3 var
++ 4 dispatcher cũ), chỉ thêm 1 menu item "Create New Folder" qua AddMenuItem() động. `[SCOPE]`
+
+**Ghi chú:** NF.G0 (C++) + NF.G1 (Blueprint BuildComboFolderTree đổi nguồn sang GetAllFolderPaths)
+đã DONE trước session này (không phải deviation — đúng plan). Chi tiết implementation: xem
+`WBP_FurnitureInventory.md` v3.6 + `Combo_C5_FolderManagement_Plan.md`.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -352,3 +387,4 @@
 | 27/06/2026 | Thêm section "SPRINT 5 — 27/06/2026 — C5.2 Inline Rename Folder": D13 WBP_EditableLabel component inline (thay dialog popup); D14 validate live OnTextChanged; D15 click ngoài = revert; D16 folder ops KHÔNG vào Undo. |
 | 30/06/2026 | Thêm section "SPRINT 5 — 30/06/2026 — C5.4 Move Folder": D-C5.4-1 Array_Append ngược TargetArray/SourceArray trong CollectFolderTargets (kết quả đệ quy không tích lũy được); D-C5.4-2 dead-end thiếu merge nhánh True trong HandleMoveFolderConfirmed (bug CHỈ lộ khi đang xem đúng folder bị move). Thêm note Learning_System: quy trình dạy học bị bỏ qua giai đoạn deadline-rush 21/06→30/06, đã khôi phục trong v1.2. |
 | 01/07/2026 | Thêm section "SPRINT 5 — 01/07/2026 — C5.5 Move Combo": D-C5.5-1 ParseIntoArray delimiter mismatch "," vs ", " (nhiều tên con gộp 1 node); D-C5.5-2 Map_Contains sai với leaf folder (không là key trong ComboFolderTree → fallback sai __ALL__); D-C5.5-3 thiếu UpdateComboFolderHighlights call sau RefreshComboFolderUI (highlight không sync sau Move Combo). |
+| 04/07/2026 | Thêm section "SPRINT 5 — 04/07/2026 — NF (New Folder, context-menu part)": D-NF-1 dialog (NF.G2-G5 gốc) → SUPERSEDED bởi inline rename (UX Explorer-style, tái dùng WBP_EditableLabel C5.2); D-NF-2 right-click tạo CÙNG CẤP (sibling) node bị click, không phải CON (lý do: sibling luôn render trên tree 2 cấp → rename mode luôn tìm thấy node); D-NF-3 không cần dispatcher riêng trên WBP_LibraryContextMenu — CB_CreateNewFolder gọi thẳng Custom Event trong WBP_FurnitureInventory. |

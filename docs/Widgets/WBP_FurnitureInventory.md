@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.5 | **Cập nhật:** 01/07/2026 — C5.5 Move Combo + C5.4 funcs (CollectFolderTargets/BuildMoveFolderTargetList/HandleMoveFolderConfirmed)
+**Phiên bản:** 3.6 | **Cập nhật:** 04/07/2026 — 22:10 ICT — NF (New Folder) context-menu part: GetChildFolderNames/GetUniqueNewFolderName/GetNewFolderParent + OnRequestNewFolder/CB_CreateNewFolder
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -785,6 +785,7 @@ Entry → Branch(FolderPath == "__ALL__" OR FolderPath == "")
               SET LibMenu.TargetFolderPath = FolderPath
               Bind LibMenu.OnRequestMoveFolder → OnRequestMoveFolder   [STUB C5.4]
               Bind LibMenu.OnRequestDeleteFolder → OnRequestDeleteFolder   [STUB C5.5]
+              LibMenu.AddMenuItem("Create New Folder", "") → Item0 → Bind Item0.OnItemClicked → CB_CreateNewFolder   ← NF, ĐẦU chuỗi
               LibMenu.AddMenuItem("✏️ Đổi tên", "") → Item1 → Bind Item1.OnItemClicked → CB_RenameFolder
               LibMenu.AddMenuItem("📁 Chuyển vào…", "") → Item2 → Bind Item2.OnItemClicked → CB_MoveFolderClick [STUB C5.4]
               LibMenu.AddMenuItem("🗑️ Xóa", "") → Item3 → Bind Item3.OnItemClicked → CB_DeleteFolderClick [STUB C5.5]
@@ -792,6 +793,7 @@ Entry → Branch(FolderPath == "__ALL__" OR FolderPath == "")
               Get Player Controller → Set Input Mode UI Only
               LibMenu.ShowAt(Get Mouse Position on Viewport)
 ```
+> **NF (04/07):** thêm `Item0 = AddMenuItem("Create New Folder")` TRƯỚC "Đổi tên" — chuỗi AddMenuItem nối tiếp nhau, KHÔNG tạo 2 nhánh song song từ Entry.
 
 ### OnRequestRenameFolder(FolderPath : String) — Custom Event
 ```
@@ -990,6 +992,70 @@ UComboSerializer::UpdateComboFolder(MovingComboID, TargetParentPath) → bOK
 Branch(bOK):
   True  → RefreshComboFolderUI()
   False → Print String("UpdateComboFolder failed — ComboID: " + MovingComboID)
+```
+
+---
+
+## NF — New Folder (context menu part, 04/07/2026)
+
+> Context-menu part DONE + test PASS. Nút "+" đầu cột tree (NF-C1/NF-C2, tạo TRONG folder
+> đang xem qua `GetNewFolderParent`) CÒN NỢ — xem `01_Session_State.md` TIẾP THEO.
+> Deviation: dialog (plan gốc NF.G2-G5) → SUPERSEDED bởi inline rename. Xem DEVIATIONS.md 04/07.
+
+### GetChildFolderNames(ParentPath : String) → Array\<String\> — Pure
+```
+Map Find(ComboFolderTree, Key=ParentPath) → CSV, bFound
+Branch(bFound):
+  True  → Parse Into Array(CSV, ",") → Return    ← delimiter "," (khớp AddFolderPathToTree)
+  False → Return Make Array (rỗng)
+```
+
+### GetUniqueNewFolderName(ParentPath : String) → String — Function (While Loop)
+**Local vars:** Existing (Array\<String\>), Candidate (String), Counter (Int)
+```
+SET Existing = GetChildFolderNames(ParentPath)
+SET Candidate = "New Folder"
+SET Counter = 2
+Branch(Array_Contains(Existing, Candidate) == false):
+  True  → Return Candidate
+  False → While Loop [Condition = Array_Contains(Existing, Candidate)]:
+            Body: SET Candidate = "New Folder (" + Conv_IntToString(Counter) + ")"
+                  SET Counter = Counter + 1
+            Completed: Return Candidate
+```
+> Pure `Array_Contains` re-evaluate mỗi vòng While = ĐÚNG Ý (Candidate đổi liên tục).
+
+### GetNewFolderParent() → String — Pure
+```
+Branch(CurrentComboFolderPath == "" OR CurrentComboFolderPath StartsWith "__"):
+  True  → Return ""                       ← Tất cả / Chưa phân loại / sentinel → tạo gốc
+  False → Return CurrentComboFolderPath   ← tạo trong folder đang xem (nút "+", NF-C2)
+```
+
+### OnRequestNewFolder(ParentPath : String) — Custom Event
+```
+GetUniqueNewFolderName(ParentPath) → SET NewName
+Branch(ParentPath == ""):
+  True  → SET FullPath = NewName
+  False → SET FullPath = ParentPath + "/" + NewName
+[merge] → UComboSerializer::CreateEmptyFolder(FullPath) → bOK
+Branch(bOK):
+  True  → RefreshComboFolderUI()
+           → OnRequestRenameFolder(FullPath)    ← tái dùng "Request" phase C5.2 → vào rename mode
+  False → Print String("Không tạo được: " + FullPath)   [gate bDebugMode]
+```
+> KHÔNG CaptureSnapshot (folder ops ngoài Undo, D16). KHÔNG đổi CurrentComboFolderPath (NF-C3 no-navigate).
+
+### CB_CreateNewFolder — Custom Event (bound từ Item0.OnItemClicked, AddMenuItem("Create New Folder") đặt ĐẦU chuỗi trong OnComboTreeNodeRightClicked)
+**Local var:** LocalTargetPath (String)
+```
+IsValid(LibraryMenuRef):
+  True  → SET LocalTargetPath = LibraryMenuRef.TargetFolderPath   ← cache TRƯỚC Hide (chống Accessed None)
+           → LibraryMenuRef.Hide
+           → SET LibraryMenuRef = None
+           → ParentOf(LocalTargetPath) → ParentPath   ← tạo CÙNG CẤP (bỏ segment cuối, D-NF-2)
+           → OnRequestNewFolder(ParentPath)
+  False → [dead-end]
 ```
 
 ---
@@ -1236,3 +1302,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.3 | 27/06/2026 — C5.2 Inline Rename Folder | 3 Pure helpers (ParentOf/LastSegmentOf/GetSiblingFolderNames). OnRequestRenameFolder: implement (ForEachLoopWithBreak tìm node + EnterRenameMode). OnRenameFolderCommitted: NEW (cascade CurrentComboFolderPath + RenameFolderPrefix + RefreshComboFolderUI). CB_RenameFolder: NEW (Hide menu → OnRequestRenameFolder). OnComboTreeNodeRightClicked: AddMenuItem → capture return → bind OnItemClicked → CB_X; SET LibraryMenuRef; xóa Print String debug. PopulateComboTreeColumn: bind OnNodeRenameCommitted → OnRenameFolderCommitted (Node1+Node2). Class vars: RenameTargetNode/NewFullPrefix/LibraryMenuRef. BUG FIX: RefreshComboFolderUI confirmed PopulateComboTreeColumn. FilterComboByFolder ⚠️→✅ FIXED. |
 | 3.4 | 30/06/2026 — C5.4 Move Folder | Class var MovingFolderPath (String). CollectFolderTargets(ParentPath, IndentLevel, MovingPath) — đệ quy, trả Array<S_FolderTargetEntry>, loại MovingPath + con cháu (Branch StartsWith). BuildMoveFolderTargetList(MovingPath) — wrap + thêm entry "(Gốc)". OnRequestMoveFolder implement (đã STUB từ C5.0). CB_MoveFolderClick implement (đã STUB). HandleMoveFolderConfirmed NEW — tính NewFullPrefix (tái dùng var C5.2), guard no-op, cập nhật CurrentComboFolderPath, gọi RenameFolderPrefix + RefreshComboFolderUI. BUG FIX D-C5.4-1 (Array_Append ngược Target/Source), D-C5.4-2 (dead-end thiếu merge nhánh True). |
 | 3.5 | 01/07/2026 — C5.5 Move Combo + BUG FIX 4.1/4.2/4.3 | Class var: MoveComboDialogRef/MovingComboID/MovingComboCurrentFolder. UpdateComboFolderHighlights() NEW (Issue 2): mirror UpdateFolderHighlights cho combo side, dùng CurrentComboFolderPath. OnComboCardRightClicked(ComboID) NEW: tạo context menu "Combo" mode từ RMB trên WBP_ComboCard, bind CB_MoveCombo. CB_MoveCombo NEW: guard stacking, ForEachLoopWithBreak tìm FolderPath hiện tại, tạo WBP_MoveToFolderDialog, bind HandleMoveComboConfirmed. HandleMoveComboConfirmed NEW: close dialog, guard no-op, UpdateComboFolder C++, RefreshComboFolderUI. WBP_ComboCard +InventoryRef class var + On Mouse Button Down override. BUG FIX 4.1 (ParseIntoArray delimiter phải "," không cách). BUG FIX 4.2 (RefreshComboFolderUI bỏ Map_Contains — leaf folder không là key). BUG FIX 4.3 (RefreshComboFolderUI thêm UpdateComboFolderHighlights sau merge 3 nhánh). |
+| 3.6 | 04/07/2026 — NF (New Folder) context-menu part | 3 Pure helpers mới: GetChildFolderNames(ParentPath) (Map Find + Parse Into Array), GetUniqueNewFolderName(ParentPath) (While Loop sinh "New Folder"/"New Folder (2)"...), GetNewFolderParent() (rỗng nếu Tất cả/Chưa phân loại/sentinel, ngược lại CurrentComboFolderPath — dùng cho nút "+" còn nợ). OnRequestNewFolder(ParentPath) NEW: CreateEmptyFolder C++ → RefreshComboFolderUI → OnRequestRenameFolder (tái dùng rename phase C5.2), KHÔNG CaptureSnapshot, KHÔNG đổi CurrentComboFolderPath. CB_CreateNewFolder NEW: cache TargetFolderPath trước Hide, ParentOf → tạo CÙNG CẤP node bị right-click (D-NF-2). OnComboTreeNodeRightClicked: +1 menu item "Create New Folder" đầu chuỗi AddMenuItem. Test PASS 9/9. Deviation: dialog (NF.G2-G5 gốc) SUPERSEDED bởi inline rename (D-NF-1); không dispatcher riêng trên WBP_LibraryContextMenu (D-NF-3). Còn nợ: nút "+" đầu cột tree. |

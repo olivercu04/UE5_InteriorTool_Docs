@@ -6,7 +6,7 @@
 > replace cả cụm, tích hợp group nhiều cấp, material RowName.
 > Mọi quyết định cũ (D1–D4) bị thay bởi mục QUYẾT ĐỊNH v2.0 bên dưới.
 
-**Phiên bản:** 2.4 | **Ngày:** 24/06/2026 | Lighting_Mnger UE5.5.4
+**Phiên bản:** 2.5 | **Ngày:** 04/07/2026 — 22:10 ICT | Lighting_Mnger UE5.5.4
 **Tác giả:** Fable 5 (v1.0) + Q&A Sonnet 4.6 (v1.1) + Kiến trúc 21/06 (v2.0) + Review patch (v2.1) + Sprint5_Plan_v1.1 (v2.3)
 **Đối tượng đọc:** model thực thi (Opus/Sonnet) + cuhoang. Tuân thủ `09_AI_Implementation_Rules.md`.
 **Làm TỪNG TASK, mỗi task có test, xong báo cuhoang.**
@@ -19,6 +19,10 @@
 > - v2.1 (21/06): patch review kiến trúc — C0→LCA (tránh lưu thừa cả room), C1 ghi nhận
 >   ItemView+persist, C2→3-phase bắt buộc, C3 folder-create, C5 BuildFolderTree nguồn mới,
 >   C8 DragOp_ComboCard+On Drop routing, C9 capture-after+rollback toast.
+> - v2.5 (04/07): NF (New Folder) NF.G0 — `GetEmptyFoldersFilePath` đổi trỏ `Folders.json`
+>   (từ `EmptyFolders.json`) + `GetAllFolderPaths` viết lại tự-ghi-bổ-sung folder path mới
+>   học từ combo (kể cả cấp cha lũy tiến). Nguồn DUY NHẤT cho BuildComboFolderTree (NF.G1,
+>   xem Blueprint_Logic_NodeFlow.md). Test PASS 6/6.
 
 ---
 
@@ -235,9 +239,25 @@ public:
     // Combo KHÔNG bị xóa. Viết RIÊNG (không dùng RenameFolderPrefix("")) để tránh lỗi "/Sofa".
     UFUNCTION(BlueprintCallable, Category="Combo|Folder")
     static int32 ClearFolderPrefix(const FString& Prefix);
+
+    // === NF — New Folder (04/07/2026) ===
+
+    // Đường dẫn file registry folder. B1: sổ giờ ĐĂNG KÝ MỌI folder (không riêng folder rỗng).
+    static FString GetEmptyFoldersFilePath();
+
+    // Tạo 1 folder rỗng — ghi FolderPath mới vào registry (Folders.json). Trả true nếu OK.
+    UFUNCTION(BlueprintCallable, Category="Combo|Folder")
+    static bool CreateEmptyFolder(const FString& FolderPath);
+
+    // Đọc registry + quét mọi combo *.json lấy FolderPath → tự AddUnique BỔ SUNG (kể cả
+    // từng cấp cha lũy tiến của path đa cấp) → tự ghi lại nếu có thay đổi. Nguồn DUY NHẤT
+    // cho BuildComboFolderTree (NF.G1).
+    UFUNCTION(BlueprintCallable, Category="Combo|Folder")
+    static TArray<FString> GetAllFolderPaths();
 };
 ```
 > ✅ C1 — `FindMaterialRowNameByPath` đã thêm (22/06/2026). C5 thêm 3 folder helpers (25/06/2026).
+> ✅ NF.G0 (04/07/2026) — `GetEmptyFoldersFilePath` đổi trỏ `Folders.json` (từ `EmptyFolders.json`); `CreateEmptyFolder` + `GetAllFolderPaths` mới. Test PASS 6/6 (create/dupe-block/IgnoreCase/rename-cascade/clear/persist).
 
 **`ComboSerializer.cpp`:**
 ```cpp
@@ -338,7 +358,44 @@ int32 UComboSerializer::ClearFolderPrefix(const FString& Prefix) {
     }
     return Count;
 }
+
+// NF — New Folder (04/07/2026)
+FString UComboSerializer::GetEmptyFoldersFilePath() {
+    // Đổi từ "EmptyFolders.json" — sổ giờ ĐĂNG KÝ MỌI folder, không riêng folder rỗng (B1).
+    return GetCombosDir() / TEXT("Folders.json");
+}
+TArray<FString> UComboSerializer::GetAllFolderPaths() {
+    // Đọc registry hiện có (LoadEmptyFoldersInternal — nội bộ, GIỮ TÊN CŨ, cosmetic backlog)
+    TArray<FString> Registry = LoadEmptyFoldersInternal();
+    const int32 BeforeNum = Registry.Num();
+    // Quét mọi combo *.json (bỏ Folders.json), lấy FolderPath
+    TArray<FString> Files;
+    IFileManager::Get().FindFiles(Files, *(GetCombosDir() / TEXT("*.json")), true, false);
+    for (const FString& FileName : Files) {
+        if (FileName.Equals(TEXT("Folders.json"), ESearchCase::IgnoreCase)) continue;
+        FString Json; FComboData Combo;
+        FString FilePath = GetCombosDir() / FileName;
+        if (!FFileHelper::LoadFileToString(Json, *FilePath)) continue;
+        if (!FJsonObjectConverter::JsonObjectStringToUStruct(Json, &Combo, 0, 0)) continue;
+        if (Combo.FolderPath.IsEmpty()) continue;
+        // Đăng ký TỪNG cấp cha lũy tiến: "A/B/C" → AddUnique "A", "A/B", "A/B/C"
+        TArray<FString> Segments;
+        Combo.FolderPath.ParseIntoArray(Segments, TEXT("/"), true);
+        FString CurrentPath;
+        for (const FString& Seg : Segments) {
+            CurrentPath = CurrentPath.IsEmpty() ? Seg : CurrentPath / Seg;
+            Registry.AddUnique(CurrentPath);
+        }
+    }
+    if (Registry.Num() != BeforeNum) {
+        SaveEmptyFoldersInternal(Registry);   // tự ghi bổ sung folder path mới học được
+    }
+    return Registry;
+}
 ```
+> Nội bộ `LoadEmptyFoldersInternal`/`SaveEmptyFoldersInternal` GIỮ TÊN CŨ (không sửa .h — cosmetic
+> backlog). `CreateEmptyFolder(FolderPath)` (dùng bởi NF context-menu, xem WBP_FurnitureInventory.md
+> §NF) ghi 1 FolderPath mới vào cùng registry — signature/impl xem code, chưa copy vào doc này.
 
 **Build.cs:** thêm `"Json", "JsonUtilities"` vào PrivateDependencyModuleNames.
 
