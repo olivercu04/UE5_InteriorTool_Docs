@@ -63,3 +63,25 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
+Repo này là bộ doc canonical của dự án UE5 Interior Tool. Claude Code làm việc ở đây
+chủ yếu để PHÂN PHỐI delta vào doc — không phải để viết lại doc.
+
+## Surgical distribution (KP3)
+- Chỉ sửa đúng file + đúng section mà delta/command chỉ định. Mỗi dòng diff phải truy
+  được về delta.
+- KHÔNG tiện tay: reformat, đổi heading, sửa chính tả, gộp mục, xóa nội dung cũ ngoài
+  chỉ định.
+- Thấy chỗ sai / lỗi thời NGOÀI phạm vi delta → ghi chú báo lại ở cuối output, không tự sửa.
+- Mỗi lần cập nhật doc: bump version + ghi ngày giờ phút thực tế + thêm dòng changelog
+  nếu doc có bảng lịch sử.
+- Xong việc: xuất diff summary (file nào, section nào, ± bao nhiêu dòng) để cuhoang
+  review trước commit.
+
+## Delta mơ hồ (KP1)
+- Delta mơ hồ hoặc mâu thuẫn với doc hiện có → DỪNG, hỏi cuhoang, không tự chọn cách hiểu.
+
+## Giọng & ngôn ngữ
+- Tiếng Việt thuần, thuật ngữ/node giữ tiếng Anh, style terse đúng như doc hiện có

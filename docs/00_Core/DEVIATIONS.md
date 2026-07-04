@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 04/07/2026 — 22:10 ICT
+**Cập nhật:** 04/07/2026 — 22:35 ICT
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -20,6 +20,19 @@
 - `[NODE]` — node UE5 khác plan giả định
 - `[PERF]` — đổi vì hiệu năng
 - `[BUG]` — đổi để fix bug phát sinh
+
+**Quy ước ceiling + trigger (thêm 04/07/2026 — từ ponytail-debt):**
+
+Deviation loại shortcut CÓ CHỦ ĐÍCH ([SCOPE], giải pháp tạm, fallback, scope cut) ghi thêm 2 trường:
+- **ceiling:** giới hạn của giải pháp tạm — chịu được đến đâu thì gãy.
+- **trigger:** sự kiện nào xảy ra thì BẮT BUỘC quay lại nâng cấp hoặc xóa.
+
+Thiếu trigger = rot risk: "để sau" thành vĩnh viễn. Deviation loại đổi-cách-làm
+([PLAN-SAI], [NODE], [BUG→FIX]) không cần 2 trường này.
+KHÔNG hồi tố entry cũ — chỉ áp cho entry mới từ 04/07/2026.
+
+Ví dụ: fallback MeshPath cho save cũ — ceiling: chỉ cover save tạo trước RowName
+migration. trigger: Gate 2 packaged build → không còn save cũ cần giữ thì xóa fallback.
 
 ---
 
@@ -388,3 +401,4 @@ không qua Broadcast/dispatcher của context menu. WBP_LibraryContextMenu KHÔN
 | 30/06/2026 | Thêm section "SPRINT 5 — 30/06/2026 — C5.4 Move Folder": D-C5.4-1 Array_Append ngược TargetArray/SourceArray trong CollectFolderTargets (kết quả đệ quy không tích lũy được); D-C5.4-2 dead-end thiếu merge nhánh True trong HandleMoveFolderConfirmed (bug CHỈ lộ khi đang xem đúng folder bị move). Thêm note Learning_System: quy trình dạy học bị bỏ qua giai đoạn deadline-rush 21/06→30/06, đã khôi phục trong v1.2. |
 | 01/07/2026 | Thêm section "SPRINT 5 — 01/07/2026 — C5.5 Move Combo": D-C5.5-1 ParseIntoArray delimiter mismatch "," vs ", " (nhiều tên con gộp 1 node); D-C5.5-2 Map_Contains sai với leaf folder (không là key trong ComboFolderTree → fallback sai __ALL__); D-C5.5-3 thiếu UpdateComboFolderHighlights call sau RefreshComboFolderUI (highlight không sync sau Move Combo). |
 | 04/07/2026 | Thêm section "SPRINT 5 — 04/07/2026 — NF (New Folder, context-menu part)": D-NF-1 dialog (NF.G2-G5 gốc) → SUPERSEDED bởi inline rename (UX Explorer-style, tái dùng WBP_EditableLabel C5.2); D-NF-2 right-click tạo CÙNG CẤP (sibling) node bị click, không phải CON (lý do: sibling luôn render trên tree 2 cấp → rename mode luôn tìm thấy node); D-NF-3 không cần dispatcher riêng trên WBP_LibraryContextMenu — CB_CreateNewFolder gọi thẳng Custom Event trong WBP_FurnitureInventory. |
+| 04/07/2026 | Thêm quy ước ceiling + trigger cho deviation loại shortcut có chủ đích (mục CÁCH DÙNG) — từ ponytail-debt |

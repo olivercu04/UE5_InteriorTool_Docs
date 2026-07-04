@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.3 | **Cập nhật:** 19/06/2026
+**Phiên bản:** 2.6 | **Cập nhật:** 04/07/2026 — 22:35 ICT
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -352,6 +352,43 @@ Logic phức tạp → đẩy về Function có tên rõ; Sonnet chỉ ráp các
 
 ---
 
+## NGUYÊN TẮC KP — 3 mảnh từ Karpathy guidelines (thêm 04/07/2026)
+
+Nguồn: repo multica-ai/andrej-karpathy-skills (4 nguyên tắc chống lỗi LLM coding của Karpathy).
+Chỉ lấy 3 mảnh hệ rules chưa có. Prefix KP để không đụng task ID K1/K3 trong roadmap.
+
+### KP1 — Giả định tường minh
+- Task/plan có chỗ mơ hồ → NÊU giả định đang dùng trước khi làm ("tao giả định X vì Y").
+- Có ≥ 2 cách hiểu hợp lý → trình cả 2 kèm khác biệt, để cuhoang chọn. KHÔNG tự chọn im lặng.
+- Bí/kẹt → dừng, nói rõ kẹt chỗ nào, hỏi.
+- Mở rộng luật "không đoán mò" từ khâu debug sang cả khâu HIỂU TASK.
+- Áp cho: nhận task card, đọc plan, viết node flow, sửa C++, distribute doc.
+
+### KP2 — Speculative prep phải được duyệt
+- KHÔNG tự thêm feature / param / field / "flexibility" ngoài yêu cầu task.
+- Văn hóa "chuẩn bị 1 lần thay vì 2" (chừa field đón backend, parameterize API đón B3...)
+  VẪN hợp lệ — nhưng phải nêu tường minh đây là prep + cuhoang duyệt TRƯỚC khi làm.
+  Duyệt rồi → ghi plan/DEVIATIONS như lệ.
+- Test nhanh: "200 dòng mà 50 dòng làm được → viết lại" / "senior engineer nhìn vào
+  có bảo overcomplicated không?"
+- Với Blueprint: flow > 2 tầng Branch lồng → tách Function (Luật B, nhắc lại cho đủ bộ).
+- Shortcut/giải pháp tạm ĐƯỢC DUYỆT → ghi DEVIATIONS.md kèm **ceiling** (chịu được
+  đến đâu thì gãy) + **trigger** (sự kiện nào thì bắt buộc nâng cấp/xóa). Thiếu
+  trigger = shortcut thành vĩnh viễn. (Quy ước từ ponytail-debt — mẫu trong DEVIATIONS.md.)
+
+### KP3 — Surgical changes: đụng đúng chỗ
+- Mỗi dòng thay đổi phải truy được về yêu cầu của task.
+- KHÔNG "tiện tay": refactor, đổi format/style, sửa comment, xóa dead code CÓ SẴN.
+- Thấy dead code / chỗ đáng sửa NGOÀI task → ghi chú báo cuhoang, không tự sửa.
+- Rác do CHÍNH thay đổi của mình tạo ra (biến/hàm/import thành mồ côi) → dọn.
+  Rác có sẵn → để nguyên trừ khi được yêu cầu.
+- Áp mạnh nhất ở 3 chỗ:
+  1. Claude Code distribute doc — chỉ đụng file + section delta chỉ định.
+  2. Sửa C++ FurnitureFilterLibrary / code kế thừa từ master project đồng nghiệp.
+  3. Sửa BP đang chạy ổn — không "nhân tiện" đổi flow ngoài scope.
+
+---
+
 ## BLUEPRINT EXPORT METHOD (phương pháp debug mới)
 
 **Khi nào dùng:** Debug logic phức tạp (nhiều node, wire routing không rõ từ screenshot).
@@ -470,3 +507,5 @@ Sau khi 1 sprint/task lớn xong:
 | 2.2 | 19/06/2026 | Thêm Is Valid Index vào bảng node; thêm key learning L11 latent aliasing |
 | 2.3 | 19/06/2026 | Thêm mục Quy ước đặt tên biến (Sprint 5 — BP_ComboManager prefix Cmb_, SaveCombo_) |
 | 2.4 | 23/06/2026 | Thêm mục "Nodes chờ xác nhận" cho Thumbnail System (SceneCapture2D, Texture Render Target 2D, SaveRenderTargetToPNG, LoadTexture2DFromFile) — chờ xác nhận tại C4, chưa vào bảng node chính thức |
+| 2.5 | 04/07/2026 | Thêm mục NGUYÊN TẮC KP (KP1 giả định tường minh, KP2 prep-phải-duyệt, KP3 surgical) — cherry-pick từ karpathy-guidelines |
+| 2.6 | 04/07/2026 | KP2 bổ sung quy ước ceiling + trigger cho shortcut được duyệt (từ ponytail-debt) |
