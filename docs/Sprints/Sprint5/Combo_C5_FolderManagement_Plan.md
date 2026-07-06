@@ -1,5 +1,5 @@
 # Combo C5 — Folder Management Plan
-**Phiên bản:** 1.1 | **Tạo:** 30/06/2026 | **Cập nhật:** 04/07/2026 — 22:10 ICT
+**Phiên bản:** 1.2 | **Tạo:** 30/06/2026 | **Cập nhật:** 06/07/2026 — 21:15 ICT
 
 > File này ghi kế hoạch và thứ tự thực thi các sub-task C5 (Folder Management) trong Sprint 5.
 > Xem `Combo_Execution.md` để biết chi tiết node-flow từng task.
@@ -28,11 +28,11 @@ C5 mở rộng từ "browse folder tree" thành full folder management:
 | 5 | Move Folder (WBP_MoveToFolderDialog + WBP_MoveFolderRow) | "Move folder" gốc | ✅ DONE (30/06) |
 | 6 | Chip highlight on selection (Issue 2 từ C5.0) | — (polish, ngoài plan gốc) | 🔲 KẾ TIẾP |
 | 7 | Move Combo (right-click card → "Chuyển vào folder…") | "Move combo" gốc | ✅ DONE (01/07) |
-| 8 | Tạo folder mới (NewFolder action trong context menu) | "Tạo folder mới" gốc, nhưng đổi route: context menu riêng thay vì nhánh trong dialog move | ✅ DONE context-menu part (04/07) — nút "+" đầu cột tree 🔲 CÒN NỢ (xem mục 4) |
-| 9 | Xóa folder (WBP_ConfirmDialog mới + ClearFolderPrefix) | "Xóa folder" gốc | 🔲 chờ |
-| 10 | ChipTag right-click + embed WBP_EditableLabel | — (ngoài plan gốc, phát sinh từ C5.0) | 🔲 chờ (nặng nhất, để cuối) |
+| 8 | Tạo folder mới (NewFolder action trong context menu + nút "+" đầu cột tree) | "Tạo folder mới" gốc, nhưng đổi route: context menu riêng thay vì nhánh trong dialog move | ✅ DONE (context-menu part 04/07, nút "+" NF.G3 06/07) |
+| 9 | Xóa folder (WBP_ConfirmDialog mới + ClearFolderPrefix) | "Xóa folder" gốc | ✅ DONE (06/07) |
+| 10 | ChipTag right-click + embed WBP_EditableLabel | — (ngoài plan gốc, phát sinh từ C5.0) | 🔄 IN PROGRESS — 7a (right-click + context menu) ✅ DONE (06/07), 7b (inline rename embed) 🔲 CÒN NỢ |
 
-→ Nút "+" (còn nợ của #8) → Sau đó #9 → #10: C5 HOÀN TẤT → C6/C7 (defer) hoặc WBP_Toast → C9.
+→ C5.7b (inline rename trong chip) → REG (regression 12 bước) → C5 HOÀN TẤT → C6/C7 (defer) hoặc WBP_Toast → C9.
 
 **#8 thực thi (04/07/2026):** đổi từ dialog (NF.G2-G5 gốc) sang inline — tạo folder rỗng
 ngay tên mặc định "New Folder" (auto hậu tố trùng qua `GetUniqueNewFolderName`), tự vào
@@ -61,6 +61,7 @@ cuối cùng — dùng thay cho bảng cũ, không đối chiếu ngược lại
 - **D-NF-1:** NF dialog (plan gốc NF.G2-G5) → SUPERSEDED bởi inline rename — xem DEVIATIONS.md 04/07
 - **D-NF-2:** Right-click "Tạo folder mới" = tạo CÙNG CẤP (sibling), không phải CON — xem DEVIATIONS.md 04/07
 - **D-NF-3:** Không cần dispatcher OnRequestNewFolder riêng trên WBP_LibraryContextMenu — xem DEVIATIONS.md 04/07
+- **D-C5.6-1:** HandleDeleteFolderConfirmed nhảy về folder CHA trực tiếp thay vì `__ALL__` sau khi xóa — xem DEVIATIONS.md 06/07
 
 ---
 
@@ -69,3 +70,4 @@ cuối cùng — dùng thay cho bảng cũ, không đối chiếu ngược lại
 |---|---|---|
 | 1.0 | 30/06/2026 | Khởi tạo — C5.4 DONE, reorder backlog, section 2 cập nhật |
 | 1.1 | 04/07/2026 | #7 Move Combo ✅ DONE (01/07). #8 Tạo folder mới ✅ DONE context-menu part (04/07) — nút "+" đầu cột tree còn nợ. Thêm D-NF-1/2/3 vào mục 3. |
+| 1.2 | 06/07/2026 | #8 nút "+" (NF.G3) ✅ DONE. #9 Xóa folder (C5.6) ✅ DONE. #10 ChipTag right-click (C5.7a) ✅ DONE — 7b (inline rename) còn nợ. Thêm D-C5.6-1 vào mục 3. |

@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.6 | **Cập nhật:** 04/07/2026 — 22:10 ICT — NF (New Folder) context-menu part: GetChildFolderNames/GetUniqueNewFolderName/GetNewFolderParent + OnRequestNewFolder/CB_CreateNewFolder
+**Phiên bản:** 3.7 | **Cập nhật:** 06/07/2026 — 21:15 ICT — NF.G3 (nút "+") + C5.6 (Xóa folder) + C5.7a (ChipTag right-click) + RebuildChipRowForPath/RefreshChipBreadcrumb
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -105,6 +105,8 @@ Python 1: populate BoundingSize | Python 2: update MeshFolderPath | (Sprint D: P
 | `MoveComboDialogRef` | WBP_MoveToFolderDialog | Ref dialog đang mở — SET None ở Event Destruct + HandleMoveComboConfirmed |
 | `MovingComboID` | String | ComboID đang được move, lưu khi mở dialog |
 | `MovingComboCurrentFolder` | String | FolderPath hiện tại của combo đang move — guard no-op nếu đã ở đúng folder |
+| **— C5.6 Xóa Folder —** | | |
+| `PendingDeleteFolderPath` | String | Path folder chờ xác nhận xóa — SET khi mở WBP_ConfirmDialog, đọc trong HandleDeleteFolderConfirmed, clear cuối hàm |
 
 ⚠️ **VRAM leak:** TargetFurnitureActor + PendingRestoredActor + SaveComboDialogRef + RenameTargetNode + LibraryMenuRef + MoveComboDialogRef là hard ref → SET None ở Event Destruct.
 
@@ -585,6 +587,16 @@ Dựng WBP_TreeNode vào `VerticalBox_44` (cột tree CHUNG với furniture/mate
 ```
 Clear Children(VerticalBox_44)
 
+// Node "+" — NF.G3 (06/07), LUÔN đứng ĐẦU, trước cả "Tất cả"
+Create Widget(WBP_TreeNode) → PlusNode
+  SET PlusNode.FolderPath = "__NEWFOLDER__"
+  SET PlusNode.FolderName = "+ Tao folder"
+  SET PlusNode.IndentLevel = 0
+  RefreshDisplay(bIsActive = false)
+  Add Child(VerticalBox_44, PlusNode)
+  Bind OnNodeSelected(PlusNode) → OnComboTreeNodeClicked
+  (KHÔNG bind OnNodeRightClicked — né context menu trên hàng "+")
+
 // Node "Tất cả" (luôn có)
 Create Widget(WBP_TreeNode) → AllNode
   SET AllNode.FolderPath = "__ALL__"
@@ -638,6 +650,7 @@ Branch(bFound)
 > **D9 (26/06):** Branch guard trong Loop Body — cấp 2 CHỈ hiện khi `CurrentComboFolderPath == lvl1 OR StartsWith(lvl1+"/")`. Guard PHẢI trong Loop Body (KHÔNG Completed) — bug Completed: lvl1=phần tử cuối, Branch chỉ check 1 lần sai.
 > Tất cả 4 node bind thêm `OnNodeRightClicked → OnComboTreeNodeRightClicked`. Guard sentinel xử lý ở receiver.
 > ⚠️ **BUG FIX 4.1 (01/07):** `ParseIntoArray` delimiter PHẢI là `","` (phẩy, không cách). `AddFolderPathToTree` viết với `","` (Map Add value = `Append(OldCSV, ",", child)`) → nếu `ParseIntoArray` đọc với `", "` (có cách sau phẩy) thì nhiều tên con bị gộp thành 1 token. Đảm bảo cả `Lvl1CSV` và `Lvl2CSV` đều dùng `","` — khớp với delimiter khi viết.
+> **NF.G3 (06/07):** node "+" dùng sentinel `FolderPath = "__NEWFOLDER__"` — guard đọc ở đầu `OnComboTreeNodeClicked`. KHÔNG bind `OnNodeRightClicked` cho node này (không có context menu trên hàng "+").
 
 ### FilterComboByFolder(FolderPath : String) — Function
 ```
@@ -660,7 +673,7 @@ ForEach Completed:
 ```
 > ✅ **FIXED (26/06):** Set List Items hoạt động đúng sau khi verify Entry Widget Class = WBP_ComboCard trong TileView settings (B-C5-card). Card render PASS.
 
-### RefreshComboFolderUI() — Function (lớp refresh duy nhất cho C5.2→C5.6)
+### RefreshComboFolderUI() — Function (lớp refresh duy nhất cho C5.2→C5.7)
 ```
 LoadComboLibrary
 BuildComboFolderTree → PopulateComboTreeColumn
@@ -670,11 +683,13 @@ Branch(CurrentComboFolderPath == "__ALL__")
             True  → FilterComboByFolder("")
             False → FilterComboByFolder(CurrentComboFolderPath)   ← luôn dùng path thật (BUG FIX 4.2)
 [3 nhánh merge] → UpdateComboFolderHighlights()   ← BUG FIX 4.3
+                → RefreshChipBreadcrumb()          ← THÊM 06/07, nối cả 3 nhánh (BUG FIX #1 mục dưới)
 ```
 > Check `__ALL__` và `""` riêng vì 2 sentinel KHÔNG nằm trong ComboFolderTree.
 > ⚠️ **BUG FIX C5.2 (27/06):** thiếu nối `PopulateComboTreeColumn` sau `BuildComboFolderTree` → tree không vẽ lại sau rename.
 > ⚠️ **BUG FIX 4.2 (01/07):** Bỏ nhánh `Map_Contains(ComboFolderTree, CurrentComboFolderPath)`. Folder lá KHÔNG là key trong ComboFolderTree (key = path cha, value = CSV tên con) → `Map_Contains` trả False cho leaf → luôn nhảy về `__ALL__`. Fix: với path thật (không phải sentinel), gọi `FilterComboByFolder(CurrentComboFolderPath)` trực tiếp — `FilterComboByFolder` tự lọc đúng.
 > ⚠️ **BUG FIX 4.3 (01/07):** Thêm `UpdateComboFolderHighlights()` sau merge 3 nhánh — thiếu call này → chip/tree node không sáng sau Move Combo.
+> ⚠️ **BUG FIX #1 (06/07):** Bản đầu chỉ nối `RefreshChipBreadcrumb` ở nhánh path-thật (else-else) — 2 nhánh `__ALL__` và `""` dead-end sau `UpdateComboFolderHighlights`, phát hiện qua export K2Node. Đã nối cả 3 nhánh về 1 điểm chung (xem mục "Bug fix — Chip area không tự refresh" dưới).
 
 ### UpdateComboFolderHighlights() — Function (Issue 2 — v3.5)
 Mirror của `UpdateFolderHighlights` cho combo side. KHÔNG dùng `IsPathActive()` (function đó đọc `CurrentFolderPath` của furniture side) — inline check trực tiếp với `CurrentComboFolderPath`.
@@ -697,33 +712,23 @@ ForEach(VB_ChipTagArea.Children):
 > **3 call sites:** (1) cuối `RefreshComboFolderUI` (BUG FIX 4.3). (2) cuối `HandleMoveComboConfirmed` bOK=True. (3) cuối `OnComboTreeNodeClicked` sau FilterComboByFolder.
 
 ### OnComboTreeNodeClicked(SelectedPath : String, IndentLevel : Integer) — Custom Event
-Bound từ mọi WBP_TreeNode trong PopulateComboTreeColumn. Branch theo IndentLevel.
+Bound từ mọi WBP_TreeNode trong PopulateComboTreeColumn (kể cả node "+"). Branch theo IndentLevel.
 ```
-Entry → ClearChildren(VB_ChipTagArea)
-→ Branch(IndentLevel == 0):
-     True  → FilterComboByFolder(SelectedPath)
-              PopulateComboTreeColumn()
-     False → FilterComboByFolder(SelectedPath)
-              Map Find(ComboFolderTree, SelectedPath) → ChildCSV, bFound
-              Branch(bFound):
-                False → [merge] → PopulateComboTreeColumn()   ← leaf folder cấp 2
-                True  → Create Widget(WBP_ChipRow) → ChipRow
-                         SET ChipRow.RowIndentLevel = 2
-                         Parse Into Array(ChildCSV, ",") → ChildNames
-                         ForEach ChildNames (element):
-                           Create Widget(WBP_ChipTag) → NewChip
-                           SET NewChip.FolderPath_ChipTag = Append(SelectedPath, "/", element)
-                           SET NewChip.FolderName_ChipTag = element
-                           SET NewChip.IndentLevel_ChipTag = 2
-                           AddChild(ChipRow.HorizontalBox_ChipRow, NewChip)
-                           Bind OnChipSelected(NewChip) → OnComboChipTagClicked
-                         Completed → AddChild(VB_ChipTagArea, ChipRow)
-              [merge] → PopulateComboTreeColumn()
+Entry → Branch(SelectedPath == "__NEWFOLDER__")            ← NF.G3 guard (06/07), ĐẦU TIÊN
+     True  → OnRequestNewFolder( GetNewFolderParent() )      ← KẾT THÚC lần gọi
+     False → ClearChildren(VB_ChipTagArea)
+              → Branch(IndentLevel == 0):
+                   True  → FilterComboByFolder(SelectedPath)
+                            PopulateComboTreeColumn()
+                   False → FilterComboByFolder(SelectedPath)
+                            RebuildChipRowForPath(SelectedPath, 1)   ← thay khối tạo ChipRow trùng lặp (06/07, xem mục Bug fix Chip area)
+                            PopulateComboTreeColumn()
 ```
+> ⚠️ **BUG FIX (06/07 — SelectedPath nhầm biến):** lúc nối `RebuildChipRowForPath(?, 1)`, Blueprint đã tự auto-wire nhầm vào **GET class var `SelectedPath`** (biến cũ cùng tên từ `PopulateTreeColumn` phía Furniture/Material) thay vì đúng **pin `SelectedPath` của param Custom Event** này — hậu quả: chip con hiện sai, ra toàn bộ danh sách folder cấp gốc thay vì đúng children của node vừa click. Fix: kéo lại dây từ đúng pin `Selected Path` trên node Entry, không đổi tên biến nào. Cảnh giác khi Custom Event có param trùng tên 1 class var đã tồn tại — auto-suggest dễ nối nhầm.
 
 ### OnComboChipTagClicked(SelectedPath_ChipTag : String, IndentLevel_ChipTag : Integer) — Custom Event
 Clone của `OnChipTagClicked` (furniture). Bound từ WBP_ChipTag trong VB_ChipTagArea (combo tree).
-**Local vars:** RowCount (Int), ChildCSV (String), ChildNames (Array<String>)
+**Local vars:** RowCount (Int)
 ```
 Entry → SET CurrentComboFolderPath = SelectedPath_ChipTag
 → SET RowCount = GetChildrenCount(VB_ChipTagArea)
@@ -731,22 +736,9 @@ Entry → SET CurrentComboFolderPath = SelectedPath_ChipTag
      Loop Body: RemoveChildAt(VB_ChipTagArea, RowCount - 1 - Index)   ← xóa từ dưới lên
    Completed →
 → FilterComboByFolder(SelectedPath_ChipTag)
-→ SET ChildCSV = Map Find(ComboFolderTree, SelectedPath_ChipTag)
-→ Branch(bFound):
-     False → dead-end
-     True  → Create Widget(WBP_ChipRow) → ChipRow
-              SET ChipRow.RowIndentLevel = IndentLevel_ChipTag + 1
-              SET ChildNames = Parse Into Array(ChildCSV, ",")
-              ForEach ChildNames (element):
-                Create Widget(WBP_ChipTag) → NewChip
-                SET NewChip.FolderPath_ChipTag = Append(SelectedPath_ChipTag, "/", element)
-                SET NewChip.FolderName_ChipTag = element
-                SET NewChip.IndentLevel_ChipTag = IndentLevel_ChipTag + 1
-                AddChild(ChipRow.HorizontalBox_ChipRow, NewChip)
-                Bind OnChipSelected(NewChip) → OnComboChipTagClicked
-              Completed → AddChild(VB_ChipTagArea, ChipRow)
+→ RebuildChipRowForPath(SelectedPath_ChipTag, IndentLevel_ChipTag)   ← thay khối tạo ChipRow trùng lặp (06/07, xem mục Bug fix Chip area)
 ```
-> NOTE: `IndentLevel_ChipTag + 1` cho cả `RowIndentLevel` và `IndentLevel_ChipTag` chip con (B pin = 1, không phải 0).
+> `RebuildChipRowForPath` tự set `RowIndentLevel`/`IndentLevel_ChipTag` chip con = `OwnIndentLevel + 1` (khớp hành vi cũ).
 
 ### ParentOf(Path : String) → ParentPath : String — Pure
 ```
@@ -784,11 +776,11 @@ Entry → Branch(FolderPath == "__ALL__" OR FolderPath == "")
               SET LibMenu.MenuMode = "Folder"
               SET LibMenu.TargetFolderPath = FolderPath
               Bind LibMenu.OnRequestMoveFolder → OnRequestMoveFolder   [STUB C5.4]
-              Bind LibMenu.OnRequestDeleteFolder → OnRequestDeleteFolder   [STUB C5.5]
+              Bind LibMenu.OnRequestDeleteFolder → OnRequestDeleteFolder   [C5.6]
               LibMenu.AddMenuItem("Create New Folder", "") → Item0 → Bind Item0.OnItemClicked → CB_CreateNewFolder   ← NF, ĐẦU chuỗi
               LibMenu.AddMenuItem("✏️ Đổi tên", "") → Item1 → Bind Item1.OnItemClicked → CB_RenameFolder
               LibMenu.AddMenuItem("📁 Chuyển vào…", "") → Item2 → Bind Item2.OnItemClicked → CB_MoveFolderClick [STUB C5.4]
-              LibMenu.AddMenuItem("🗑️ Xóa", "") → Item3 → Bind Item3.OnItemClicked → CB_DeleteFolderClick [STUB C5.5]
+              LibMenu.AddMenuItem("🗑️ Xóa", "") → Item3 → Bind Item3.OnItemClicked → CB_DeleteFolderClick [C5.6]
               SET LibraryMenuRef = LibMenu
               Get Player Controller → Set Input Mode UI Only
               LibMenu.ShowAt(Get Mouse Position on Viewport)
@@ -859,10 +851,45 @@ Dialog.AddToViewport
 Get Player Controller → Set Input Mode UI Only
 ```
 
-### OnRequestDeleteFolder(FolderPath : String) — Custom Event [STUB — C5.5]
+### OnRequestDeleteFolder(FolderPath : String) — Custom Event [C5.6]
 ```
-// C5.5: gọi ComboSerializer.ClearFolderPrefix(FolderPath) + xóa folder + refresh UI
+SET PendingDeleteFolderPath = FolderPath
+Create Widget(WBP_ConfirmDialog) → Dialog
+  Message = "Xóa folder '" + LastSegmentOf(FolderPath)
+          + "'? Combo bên trong sẽ chuyển về Chưa phân loại (không bị xóa)."
+  ConfirmLabel = "Xóa"
+Bind Dialog.OnConfirmed → HandleDeleteFolderConfirmed
+Add to Viewport
+Get Player Controller → Set Input Mode UI Only
 ```
+
+### HandleDeleteFolderConfirmed() — Custom Event [C5.6]
+Bound từ `WBP_ConfirmDialog.OnConfirmed` trong `OnRequestDeleteFolder`.
+```
+Get Player Controller → Set Input Mode Game and UI
+Branch( CurrentComboFolderPath == PendingDeleteFolderPath
+        OR CurrentComboFolderPath StartsWith (PendingDeleteFolderPath + "/") )
+     True  → ParentOf(PendingDeleteFolderPath) → ParentPath
+            → Branch(ParentPath == "")
+                 True  → SET CurrentComboFolderPath = "__ALL__"
+                 False → SET CurrentComboFolderPath = ParentPath
+     False → (merge, không đổi)
+→ UComboSerializer::ClearFolderPrefix(PendingDeleteFolderPath) → ChangedCount
+→ RefreshComboFolderUI()
+→ Print String("Đã xóa folder, " + ChangedCount + " combo về Chưa phân loại")   [gate bDebugMode]
+→ SET PendingDeleteFolderPath = ""
+```
+> **[DEVIATION D-C5.6-1]** Spec gốc (`Combo_C5_FolderManagement_Plan.md`, test case 5) quy định "nhảy về `__ALL__`" khi xóa folder đang xem/cha của đang xem. Đổi thành **"nhảy về folder CHA trực tiếp"** (dùng `ParentOf` có sẵn từ C5.2) — nếu cha là gốc (`""`) thì mới về `__ALL__`. Lý do: UX mượt hơn khi xóa folder lồng sâu — giữ ngữ cảnh thay vì bật về Tất cả mỗi lần xóa. Xem DEVIATIONS.md 06/07.
+
+### CB_DeleteFolderClick — Custom Event (bound từ Item3.OnItemClicked trong OnComboTreeNodeRightClicked) [C5.6]
+```
+GET LibraryMenuRef → IsValid →
+  LibraryMenuRef.Hide
+  → OnRequestDeleteFolder(LibraryMenuRef.TargetFolderPath)   ← đọc TRƯỚC khi None
+  → SET LibraryMenuRef = None                                ← cuối chuỗi, khớp pattern CB_CreateNewFolder/CB_MoveFolderClick
+```
+> ⚠️ **BUG FIX (thứ tự exec, 06/07):** Lúc đầu code SET `LibraryMenuRef = None` TRƯỚC khi đọc `TargetFolderPath` → Accessed None runtime error. Đã sửa: đọc property trước, SET None sau cùng.
+> **Ghi chú tồn kho:** `CB_RenameFolder` (từ C5.2) là ca lẻ loi KHÔNG có `SET LibraryMenuRef = None` sau `Hide` — không gây lỗi hiện tại nhưng lệch pattern so với 4/5 CB_ khác. Backlog dọn sau, không sửa trong phạm vi C5.6 (KP3).
 
 ### OnRenameFolderCommitted(OldPath : String, NewName : String) — Custom Event
 Bound từ `WBP_TreeNode.OnNodeRenameCommitted` trong `PopulateComboTreeColumn` (mỗi node cấp 1+2).
@@ -1057,6 +1084,73 @@ IsValid(LibraryMenuRef):
            → OnRequestNewFolder(ParentPath)
   False → [dead-end]
 ```
+
+> **NF.G3 (06/07) — DONE:** nút "+" đầu cột tree implement — xem `PopulateComboTreeColumn` (PlusNode) + `OnComboTreeNodeClicked` (guard `__NEWFOLDER__`) ở trên. Không tạo hàm mới — tái dùng `GetNewFolderParent()` + `OnRequestNewFolder(ParentPath)` đã có. Khác biệt so với context-menu "Create New Folder": nút "+" tạo folder TRONG folder đang xem (`GetNewFolderParent`), context-menu tạo CÙNG CẤP node bị right-click (`ParentOf`). Test PASS 5/5.
+
+---
+
+## C5.7a — ChipTag right-click → context menu (06/07/2026)
+
+Tái dùng `OnComboTreeNodeRightClicked` cho cả tree node lẫn chip — không cần logic menu mới. Đầy đủ ở phía `WBP_ChipTag` (dispatcher `OnChipRightClicked` + `On Mouse Button Down` override) — xem `WBP_ChipTag.md`. Bind ở `RebuildChipRowForPath` (mục dưới) — 1 điểm bind DUY NHẤT, dùng chung cho mọi chip được tạo:
+```
+Bind OnChipRightClicked(NewChip) → OnComboTreeNodeRightClicked   ← tái dùng handler tree, signature khớp (FolderPath : String)
+```
+
+**Test PASS 3/4 case ban đầu:** right-click chip mở menu đúng path, move/xóa từ chip chạy đúng, click trái chip vẫn chọn folder bình thường. Rename từ chip → **FAIL theo dự kiến** (thuộc C5.7b — `OnRequestRenameFolder` chưa biết tìm node trong `VB_ChipTagArea`, chưa làm — CÒN NỢ).
+
+---
+
+## Bug fix — Chip area không tự refresh sau Move/Xóa/Rename folder (06/07/2026)
+
+**Phát hiện lúc test C5.7a case 3** (move combo từ chip → chip area không tự vẽ lại, phải chuyển folder khác rồi quay lại). **Nguyên nhân gốc:** `RefreshComboFolderUI()` chỉ vẽ lại `VerticalBox_44` (tree) — không có gì chủ động vẽ lại `VB_ChipTagArea` khi dữ liệu đổi từ nguồn khác (move/rename/xóa), cột chip trước đó chỉ được dựng tại thời điểm click.
+
+### RebuildChipRowForPath(Path : String, OwnIndentLevel : Integer) — Function
+Tách logic dựng 1 hàng chip (trước đây lặp lại 2 lần trong `OnComboTreeNodeClicked` và `OnComboChipTagClicked`) thành hàm dùng chung — CẢ 2 nơi gọi hàm này thay vì tự dựng ChipRow.
+```
+Map Find(ComboFolderTree, Path) → ChildCSV, bFound
+Branch(bFound):
+  False → return (không có gì để vẽ)
+  True  → Create Widget(WBP_ChipRow) → Row
+           SET Row.RowIndentLevel = OwnIndentLevel + 1
+           Parse Into Array(ChildCSV, ",") → ChildNames
+           ForEach ChildNames (element):
+             Create Widget(WBP_ChipTag) → NewChip
+             SET NewChip.FolderPath_ChipTag = Append(Path, "/", element)
+             SET NewChip.FolderName_ChipTag = element
+             SET NewChip.IndentLevel_ChipTag = OwnIndentLevel + 1
+             Bind OnChipSelected(NewChip) → OnComboChipTagClicked
+             Bind OnChipRightClicked(NewChip) → OnComboTreeNodeRightClicked   ← C5.7a
+             AddChild(Row.HorizontalBox_ChipRow, NewChip)
+           Completed → AddChild(VB_ChipTagArea, Row)
+```
+
+### RefreshChipBreadcrumb() — Function
+Dựng lại TOÀN BỘ chuỗi hàng chip từ `CurrentComboFolderPath`. Gọi từ `RefreshComboFolderUI` sau `UpdateComboFolderHighlights` (cả 3 nhánh filter).
+```
+ClearChildren(VB_ChipTagArea)
+Branch(CurrentComboFolderPath == "__ALL__" OR CurrentComboFolderPath == ""):
+  True → return
+Parse Into Array(CurrentComboFolderPath, "/") → Segments   ← Delimiter PHẢI là "/" (1 ký tự)
+Branch(Segments.Length <= 1):
+  True → return          ← cấp 1 (root) — tree tự vẽ cấp 2 lồng, không cần chip
+
+Local: BuildPath = Append(Segments[0], "/", Segments[1])   ← path cấp 2
+Local: Lvl = 1
+RebuildChipRowForPath(BuildPath, Lvl)                       ← LUÔN vẽ hàng đầu
+
+Branch(Segments.Length > 2):
+  False → return
+  True  → ForLoop(2, Segments.Length - 1):
+            SET BuildPath = Append(BuildPath, "/", Segments[Index])
+            SET Lvl = Lvl + 1
+            RebuildChipRowForPath(BuildPath, Lvl)
+          Completed → end
+```
+
+> ⚠️ **BUG FIX #2 (Delimiter sai):** `Parse Into Array` trong `RefreshChipBreadcrumb` có `Delimiter = "/ "` (gạch chéo + khoảng trắng) thay vì `"/"` — gõ nhầm lúc tạo node. Vì `CurrentComboFolderPath` không chứa chuỗi `"/ "`, `ParseIntoArray` không tách được gì, trả mảng 1 phần tử → `Segments.Length <= 1` luôn True → hàm return sớm, chip area trống dù đáng lẽ phải vẽ. Đã sửa Delimiter về `"/"` (1 ký tự).
+> ⚠️ **BUG FIX #3 (logic sai vô hại):** node điều kiện đầu (check `__ALL__`/`""`) dùng nhầm `BooleanAND` thay vì `BooleanOR` — về lý thuyết sai (1 chuỗi không thể vừa bằng 2 giá trị khác nhau cùng lúc, nhánh True không bao giờ chạy được), nhưng KHÔNG gây triệu chứng vì `Branch(Segments.Length <= 1)` phía sau vô tình bắt được cả 2 case đó. Đã sửa `AND` → `OR` cho đúng ý định logic, dù hành vi runtime không đổi.
+
+**Test PASS sau fix:** click __ALL__ dọn sạch chip / xóa folder cha đang xem con → về cha, con còn lại hiện đủ ngay / regression case 2-4 segment path đều đúng.
 
 ---
 
@@ -1303,3 +1397,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.4 | 30/06/2026 — C5.4 Move Folder | Class var MovingFolderPath (String). CollectFolderTargets(ParentPath, IndentLevel, MovingPath) — đệ quy, trả Array<S_FolderTargetEntry>, loại MovingPath + con cháu (Branch StartsWith). BuildMoveFolderTargetList(MovingPath) — wrap + thêm entry "(Gốc)". OnRequestMoveFolder implement (đã STUB từ C5.0). CB_MoveFolderClick implement (đã STUB). HandleMoveFolderConfirmed NEW — tính NewFullPrefix (tái dùng var C5.2), guard no-op, cập nhật CurrentComboFolderPath, gọi RenameFolderPrefix + RefreshComboFolderUI. BUG FIX D-C5.4-1 (Array_Append ngược Target/Source), D-C5.4-2 (dead-end thiếu merge nhánh True). |
 | 3.5 | 01/07/2026 — C5.5 Move Combo + BUG FIX 4.1/4.2/4.3 | Class var: MoveComboDialogRef/MovingComboID/MovingComboCurrentFolder. UpdateComboFolderHighlights() NEW (Issue 2): mirror UpdateFolderHighlights cho combo side, dùng CurrentComboFolderPath. OnComboCardRightClicked(ComboID) NEW: tạo context menu "Combo" mode từ RMB trên WBP_ComboCard, bind CB_MoveCombo. CB_MoveCombo NEW: guard stacking, ForEachLoopWithBreak tìm FolderPath hiện tại, tạo WBP_MoveToFolderDialog, bind HandleMoveComboConfirmed. HandleMoveComboConfirmed NEW: close dialog, guard no-op, UpdateComboFolder C++, RefreshComboFolderUI. WBP_ComboCard +InventoryRef class var + On Mouse Button Down override. BUG FIX 4.1 (ParseIntoArray delimiter phải "," không cách). BUG FIX 4.2 (RefreshComboFolderUI bỏ Map_Contains — leaf folder không là key). BUG FIX 4.3 (RefreshComboFolderUI thêm UpdateComboFolderHighlights sau merge 3 nhánh). |
 | 3.6 | 04/07/2026 — NF (New Folder) context-menu part | 3 Pure helpers mới: GetChildFolderNames(ParentPath) (Map Find + Parse Into Array), GetUniqueNewFolderName(ParentPath) (While Loop sinh "New Folder"/"New Folder (2)"...), GetNewFolderParent() (rỗng nếu Tất cả/Chưa phân loại/sentinel, ngược lại CurrentComboFolderPath — dùng cho nút "+" còn nợ). OnRequestNewFolder(ParentPath) NEW: CreateEmptyFolder C++ → RefreshComboFolderUI → OnRequestRenameFolder (tái dùng rename phase C5.2), KHÔNG CaptureSnapshot, KHÔNG đổi CurrentComboFolderPath. CB_CreateNewFolder NEW: cache TargetFolderPath trước Hide, ParentOf → tạo CÙNG CẤP node bị right-click (D-NF-2). OnComboTreeNodeRightClicked: +1 menu item "Create New Folder" đầu chuỗi AddMenuItem. Test PASS 9/9. Deviation: dialog (NF.G2-G5 gốc) SUPERSEDED bởi inline rename (D-NF-1); không dispatcher riêng trên WBP_LibraryContextMenu (D-NF-3). Còn nợ: nút "+" đầu cột tree. |
+| 3.7 | 06/07/2026 — NF.G3 (nút "+") + C5.6 (Xóa folder) + C5.7a (ChipTag right-click) | **NF.G3:** PopulateComboTreeColumn +PlusNode (sentinel `__NEWFOLDER__`, đầu tiên); OnComboTreeNodeClicked +guard đầu tiên → OnRequestNewFolder(GetNewFolderParent()). Không hàm mới. Test PASS 5/5. **C5.6:** class var PendingDeleteFolderPath; OnRequestDeleteFolder implement (mở WBP_ConfirmDialog mới); HandleDeleteFolderConfirmed NEW (ClearFolderPrefix C++ + navigate về cha); CB_DeleteFolderClick implement. Deviation D-C5.6-1 (nhảy về cha thay vì __ALL__). BUG FIX thứ tự exec (đọc TargetFolderPath trước SET None). Test PASS 6/6. **C5.7a:** WBP_ChipTag +dispatcher OnChipRightClicked + On Mouse Button Down override (xem WBP_ChipTag.md v1.2); bind → OnComboTreeNodeRightClicked (tái dùng, không logic mới). Test PASS 3/4 (rename từ chip = C5.7b, chưa làm). **Refactor + bug fix phát sinh:** RebuildChipRowForPath (hàm mới, gộp code tạo ChipRow trùng lặp) + RefreshChipBreadcrumb (hàm mới, tự vẽ lại toàn bộ chip breadcrumb) — RefreshComboFolderUI gọi RefreshChipBreadcrumb sau UpdateComboFolderHighlights ở cả 3 nhánh. BUG FIX #1 (2/3 nhánh dead-end trước khi nối), #2 (delimiter "/ " sai lẽ ra "/"), #3 (BooleanAND→OR vô hại). Bug fix SelectedPath nhầm biến (class var trùng tên param) trong OnComboTreeNodeClicked. |

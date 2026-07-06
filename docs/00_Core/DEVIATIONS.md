@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 04/07/2026 — 22:35 ICT
+**Cập nhật:** 06/07/2026 — 21:15 ICT
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -343,6 +343,32 @@ không qua Broadcast/dispatcher của context menu. WBP_LibraryContextMenu KHÔN
 
 ---
 
+## SPRINT 5 — 06/07/2026 — NF.G3 + C5.6 + C5.7a
+
+### D-C5.6-1 — HandleDeleteFolderConfirmed đổi hành vi navigate sau xóa folder
+Spec gốc (test case 5, `Combo_C5_FolderManagement_Plan.md`) quy định "nhảy về `__ALL__`".
+Đổi thành "nhảy về folder CHA trực tiếp" (`ParentOf`, có sẵn từ C5.2) — nếu cha là gốc mới
+về `__ALL__`. Lý do: UX mượt hơn khi xóa folder lồng sâu, giữ ngữ cảnh thay vì bật về Tất
+cả. cuhoang duyệt. `[SCOPE]`
+
+### Bug fix RefreshComboFolderUI — 2/3 nhánh dead-end trước RefreshChipBreadcrumb
+2/3 nhánh filter (`__ALL__`, `""`) dead-end sau `UpdateComboFolderHighlights`, không nối
+tới `RefreshChipBreadcrumb` (hàm mới) → chip area không tự dọn khi navigate về
+`__ALL__`/`""`. Phát hiện qua export K2Node, đã nối cả 3 nhánh. `[BUG]`
+
+### Bug fix RefreshChipBreadcrumb — Delimiter gõ nhầm
+`Parse Into Array` dùng Delimiter `"/ "` (có khoảng trắng) thay vì `"/"` → Segments không
+tách được, chip area trống sau move/xóa folder con trong path ≥2 cấp. Đã sửa Delimiter.
+Kèm sửa phụ: BooleanAND→BooleanOR ở guard đầu hàm (logic sai nhưng vô hại runtime, sửa
+cho đúng ý định). `[BUG]`
+
+**Ghi chú:** NF.G3 (nút "+") không phải deviation — đúng plan, tái dùng `GetNewFolderParent`/
+`OnRequestNewFolder` có sẵn, không hàm mới. Bug fix "SelectedPath nhầm biến" (class var
+trùng tên param trong `OnComboTreeNodeClicked`) ghi ở `WBP_FurnitureInventory.md` §OnComboTreeNodeClicked,
+không lặp lại ở đây (không phải deviation kiến trúc, là lỗi wire cụ thể).
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -401,4 +427,5 @@ không qua Broadcast/dispatcher của context menu. WBP_LibraryContextMenu KHÔN
 | 30/06/2026 | Thêm section "SPRINT 5 — 30/06/2026 — C5.4 Move Folder": D-C5.4-1 Array_Append ngược TargetArray/SourceArray trong CollectFolderTargets (kết quả đệ quy không tích lũy được); D-C5.4-2 dead-end thiếu merge nhánh True trong HandleMoveFolderConfirmed (bug CHỈ lộ khi đang xem đúng folder bị move). Thêm note Learning_System: quy trình dạy học bị bỏ qua giai đoạn deadline-rush 21/06→30/06, đã khôi phục trong v1.2. |
 | 01/07/2026 | Thêm section "SPRINT 5 — 01/07/2026 — C5.5 Move Combo": D-C5.5-1 ParseIntoArray delimiter mismatch "," vs ", " (nhiều tên con gộp 1 node); D-C5.5-2 Map_Contains sai với leaf folder (không là key trong ComboFolderTree → fallback sai __ALL__); D-C5.5-3 thiếu UpdateComboFolderHighlights call sau RefreshComboFolderUI (highlight không sync sau Move Combo). |
 | 04/07/2026 | Thêm section "SPRINT 5 — 04/07/2026 — NF (New Folder, context-menu part)": D-NF-1 dialog (NF.G2-G5 gốc) → SUPERSEDED bởi inline rename (UX Explorer-style, tái dùng WBP_EditableLabel C5.2); D-NF-2 right-click tạo CÙNG CẤP (sibling) node bị click, không phải CON (lý do: sibling luôn render trên tree 2 cấp → rename mode luôn tìm thấy node); D-NF-3 không cần dispatcher riêng trên WBP_LibraryContextMenu — CB_CreateNewFolder gọi thẳng Custom Event trong WBP_FurnitureInventory. |
+| 06/07/2026 | Thêm section "SPRINT 5 — 06/07/2026 — NF.G3 + C5.6 + C5.7a": D-C5.6-1 HandleDeleteFolderConfirmed nhảy về folder CHA thay vì `__ALL__` sau xóa; bug fix RefreshComboFolderUI 2/3 nhánh dead-end trước RefreshChipBreadcrumb (hàm mới); bug fix RefreshChipBreadcrumb delimiter gõ nhầm "/ " thay vì "/" (kèm BooleanAND→OR vô hại). |
 | 04/07/2026 | Thêm quy ước ceiling + trigger cho deviation loại shortcut có chủ đích (mục CÁCH DÙNG) — từ ponytail-debt |

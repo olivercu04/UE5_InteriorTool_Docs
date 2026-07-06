@@ -1,6 +1,6 @@
 # Blueprint Logic — Node Flow Reference
 **HỢP NHẤT TỪ 3 file:** v1.3 base (07/06) + v1.4_patch (12/06) + v1.5_patch (15/06)
-**Phiên bản:** 1.6 | **Cập nhật:** 04/07/2026 — 22:10 ICT — NF (New Folder) node flow
+**Phiên bản:** 1.7 | **Cập nhật:** 06/07/2026 — 21:15 ICT — NF.G3 (nút "+") + RebuildChipRowForPath/RefreshChipBreadcrumb node flow
 **Mục đích:** Ghi lại thứ tự node logic để không cần chụp ảnh lại Blueprint. Full flows sống trong file BP_*.md / WBP_*.md tương ứng — file này ghi node-by-node diff và cross-BP flows.
 
 ---
@@ -343,6 +343,55 @@ IsValid(LibraryMenuRef):
   False → [dead-end]
 ```
 > OnComboTreeNodeRightClicked thêm `AddMenuItem("Create New Folder")` ĐẦU chuỗi (trước "Đổi tên"), nối tiếp — KHÔNG 2 nhánh song song từ Entry.
+
+### NF.G3 — Nút "+" đầu cột tree (06/07/2026, DONE)
+
+> Full doc: **WBP_FurnitureInventory.md §PopulateComboTreeColumn / §OnComboTreeNodeClicked**. Không hàm mới — tái dùng `GetNewFolderParent`/`OnRequestNewFolder` ở trên.
+
+```
+PopulateComboTreeColumn(): thêm khối ĐẦU TIÊN (trước node "Tất cả")
+  Create Widget(WBP_TreeNode) → PlusNode
+  SET FolderPath="__NEWFOLDER__" | FolderName="+ Tao folder" | IndentLevel=0
+  RefreshDisplay(bIsActive=false) → Add Child → Bind OnNodeSelected → OnComboTreeNodeClicked
+  (KHÔNG bind OnNodeRightClicked)
+
+OnComboTreeNodeClicked(SelectedPath, IndentLevel): thêm guard ĐẦU TIÊN
+  Entry → Branch(SelectedPath == "__NEWFOLDER__")
+       True  → OnRequestNewFolder(GetNewFolderParent())   ← KẾT THÚC
+       False → ...logic cũ giữ nguyên...
+```
+> Khác biệt hành vi so với context-menu "Create New Folder": nút "+" tạo TRONG folder đang xem (`GetNewFolderParent`), context-menu tạo CÙNG CẤP node bị right-click (`ParentOf`). Test PASS 5/5.
+
+### RebuildChipRowForPath + RefreshChipBreadcrumb (06/07/2026, bug fix chip area không tự refresh)
+
+> Full doc: **WBP_FurnitureInventory.md §Bug fix — Chip area không tự refresh**. Gộp code tạo ChipRow trùng lặp từ `OnComboTreeNodeClicked` + `OnComboChipTagClicked` thành 1 hàm dùng chung, và thêm hàm tự-vẽ-lại-toàn-bộ gọi từ `RefreshComboFolderUI` (fix chip area không tự refresh sau Move/Xóa/Rename folder).
+
+```
+RebuildChipRowForPath(Path, OwnIndentLevel) — Function:
+  Map Find(ComboFolderTree, Path) → ChildCSV, bFound
+  Branch bFound:
+    False → return
+    True  → Create WBP_ChipRow(RowIndentLevel=OwnIndentLevel+1)
+             ForEach ParseIntoArray(ChildCSV, ",") (element):
+               Create WBP_ChipTag (FolderPath=Path+"/"+element, IndentLevel=OwnIndentLevel+1)
+               Bind OnChipSelected → OnComboChipTagClicked
+               Bind OnChipRightClicked → OnComboTreeNodeRightClicked   ← C5.7a
+               AddChild(Row.HorizontalBox_ChipRow)
+             Completed: AddChild(VB_ChipTagArea, Row)
+
+RefreshChipBreadcrumb() — Function, gọi từ RefreshComboFolderUI SAU UpdateComboFolderHighlights (cả 3 nhánh):
+  ClearChildren(VB_ChipTagArea)
+  Branch(CurrentComboFolderPath=="__ALL__" OR ==""): True → return
+  ParseIntoArray(CurrentComboFolderPath, "/") → Segments   ← delimiter "/" (1 ký tự)
+  Branch(Segments.Length <= 1): True → return   ← cấp 1, tree tự vẽ cấp 2 lồng
+  BuildPath = Segments[0]+"/"+Segments[1] | Lvl = 1
+  RebuildChipRowForPath(BuildPath, Lvl)          ← luôn vẽ hàng đầu
+  Branch(Segments.Length > 2):
+    True → ForLoop(2, Segments.Length-1):
+             BuildPath += "/"+Segments[Index] | Lvl += 1
+             RebuildChipRowForPath(BuildPath, Lvl)
+```
+> 3 bug tìm & fix trong lúc build 2 hàm này: (#1) RefreshComboFolderUI chỉ nối RefreshChipBreadcrumb ở 1/3 nhánh — 2 nhánh còn dead-end; (#2) ParseIntoArray delimiter gõ nhầm `"/ "` thay vì `"/"` → Segments không tách được; (#3) guard đầu hàm dùng nhầm BooleanAND thay BooleanOR (vô hại vì Branch sau vô tình bắt được). Chi tiết: WBP_FurnitureInventory.md.
 
 ---
 
@@ -992,3 +1041,4 @@ ComputeSelectionUnits(SelectedActors) → (GroupUnits, LooseActors)
 | 1.4 | 12/06/2026 — 15:04 ICT | **Sprint 3 group final + Sprint 4 đầy đủ:** Sprint 3 flows (GenerateGroupID, GetGroupChildren, FindGroupData, CreateGroup, SyncGroupsToContainer, Snapshot v3). Sprint 4: 7 helpers, GetEditBreadcrumb, Enter/Exit edit, TryEnterEdit, WBP_MeshControls T5, CreateGroup nested T6, PruneEmptyGroups + UngroupActors peel-one-level T7, ValidateEditMode T8, Replace GroupID fix, LƯU Ý quan trọng. |
 | 1.5 | 15/06/2026 — 20:30 ICT | **Sprint 4 Bug Fix Learnings:** L-NEW-1 (Branch dead-end Sequence vs Event), L-NEW-2 (output pins + Temp buffer), L-NEW-3 (ComputeSelectionUnits trước guard), L-NEW-4 (Blueprint export text debug), L-NEW-5 (EditModeStack runtime → snapshot), L-NEW-6 (ValidateEditMode restore order). NODE FLOW ĐÃ CONFIRM table. |
 | 1.6 | 04/07/2026 — 22:10 ICT | **NF — New Folder (context menu, dưới §C5.0 combo):** node flow GetChildFolderNames, GetUniqueNewFolderName, GetNewFolderParent, OnRequestNewFolder, CB_CreateNewFolder + ghi chú OnComboTreeNodeRightClicked thêm menu item đầu chuỗi. Full doc: WBP_FurnitureInventory.md v3.6. |
+| 1.7 | 06/07/2026 — 21:15 ICT | **NF.G3 (nút "+")** node flow: PopulateComboTreeColumn +PlusNode, OnComboTreeNodeClicked +guard đầu tiên. **RebuildChipRowForPath + RefreshChipBreadcrumb** node flow (gộp code ChipRow trùng lặp + tự vẽ lại chip breadcrumb sau Move/Xóa/Rename folder) + tóm tắt 3 bug fix (dead-end 2/3 nhánh, delimiter sai, BooleanAND→OR). Full doc: WBP_FurnitureInventory.md v3.7. |
