@@ -4,6 +4,8 @@
 ## Mục đích
 Dialog nhập thông tin trước khi lưu combo. Thay hardcode "MyCombo" tạm (C3b). Async — đóng băng selection trước khi mở.
 
+> 🔲 **PLANNED (C5.8, chưa thực thi):** field Folder (`CMB_Folder`+`BTN_NewFolder`+`TextBox_FolderPath`, `bIsCreatingNewFolder`, `ExistingFolders`) dự kiến thay bằng 1 `WBP_FolderTreePicker` compact + nút "+" (inline create qua dispatcher `OnRequestCreateFolder`). Xem `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md` §5, §6. Code/doc dưới đây CHƯA đổi — vẫn đúng hiện trạng.
+
 ## Expose on Spawn
 | Tên | Kiểu | Vai trò |
 |-----|------|---------|

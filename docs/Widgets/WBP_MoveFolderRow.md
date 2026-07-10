@@ -6,6 +6,8 @@
 ## Tổng quan
 1 dòng trong danh sách chọn folder đích của WBP_MoveToFolderDialog. Thụt lề theo cấp, click để chọn, highlight khi đang chọn. Pattern tương tự WBP_ContextMenuItem.
 
+> 🔲 **[SUPERSEDED-candidate] (C5.8, chưa thực thi):** dự kiến thay bằng `WBP_FolderPickerRow` (mới, host `WBP_EditableLabel` + guide line + badge). Xem `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md` §4. Widget này CHƯA đổi/xóa — vẫn đang chạy.
+
 ## Layout
 ```
 [Root] Horizontal Box

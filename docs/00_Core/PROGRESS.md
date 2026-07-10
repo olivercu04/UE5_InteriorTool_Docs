@@ -1,6 +1,6 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
-**Cập nhật:** 06/07/2026 — 21:15 ICT (NF.G3 ✅ + C5.6 ✅ + C5.7a ✅ DONE, C5.7b 🔲 còn nợ)
+**Cập nhật:** 07/07/2026 — 20:30 ICT (C5.7b ✅ DONE — C5 HOÀN TẤT; C5.8 Folder Tree Picker Unify 🔲 PLANNED)
 
 ---
 
@@ -15,7 +15,8 @@ Gate 1                        ████████████████ 3
 Sprint D — Data Layer v2      ████████████████ 9/9  DONE ✅ (17/06)
 Sprint 5 — Combo Mesh         █████████████░  15/19 task (T1/T2/C0/C1/C2/C3a/C3b/C4/C8/C5.1/C5.0/C5.2/C5.4/Issue2/C5.5 ✅; 4 còn lại — +2 task backlog thêm 30/06)
                                (NF — New Folder: context-menu part ✅ DONE 04/07 + nút "+" (NF.G3) ✅ DONE 06/07)
-                               (C5.6 Xóa folder ✅ DONE 06/07; C5.7a ChipTag right-click ✅ DONE 06/07, C5.7b 🔲 chưa tính vào task count)
+                               (C5.6 Xóa folder ✅ DONE 06/07; C5.7 ChipTag right-click+rename ✅ DONE 06/07 — C5 HOÀN TẤT)
+                               (C5.8 — Folder Tree Picker Unify: 🔲 PLANNED 07/07, chưa tính vào task count — xem C5.8_FolderTreePicker_Unify_Plan.md)
 Sprint 6 — Polish UX          ░░░░░░░░░░░░░    0/14 task
 Sprint 7 — Material v1.2      ░░░░░░░░░        0/9  task
 
@@ -263,7 +264,8 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
   - [x] **C5.5** — Move Combo: WBP_ComboCard v1.1 + WBP_FurnitureInventory v3.5 (OnComboCardRightClicked/CB_MoveCombo/HandleMoveComboConfirmed). BUG FIX 4.1/4.2/4.3. ✅ DONE (01/07)
   - [x] **NF** — Tạo folder mới: context menu action ✅ DONE (04/07) — C++ Folders.json+GetAllFolderPaths, WBP_FurnitureInventory v3.6 (helpers+OnRequestNewFolder+CB_CreateNewFolder). Nút "+" đầu cột tree (NF.G3) ✅ DONE (06/07) — sentinel `__NEWFOLDER__`, tái dùng OnRequestNewFolder.
   - [x] C5.6 — Xóa folder ✅ DONE (06/07) — WBP_ConfirmDialog mới + ClearFolderPrefix (đã có từ C5.1)
-  - [~] C5.7 — ChipTag right-click + rename ⏳ IN PROGRESS — 7a (right-click+menu) ✅ DONE (06/07), 7b (inline rename) 🔲 CÒN NỢ
+  - [x] C5.7 — ChipTag right-click + rename ✅ DONE — 7a (right-click+menu) DONE (06/07), 7b (inline rename, fallback tree→chip) DONE (06/07 tối). **C5 — FOLDER MANAGEMENT HOÀN TẤT.**
+  - [ ] **C5.8** — Folder Tree Picker Unify (Move Dialog + Save Dialog) 🔲 PLANNED (07/07) — gộp lõi data (`BuildFolderTree`/`S_FolderTreeNode`) + component (`WBP_FolderTreePicker`/`WBP_FolderPickerRow`) dùng chung cho Move+Save, thay `WBP_MoveFolderRow` + folder-field cũ của Save. Slot chốt: NGAY SAU C5, TRƯỚC C9. Plan: `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md`. Chưa thực thi — kế tiếp: Task Card #1 (Data Layer).
 - [ ] **C5** — Folder tree tab 🧩 Combo trong WBP_FurnitureInventory
 - [ ] **C6** — Favorite + Recent combo
 - [ ] **C7** — WBP_ComboDetailPopup (thumbnail thật)
@@ -302,3 +304,5 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 01/07/2026 | Issue 2 ✅ + C5.5 Move Combo ✅ DONE: UpdateComboFolderHighlights NEW (Issue 2). WBP_ComboCard v1.1 (InventoryRef + On Mouse Button Down). WBP_FurnitureInventory v3.5 (3 class var + OnComboCardRightClicked + CB_MoveCombo + HandleMoveComboConfirmed). BUG FIX 4.1/4.2/4.3. Learning_System v1.3. TỔNG Sprint 5: 15/19 (+2 backlog task). |
 | 04/07/2026 | NF (New Folder) — context menu part ✅ DONE, nút "+" 🔲 CÒN NỢ: C++ GetEmptyFoldersFilePath→Folders.json + GetAllFolderPaths tự-ghi-bổ-sung (kể cả cấp cha) test PASS 6/6. BuildComboFolderTree đổi nguồn sang GetAllFolderPaths test PASS 4/4. WBP_FurnitureInventory v3.6: GetChildFolderNames/GetUniqueNewFolderName/GetNewFolderParent (helpers) + OnRequestNewFolder + CB_CreateNewFolder (tạo cùng cấp node right-click, tự vào rename mode) — test PASS 9/9. Deviation: dialog (NF.G2-G5 gốc) → SUPERSEDED bởi inline rename. TỔNG Sprint 5: 15/19 (NF chưa tính — còn nút "+"). |
 | 06/07/2026 | NF.G3 ✅ + C5.6 ✅ + C5.7a ✅ DONE: nút "+" đầu cột tree (sentinel `__NEWFOLDER__`, test PASS 5/5). Xóa folder — WBP_ConfirmDialog mới (generic) + HandleDeleteFolderConfirmed + CB_DeleteFolderClick, Deviation D-C5.6-1 (nhảy về cha thay vì `__ALL__`), test PASS 6/6. ChipTag right-click — WBP_ChipTag v1.2 (+OnChipRightClicked + On Mouse Button Down) bind → OnComboTreeNodeRightClicked, test PASS 3/4 (rename = C5.7b, chưa làm). Refactor + bug fix phát sinh: RebuildChipRowForPath + RefreshChipBreadcrumb (gộp code trùng lặp + fix chip area không tự refresh) — 3 bug fix (dead-end 2/3 nhánh, delimiter sai, BooleanAND→OR); bug fix SelectedPath nhầm biến trong OnComboTreeNodeClicked. WBP_FurnitureInventory v3.7. TỔNG Sprint 5: 17/19 (NF.G3+C5.6 done, C5.7 partial — 7a done/7b nợ). |
+| 06/07/2026 (tối) | C5.7b ✅ DONE — **C5 FOLDER MANAGEMENT HOÀN TẤT.** WBP_ChipTag v1.3 (EditLabel_ChipTag thay TextBlock, EnterRenameMode/HandleLabelCommitted, dispatcher OnChipRenameCommitted). WBP_FurnitureInventory v3.8 (RenameTargetChip + OnRequestRenameFolder fallback tree→chip + RebuildChipRowForPath bind). BUG FIX CB_CreateNewFolder (node SET thừa) + CB_RenameFolder (thiếu SET None). TỔNG Sprint 5: 19/19. |
+| 07/07/2026 | **C5.8 — Folder Tree Picker Unify 🔲 PLANNED** (chưa tính vào task count): nhận delta kiến trúc v2 (Fable/Opus) — gộp lõi data (`BuildFolderTree`/`S_FolderTreeNode`) + component (`WBP_FolderTreePicker`/`WBP_FolderPickerRow`) dùng chung Move+Save dialog, thay `WBP_MoveFolderRow` + folder-field cũ Save. Slot chốt: NGAY SAU C5, TRƯỚC C9. Plan đầy đủ + 2 Task Card: `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md`. Chưa thực thi. |

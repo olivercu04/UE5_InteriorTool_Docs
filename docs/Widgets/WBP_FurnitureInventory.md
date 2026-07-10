@@ -816,6 +816,8 @@ Completed: Branch(IsValid(RenameTargetNode)):
 > **Double-break pattern:** Break trong vòng trong chỉ thoát vòng trong (tự kích `Completed` của nó). Muốn thoát cả vòng ngoài phải kiểm tra `IsValid(RenameTargetChip)` ở `Completed` của vòng trong rồi mới `Break` vòng ngoài — Break KHÔNG xuyên qua 2 tầng loop trực tiếp.
 
 ### CollectFolderTargets(ParentPath : String, IndentLevel : Integer, MovingPath : String) → Array\<S_FolderTargetEntry\> — Function (Đệ quy — C5.4)
+> 🔲 **PLANNED (C5.8, chưa thực thi):** hàm này + struct `S_FolderTargetEntry` dự kiến nâng cấp thành `BuildFolderTree`/`S_FolderTreeNode` (rename + thêm field HasChildren/ChildCount/ContinuesAncestors/bIsLast cho guide line picker). Xem `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md` §3, Task Card #1. Code hiện tại CHƯA đổi.
+
 Gom tất cả folder hợp lệ làm đích move, loại `MovingPath` và mọi con cháu của nó.
 ```
 Local: LocalResult (Array<S_FolderTargetEntry>)

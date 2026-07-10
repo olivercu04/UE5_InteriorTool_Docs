@@ -6,6 +6,8 @@
 ## Tổng quan
 Dialog modal chọn folder cha đích khi move folder. List phẳng indent ảo (build từ WBP_MoveFolderRow), không dùng ComboBox/drag-drop (xung đột C4 drag behavior).
 
+> 🔲 **PLANNED (C5.8, chưa thực thi):** `ScrollBox_FolderList` (build từ `WBP_MoveFolderRow`) dự kiến thay bằng 1 `WBP_FolderTreePicker` full (guide line, search, expand/collapse) — `WBP_MoveFolderRow` superseded. Xem `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md` §5. Code/doc dưới đây CHƯA đổi — vẫn đúng hiện trạng.
+
 ## Layout
 ```
 Canvas Panel
