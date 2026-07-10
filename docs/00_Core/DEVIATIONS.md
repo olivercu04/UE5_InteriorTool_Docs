@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 06/07/2026 — 21:15 ICT
+**Cập nhật:** 08/07/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -369,6 +369,25 @@ không lặp lại ở đây (không phải deviation kiến trúc, là lỗi wi
 
 ---
 
+## SPRINT 5 — 08/07/2026 — C5.8 Task Card #1 (Data Layer)
+
+### [RENAME] S_FolderTargetEntry → S_FolderTreeNode
+Struct đổi tên (field `IndentLevel` → `Depth`) + thêm 4 field mới (`HasChildren`, `ChildCount`,
+`ContinuesAncestors`, `bIsLast`) phục vụ guide line của `WBP_FolderTreePicker` (C5.8, chưa build —
+xem `C5.8_FolderTreePicker_Unify_Plan.md`). 2 chỗ dùng struct này (`WBP_FurnitureInventory`,
+`WBP_MoveToFolderDialog.PopulateRows`) — Blueprint tự propagate tên mới qua rename, không cần sửa
+tay widget. `[SCOPE]` — đúng kế hoạch Task Card #1, không phải phát sinh ngoài ý muốn.
+
+### [ARCH] Tên wrapper đổi khác plan gốc: BuildFolderTree → BuildComboFolderTreeNodes
+Plan gốc (§3.3/§11) đặt tên wrapper build-cây là `BuildFolderTree`. Lúc thực thi phát hiện tên
+này đã trùng với 1 hàm cũ phía Material/Furniture catalog (khác combo) → đổi thành
+`BuildComboFolderTreeNodes(ExcludePath)` để tránh đụng độ tên. Recursive core giữ đúng tên plan
+(`BuildFolderTreeRecursive`) + thêm 1 hàm phụ `GetFilteredChildren` (Pure, tách bước filter ra
+khỏi recursive function — không có trong plan gốc nhưng cùng tinh thần, không đổi hành vi).
+`[SCOPE]` — phát hiện lúc code, không phải lỗi kế hoạch.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -428,4 +447,5 @@ không lặp lại ở đây (không phải deviation kiến trúc, là lỗi wi
 | 01/07/2026 | Thêm section "SPRINT 5 — 01/07/2026 — C5.5 Move Combo": D-C5.5-1 ParseIntoArray delimiter mismatch "," vs ", " (nhiều tên con gộp 1 node); D-C5.5-2 Map_Contains sai với leaf folder (không là key trong ComboFolderTree → fallback sai __ALL__); D-C5.5-3 thiếu UpdateComboFolderHighlights call sau RefreshComboFolderUI (highlight không sync sau Move Combo). |
 | 04/07/2026 | Thêm section "SPRINT 5 — 04/07/2026 — NF (New Folder, context-menu part)": D-NF-1 dialog (NF.G2-G5 gốc) → SUPERSEDED bởi inline rename (UX Explorer-style, tái dùng WBP_EditableLabel C5.2); D-NF-2 right-click tạo CÙNG CẤP (sibling) node bị click, không phải CON (lý do: sibling luôn render trên tree 2 cấp → rename mode luôn tìm thấy node); D-NF-3 không cần dispatcher riêng trên WBP_LibraryContextMenu — CB_CreateNewFolder gọi thẳng Custom Event trong WBP_FurnitureInventory. |
 | 06/07/2026 | Thêm section "SPRINT 5 — 06/07/2026 — NF.G3 + C5.6 + C5.7a": D-C5.6-1 HandleDeleteFolderConfirmed nhảy về folder CHA thay vì `__ALL__` sau xóa; bug fix RefreshComboFolderUI 2/3 nhánh dead-end trước RefreshChipBreadcrumb (hàm mới); bug fix RefreshChipBreadcrumb delimiter gõ nhầm "/ " thay vì "/" (kèm BooleanAND→OR vô hại). |
+| 08/07/2026 | Thêm section "SPRINT 5 — 08/07/2026 — C5.8 Task Card #1 (Data Layer)": [RENAME] `S_FolderTargetEntry`→`S_FolderTreeNode` (Depth thay IndentLevel, +4 field mới cho guide line picker); [ARCH] tên wrapper đổi khác plan gốc `BuildFolderTree`→`BuildComboFolderTreeNodes` (trùng tên hàm cũ Material/Furniture catalog) + hàm phụ `GetFilteredChildren` mới. |
 | 04/07/2026 | Thêm quy ước ceiling + trigger cho deviation loại shortcut có chủ đích (mục CÁCH DÙNG) — từ ponytail-debt |

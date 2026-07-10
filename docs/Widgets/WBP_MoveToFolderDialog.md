@@ -34,7 +34,8 @@ OnMoveFolderConfirmed(TargetParentPath : String)
 
 ## Functions
 
-### PopulateRows(Entries : Array\<S_FolderTargetEntry\>)
+### PopulateRows(Entries : Array\<S_FolderTreeNode\>)
+> `S_FolderTreeNode` — v3.9 rename của `S_FolderTargetEntry` (WBP_FurnitureInventory, C5.8 Task Card #1, 08/07). Struct auto-propagate tên mới qua rename, chưa đổi logic/layout của dialog này (C5.8 §5 — chờ Task Card #2).
 ```
 Clear Children(ScrollBox_FolderList)
 SET CurrentSelectedRow = None | bHasSelection = False

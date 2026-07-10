@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.8 | **Cập nhật:** 06/07/2026 — 23:40 ICT — C5.7b (Inline Rename chip) + BUG FIX CB_CreateNewFolder + CB_RenameFolder — **C5 HOÀN TẤT**
+**Phiên bản:** 3.10 | **Cập nhật:** 08/07/2026 (bổ sung) — node flow thật (export K2Node) cho GetFilteredChildren/BuildFolderTreeRecursive/BuildComboFolderTreeNodes, thay bản suy luận v3.9
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -101,7 +101,7 @@ Python 1: populate BoundingSize | Python 2: update MeshFolderPath | (Sprint D: P
 | `NewFullPrefix` | String | Prefix mới sau rename: `ParentPath/NewName` hoặc `NewName` nếu root |
 | `LibraryMenuRef` | WBP_LibraryContextMenu | Ref menu đang mở — SET None ở Event Destruct |
 | **— C5.4 Move Folder —** | | |
-| `MovingFolderPath` | String | Path folder đang được move — lưu để loại khỏi danh sách đích trong CollectFolderTargets |
+| `MovingFolderPath` | String | Path folder đang được move — lưu để loại khỏi danh sách đích trong `BuildFolderTreeRecursive` (v3.9, trước là CollectFolderTargets) |
 | **— C5.5 Move Combo —** | | |
 | `MoveComboDialogRef` | WBP_MoveToFolderDialog | Ref dialog đang mở — SET None ở Event Destruct + HandleMoveComboConfirmed |
 | `MovingComboID` | String | ComboID đang được move, lưu khi mở dialog |
@@ -815,41 +815,106 @@ Completed: Branch(IsValid(RenameTargetNode)):
 ```
 > **Double-break pattern:** Break trong vòng trong chỉ thoát vòng trong (tự kích `Completed` của nó). Muốn thoát cả vòng ngoài phải kiểm tra `IsValid(RenameTargetChip)` ở `Completed` của vòng trong rồi mới `Break` vòng ngoài — Break KHÔNG xuyên qua 2 tầng loop trực tiếp.
 
-### CollectFolderTargets(ParentPath : String, IndentLevel : Integer, MovingPath : String) → Array\<S_FolderTargetEntry\> — Function (Đệ quy — C5.4)
-> 🔲 **PLANNED (C5.8, chưa thực thi):** hàm này + struct `S_FolderTargetEntry` dự kiến nâng cấp thành `BuildFolderTree`/`S_FolderTreeNode` (rename + thêm field HasChildren/ChildCount/ContinuesAncestors/bIsLast cho guide line picker). Xem `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md` §3, Task Card #1. Code hiện tại CHƯA đổi.
+### S_FolderTreeNode — Struct (RENAME v3.9, C5.8 Task Card #1 — trước là `S_FolderTargetEntry`)
+```
+Path                String            (có sẵn)
+DisplayLabel        String            (có sẵn)
+Depth               Integer           ← RENAME từ IndentLevel (= Length(ContinuesAncestors))
+HasChildren         Boolean           MỚI — arrow hiện/ẩn ở picker
+ChildCount          Integer           MỚI — badge số con (đếm sau exclusion)
+ContinuesAncestors  Array<Boolean>    MỚI — cột tổ tiên "còn em bên dưới" → vẽ │ hay trống
+bIsLast             Boolean           MỚI — con út của cha (sau exclusion) → └ hay ├
+```
+> `[RENAME]` — log ở DEVIATIONS.md 08/07. 2 chỗ dùng struct này (`WBP_FurnitureInventory`, `WBP_MoveToFolderDialog.PopulateRows`) — Blueprint tự propagate tên mới qua rename, không cần sửa tay widget.
 
-Gom tất cả folder hợp lệ làm đích move, loại `MovingPath` và mọi con cháu của nó.
+### GetFilteredChildren(ParentPath : String, ExcludePath : String) → Array\<String\> — Pure Function (MỚI, C5.8 Task Card #1, không đệ quy)
+**Local var:** LocalResult (Array\<String\>), CSV (String), FullPath (String), child (String)
 ```
-Local: LocalResult (Array<S_FolderTargetEntry>)
+▶ Map Find(Self.ComboFolderTree, Key=ParentPath) ●→ Value(CSV), ReturnValue(bFound)
+▶ SET CSV = Value
+▶ Branch(bFound == False)
+   True  ▶→ Return Node(LocalResult)   ← nối thẳng Make Array (0 input, rỗng)
+   False ▶→ Parse Into Array(SourceString=CSV, Delimiter=",") ●→ RawChildren
+          ▶ ForEachLoop(RawChildren) — Array Element = child
+             SET child = Array Element
+             FullPath = Select String(
+                Pick = Equal(ParentPath, ""),
+                A = child,
+                B = Concat(Concat(ParentPath, "/"), child) )
+             SET FullPath = (kết quả Select)
+             ▶ IfThenElse( OR(
+                  Equal(FullPath, ExcludePath),
+                  StartsWith(FullPath, Concat(ExcludePath, "/")) ) )
+                True  ▶→ (dead-end trong LoopBody — hợp lệ, không phải Event chain)
+                False ▶→ Array_Add(LocalResult, child) ▶→ (dead-end, hợp lệ, cuối loop body)
+          ▶ Completed ▶→ Return Node(LocalResult)
+```
+> Q8: Container=Function (Pure) | IsValid: Map Find bFound guard ✓ | L2: True nhánh dead-end trong LoopBody = hợp lệ (không phải Event chain), False nhánh qua Completed→Return ✓ | No latent ✓ | 6A: n/a — pure reader
 
-Map Find(ComboFolderTree, ParentPath) → ChildCSV, bFound
-Branch(bFound):
-  False → return LocalResult (rỗng)
-  True  → Parse Into Array(ChildCSV, ",") → ChildNames
-           ForEach ChildNames (child):
-             FullPath = ParentPath == "" ? child : Append(ParentPath, "/", child)
-             // Loại MovingPath và mọi con cháu
-             Branch( (FullPath == MovingPath) OR (FullPath StartsWith Append(MovingPath, "/")) ):
-               True  → [dead-end — skip]
-               False → Make S_FolderTargetEntry(Path=FullPath, DisplayLabel=child, IndentLevel=IndentLevel)
-                        ADD LocalResult(entry)
-                        // Đệ quy vào con
-                        CollectFolderTargets(FullPath, IndentLevel+1, MovingPath) → SubResult
-                        Array_Append(Target=LocalResult, Source=SubResult)   ← Target là array tích lũy!
-           ForEach Completed → return LocalResult
+### BuildFolderTreeRecursive(ParentPath : String, ExcludePath : String, AncestorsContinue : Array\<Boolean\>) → Array\<S_FolderTreeNode\> — Function (Đệ quy, depth guard=12 — RENAME v3.9, trước là `CollectFolderTargets`)
+**Local var:** LocalResult (Array\<S_FolderTreeNode\>), ChildAncestors (Array\<Boolean\>), FilteredChildren (Array\<String\>), Count (Int), child (String), FullPath (String), GrandChildren (Array\<String\>), HasChildren (Bool), ChildCount (Int), isLast (Bool)
 ```
-> ⚠️ **D-C5.4-1:** `Array_Append(Target, Source)` — Target là array NHẬN vào (tích lũy), Source là array phụ. Chiều NGƯỢC thì LocalResult trống sau mỗi đệ quy.
+▶ Branch( Array_Length(AncestorsContinue) >= 12 )
+   True  ▶→ Return Node( Make Array(0 input, rỗng) )   ← depth guard, folder path acyclic, chỉ bảo hiểm
+   False ▶→ SET FilteredChildren = GetFilteredChildren(Self.ParentPath, Self.ExcludePath)
+          SET Count = Array_Length(FilteredChildren)
+          ▶ ForEachLoop(FilteredChildren) — Array Element = child
+             SET child = Array Element
 
-### BuildMoveFolderTargetList(MovingPath : String) → Array\<S_FolderTargetEntry\> — Function (C5.4)
-Wrap `CollectFolderTargets` + thêm entry "(Gốc)" đứng đầu danh sách.
+             FullPath = Select String(
+                Pick = Equal(ParentPath, ""),
+                A = child,
+                B = Concat(Concat(ParentPath, "/"), child) )
+             SET FullPath = (kết quả Select)
+
+             isLast = Equal(Int)( Array Index, Count - 1 )
+             SET isLast
+
+             GrandChildren = GetFilteredChildren(FullPath, ExcludePath)   ← 1 lần duy nhất, dùng cho cả 2 field dưới
+             SET GrandChildren
+             SET ChildCount = Array_Length(GrandChildren)
+             SET HasChildren = ( ChildCount > 0 )
+
+             MakeStruct S_FolderTreeNode(
+                Path = FullPath,
+                DisplayLabel = child,
+                Depth = Array_Length(AncestorsContinue),
+                HasChildren = HasChildren,
+                ChildCount = ChildCount,
+                ContinuesAncestors = AncestorsContinue,   ← param GỐC, chưa mutate
+                bIsLast = isLast )
+             ▶ Array_Add(LocalResult, [struct trên])
+
+             SET ChildAncestors = AncestorsContinue        ← copy value-type từ param
+             ▶ Array_Add(ChildAncestors, NOT isLast)
+
+             ▶ BuildFolderTreeRecursive(FullPath, ExcludePath, ChildAncestors) ●→ ReturnValue(Sub)
+             ▶ Array_Append(TargetArray=LocalResult, SourceArray=Sub)   ← LocalResult là accumulator
+          ▶ Completed ▶→ Return Node(LocalResult)
 ```
-Local: Entries (Array<S_FolderTargetEntry>)
-Make S_FolderTargetEntry(Path="", DisplayLabel="(Gốc)", IndentLevel=0) → RootEntry
-ADD Entries(RootEntry)
-CollectFolderTargets("", 0, MovingPath) → SubEntries
-Array_Append(Target=Entries, Source=SubEntries)
-return Entries
+> ⚠️ **D-C5.4-1:** `Array_Append(TargetArray, SourceArray)` — TargetArray là array NHẬN vào (tích lũy), SourceArray là array phụ. Chiều NGƯỢC thì LocalResult trống sau mỗi đệ quy.
+> Q8: Container=Function (đệ quy, có Return) | IsValid: n/a | L2: True nhánh Return trực tiếp, False chảy hết loop→Completed→Return, không dead-end lửng nào khác | No latent ✓ | 6A: n/a — pure builder, không mutate `AncestorsContinue` param gốc
+
+### BuildComboFolderTreeNodes(ExcludePath : String) → Array\<S_FolderTreeNode\> — Function (wrapper, không đệ quy — RENAME v3.9, C5.8 Task Card #1, trước là `BuildMoveFolderTargetList`)
+> ⚠️ **[RENAME khác plan gốc]** Plan §3.3/§11 gốc đặt tên wrapper là `BuildFolderTree` — ĐỔI thành `BuildComboFolderTreeNodes` lúc thực thi vì tên đó đã trùng với hàm cũ phía Material/Furniture catalog (không phải combo). Log DEVIATIONS.md 08/07.
+**Local var:** RootEntry (Array\<S_FolderTreeNode\>)
 ```
+▶ MakeStruct S_FolderTreeNode(
+     Path = "", DisplayLabel = "(Gốc)", Depth = 0,
+     HasChildren = False, ChildCount = 0,
+     ContinuesAncestors = Make Array(0 input, rỗng),
+     bIsLast = False )
+▶ Make Array(1 input = struct trên) ●→ SET RootEntry
+
+▶ BuildFolderTreeRecursive(ParentPath="", ExcludePath=Self.ExcludePath, AncestorsContinue=Make Array(0 input, rỗng))
+   ●→ ReturnValue(TreeNodes)
+
+▶ Array_Append(TargetArray=RootEntry, SourceArray=TreeNodes)
+▶ Return Node(RootEntry)
+```
+> Q8: Container=Function (không đệ quy, có Return) | IsValid: n/a | L2: 1 nhánh thẳng, không Branch | No latent ✓ | 6A: n/a — pure builder
+> Gọi thay `BuildMoveFolderTargetList(MovingPath)` cũ — cùng chữ ký 1 tham số String (nay gọi là `ExcludePath` thay `MovingPath`), call site `OnRequestMoveFolder`/`CB_MoveCombo` không cần sửa tay (Blueprint tự theo tên hàm đã rename).
+> **Test PASS (08/07):** Print trên data thật (8 combo, nested 3 tầng, tiếng Việt, cả 2 case `ExcludePath=""` và `ExcludePath="Livingroom/Sofa"`) — Depth/HasChildren/ChildCount/ContinuesAncestors.Length/bIsLast khớp 100% kỳ vọng, không warning. Node flow xác nhận từ export K2Node thật (không còn suy luận).
 
 ### OnRequestMoveFolder(FolderPath : String) — Custom Event [C5.4]
 ```
@@ -858,7 +923,7 @@ SET MovingFolderPath = FolderPath
 // Guard: dialog đã mở
 // (không có MoveComboDialogRef ở đây — đây là Move Folder, không phải Move Combo)
 
-BuildMoveFolderTargetList(FolderPath) → Entries
+BuildComboFolderTreeNodes(FolderPath) → Entries   ← v3.9, trước là BuildMoveFolderTargetList(FolderPath)
 
 Create Widget(WBP_MoveToFolderDialog) → Dialog
 PopulateRows(Dialog, Entries)
@@ -1010,7 +1075,7 @@ ForEachLoopWithBreak(AllComboViews_Combo):
 Completed →
 
 // Build list (không loại gì — combo không có con)
-BuildMoveFolderTargetList("") → Entries   ← MovingPath="" = không loại folder nào
+BuildComboFolderTreeNodes("") → Entries   ← v3.9, trước là BuildMoveFolderTargetList; ExcludePath="" = không loại folder nào
 
 // Tạo dialog
 Create Widget(WBP_MoveToFolderDialog) → Dialog
@@ -1420,3 +1485,5 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.6 | 04/07/2026 — NF (New Folder) context-menu part | 3 Pure helpers mới: GetChildFolderNames(ParentPath) (Map Find + Parse Into Array), GetUniqueNewFolderName(ParentPath) (While Loop sinh "New Folder"/"New Folder (2)"...), GetNewFolderParent() (rỗng nếu Tất cả/Chưa phân loại/sentinel, ngược lại CurrentComboFolderPath — dùng cho nút "+" còn nợ). OnRequestNewFolder(ParentPath) NEW: CreateEmptyFolder C++ → RefreshComboFolderUI → OnRequestRenameFolder (tái dùng rename phase C5.2), KHÔNG CaptureSnapshot, KHÔNG đổi CurrentComboFolderPath. CB_CreateNewFolder NEW: cache TargetFolderPath trước Hide, ParentOf → tạo CÙNG CẤP node bị right-click (D-NF-2). OnComboTreeNodeRightClicked: +1 menu item "Create New Folder" đầu chuỗi AddMenuItem. Test PASS 9/9. Deviation: dialog (NF.G2-G5 gốc) SUPERSEDED bởi inline rename (D-NF-1); không dispatcher riêng trên WBP_LibraryContextMenu (D-NF-3). Còn nợ: nút "+" đầu cột tree. |
 | 3.7 | 06/07/2026 — NF.G3 (nút "+") + C5.6 (Xóa folder) + C5.7a (ChipTag right-click) | **NF.G3:** PopulateComboTreeColumn +PlusNode (sentinel `__NEWFOLDER__`, đầu tiên); OnComboTreeNodeClicked +guard đầu tiên → OnRequestNewFolder(GetNewFolderParent()). Không hàm mới. Test PASS 5/5. **C5.6:** class var PendingDeleteFolderPath; OnRequestDeleteFolder implement (mở WBP_ConfirmDialog mới); HandleDeleteFolderConfirmed NEW (ClearFolderPrefix C++ + navigate về cha); CB_DeleteFolderClick implement. Deviation D-C5.6-1 (nhảy về cha thay vì __ALL__). BUG FIX thứ tự exec (đọc TargetFolderPath trước SET None). Test PASS 6/6. **C5.7a:** WBP_ChipTag +dispatcher OnChipRightClicked + On Mouse Button Down override (xem WBP_ChipTag.md v1.2); bind → OnComboTreeNodeRightClicked (tái dùng, không logic mới). Test PASS 3/4 (rename từ chip = C5.7b, chưa làm). **Refactor + bug fix phát sinh:** RebuildChipRowForPath (hàm mới, gộp code tạo ChipRow trùng lặp) + RefreshChipBreadcrumb (hàm mới, tự vẽ lại toàn bộ chip breadcrumb) — RefreshComboFolderUI gọi RefreshChipBreadcrumb sau UpdateComboFolderHighlights ở cả 3 nhánh. BUG FIX #1 (2/3 nhánh dead-end trước khi nối), #2 (delimiter "/ " sai lẽ ra "/"), #3 (BooleanAND→OR vô hại). Bug fix SelectedPath nhầm biến (class var trùng tên param) trong OnComboTreeNodeClicked. |
 | 3.8 | 06/07/2026 — C5.7b (Inline Rename chip) + 2 bug fix — **C5 HOÀN TẤT** | Class var mới `RenameTargetChip` (WBP_ChipTag). `OnRequestRenameFolder` mở rộng fallback tree→chip khi không tìm thấy TreeNode khớp (double-break qua Completed loop lồng). `RebuildChipRowForPath` +bind `OnChipRenameCommitted`→`OnRenameFolderCommitted` (tái dùng nguyên). BUG FIX `CB_CreateNewFolder`: node `SET Local Target Path=""` thừa đè mất cache → luôn tạo root bất kể right-click sâu đến đâu — đã xóa node thừa. BUG FIX `CB_RenameFolder`: bổ sung `SET LibraryMenuRef=None` cuối chuỗi (ca lẻ loi thiếu dòng này so với 3 CB_ khác). Test PASS full case rename chip + Create New Folder từ chip sâu. |
+| 3.9 | 08/07/2026 — C5.8 Task Card #1 (Data Layer) DONE | RENAME struct `S_FolderTargetEntry`→`S_FolderTreeNode` (Depth thay IndentLevel, +HasChildren/ChildCount/ContinuesAncestors/bIsLast). RENAME function `CollectFolderTargets`→`BuildFolderTreeRecursive` (đệ quy, depth guard=12, dùng `AncestorsContinue` thay IndentLevel). Hàm mới `GetFilteredChildren` (Pure, tách filter exclusion ra khỏi recursive function). Wrapper `BuildMoveFolderTargetList`→`BuildComboFolderTreeNodes(ExcludePath)` — **tên đổi so với plan gốc** (plan ghi "BuildFolderTree", trùng tên hàm cũ phía Material/Furniture catalog → đổi). Call site `OnRequestMoveFolder`/`CB_MoveCombo` cập nhật theo tên mới (Blueprint tự propagate qua rename). Test Print PASS trên data thật (8 combo, nested 3 tầng, tiếng Việt) — không lệch. Việc kế tiếp: Task Card #2 (`WBP_FolderTreePicker` UI component). Xem `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md`. |
+| 3.10 | 08/07/2026 (bổ sung) | Thay node flow "ghi theo suy luận" (v3.9) của `GetFilteredChildren`/`BuildFolderTreeRecursive`/`BuildComboFolderTreeNodes` bằng node flow THẬT (export K2Node) — kèm Local var đầy đủ + Q8 self-check mỗi hàm. Khác biệt nhỏ so với bản suy luận: `GetFilteredChildren` gọi 1 lần/child trong `BuildFolderTreeRecursive` (dùng chung cho `ChildCount`+`HasChildren`, không gọi 2 lần); node "(Gốc)" trong `BuildComboFolderTreeNodes` có `bIsLast=False` (không phải True như suy đoán trước). Test PASS thêm case `ExcludePath="Livingroom/Sofa"`, khớp 100%. Không đổi hành vi/kết luận đã ghi ở v3.9. |
