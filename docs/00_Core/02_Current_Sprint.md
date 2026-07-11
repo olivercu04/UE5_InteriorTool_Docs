@@ -1,5 +1,5 @@
 # Current Sprint — Sprint 5: Combo Mesh (C5.8 Folder Tree Picker Unify)
-**Cập nhật:** 11/07/2026 15:04 — Task Card #2 Part B, Giai đoạn 1 DONE + sửa reference §7.3/§7.4 sai
+**Cập nhật:** 11/07/2026 15:49 — Task Card #2 Part B, Giai đoạn 1 DONE + sửa reference §7.3/§7.4 sai + thêm REG task card (chờ)
 
 ---
 
@@ -34,8 +34,11 @@ Kế hoạch chi tiết: `docs/Sprints/Sprint5/C5.8_TaskCard2_FixPlan_11jul2026.
 | 2d — rename host | §4/§6 Unify Plan | 🔲 chờ Opus |
 | Wire Move | §5 Unify Plan | 🔲 chờ Opus |
 | Wire Save + Create Folder | §5/§6 Unify Plan | 🔲 chờ Opus |
+| REG / Chốt sổ C5.8 | `C5.8_REG_TaskCard_11jul2026.md` (Fable, 11/07) | 🔲 chờ — BỊ CHẶN, chỉ chạy khi 2d + Wire Move + Wire Save đều DONE |
 
-Thứ tự khoá: 2d → Wire Move → Wire Save. Không đảo.
+Thứ tự khoá: 2d → Wire Move → Wire Save → REG. Không đảo.
+
+**Quyết định (cuhoang 11/07):** REG C5.8 TÁCH RIÊNG khỏi regression Sprint 5 tổng (C10) — phải PASS độc lập trước khi cho phép sang C9.
 
 ---
 
