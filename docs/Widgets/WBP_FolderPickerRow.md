@@ -1,5 +1,5 @@
 # WBP_FolderPickerRow
-**Phiên bản:** 1.0 | **Tạo:** 11/07/2026 11:17 — C5.8 Task Card #2 (2a + 2b Part A)
+**Phiên bản:** 1.1 | **Tạo:** 11/07/2026 11:17 — C5.8 Task Card #2 (2a + 2b Part A) | **Sửa:** 11/07/2026 13:14 — Giai đoạn 1 bug fix (xem `C5.8_TaskCard2_Delta_GiaiDoan1_11jul2026.md`)
 
 ---
 
@@ -29,16 +29,18 @@ OnRowSelected(Path : String)
 
 ## Functions
 
-### `SetNode(Node : S_FolderTreeNode)` (2a, SỬA ở 2b)
-⚠️ SUY LUẬN phần đầu 2a (guide glyphs) — đoạn cuối as-built đã confirm trong chat:
+### `SetNode(Node : S_FolderTreeNode)` (2a, SỬA ở 2b, BUG FIX Giai đoạn 1 11/07)
+⚠️ SUY LUẬN phần guide glyphs (chưa export) — phần còn lại đã confirm qua export K2Node 11/07:
 ```
-▶ SET RowNode = Node                                  ← ⚠️ SUY LUẬN vị trí, confirm khi export
+▶ SET RowNode = Node                                  ← BUG FIX 11/07: dòng này ĐÃ THIẾU hoàn toàn ở bản build đầu — root cause bug #2 (RowNode/Path luôn rỗng)
 ▶ (dựng guide string từ Node.ContinuesAncestors[] + Node.bIsLast → SetText TXT_Guide)  ⚠️ SUY LUẬN chi tiết
 ▶ Set Text(TXT_Name, To Text(Node.DisplayLabel))
 ▶ Set Visibility(TXT_Badge, Collapsed)                ← TRƯỚC Branch (cả 2 nhánh đều cần)
 ▶ Branch(Node.HasChildren)
    True  → Set Visibility(TXT_Arrow, Visible)
+            Set Visibility(BTN_Arrow, Visible)         ← BUG FIX 11/07: thiếu ở bản đầu — nút bọc ngoài không đồng bộ Visibility với TXT_Arrow bên trong
    False → Set Visibility(TXT_Arrow, Hidden)
+            Set Visibility(BTN_Arrow, Hidden)           ← BUG FIX 11/07 (Hidden, không Collapsed — giữ layout)
 ```
 
 ### `SetExpanded(bExpanded : Boolean)` (2b Part A, verify export XML)
@@ -51,14 +53,15 @@ OnRowSelected(Path : String)
    False → [dead-end hợp lệ]
 ```
 
-### Button handlers (2b Part A — **ĐÍNH CHÍNH quan trọng**)
-As-built dùng **Custom Event trung gian** (sinh từ Details panel "+"), KHÁC ghi chú TIẾN ĐỘ cũ trong `C5.8_TaskCard2_PartB_2c_10jul2026.md` ("nối THẲNG vào Call dispatcher") — xem `DEVIATIONS.md` [DOC-FIX] 11/07/2026:
+### Button handlers (2b Part A — **ĐÍNH CHÍNH lần 2, 11/07 13:14**)
+As-built THẬT, xác nhận qua export K2Node 11/07: nối **THẲNG**, KHÔNG có Custom Event trung gian:
 ```
-BTN_Arrow.OnClicked → HandleArrowClicked (Custom Event)
-   ▶ Broadcast OnRowExpandClicked(RowNode.Path)
-BTN_Name.OnClicked  → HandleNameClicked (Custom Event)
-   ▶ Broadcast OnRowSelected(RowNode.Path)
+On Clicked (BTN_Arrow) ▶→ Call On Row Expand Clicked(Target=self, Path=Break(RowNode).Path)
+On Clicked (BTN_Name)  ▶→ Call On Row Selected(Target=self, Path=Break(RowNode).Path)
 ```
+`Path` lấy qua `Break S_FolderTreeNode(RowNode)` — không hardcode, không qua param `Node`.
+
+⚠️ Bản v1.0 file này từng ghi "Custom Event trung gian HandleArrowClicked/HandleNameClicked" — **SAI**, đã đính chính ngược lại lần nữa theo export K2Node thật. Xem `DEVIATIONS.md` [DOC-FIX] 11/07/2026 (mục Giai đoạn 1).
 
 ## Còn nợ (Task Card sau)
 `SetSearchHighlight(bMatch)` (Part 2c — chưa build) · `EnterRenameMode`/host `WBP_EditableLabel` (2d).
@@ -69,3 +72,4 @@ BTN_Name.OnClicked  → HandleNameClicked (Custom Event)
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 11/07/2026 11:17 | Khởi tạo — C5.8 Task Card #2: 2a (row tĩnh + guide line, PASS full data thật) + 2b Part A (hierarchy BTN_Arrow/BTN_Name, dispatchers OnRowExpandClicked/OnRowSelected, SetExpanded, Custom Event trung gian HandleArrowClicked/HandleNameClicked). |
+| 1.1 | 11/07/2026 13:14 | Giai đoạn 1 bug fix: `SetNode` thêm `SET RowNode = Node` (thiếu hoàn toàn ở bản đầu — root cause bug #2) + thêm `SetVisibility(BTN_Arrow,...)` song song `TXT_Arrow` ở cả 2 nhánh Branch. Đính chính lần 2 "Button handlers": as-built THẬT là nối THẲNG `OnClicked → Call dispatcher` (không Custom Event trung gian) — xác nhận qua export K2Node 11/07. |

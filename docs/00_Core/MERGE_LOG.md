@@ -1,6 +1,6 @@
 # MERGE LOG — UE5 InteriorTool Docs
 **Mục đích:** Reviewer chỉ cần đọc file này để biết file nào cần soi kỹ.
-**Cập nhật:** 16/06/2026
+**Cập nhật:** 11/07/2026 13:14
 
 ---
 
@@ -552,3 +552,8 @@ Coverage: Gate 1 (G1.T1 bIsRestoring guard, G1.T2 spawn merge, G1.T3 docs) + Spr
 ### Planning/MultiSelect_Group_ComboMesh_Plan.md
 - **Ghi chú:** File này tồn tại trong docs/ nhưng KHÔNG có trong TARGET_STRUCTURE tree. Không vi phạm quy tắc (không có _patch/_update suffix). Để nguyên vì nội dung vẫn hữu ích.
 - **[?]:** Cần thêm vào TARGET_STRUCTURE hay move sang Archive/?
+
+---
+
+## ✅ [MỚI — không qua merge] Widgets/WBP_FolderTreePicker.md + WBP_FolderPickerRow.md
+Tạo trực tiếp 11/07/2026, C5.8 Task Card #2 — **không có nguồn import_raw**, viết thẳng từ task card + export K2Node (không qua bước merge base+patch như các file Lô A-D ở trên). WBP_FolderPickerRow.md v1.1, WBP_FolderTreePicker.md v1.0 (11/07 13:14, sau Giai đoạn 1 bug fix).

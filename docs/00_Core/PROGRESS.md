@@ -1,6 +1,6 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
-**Cập nhật:** 11/07/2026 (C5.8 Task Card #2 UI component — Part B lần 1, bug #2 đang debug)
+**Cập nhật:** 11/07/2026 13:14 (C5.8 Task Card #2 UI component — Part B, Giai đoạn 1 DONE)
 
 ---
 
@@ -16,7 +16,7 @@ Sprint D — Data Layer v2      ████████████████
 Sprint 5 — Combo Mesh         █████████████░  15/19 task (T1/T2/C0/C1/C2/C3a/C3b/C4/C8/C5.1/C5.0/C5.2/C5.4/Issue2/C5.5 ✅; 4 còn lại — +2 task backlog thêm 30/06)
                                (NF — New Folder: context-menu part ✅ DONE 04/07 + nút "+" (NF.G3) ✅ DONE 06/07)
                                (C5.6 Xóa folder ✅ DONE 06/07; C5.7 ChipTag right-click+rename ✅ DONE 06/07 — C5 HOÀN TẤT)
-                               (C5.8 — Folder Tree Picker Unify: Task Card #1 Data Layer ✅ DONE 08/07, Task Card #2 UI Part B 🔄 IN PROGRESS (bug #2 đang debug, 11/07), chưa tính vào task count — xem C5.8_FolderTreePicker_Unify_Plan.md)
+                               (C5.8 — Folder Tree Picker Unify: Task Card #1 Data Layer ✅ DONE 08/07, Task Card #2 UI Part B — Giai đoạn 1 ✅ DONE (11/07, bug #2 fixed + test 1-5 PASS), Giai đoạn 2 (search) chưa làm, chưa tính vào task count — xem C5.8_FolderTreePicker_Unify_Plan.md)
 Sprint 6 — Polish UX          ░░░░░░░░░░░░░    0/14 task
 Sprint 7 — Material v1.2      ░░░░░░░░░        0/9  task
 
@@ -310,3 +310,4 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 07/07/2026 | **C5.8 — Folder Tree Picker Unify 🔲 PLANNED** (chưa tính vào task count): nhận delta kiến trúc v2 (Fable/Opus) — gộp lõi data (`BuildFolderTree`/`S_FolderTreeNode`) + component (`WBP_FolderTreePicker`/`WBP_FolderPickerRow`) dùng chung Move+Save dialog, thay `WBP_MoveFolderRow` + folder-field cũ Save. Slot chốt: NGAY SAU C5, TRƯỚC C9. Plan đầy đủ + 2 Task Card: `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md`. Chưa thực thi. |
 | 08/07/2026 | **C5.8 Task Card #1 (Data Layer) ✅ DONE** (chưa tính vào task count): rename `S_FolderTargetEntry`→`S_FolderTreeNode` (+4 field); `CollectFolderTargets`→`BuildFolderTreeRecursive` (depth guard=12) + `GetFilteredChildren` mới (Pure); wrapper `BuildComboFolderTreeNodes(ExcludePath)` — tên đổi khác plan gốc, log DEVIATIONS.md. Test Print PASS (8 combo, nested 3 tầng, tiếng Việt). WBP_FurnitureInventory v3.9. Tiếp theo: Task Card #2 (UI component). |
 | 10-11/07/2026 | **C5.8 Task Card #2 (UI component)** (chưa tính vào task count): 2a `WBP_FolderPickerRow` (row tĩnh + guide line) ✅ PASS full data thật. 2b Part A (hierarchy BTN_Arrow/BTN_Name, dispatchers, `SetExpanded`) ✅ DONE. Part B lần 1 🔄 IN PROGRESS: Variables + toolbar + `SB_SearchFolder`, `IsPathVisible`, `RefreshVisibleRows`, `SetFolders` bug fix, 2 Custom Event handler DONE — **bug #2 OPEN** (test mục 2 FAIL, đang debug theo `docs/Sprints/Sprint5/C5.8_TaskCard2_FixPlan_11jul2026.md`). Doc mới: `WBP_FolderTreePicker.md` v0.9, `WBP_FolderPickerRow.md` v1.0. |
+| 11/07/2026 13:14 | **C5.8 Task Card #2 Part B — Giai đoạn 1 ✅ DONE**: bug #2 root cause = `SetNode` thiếu `SET RowNode = Node` + `BTN_Arrow` không đồng bộ Visibility với `TXT_Arrow`. Fix xong (`WBP_FolderPickerRow.md` v1.1). Đính chính lần 2: as-built THẬT nối THẲNG `OnClicked→Call dispatcher`, KHÔNG Custom Event trung gian (đảo ngược [DOC-FIX] trước đó) — áp dụng cho cả BTN_Arrow/BTN_Name và 2 handler mới BTN_ExpandAll/BTN_CollapseAll (`WBP_FolderTreePicker.md` v1.0). Test mục 1-5 PASS. Tiếp theo: Giai đoạn 2 (search). |

@@ -1,5 +1,5 @@
 # Index — Toàn bộ tài liệu docs/
-**Cập nhật:** 15/06/2026 | **Tổng số file:** 76 .md files
+**Cập nhật:** 11/07/2026 13:14 (bảng Widgets/ bổ sung đủ 16 file thật + fix tổng số file lỗi thời) | **Tổng số file:** 100 .md files (đếm thật `find docs -iname *.md`, 11/07/2026)
 **Ghi chú:** File này là index điều hướng — không chứa nội dung kỹ thuật.
 
 ---
@@ -203,11 +203,22 @@
 | File | Nội dung |
 |---|---|
 | [WBP_BoxSelectOverlay.md](../Widgets/WBP_BoxSelectOverlay.md) | Widget overlay box select (07/06/2026) |
+| [WBP_ChipTag.md](../Widgets/WBP_ChipTag.md) | Chip đại diện 1 folder con trong breadcrumb area — click navigate + highlight active (C5.7b inline rename) |
+| [WBP_ConfirmDialog.md](../Widgets/WBP_ConfirmDialog.md) | Dialog xác nhận generic Yes/No, tái dùng cho mọi hành động cần confirm (đầu tiên: C5.6 Xóa folder) |
 | [WBP_DetailPopup.md](../Widgets/WBP_DetailPopup.md) | Widget popup detail (25/05/2026) |
 | [WBP_DragOverlay_FurnitureCard.md](../Widgets/WBP_DragOverlay_FurnitureCard.md) | Widget drag card — On Drop auto-join edit scope |
+| [WBP_EditableLabel.md](../Widgets/WBP_EditableLabel.md) | Component inline rename tái dùng (Content Browser style) — dùng bởi WBP_TreeNode (C5.2), WBP_ChipTag (C5.4+) |
+| [WBP_FolderPickerRow.md](../Widgets/WBP_FolderPickerRow.md) | Row của WBP_FolderTreePicker — C5.8 |
+| [WBP_FolderTreePicker.md](../Widgets/WBP_FolderTreePicker.md) | Tree picker component dùng chung Move/Save dialog — C5.8 |
+| [WBP_FurnitureCard.md](../Widgets/WBP_FurnitureCard.md) | Card hiển thị 1 mặt hàng nội thất trong inventory (IUserObjectListEntry, Sprint D.T6) |
 | [WBP_FurnitureInventory.md](../Widgets/WBP_FurnitureInventory.md) | Inventory widget — filter, scroll, folder nav |
+| [WBP_LibraryContextMenu.md](../Widgets/WBP_LibraryContextMenu.md) | Context menu Combo Library — right-click WBP_TreeNode/WBP_ComboCard, clone WBP_ContextMenu |
 | [WBP_MeshControls.md](../Widgets/WBP_MeshControls.md) | Controls panel (Move/Rotate/Scale/Delete) |
+| [WBP_MoveFolderRow.md](../Widgets/WBP_MoveFolderRow.md) | 1 dòng trong list chọn folder đích của WBP_MoveToFolderDialog (C5.4) — superseded-candidate bởi WBP_FolderPickerRow, C5.8 |
+| [WBP_MoveToFolderDialog.md](../Widgets/WBP_MoveToFolderDialog.md) | Dialog modal chọn folder cha đích khi move folder (C5.4) — field list dự kiến thay bằng WBP_FolderTreePicker, C5.8 |
 | [WBP_ResizeWindow.md](../Widgets/WBP_ResizeWindow.md) | Widget resize cửa sổ tool (27/05/2026) |
+| [WBP_SaveComboDialog.md](../Widgets/WBP_SaveComboDialog.md) | Dialog async nhập tên/folder/tags khi lưu combo (C3b) — field Folder dự kiến thay bằng WBP_FolderTreePicker, C5.8 |
+| [WBP_TreeNode.md](../Widgets/WBP_TreeNode.md) | Node cây folder trong WBP_FurnitureInventory — click → OnNodeSelected + active highlight |
 | [README.md](../Widgets/README.md) | Mô tả thư mục Widgets/ |
 
 ---

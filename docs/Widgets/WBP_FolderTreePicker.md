@@ -1,5 +1,5 @@
 # WBP_FolderTreePicker
-**Phiên bản:** 0.9 — 🔄 IN PROGRESS | **Tạo:** 11/07/2026 11:17 — C5.8 Task Card #2 Part B lần 1
+**Phiên bản:** 1.0 — 🔄 IN PROGRESS | **Tạo:** 11/07/2026 11:17 — C5.8 Task Card #2 Part B lần 1 | **Sửa:** 11/07/2026 13:14 — Giai đoạn 1 DONE (xem `C5.8_TaskCard2_Delta_GiaiDoan1_11jul2026.md`)
 
 ---
 
@@ -72,11 +72,26 @@ HandleRowExpandClicked(Path): Branch(Array_Contains(ExpandedFolders,Path))
 HandleRowSelected(Path): SET SelectedPath=Path → Broadcast OnFolderSelected(Path)
 ```
 
+## Events — BTN_ExpandAll / BTN_CollapseAll (DONE, Giai đoạn 1, 11/07)
+Nối thẳng từ `OnClicked`, cùng pattern với `WBP_FolderPickerRow` (không qua Custom Event trung gian):
+```
+On Clicked (BTN_ExpandAll)
+   ▶ CLEAR ExpandedFolders
+   ▶ ForEachLoop(Folders):
+        Branch(node.HasChildren) True → Array_AddUnique(ExpandedFolders, node.Path)
+      Completed → RefreshVisibleRows()
+
+On Clicked (BTN_CollapseAll)
+   ▶ CLEAR ExpandedFolders
+   ▶ RefreshVisibleRows()
+```
+
 ## Chưa build (Part 2c còn lại)
-`PathMatchesQuery` · `BuildSearchOverride` · nhánh search trong Refresh · `SB_SearchFolder.OnSearchTextChanged` · `BTN_ExpandAll/CollapseAll.OnClicked`.
+`PathMatchesQuery` · `BuildSearchOverride` · nhánh search trong Refresh · `SB_SearchFolder.OnSearchTextChanged`.
 
 ## Test status
-Mục 1 (top-level only) PASS · **mục 2 FAIL (bug #2, đang debug theo `docs/Sprints/Sprint5/C5.8_TaskCard2_FixPlan_11jul2026.md`)** · mục 3-10 chưa chạy.
+Mục 1-5 PASS (Giai đoạn 1 task card HOÀN TẤT — expand/collapse đơn lẻ + Mở tất cả/Thu gọn + nhớ state con cháu sau collapse/expand lại, xác nhận 6A).
+Mục 6-10 chưa chạy (Giai đoạn 2 — search — chưa làm).
 
 ---
 
@@ -84,3 +99,4 @@ Mục 1 (top-level only) PASS · **mục 2 FAIL (bug #2, đang debug theo `docs/
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 0.9 | 11/07/2026 11:17 | Khởi tạo (IN PROGRESS) — C5.8 Task Card #2 Part B lần 1: Layout (HB_Toolbar + SB_SearchFolder) + Variables (Folders/ExpandedFolders/SelectedPath/bIsSearching/SearchExpandOverride) + `IsPathVisible` DONE + `RefreshVisibleRows` DONE (nhánh search ⚠️ SUY LUẬN, chưa ghép) + `SetFolders` bug fix + 2 Custom Event handler DONE. Test mục 1 PASS, mục 2 FAIL (bug #2 đang debug). |
+| 1.0 | 11/07/2026 13:14 | Giai đoạn 1 DONE — thêm 2 handler mới `BTN_ExpandAll`/`BTN_CollapseAll.OnClicked` (nối thẳng, không Custom Event trung gian). Cập nhật "Chưa build" (bỏ ExpandAll/CollapseAll — đã DONE). Test status: mục 1-5 PASS (expand/collapse + Mở tất cả/Thu gọn + nhớ state con cháu, 6A xác nhận); mục 6-10 chưa chạy (Giai đoạn 2 — search). |

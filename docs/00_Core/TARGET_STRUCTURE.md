@@ -61,7 +61,9 @@ docs/
 │   ├── WBP_DragOverlay_ComboCard.md       ← Sprint 5 (C4, nếu tách riêng file)
 │   ├── WBP_SaveComboDialog.md             ← Sprint 5 (C3b)
 │   ├── WBP_MoveToFolderDialog.md          ← Sprint 5 (C5.4) — MỚI 30/06
-│   └── WBP_MoveFolderRow.md               ← Sprint 5 (C5.4) — MỚI 30/06
+│   ├── WBP_MoveFolderRow.md               ← Sprint 5 (C5.4) — MỚI 30/06
+│   ├── WBP_FolderTreePicker.md            ← Sprint 5 (C5.8)
+│   └── WBP_FolderPickerRow.md             ← Sprint 5 (C5.8)
 ├── Data/
 │   ├── Data_Structures.md
 │   ├── Data_Overview.md

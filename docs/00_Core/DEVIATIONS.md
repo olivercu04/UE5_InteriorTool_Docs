@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 11/07/2026
+**Cập nhật:** 11/07/2026 13:14
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -404,6 +404,19 @@ Sonnet quên nhắc sửa `SetFolders` theo bước 4e task card khi build Part 
 
 ---
 
+## SPRINT 5 — 11/07/2026 (tiếp) — C5.8 Task Card #2 Part B, Giai đoạn 1 (bug #2 fix)
+
+### [BUG-FIX] WBP_FolderPickerRow.SetNode thiếu SET RowNode = Node
+Root cause của cả bug #2 (Path rỗng khi broadcast) LẪN triệu chứng arrow không ăn click. 1 fix duy nhất giải quyết cả 2 nhánh nghi vấn (1-H1 + góc của 1-H2) từng liệt kê riêng trong FixPlan. Không có ceiling — fix triệt để.
+
+### [BUG-FIX] BTN_Arrow không đồng bộ Visibility với TXT_Arrow trong SetNode
+`BTN_Arrow` (nút bọc) không đồng bộ Visibility với `TXT_Arrow` (text bên trong) — leaf node vẫn hiện khung nút xám + vẫn hit-test được dù không có con. Fix: thêm `SetVisibility(BTN_Arrow,...)` clone theo `TXT_Arrow` ở cả 2 nhánh Branch. Ceiling: đủ tốt hiện tại; trigger: nếu sau này tách UI nút/text phức tạp hơn (icon riêng) thì rà lại toàn bộ cặp Visibility này.
+
+### [DOC-FIX] C5.8_TaskCard2_FixPlan_11jul2026.md v1.1 đính chính SAI về Custom Event trung gian
+Phần "ĐÍNH CHÍNH AS-BUILT" của FixPlan v1.1 khẳng định SAI rằng có Custom Event trung gian `HandleArrowClicked`/`HandleNameClicked`. Export K2Node thật (11/07, cuhoang gửi) xác nhận: `On Clicked(BTN_Arrow/BTN_Name)` nối THẲNG vào `Call On Row Expand Clicked`/`Call On Row Selected`, không qua lớp nào. Bản doc gốc `C5.8_TaskCard2_PartB_2c_10jul2026.md` ("nối thẳng") mới là ĐÚNG — FixPlan v1.1 đã "đính chính" nhầm theo hướng ngược lại. Không cần fix code — chỉ cần sửa doc. `WBP_FolderPickerRow.md` v1.1 đã cập nhật đúng.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -466,3 +479,4 @@ Sonnet quên nhắc sửa `SetFolders` theo bước 4e task card khi build Part 
 | 08/07/2026 | Thêm section "SPRINT 5 — 08/07/2026 — C5.8 Task Card #1 (Data Layer)": [RENAME] `S_FolderTargetEntry`→`S_FolderTreeNode` (Depth thay IndentLevel, +4 field mới cho guide line picker); [ARCH] tên wrapper đổi khác plan gốc `BuildFolderTree`→`BuildComboFolderTreeNodes` (trùng tên hàm cũ Material/Furniture catalog) + hàm phụ `GetFilteredChildren` mới. |
 | 04/07/2026 | Thêm quy ước ceiling + trigger cho deviation loại shortcut có chủ đích (mục CÁCH DÙNG) — từ ponytail-debt |
 | 11/07/2026 | Thêm section "SPRINT 5 — 11/07/2026 — C5.8 Task Card #2 Part B lần 1 (as-built)": [ARCH] ExpandedFolders Array thay Set; [SWAP] ETB_Search→SB_SearchFolder; [DOC-FIX] as-built dùng Custom Event trung gian HandleArrowClicked/HandleNameClicked (sửa dòng TIẾN ĐỘ sai trong task card); [LESSON] SetFolders giữ thân cũ 2a khi build Part B — quy tắc đề xuất diff thân cũ trước khi sửa function có sẵn. |
+| 11/07/2026 13:14 | Thêm section "SPRINT 5 — 11/07/2026 (tiếp) — C5.8 Task Card #2 Part B, Giai đoạn 1": [BUG-FIX] `SetNode` thiếu `SET RowNode = Node` (root cause bug #2); [BUG-FIX] `BTN_Arrow` không đồng bộ Visibility với `TXT_Arrow`; [DOC-FIX] FixPlan v1.1 đính chính SAI về Custom Event trung gian — export K2Node thật xác nhận nối THẲNG (đảo ngược lại entry [DOC-FIX] 11/07/2026 trước đó). |
