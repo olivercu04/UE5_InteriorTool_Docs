@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 08/07/2026 — C5.8 Task Card #1 (Data Layer) ✅ DONE, Task Card #2 (UI component) 🔲 kế tiếp | WBP_FurnitureInventory v3.9
+**Phiên bản:** 11/07/2026 11:17 — C5.8 Task Card #2 Part B 🔄 IN PROGRESS (bug #2 đang debug) | WBP_FurnitureInventory v3.9
 
 ---
 
@@ -171,7 +171,7 @@
 
 **C5.8 — Folder Tree Picker Unify** 🔄 IN PROGRESS (chốt slot 07/07/2026 — NGAY SAU C5, TRƯỚC C9). Gộp lõi data+component cho `WBP_MoveToFolderDialog` + `WBP_SaveComboDialog` (tree picker có guide line/search/inline-create, thay `WBP_MoveFolderRow` + folder-field cũ của Save). Chi tiết đầy đủ + Task Card: `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md`.
 - ✅ **Task Card #1 (Data Layer)** — DONE (08/07): rename `S_FolderTargetEntry`→`S_FolderTreeNode` (+4 field mới); `CollectFolderTargets`→`BuildFolderTreeRecursive` (đệ quy, depth guard=12) + hàm mới `GetFilteredChildren`; wrapper `BuildComboFolderTreeNodes(ExcludePath)` (tên đổi khác plan gốc — trùng tên hàm cũ Material/Furniture catalog). Test Print PASS (8 combo, nested 3 tầng, tiếng Việt). WBP_FurnitureInventory v3.9.
-- 🔲 **Task Card #2 (UI component)** — kế tiếp: `WBP_FolderTreePicker` + `WBP_FolderPickerRow` (§11b plan).
+- 🔄 **Task Card #2 (UI component)** — Part B đang IN PROGRESS (11/07): DONE = Phần 1/2 (Variables + layout toolbar `SB_SearchFolder`), `IsPathVisible`, `RefreshVisibleRows`, `SetFolders` bug fix, 2 Custom Event handler (`HandleRowExpandClicked`/`HandleRowSelected`). ĐANG: bug #2 (test mục 2 — click ▶ Livingroom không hiện gì) — debug theo `docs/Sprints/Sprint5/C5.8_TaskCard2_FixPlan_11jul2026.md`. TIẾP THEO trỏ về FixPlan Giai đoạn 0. Doc: `WBP_FolderTreePicker.md` v0.9, `WBP_FolderPickerRow.md` v1.0.
 
 **Roadmap v3.3 (chia 3 giai đoạn — scope phình to sau 23/06):**
 ```
@@ -197,7 +197,7 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
   ⏳ WBP_Toast (K1) — TIÊN QUYẾT trước C8
   ⏳ C8 — Drag-drop + surface-snap kiểu khối (P2) + fix drop-anchor Lỗ14
   ⏳ Xoay combo (P3) — verify gizmo group + tùy chọn xoay-lúc-kéo
-  🔄 C5.8 — Folder Tree Picker Unify (Move Dialog + Save Dialog) — Task Card #1 (Data) ✅ DONE 08/07, Task Card #2 (UI) 🔲 kế tiếp, xem C5.8_FolderTreePicker_Unify_Plan.md
+  🔄 C5.8 — Folder Tree Picker Unify (Move Dialog + Save Dialog) — Task Card #1 (Data) ✅ DONE 08/07, Task Card #2 (UI) Part B 🔄 IN PROGRESS (bug #2 đang debug, 11/07), xem C5.8_FolderTreePicker_Unify_Plan.md
   ⏳ C9 — Replace (+ verify K2 + CalculateCenter chung + auto-rollback)
 ──── Giai đoạn 3 ────
   ⏳ C11 — Export/Import cả 2 hướng (K5)
@@ -238,3 +238,4 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 06/07/2026 (tối) | C5.7b ✅ DONE — **C5 FOLDER MANAGEMENT HOÀN TẤT.** WBP_ChipTag v1.3: `EditLabel_ChipTag` (WBP_EditableLabel) thay `TextBlock_ChipTag`; `EnterRenameMode`/`HandleLabelCommitted` NEW; dispatcher `OnChipRenameCommitted`. WBP_FurnitureInventory v3.8: class var `RenameTargetChip`; `OnRequestRenameFolder` mở rộng fallback tree→chip (double-break qua Completed loop lồng); `RebuildChipRowForPath` +bind `OnChipRenameCommitted`→`OnRenameFolderCommitted`. BUG FIX `CB_CreateNewFolder` (node SET thừa đè cache → luôn tạo root); BUG FIX `CB_RenameFolder` (thiếu SET LibraryMenuRef=None cuối chuỗi). Test PASS full case. Tiếp theo: REG (regression 12 bước) → C6/C7 (defer) hoặc WBP_Toast → C9. |
 | 07/07/2026 | **C5.8 (Folder Tree Picker Unify) 🔲 PLANNED** — nhận delta kiến trúc v2 (Fable/Opus) gộp lõi data+component cho `WBP_MoveToFolderDialog`+`WBP_SaveComboDialog` (tree picker: guide line, search, expand/collapse, inline create). Slot chốt: NGAY SAU C5, TRƯỚC C9 (cuhoang chốt). Plan đầy đủ + 2 Task Card: `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md`. CHƯA thực thi — việc kế tiếp là Task Card #1 (Data Layer: rename `S_FolderTargetEntry`→`S_FolderTreeNode`, `BuildFolderTree`, verify Print trước UI). |
 | 08/07/2026 | **C5.8 Task Card #1 (Data Layer) ✅ DONE** — rename `S_FolderTargetEntry`→`S_FolderTreeNode` (+4 field: HasChildren/ChildCount/ContinuesAncestors/bIsLast); `CollectFolderTargets`→`BuildFolderTreeRecursive` (đệ quy, depth guard=12) + hàm mới `GetFilteredChildren` (Pure); wrapper `BuildComboFolderTreeNodes(ExcludePath)` — tên đổi khác plan gốc (`BuildFolderTree` trùng tên hàm cũ Material/Furniture catalog), log DEVIATIONS.md. Test Print PASS data thật (8 combo, nested 3 tầng, tiếng Việt) — không lệch. WBP_FurnitureInventory v3.9. Tiếp theo: Task Card #2 (`WBP_FolderTreePicker` UI component, §11b). |
+| 11/07/2026 | **C5.8 Task Card #2 Part B lần 1 🔄 IN PROGRESS** — tạo mới `WBP_FolderTreePicker.md` v0.9 + `WBP_FolderPickerRow.md` v1.0 (2a+2b Part A DONE; Part B: Variables/toolbar/`IsPathVisible`/`RefreshVisibleRows`/`SetFolders` fix/2 handler DONE). **Bug #2 OPEN** (test mục 2 — click ▶ Livingroom không hiện gì) — đang debug theo `docs/Sprints/Sprint5/C5.8_TaskCard2_FixPlan_11jul2026.md` (file mới, copy vào repo). DEVIATIONS.md +4 entry ([ARCH] Array thay Set, [SWAP] SB_SearchFolder, [DOC-FIX] Custom Event trung gian, [LESSON] SetFolders thân cũ). Tiếp theo: FixPlan Giai đoạn 0 (phân loại bug #2). |

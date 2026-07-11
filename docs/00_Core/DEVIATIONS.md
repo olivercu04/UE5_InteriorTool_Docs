@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 08/07/2026
+**Cập nhật:** 11/07/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -388,6 +388,22 @@ khỏi recursive function — không có trong plan gốc nhưng cùng tinh th�
 
 ---
 
+## SPRINT 5 — 11/07/2026 — C5.8 Task Card #2 Part B lần 1 (as-built)
+
+### [ARCH] ExpandedFolders: Array<String> thay Set<String>
+Lý do: tránh node Set chưa xác nhận, project chưa dùng Set trong Blueprint. Ceiling: vài chục folder; trigger: scale nghìn folder → đổi Set.
+
+### [SWAP] ETB_Search → SB_SearchFolder (Search Bar)
+Lý do: tiền lệ Material search trong `WBP_FurnitureInventory` (có `OnSearchTextChanged` + pin Text), tránh bug CommonSearchBox cũ. Ceiling/trigger: n/a.
+
+### [DOC-FIX] 2b Part A as-built dùng Custom Event trung gian HandleArrowClicked/HandleNameClicked
+Ghi chú "nối THẲNG vào Call dispatcher (không Custom Event trung gian)" trong `C5.8_TaskCard2_PartB_2c_10jul2026.md` mục TIẾN ĐỘ là SAI so với code thật — đã sửa dòng đó trong task card (xem changelog file đó).
+
+### [LESSON] SetFolders giữ thân cũ 2a khi build Part B
+Sonnet quên nhắc sửa `SetFolders` theo bước 4e task card khi build Part B → breakpoint không fire (bug phát hiện + fix bởi cuhoang). Quy tắc mới đề xuất: sửa function CÓ SẴN phải diff thân cũ trước, không chỉ thêm mới (candidate vào AI_Implementation_Rules).
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -449,3 +465,4 @@ khỏi recursive function — không có trong plan gốc nhưng cùng tinh th�
 | 06/07/2026 | Thêm section "SPRINT 5 — 06/07/2026 — NF.G3 + C5.6 + C5.7a": D-C5.6-1 HandleDeleteFolderConfirmed nhảy về folder CHA thay vì `__ALL__` sau xóa; bug fix RefreshComboFolderUI 2/3 nhánh dead-end trước RefreshChipBreadcrumb (hàm mới); bug fix RefreshChipBreadcrumb delimiter gõ nhầm "/ " thay vì "/" (kèm BooleanAND→OR vô hại). |
 | 08/07/2026 | Thêm section "SPRINT 5 — 08/07/2026 — C5.8 Task Card #1 (Data Layer)": [RENAME] `S_FolderTargetEntry`→`S_FolderTreeNode` (Depth thay IndentLevel, +4 field mới cho guide line picker); [ARCH] tên wrapper đổi khác plan gốc `BuildFolderTree`→`BuildComboFolderTreeNodes` (trùng tên hàm cũ Material/Furniture catalog) + hàm phụ `GetFilteredChildren` mới. |
 | 04/07/2026 | Thêm quy ước ceiling + trigger cho deviation loại shortcut có chủ đích (mục CÁCH DÙNG) — từ ponytail-debt |
+| 11/07/2026 | Thêm section "SPRINT 5 — 11/07/2026 — C5.8 Task Card #2 Part B lần 1 (as-built)": [ARCH] ExpandedFolders Array thay Set; [SWAP] ETB_Search→SB_SearchFolder; [DOC-FIX] as-built dùng Custom Event trung gian HandleArrowClicked/HandleNameClicked (sửa dòng TIẾN ĐỘ sai trong task card); [LESSON] SetFolders giữ thân cũ 2a khi build Part B — quy tắc đề xuất diff thân cũ trước khi sửa function có sẵn. |
