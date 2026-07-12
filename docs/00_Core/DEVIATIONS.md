@@ -434,6 +434,9 @@ Cần thiết để hỗ trợ "tổ tiên qua expand thủ công trong lúc sea
 ### [SCOPE] Select (Giai đoạn 3, mục 10) không cần sửa gì
 `HandleRowSelected` build từ Part A đã đúng hành vi ngay từ đầu — chỉ verify test, không phát sinh bug/deviation.
 
+### [SCOPE] Bỏ Print debug gate bằng bDebugMode (Giai đoạn 4, 12/07 tiếp)
+FixPlan mục 1 định thêm biến `bDebugMode` + wire Branch gate cho từng Print debug. Thực tế: bỏ hẳn, dùng breakpoint/watch pin (công cụ debug sẵn có UE5) thay thế khi cần. Lý do: thêm biến + wire Branch riêng cho từng Print là thừa so với lợi ích ở quy mô hiện tại.
+
 ---
 
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
@@ -500,3 +503,4 @@ Cần thiết để hỗ trợ "tổ tiên qua expand thủ công trong lúc sea
 | 11/07/2026 | Thêm section "SPRINT 5 — 11/07/2026 — C5.8 Task Card #2 Part B lần 1 (as-built)": [ARCH] ExpandedFolders Array thay Set; [SWAP] ETB_Search→SB_SearchFolder; [DOC-FIX] as-built dùng Custom Event trung gian HandleArrowClicked/HandleNameClicked (sửa dòng TIẾN ĐỘ sai trong task card); [LESSON] SetFolders giữ thân cũ 2a khi build Part B — quy tắc đề xuất diff thân cũ trước khi sửa function có sẵn. |
 | 11/07/2026 13:14 | Thêm section "SPRINT 5 — 11/07/2026 (tiếp) — C5.8 Task Card #2 Part B, Giai đoạn 1": [BUG-FIX] `SetNode` thiếu `SET RowNode = Node` (root cause bug #2); [BUG-FIX] `BTN_Arrow` không đồng bộ Visibility với `TXT_Arrow`; [DOC-FIX] FixPlan v1.1 đính chính SAI về Custom Event trung gian — export K2Node thật xác nhận nối THẲNG (đảo ngược lại entry [DOC-FIX] 11/07/2026 trước đó). |
 | 12/07/2026 10:40 | Thêm section "SPRINT 5 — 12/07/2026 — C5.8 Task Card #2 Giai đoạn 2+3": [BUG] `PathMatchesQuery` dùng nhầm `node.Path` thay vì `node.DisplayLabel` (substring match nhầm con); [ARCH] `CurrentSearchFolder` đổi Local→Class Variable (`Get Initial Text` trả rỗng); [BUG] arrow-click trong lúc search không lộ con — thêm `GetParentPath` + điều kiện `bShow` + bỏ hardcode `SetExpanded`; [ARCH] `GetParentPath` function mới ngoài plan gốc; [SCOPE] Select (mục 10) không cần sửa gì, chỉ verify. |
+| 12/07/2026 15:30 | Thêm dòng vào section "SPRINT 5 — 12/07/2026 — C5.8 Task Card #2 Giai đoạn 2+3": [SCOPE] Bỏ Print debug gate bằng `bDebugMode` (FixPlan mục 1) — dùng breakpoint/watch pin (UE5 built-in) thay thế, thêm biến+Branch riêng cho từng Print là thừa so với lợi ích ở quy mô hiện tại. |

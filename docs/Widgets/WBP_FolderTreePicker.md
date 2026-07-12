@@ -1,5 +1,5 @@
 # WBP_FolderTreePicker
-**Phiên bản:** 1.1 — ✅ DONE | **Tạo:** 11/07/2026 11:17 — C5.8 Task Card #2 Part B lần 1 | **Sửa:** 12/07/2026 10:40 — Giai đoạn 2 (Search) + Giai đoạn 3 (Select) DONE (delta C5.8 Task Card #2 Part B Giai đoạn 2+3, 12/07/2026)
+**Phiên bản:** 1.2 — ✅ DONE | **Tạo:** 11/07/2026 11:17 — C5.8 Task Card #2 Part B lần 1 | **Sửa:** 12/07/2026 16:03 — gỡ cờ ⚠️ SUY LUẬN `IsPathVisible` (K2Node export xác nhận, delta C5.8 Task Card #2 Giai đoạn 4)
 
 ---
 
@@ -33,9 +33,26 @@ OnFolderSelected(Path : String)
 
 ## Functions
 
-### `IsPathVisible(Path : String) → Boolean` (DONE, trace tay export XML khớp 100%)
-Node hiện ⇔ mọi tổ tiên ∈ `ExpandedFolders`. Top-level / "(Gốc)" luôn True.
-⚠️ Chi tiết loop as-built (ForEachLoopWithBreak hay For Loop With Break) — lấy theo K2Node export khi cuhoang gửi; kết quả Print test đã PASS (top-level=True, tổ tiên chưa expand=False, nested-chain sâu đúng).
+### `IsPathVisible(Path : String) → Boolean` (DONE, K2Node export xác nhận — Giai đoạn 4, 12/07)
+Local var: `Segments : Array<String>`, `n : Integer`, `bHidden : Boolean`, `CurrentPrefix : String`.
+```
+FunctionEntry(Path)
+  ▶ SET Segments = ParseIntoArray(Path, Delimiter="/", CullEmptyStrings=true)
+  ▶ SET n = Array_Length(Segments)
+  ▶ SET bHidden = false
+  ▶ Branch(n <= 1)
+       True  → Return true                                    ← top-level/1-segment luôn visible
+       False → SET CurrentPrefix = Segments[0]
+               ▶ ForEachLoopWithBreak(Segments):
+                    Branch(ArrayIndex >= n-1)
+                       True  → Break                            ← bỏ qua segment cuối (chính node đang xét)
+                       False → Branch(NOT Array_Contains(ExpandedFolders, CurrentPrefix))
+                                  True  → SET bHidden = true → Break   ← tổ tiên chưa mở → ẩn, thoát sớm
+                                  False → SET CurrentPrefix = CurrentPrefix + "/" + Segments[ArrayIndex+1]
+                                          (loop tự next)
+               Completed/Break → Return NOT bHidden
+```
+Loop dùng **ForEachLoopWithBreak** (không phải For Loop With Break thường) — thoát sớm ngay khi phát hiện 1 tổ tiên chưa mở, không cần duyệt hết mảng. `CurrentPrefix` build tích lũy theo từng segment (cùng pattern `AccumPath` trong `BuildSearchOverride`), chỉ kiểm tra CÁC TỔ TIÊN (bỏ qua segment cuối = chính node). Node hiện ⇔ mọi tổ tiên ∈ `ExpandedFolders`. Test Print PASS: top-level=True, tổ tiên chưa expand=False, nested-chain sâu đúng.
 
 ### `RefreshVisibleRows()` (DONE — SINGLE SOURCE expand-mode + search-mode, Giai đoạn 2 ghép xong 12/07)
 Local var thêm: `SearchBool : Boolean` (ngoài `bShow`/`Row`/`node` có sẵn). `QueryStr` cũ đã XÓA — đọc `CurrentSearchFolder` (class var, xem Variables) thay vì tự query `SB_SearchFolder`.
@@ -156,3 +173,4 @@ Mục 10 (click tên → SelectedPath đúng, UI không đổi; click arrow → 
 | 0.9 | 11/07/2026 11:17 | Khởi tạo (IN PROGRESS) — C5.8 Task Card #2 Part B lần 1: Layout (HB_Toolbar + SB_SearchFolder) + Variables (Folders/ExpandedFolders/SelectedPath/bIsSearching/SearchExpandOverride) + `IsPathVisible` DONE + `RefreshVisibleRows` DONE (nhánh search ⚠️ SUY LUẬN, chưa ghép) + `SetFolders` bug fix + 2 Custom Event handler DONE. Test mục 1 PASS, mục 2 FAIL (bug #2 đang debug). |
 | 1.0 | 11/07/2026 13:14 | Giai đoạn 1 DONE — thêm 2 handler mới `BTN_ExpandAll`/`BTN_CollapseAll.OnClicked` (nối thẳng, không Custom Event trung gian). Cập nhật "Chưa build" (bỏ ExpandAll/CollapseAll — đã DONE). Test status: mục 1-5 PASS (expand/collapse + Mở tất cả/Thu gọn + nhớ state con cháu, 6A xác nhận); mục 6-10 chưa chạy (Giai đoạn 2 — search). |
 | 1.1 | 12/07/2026 10:40 | Giai đoạn 2 (Search) + Giai đoạn 3 (Select) DONE. Thêm 3 Function mới: `PathMatchesQuery` (Pure), `BuildSearchOverride`, `GetParentPath` (Pure, hỗ trợ bug 2.3). `RefreshVisibleRows` ghép xong nhánh search (as-built thật, không còn ⚠️ SUY LUẬN) — `SetExpanded` bỏ hardcode `True`, dùng chung công thức `Array_Contains(ExpandedFolders,Path)` cả 2 nhánh. Thêm Event `SB_SearchFolder.OnSearchTextChanged`. Thêm class var `CurrentSearchFolder` (thay Local `QueryStr`). Bug fix: 2.1 (`PathMatchesQuery` dùng `DisplayLabel` thay `Path` đầy đủ), 2.3 (`bShow` thêm điều kiện qua `GetParentPath` để lộ con khi manual-expand trong lúc search). Test mục 1-10 PASS hết. |
+| 1.2 | 12/07/2026 16:03 | Giai đoạn 4 (Chốt sổ) — gỡ cờ ⚠️ SUY LUẬN của `IsPathVisible`: thay bằng node flow as-built đầy đủ (K2Node export xác nhận). Loop = `ForEachLoopWithBreak` (thoát sớm khi gặp tổ tiên chưa mở), `CurrentPrefix` build tích lũy qua từng segment, bỏ qua segment cuối (chính node). Không đổi hành vi — chỉ hoàn thiện tài liệu. |
