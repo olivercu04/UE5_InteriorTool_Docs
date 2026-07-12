@@ -1,5 +1,5 @@
 # WBP_FolderPickerRow
-**Phiên bản:** 1.1 | **Tạo:** 11/07/2026 11:17 — C5.8 Task Card #2 (2a + 2b Part A) | **Sửa:** 11/07/2026 13:14 — Giai đoạn 1 bug fix (xem `C5.8_TaskCard2_Delta_GiaiDoan1_11jul2026.md`)
+**Phiên bản:** 1.2 | **Tạo:** 11/07/2026 11:17 — C5.8 Task Card #2 (2a + 2b Part A) | **Sửa:** 12/07/2026 10:40 — `SetSearchHighlight` DONE (Giai đoạn 2, delta C5.8 Task Card #2 Part B Giai đoạn 2+3, 12/07/2026)
 
 ---
 
@@ -20,6 +20,8 @@ HB_Row
 | Tên | Kiểu | Ghi chú |
 |---|---|---|
 | `RowNode` | `S_FolderTreeNode` | SET trong `SetNode`, mọi Broadcast đọc từ đây |
+| `Color Match` | Linear Color | Giai đoạn 2 (12/07) — (R=1.0, G=0.85, B=0.4, A=1.0), vàng nhạt, dùng trong `SetSearchHighlight` |
+| `Color Default` | Linear Color | Giai đoạn 2 (12/07) — (R=1.0, G=1.0, B=1.0, A=1.0), trắng (màu gốc), dùng trong `SetSearchHighlight` |
 
 ## Event Dispatchers
 ```
@@ -53,6 +55,15 @@ OnRowSelected(Path : String)
    False → [dead-end hợp lệ]
 ```
 
+### `SetSearchHighlight(bMatch : Boolean)` (Giai đoạn 2, DONE 12/07, export K2Node thật)
+```
+FunctionEntry(Match)
+  ▶ Branch(Match)
+       True  → Set Color and Opacity(Target=TXT_Name, In Color and Opacity = GET Color Match)
+       False → Set Color and Opacity(Target=TXT_Name, In Color and Opacity = GET Color Default)
+```
+Dùng node **`f Set Color and Opacity`** (mục Appearance) — KHÔNG dùng dòng "Variables → Set Color and Opacity" trùng tên (đó là setter biến struct, không phải hàm set màu widget).
+
 ### Button handlers (2b Part A — **ĐÍNH CHÍNH lần 2, 11/07 13:14**)
 As-built THẬT, xác nhận qua export K2Node 11/07: nối **THẲNG**, KHÔNG có Custom Event trung gian:
 ```
@@ -64,7 +75,7 @@ On Clicked (BTN_Name)  ▶→ Call On Row Selected(Target=self, Path=Break(RowNo
 ⚠️ Bản v1.0 file này từng ghi "Custom Event trung gian HandleArrowClicked/HandleNameClicked" — **SAI**, đã đính chính ngược lại lần nữa theo export K2Node thật. Xem `DEVIATIONS.md` [DOC-FIX] 11/07/2026 (mục Giai đoạn 1).
 
 ## Còn nợ (Task Card sau)
-`SetSearchHighlight(bMatch)` (Part 2c — chưa build) · `EnterRenameMode`/host `WBP_EditableLabel` (2d).
+`EnterRenameMode`/host `WBP_EditableLabel` (2d).
 
 ---
 
@@ -73,3 +84,4 @@ On Clicked (BTN_Name)  ▶→ Call On Row Selected(Target=self, Path=Break(RowNo
 |---|---|---|
 | 1.0 | 11/07/2026 11:17 | Khởi tạo — C5.8 Task Card #2: 2a (row tĩnh + guide line, PASS full data thật) + 2b Part A (hierarchy BTN_Arrow/BTN_Name, dispatchers OnRowExpandClicked/OnRowSelected, SetExpanded, Custom Event trung gian HandleArrowClicked/HandleNameClicked). |
 | 1.1 | 11/07/2026 13:14 | Giai đoạn 1 bug fix: `SetNode` thêm `SET RowNode = Node` (thiếu hoàn toàn ở bản đầu — root cause bug #2) + thêm `SetVisibility(BTN_Arrow,...)` song song `TXT_Arrow` ở cả 2 nhánh Branch. Đính chính lần 2 "Button handlers": as-built THẬT là nối THẲNG `OnClicked → Call dispatcher` (không Custom Event trung gian) — xác nhận qua export K2Node 11/07. |
+| 1.2 | 12/07/2026 10:40 | `SetSearchHighlight(bMatch)` DONE (Giai đoạn 2) — 2 class var mới `Color Match`/`Color Default` + hàm dùng `f Set Color and Opacity` set màu `TXT_Name`. Xóa khỏi "Còn nợ". |

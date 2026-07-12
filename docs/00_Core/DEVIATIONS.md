@@ -417,6 +417,25 @@ Phần "ĐÍNH CHÍNH AS-BUILT" của FixPlan v1.1 khẳng định SAI rằng c�
 
 ---
 
+## SPRINT 5 — 12/07/2026 — C5.8 Task Card #2 Giai đoạn 2+3
+
+### [BUG] PathMatchesQuery dùng nhầm node.Path (full path) thay vì node.DisplayLabel
+Test mục 6 (search "sofa") ban đầu FAIL: hiện luôn cả con của node "Sofa" (`Đồng Gia`, `New Folder`) vì `Contains` substring match trên toàn bộ path (`"Livingroom/Sofa/Đồng Gia"` chứa chữ trùng). Sửa: đổi input `Path` của `PathMatchesQuery` — ở CẢ 2 chỗ gọi (`BuildSearchOverride` và `RefreshVisibleRows`) — từ `Break Struct → Path` sang `Break Struct → DisplayLabel`. `Array_Contains` (exact match, cho `SearchExpandOverride`/`ExpandedFolders`) vẫn giữ nguyên dùng `Path` đầy đủ.
+
+### [ARCH] CurrentSearchFolder: đổi từ Local Variable → Class Variable
+Nguồn đọc text ban đầu sai: `RefreshVisibleRows` tự query `SB_SearchFolder → Get Initial Text` — trả rỗng luôn (property này không phản ánh text người dùng đang gõ). Sửa đúng: `OnSearchTextChanged` là nơi duy nhất có giá trị text chính xác (qua pin `Text` của delegate) → SET vào class var `CurrentSearchFolder` ngay đầu event; mọi nơi khác đọc lại từ class var thay vì tự query widget lần 2.
+
+### [BUG] Arrow-click trong lúc search không lộ folder con
+Test bổ sung: search "sofa" → click arrow của node "Sofa" (đang match) → không có gì xảy ra, con không hiện. Nguyên nhân kép: `bShow` nhánh search ban đầu chỉ xét match/`SearchExpandOverride` (search-driven), không biết đến `ExpandedFolders` do người dùng tự click mở thêm trong lúc đang search; `SetExpanded` nhánh search ban đầu hardcode `True` — không phản ánh trạng thái thật. Sửa: thêm Function mới `GetParentPath(Path) → String` (Pure); thêm điều kiện `OR Array_Contains(ExpandedFolders, GetParentPath(node.Path))` vào `bShow`; `SetExpanded` đổi từ hardcode `True` sang `Array_Contains(ExpandedFolders, node.Path)` — giống hệt công thức nhánh False, không hardcode nữa.
+
+### [ARCH] GetParentPath — Function mới, không có trong plan gốc
+Cần thiết để hỗ trợ "tổ tiên qua expand thủ công trong lúc search" — plan gốc §4d chỉ tính expand search-driven (qua `SearchExpandOverride`), chưa tính trường hợp người dùng tự mở thêm trong khi đang search. Không đổi kiến trúc tổng thể, chỉ bổ sung 1 pure function nhỏ trên `WBP_FolderTreePicker`.
+
+### [SCOPE] Select (Giai đoạn 3, mục 10) không cần sửa gì
+`HandleRowSelected` build từ Part A đã đúng hành vi ngay từ đầu — chỉ verify test, không phát sinh bug/deviation.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -480,3 +499,4 @@ Phần "ĐÍNH CHÍNH AS-BUILT" của FixPlan v1.1 khẳng định SAI rằng c�
 | 04/07/2026 | Thêm quy ước ceiling + trigger cho deviation loại shortcut có chủ đích (mục CÁCH DÙNG) — từ ponytail-debt |
 | 11/07/2026 | Thêm section "SPRINT 5 — 11/07/2026 — C5.8 Task Card #2 Part B lần 1 (as-built)": [ARCH] ExpandedFolders Array thay Set; [SWAP] ETB_Search→SB_SearchFolder; [DOC-FIX] as-built dùng Custom Event trung gian HandleArrowClicked/HandleNameClicked (sửa dòng TIẾN ĐỘ sai trong task card); [LESSON] SetFolders giữ thân cũ 2a khi build Part B — quy tắc đề xuất diff thân cũ trước khi sửa function có sẵn. |
 | 11/07/2026 13:14 | Thêm section "SPRINT 5 — 11/07/2026 (tiếp) — C5.8 Task Card #2 Part B, Giai đoạn 1": [BUG-FIX] `SetNode` thiếu `SET RowNode = Node` (root cause bug #2); [BUG-FIX] `BTN_Arrow` không đồng bộ Visibility với `TXT_Arrow`; [DOC-FIX] FixPlan v1.1 đính chính SAI về Custom Event trung gian — export K2Node thật xác nhận nối THẲNG (đảo ngược lại entry [DOC-FIX] 11/07/2026 trước đó). |
+| 12/07/2026 10:40 | Thêm section "SPRINT 5 — 12/07/2026 — C5.8 Task Card #2 Giai đoạn 2+3": [BUG] `PathMatchesQuery` dùng nhầm `node.Path` thay vì `node.DisplayLabel` (substring match nhầm con); [ARCH] `CurrentSearchFolder` đổi Local→Class Variable (`Get Initial Text` trả rỗng); [BUG] arrow-click trong lúc search không lộ con — thêm `GetParentPath` + điều kiện `bShow` + bỏ hardcode `SetExpanded`; [ARCH] `GetParentPath` function mới ngoài plan gốc; [SCOPE] Select (mục 10) không cần sửa gì, chỉ verify. |

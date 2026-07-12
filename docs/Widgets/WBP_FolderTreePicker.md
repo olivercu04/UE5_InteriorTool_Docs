@@ -1,5 +1,5 @@
 # WBP_FolderTreePicker
-**Phiên bản:** 1.0 — 🔄 IN PROGRESS | **Tạo:** 11/07/2026 11:17 — C5.8 Task Card #2 Part B lần 1 | **Sửa:** 11/07/2026 13:14 — Giai đoạn 1 DONE (xem `C5.8_TaskCard2_Delta_GiaiDoan1_11jul2026.md`)
+**Phiên bản:** 1.1 — ✅ DONE | **Tạo:** 11/07/2026 11:17 — C5.8 Task Card #2 Part B lần 1 | **Sửa:** 12/07/2026 10:40 — Giai đoạn 2 (Search) + Giai đoạn 3 (Select) DONE (delta C5.8 Task Card #2 Part B Giai đoạn 2+3, 12/07/2026)
 
 ---
 
@@ -24,6 +24,7 @@ VB_Picker
 | `SelectedPath` | String | "" | chưa dùng highlight |
 | `bIsSearching` | Boolean | false | |
 | `SearchExpandOverride` | Array\<String\> | rỗng | tập force-expand lúc search, KHÔNG đụng ExpandedFolders |
+| `CurrentSearchFolder` | String | "" | Giai đoạn 2 (12/07) — class var, thay Local `QueryStr` cũ (`RefreshVisibleRows` không tự query widget, đọc lại biến này) |
 
 ## Event Dispatcher
 ```
@@ -36,26 +37,65 @@ OnFolderSelected(Path : String)
 Node hiện ⇔ mọi tổ tiên ∈ `ExpandedFolders`. Top-level / "(Gốc)" luôn True.
 ⚠️ Chi tiết loop as-built (ForEachLoopWithBreak hay For Loop With Break) — lấy theo K2Node export khi cuhoang gửi; kết quả Print test đã PASS (top-level=True, tổ tiên chưa expand=False, nested-chain sâu đúng).
 
-### `RefreshVisibleRows()` (DONE — SINGLE SOURCE expand-mode + search-mode)
-⚠️ SUY LUẬN theo §4d task card (nhánh search hiện để `bIsSearching=False` mặc định, chưa ghép search):
+### `RefreshVisibleRows()` (DONE — SINGLE SOURCE expand-mode + search-mode, Giai đoạn 2 ghép xong 12/07)
+Local var thêm: `SearchBool : Boolean` (ngoài `bShow`/`Row`/`node` có sẵn). `QueryStr` cũ đã XÓA — đọc `CurrentSearchFolder` (class var, xem Variables) thay vì tự query `SB_SearchFolder`.
+As-built export K2Node thật (cuhoang xác nhận PASS test mục 6-9 + bổ sung):
 ```
-▶ SET QueryStr = Get Text(SB_SearchFolder) → ToString
 ▶ Clear Children(SB_Rows)
 ▶ ForEachLoop(Folders):
-     Branch(bIsSearching)
-        True  → bShow = Array_Contains(SearchExpandOverride, node.Path) OR PathMatchesQuery(...)
-        False → bShow = IsPathVisible(node.Path)
+     SET node = Array Element → Break S Folder Tree Node(node) → Path, DisplayLabel
+     IsPathVisible(Path) → SearchBool_tmp1        ← (wire cũ, giữ nguyên vị trí gọi)
+     PathMatchesQuery(Path=DisplayLabel, Query=CurrentSearchFolder) → MatchBool
+     Array_Contains(SearchExpandOverride, Path) → InOverrideBool
+     Array_Contains(ExpandedFolders, GetParentPath(Path)) → InManualExpandBool
+     BooleanOR(MatchBool, InOverrideBool, InManualExpandBool) → SearchBool
+     Select(Index=bIsSearching, Option False=IsPathVisible.ReturnValue, Option True=SearchBool) → SET bShow
      Branch(bShow) True →
         Create Widget(WBP_FolderPickerRow) → Row
         Row.SetNode(node)
-        Branch(bIsSearching): True → SetExpanded(True)+SetSearchHighlight(match)
-                              False → SetExpanded(Array_Contains(ExpandedFolders,node.Path))+SetSearchHighlight(False)*
+        Branch(bIsSearching):
+           True  → Row.SetExpanded(Array_Contains(ExpandedFolders,Path)) → Row.SetSearchHighlight(MatchBool)
+           False → Row.SetExpanded(Array_Contains(ExpandedFolders,Path)) → Row.SetSearchHighlight(False)   ← wire cũ, giữ nguyên
         Bind Row.OnRowExpandClicked → HandleRowExpandClicked
         Bind Row.OnRowSelected → HandleRowSelected
         Add Child(SB_Rows, Row)
    Completed → hết hàm
 ```
-(*) `SetSearchHighlight` chưa tồn tại ở lần build 1 — nhánh này chưa có node đó.
+⚠️ Điểm mấu chốt khác pseudocode gốc: `SetExpanded` ở CẢ 2 nhánh `bIsSearching` giờ dùng CHUNG công thức `Array_Contains(ExpandedFolders, Path)` — nhánh search KHÔNG còn hardcode `True` (bug 2.3). `bShow` khi search thêm điều kiện `InManualExpandBool` (qua `GetParentPath`) để lộ con khi user tự click arrow mở tổ tiên trong lúc đang search (bug 2.3/2.4).
+
+### `PathMatchesQuery(Path : String, Query : String) → Boolean` (Pure, DONE Giai đoạn 2)
+```
+▶ Contains(Search In=Path, Substring=Query, Use Case=[trống — không phân biệt hoa thường], Search from End=[trống]) → Return Value
+```
+1 node duy nhất, Pure (không exec pin, không Branch). Gọi với `Path=node.DisplayLabel` (KHÔNG phải `node.Path` đầy đủ — bug 2.1: substring trên full path match nhầm cả con không liên quan).
+
+### `BuildSearchOverride(Query : String)` (DONE Giai đoạn 2)
+Local var: `Segments : Array<String>`, `AccumPath : String`.
+```
+▶ Array Clear(SearchExpandOverride)
+▶ ForEachLoop(Folders):
+     Break node → Path, DisplayLabel
+     PathMatchesQuery(Path=DisplayLabel, Query) → Branch
+        True → ParseIntoArray(Path, Delimiter="/", Cull Empty Strings=✓) → SET Segments
+                SET AccumPath = ""
+                ForLoop(First=0, Last=Segments.Length-2):
+                   Branch(Index==0)
+                      True  → AccumPath = GET(Segments, Index)
+                      False → AccumPath = Append(AccumPath, "/", GET(Segments, Index))
+                   [merge] → Array_AddUnique(SearchExpandOverride, AccumPath)
+        False → (bỏ qua, outer loop tự next)
+   Completed → hết hàm (không Return Node)
+```
+`Array_AddUnique` (không phải `Array_Add`) — tránh trùng khi nhiều node con cùng match kéo chung 1 tổ tiên. Top-level match (1 segment) → `Length-2=-1` → ForLoop không chạy vòng nào → không add gì (đúng, top-level luôn visible sẵn).
+
+### `GetParentPath(Path : String) → String` (Pure, DONE Giai đoạn 2 — hỗ trợ bug 2.3)
+```
+▶ Find Substring(Search In=Path, Substring="/", Search from End=✓, Start Position=-1) → Index
+▶ Branch(Index == -1)
+     True  → Return ""
+     False → Return Left(Path, Index)
+```
+Tìm dấu `/` CUỐI CÙNG (`Search from End=✓`, khác `Find` thường tìm từ đầu). Pure function vẫn dùng `Branch` — hợp lệ (không có exec pin ở Entry/Return, Branch chạy qua dependency chain của data pin).
 
 ### `SetFolders(Nodes)` — SỬA (bug đã fix, ghi lesson)
 Thân 2a cũ (tự loop tạo row) → thay bằng:
@@ -86,12 +126,27 @@ On Clicked (BTN_CollapseAll)
    ▶ RefreshVisibleRows()
 ```
 
-## Chưa build (Part 2c còn lại)
-`PathMatchesQuery` · `BuildSearchOverride` · nhánh search trong Refresh · `SB_SearchFolder.OnSearchTextChanged`.
+## Events — SB_SearchFolder.OnSearchTextChanged (DONE, Giai đoạn 2, 12/07)
+`ComponentBoundEvent` trên `SB_SearchFolder`:
+```
+BoundEvent(Text)
+   ▶ SET CurrentSearchFolder = Conv_TextToString(Text)     ← class var, MỚI (thay Local QueryStr cũ)
+   ▶ Trim(Conv_TextToString(Text)) → Len → EqualEqual(0)
+   ▶ IfThenElse(Len==0)
+        True  → SET bIsSearching = False → Array_Clear(SearchExpandOverride)
+        False → SET bIsSearching = True  → BuildSearchOverride(CurrentSearchFolder)
+        [merge] → RefreshVisibleRows()
+```
+Ghi chú as-built: `Conv_TextToString(Text)` gọi 2 lần độc lập (1 cho `SET CurrentSearchFolder`, 1 cho `Trim`) — cùng input `Text` từ delegate pin, không phải bug, chỉ 2 pure node riêng thay vì dùng chung 1 local var trung gian. Không ảnh hưởng hành vi.
+
+## Chưa build
+`2d — rename host` (xem `02_Current_Sprint.md`). `PathMatchesQuery` · `BuildSearchOverride` · nhánh search trong `RefreshVisibleRows` · `SB_SearchFolder.OnSearchTextChanged` · `GetParentPath` — đều đã DONE (Giai đoạn 2).
 
 ## Test status
-Mục 1-5 PASS (Giai đoạn 1 task card HOÀN TẤT — expand/collapse đơn lẻ + Mở tất cả/Thu gọn + nhớ state con cháu sau collapse/expand lại, xác nhận 6A).
-Mục 6-10 chưa chạy (Giai đoạn 2 — search — chưa làm).
+Mục 1-5 PASS (Giai đoạn 1, xác nhận 11/07).
+Mục 6 (search "sofa" → chỉ đường Livingroom→Sofa hiện, Sofa highlight vàng), 7 (search "com" → mọi đường tới node khớp hiện, mỗi match highlight riêng), 8/6A (xóa query → về đúng state expand trước search), 9 (search "zzz" → SB_Rows trống, không crash) — PASS (Giai đoạn 2, 12/07).
+Bổ sung: click arrow node đang match trong lúc search → lộ con — PASS (sau fix bug 2.3/2.4).
+Mục 10 (click tên → SelectedPath đúng, UI không đổi; click arrow → không fire OnFolderSelected) — PASS (Giai đoạn 3, 12/07).
 
 ---
 
@@ -100,3 +155,4 @@ Mục 6-10 chưa chạy (Giai đoạn 2 — search — chưa làm).
 |---|---|---|
 | 0.9 | 11/07/2026 11:17 | Khởi tạo (IN PROGRESS) — C5.8 Task Card #2 Part B lần 1: Layout (HB_Toolbar + SB_SearchFolder) + Variables (Folders/ExpandedFolders/SelectedPath/bIsSearching/SearchExpandOverride) + `IsPathVisible` DONE + `RefreshVisibleRows` DONE (nhánh search ⚠️ SUY LUẬN, chưa ghép) + `SetFolders` bug fix + 2 Custom Event handler DONE. Test mục 1 PASS, mục 2 FAIL (bug #2 đang debug). |
 | 1.0 | 11/07/2026 13:14 | Giai đoạn 1 DONE — thêm 2 handler mới `BTN_ExpandAll`/`BTN_CollapseAll.OnClicked` (nối thẳng, không Custom Event trung gian). Cập nhật "Chưa build" (bỏ ExpandAll/CollapseAll — đã DONE). Test status: mục 1-5 PASS (expand/collapse + Mở tất cả/Thu gọn + nhớ state con cháu, 6A xác nhận); mục 6-10 chưa chạy (Giai đoạn 2 — search). |
+| 1.1 | 12/07/2026 10:40 | Giai đoạn 2 (Search) + Giai đoạn 3 (Select) DONE. Thêm 3 Function mới: `PathMatchesQuery` (Pure), `BuildSearchOverride`, `GetParentPath` (Pure, hỗ trợ bug 2.3). `RefreshVisibleRows` ghép xong nhánh search (as-built thật, không còn ⚠️ SUY LUẬN) — `SetExpanded` bỏ hardcode `True`, dùng chung công thức `Array_Contains(ExpandedFolders,Path)` cả 2 nhánh. Thêm Event `SB_SearchFolder.OnSearchTextChanged`. Thêm class var `CurrentSearchFolder` (thay Local `QueryStr`). Bug fix: 2.1 (`PathMatchesQuery` dùng `DisplayLabel` thay `Path` đầy đủ), 2.3 (`bShow` thêm điều kiện qua `GetParentPath` để lộ con khi manual-expand trong lúc search). Test mục 1-10 PASS hết. |
