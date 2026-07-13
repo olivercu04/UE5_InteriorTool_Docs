@@ -439,6 +439,34 @@ FixPlan mục 1 định thêm biến `bDebugMode` + wire Branch gate cho từng 
 
 ---
 
+## SPRINT 5 — 13/07/2026 — C5.8 2d (rename host) + Wire Move + Wire Save
+
+### [BUG-FIX] OnRequestMoveFolder + CB_MoveCombo vẫn gọi BuildMoveFolderTargetList
+Rename Task Card #1 (08/07) từ `BuildMoveFolderTargetList` → `BuildComboFolderTreeNodes` KHÔNG propagate hết 2 call site (claim "Blueprint tự propagate qua rename" trong `WBP_FurnitureInventory.md` v3.9 SAI). Hệ quả: `HasChildren`/`ChildCount` luôn False/0 cho MỌI node trong Move dialog (hàm cũ sinh trước khi 2 field này tồn tại trong struct) → không hiện arrow/badge dù folder có con thật. Fix: `OnRequestMoveFolder` + `CB_MoveCombo` đổi sang gọi `BuildComboFolderTreeNodes`. `BuildMoveFolderTargetList` xoá hẳn (mồ côi sau fix, không giữ [LEGACY] — bản thiếu field, giữ lại chỉ gây nhầm lẫn).
+
+### [BUG-FIX] SetSelectedHighlight dùng nhầm biến so sánh
+`RefreshVisibleRows` (`WBP_FolderTreePicker`): dòng gọi `Row.SetSelectedHighlight()` dùng CHUNG kết quả so sánh "===" với nhánh Set Current Tag (`Break(Node).Path == CurrentPath`) thay vì so với `SelectedPath` (biến riêng, đổi mỗi lần user click chọn). Hệ quả: click chọn folder → Confirm bấm được (`SelectedTargetPath` ở Dialog đúng) nhưng KHÔNG thấy highlight xanh (vì Picker so sai biến) — trừ khi trùng ngẫu nhiên `CurrentPath`. Fix: tách node so sánh riêng (`Break(Node).Path == SelectedPath`) cho nhánh `SetSelectedHighlight`, không dùng chung với nhánh tag "hiện tại".
+
+### [CORRECTION] SetLabelColor nhận Slate Color, không phải Linear Color
+`WBP_EditableLabel.SetLabelColor(InColor)` — patch P2 (Card 0) giả định Linear Color vì suy loại theo Image widget. Thực tế `Set Color and Opacity` trên TextBlock (built-in UMG) nhận `FSlateColor` (struct bọc ngoài Linear Color). Không phải bug — Blueprint tự convert khi nối Linear Color var vào pin — chỉ sửa lại type khai báo param cho đúng bản chất API.
+
+### [SCOPE] Rename qua context-menu trong picker KHÔNG tồn tại
+Test S6b (REG khối A) kỳ vọng right-click row → "Đổi tên" trong Move/Save dialog. Xác nhận: 2d (Task Card 2d) chỉ xây `BeginRenameOnPath` như hàm được GỌI TỪ CODE (trigger duy nhất: nút "+ Thư mục mới" ở Save dialog, sau khi `CreateEmptyFolder`). KHÔNG có UI right-click-để-rename trên row picker — đúng phạm vi 2d ban đầu, không phải thiếu sót. Nếu cần trigger này trong tương lai, cần task card riêng (ngoài C5.8).
+
+### [SCOPE] Test mục 10 TC#2 gốc SUPERSEDED
+"Click tên → UI không đổi" (TC#2 cũ) không còn đúng sau Card 1 — click chọn giờ PHẢI đổi UI (highlight xanh). Hành vi mới đúng ý, chỉ ghi nhận thay đổi kỳ vọng test.
+
+### [CEILING] Bind OnFolderSelected trong InitPicker giả định 1 lần/instance
+`WBP_MoveToFolderDialog.InitPicker` Bind `Picker.OnFolderSelected` → `HandlePickerFolderSelected` ngay trong hàm `InitPicker` (không phải Event Construct). An toàn CHỈ KHI mỗi lần mở dialog là 1 instance mới (Create Widget mới, đúng hiện trạng). Nếu sau này đổi sang tái dùng instance (gọi `InitPicker` nhiều lần/1 instance) → Bind sẽ chồng (double-fire) → phải dời sang Event Construct lúc đó.
+
+### [SCOPE] 6A của Create Folder (Save dialog)
+User tạo folder mới rồi ESC/blur trước khi đặt tên → `WBP_EditableLabel` tự revert về "New Folder (N)" (đã có sẵn cơ chế). Folder rỗng tên auto này vẫn tồn tại trong `Folders.json` — CHẤP NHẬN, giống hành vi NF (New Folder qua context-menu tree chính) đã có từ trước. Không phải bug, không cần cleanup ở C5.8 — nếu cần dọn folder rỗng tên tự động sau này thì đưa vào C10 (regression tổng).
+
+### [CLEANUP] Print debug ở HandleSaveDialogCreateFolder/HandleSavePickerRenameCommitted
+Dùng `EnabledState=DevelopmentOnly` (property node, tự strip khỏi Shipping build) thay vì gate bằng biến `bDebugMode` như quy ước project. Quyết định giữ nguyên (đơn giản hơn, đủ hiệu quả) — không đổi. Ghi nhận khác biệt cơ chế: `DevelopmentOnly` cắt theo LOẠI BUILD, `bDebugMode` cắt theo RUNTIME TOGGLE (bật/tắt không cần rebuild).
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |

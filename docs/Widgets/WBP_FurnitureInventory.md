@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.10 | **Cập nhật:** 08/07/2026 (bổ sung) — node flow thật (export K2Node) cho GetFilteredChildren/BuildFolderTreeRecursive/BuildComboFolderTreeNodes, thay bản suy luận v3.9
+**Phiên bản:** 3.11 | **Cập nhật:** 13/07/2026 — C5.8 Wire Move + Wire Save: `OnRequestMoveFolder`/`CB_MoveCombo` gọi `Dialog.InitPicker` thay `PopulateRows`; `OpenSaveComboDialog` wire `Picker.SetFolders`+`OnRequestCreateFolder`+`OnRequestCommitRename`; 2 Custom Event mới `HandleSaveDialogCreateFolder`/`HandleSavePickerRenameCommitted`
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -108,6 +108,8 @@ Python 1: populate BoundingSize | Python 2: update MeshFolderPath | (Sprint D: P
 | `MovingComboCurrentFolder` | String | FolderPath hiện tại của combo đang move — guard no-op nếu đã ở đúng folder |
 | **— C5.6 Xóa Folder —** | | |
 | `PendingDeleteFolderPath` | String | Path folder chờ xác nhận xóa — SET khi mở WBP_ConfirmDialog, đọc trong HandleDeleteFolderConfirmed, clear cuối hàm |
+| **— C5.8 Wire Save —** | | |
+| `SaveDlg_NewFolderPath` | String | Path folder rỗng mới tạo qua `BTN_AddFolder` — SET trong `HandleSaveDialogCreateFolder`, dùng để ExpandToPath + BeginRenameOnPath |
 
 ⚠️ **VRAM leak:** TargetFurnitureActor + PendingRestoredActor + SaveComboDialogRef + RenameTargetNode + LibraryMenuRef + MoveComboDialogRef là hard ref → SET None ở Event Destruct.
 
@@ -505,14 +507,65 @@ Then 5: Bind OnComboLibraryChanged → LoadComboLibrary
 ```
 SET PendingSelectedActors = SelectedActors
 SET PendingCenter = Center
-GetExistingFolders() → TempFolders
 GetAllUsedTags() → TempTags
-Create Widget(WBP_SaveComboDialog, ExistingFolders=TempFolders, TagVocabulary=TempTags) → SET SaveComboDialogRef
+Create Widget(WBP_SaveComboDialog, TagVocabulary=TempTags) → SET SaveComboDialogRef
+Branch(IsValid(SaveComboDialogRef))
+  True →
+    BuildComboFolderTree()
+    BuildComboFolderTreeNodes("") → Entries
+    SaveComboDialogRef.Picker.SetFolders(Entries)
+    SET SaveComboDialogRef.Picker.bShowCurrentTag = False
+    Bind SaveComboDialogRef.OnRequestCreateFolder → HandleSaveDialogCreateFolder
+    Bind SaveComboDialogRef.Picker.OnRequestCommitRename → HandleSavePickerRenameCommitted
+  False → dead-end (guard có sẵn từ trước C5.8, không phải patch mới)
 Add to Viewport(SaveComboDialogRef, ZOrder=99)
 Bind OnDialogConfirmed(SaveComboDialogRef) → OnSaveComboConfirmed
 Bind OnDialogCancelled(SaveComboDialogRef) → OnSaveComboDialogClosed
 Get Player Controller → Set Input Mode UI Only(InWidgetToFocus=SaveComboDialogRef)
 ```
+> **13/07 (C5.8 Wire Save):** xoá dòng cũ `GetExistingFolders() → SET TempFolders` (đã orphan sau khi pin `ExistingFolders` bị xoá khỏi `WBP_SaveComboDialog` Expose on Spawn) + bỏ arg `ExistingFolders=TempFolders` khỏi `Create Widget`. Thêm Branch wire `Picker`/bind 2 dispatcher mới của dialog, chèn NGAY SAU `SET SaveComboDialogRef`, TRƯỚC `AddToViewport`.
+
+### HandleSaveDialogCreateFolder(ParentPath : String) — Custom Event MỚI (13/07, C5.8 Wire Save)
+Bound từ `SaveComboDialogRef.OnRequestCreateFolder` trong `OpenSaveComboDialog`.
+```
+GetUniqueNewFolderName(ParentPath) → NewName
+Select(String)(Pick=ParentPath=="", A=NewName, B=Concat(ParentPath,"/",NewName)) → SET SaveDlg_NewFolderPath
+CreateEmptyFolder(SaveDlg_NewFolderPath) → bOK
+Branch(bOK)
+  False → Print "CreateEmptyFolder failed: "+SaveDlg_NewFolderPath [DevelopmentOnly]
+  True  →
+    BuildComboFolderTree() → BuildComboFolderTreeNodes("") → Entries
+    Branch(IsValid(SaveComboDialogRef))
+      True →
+        Picker.SetFolders(Entries)
+        Picker.ExpandToPath(SaveDlg_NewFolderPath)
+        Picker.RefreshVisibleRows()
+        GetSiblingFolderNames(SaveDlg_NewFolderPath) → Siblings
+        Picker.BeginRenameOnPath(SaveDlg_NewFolderPath, Siblings)
+      False → dead-end
+```
+Var mới: `SaveDlg_NewFolderPath : String` (class var, prefix `SaveDlg_`).
+
+### HandleSavePickerRenameCommitted(OldPath, NewName) — Custom Event MỚI (13/07, C5.8 Wire Save)
+Bound từ `SaveComboDialogRef.Picker.OnRequestCommitRename` trong `OpenSaveComboDialog`.
+```
+ParentOf(OldPath) → ParentPath
+Select(String) hoặc Branch(ParentPath=="") → NewFullPath
+RenameFolderPrefix(OldPath, NewFullPath) → (Return Value KHÔNG dùng để gate — xem ghi chú)
+BuildComboFolderTree() → BuildComboFolderTreeNodes("") → Entries
+Branch(IsValid(SaveComboDialogRef))
+  True →
+    Picker.SetFolders(Entries)
+    Picker.ExpandToPath(NewFullPath)
+    SET Picker.SelectedPath = NewFullPath
+    Picker.RefreshVisibleRows()
+  False → dead-end
+```
+> **Ghi chú quan trọng — KHÔNG Branch theo `RenameFolderPrefix` Return Value (Integer, đếm combo bị đổi):**
+> Verify code C++ thật (`ComboSerializer::RenameFolderPrefix`, có nhánh C5.3 cascade sang `Folders.json` manifest ĐỘC LẬP với count combo) — `Count=0` (rename folder rỗng) vẫn cập nhật registry đúng qua nhánh cascade. Gate theo `Count>0` sẽ sai (báo fail nhầm cho case phổ biến nhất — rename ngay sau khi tạo folder rỗng). Chạy thẳng không Branch, đúng spec gốc Wire_ExecutionPlan.
+> Ghi chú as-built: biến `SaveDlg_RenamedPath` KHÔNG dùng — thực tế dùng `NewFullPrefix`/pattern tương tự `HandleMoveFolderConfirmed` cũ (xem export K2Node thật nếu cần chính xác tuyệt đối tên biến — Sonnet ghi theo mô tả logic đã verify qua screenshot, không phải export đầy đủ 100% cho hàm này).
+
+### Test PASS (13/07, C5.8 Wire Save): S6a, S6c, M1-M6, Phần 2 test 1-2
 
 ### OnSaveComboConfirmed(ComboName, FolderPath, Description : String; Tags : Array String) — Custom Event
 ```
@@ -913,7 +966,8 @@ bIsLast             Boolean           MỚI — con út của cha (sau exclusion
 ▶ Return Node(RootEntry)
 ```
 > Q8: Container=Function (không đệ quy, có Return) | IsValid: n/a | L2: 1 nhánh thẳng, không Branch | No latent ✓ | 6A: n/a — pure builder
-> Gọi thay `BuildMoveFolderTargetList(MovingPath)` cũ — cùng chữ ký 1 tham số String (nay gọi là `ExcludePath` thay `MovingPath`), call site `OnRequestMoveFolder`/`CB_MoveCombo` không cần sửa tay (Blueprint tự theo tên hàm đã rename).
+> Gọi thay `BuildMoveFolderTargetList(MovingPath)` cũ — cùng chữ ký 1 tham số String (nay gọi là `ExcludePath` thay `MovingPath`).
+> ⚠️ **[CORRECTION 13/07]** Dòng "call site `OnRequestMoveFolder`/`CB_MoveCombo` không cần sửa tay (Blueprint tự theo tên hàm đã rename)" ở trên — SAI. Thực tế 2 call site VẪN gọi hàm cũ `BuildMoveFolderTargetList` cho tới khi fix thủ công 13/07 (hàm cũ sinh trước khi `HasChildren`/`ChildCount` tồn tại trong struct → arrow/badge không hiện dù folder có con thật). Xem `DEVIATIONS.md` 13/07/2026 [BUG-FIX]. `BuildMoveFolderTargetList` nay đã xoá hẳn khỏi Blueprint.
 > **Test PASS (08/07):** Print trên data thật (8 combo, nested 3 tầng, tiếng Việt, cả 2 case `ExcludePath=""` và `ExcludePath="Livingroom/Sofa"`) — Depth/HasChildren/ChildCount/ContinuesAncestors.Length/bIsLast khớp 100% kỳ vọng, không warning. Node flow xác nhận từ export K2Node thật (không còn suy luận).
 
 ### OnRequestMoveFolder(FolderPath : String) — Custom Event [C5.4]
@@ -923,10 +977,10 @@ SET MovingFolderPath = FolderPath
 // Guard: dialog đã mở
 // (không có MoveComboDialogRef ở đây — đây là Move Folder, không phải Move Combo)
 
-BuildComboFolderTreeNodes(FolderPath) → Entries   ← v3.9, trước là BuildMoveFolderTargetList(FolderPath)
+BuildComboFolderTreeNodes(FolderPath) → Entries   ← [BUG-FIX 13/07] call site thật đã fix về hàm này, thay BuildMoveFolderTargetList (xem CORRECTION ở §BuildComboFolderTreeNodes)
 
 Create Widget(WBP_MoveToFolderDialog) → Dialog
-PopulateRows(Dialog, Entries)
+Dialog.InitPicker(Entries, ParentOf(FolderPath), True)   ← 13/07: thay PopulateRows(Dialog, Entries) sau khi Dialog đổi sang WBP_FolderTreePicker
 Bind Dialog.OnMoveFolderConfirmed → HandleMoveFolderConfirmed
 Dialog.AddToViewport
 Get Player Controller → Set Input Mode UI Only
@@ -1075,11 +1129,11 @@ ForEachLoopWithBreak(AllComboViews_Combo):
 Completed →
 
 // Build list (không loại gì — combo không có con)
-BuildComboFolderTreeNodes("") → Entries   ← v3.9, trước là BuildMoveFolderTargetList; ExcludePath="" = không loại folder nào
+BuildComboFolderTreeNodes("") → Entries   ← [BUG-FIX 13/07] call site thật đã fix về hàm này, thay BuildMoveFolderTargetList; ExcludePath="" = không loại folder nào
 
 // Tạo dialog
 Create Widget(WBP_MoveToFolderDialog) → Dialog
-PopulateRows(Dialog, Entries)
+Dialog.InitPicker(Entries, MovingComboCurrentFolder, True)   ← 13/07: thay PopulateRows(Dialog, Entries)
 Bind Dialog.OnMoveFolderConfirmed → HandleMoveComboConfirmed
 SET MoveComboDialogRef = Dialog
 Dialog.AddToViewport
@@ -1487,3 +1541,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.8 | 06/07/2026 — C5.7b (Inline Rename chip) + 2 bug fix — **C5 HOÀN TẤT** | Class var mới `RenameTargetChip` (WBP_ChipTag). `OnRequestRenameFolder` mở rộng fallback tree→chip khi không tìm thấy TreeNode khớp (double-break qua Completed loop lồng). `RebuildChipRowForPath` +bind `OnChipRenameCommitted`→`OnRenameFolderCommitted` (tái dùng nguyên). BUG FIX `CB_CreateNewFolder`: node `SET Local Target Path=""` thừa đè mất cache → luôn tạo root bất kể right-click sâu đến đâu — đã xóa node thừa. BUG FIX `CB_RenameFolder`: bổ sung `SET LibraryMenuRef=None` cuối chuỗi (ca lẻ loi thiếu dòng này so với 3 CB_ khác). Test PASS full case rename chip + Create New Folder từ chip sâu. |
 | 3.9 | 08/07/2026 — C5.8 Task Card #1 (Data Layer) DONE | RENAME struct `S_FolderTargetEntry`→`S_FolderTreeNode` (Depth thay IndentLevel, +HasChildren/ChildCount/ContinuesAncestors/bIsLast). RENAME function `CollectFolderTargets`→`BuildFolderTreeRecursive` (đệ quy, depth guard=12, dùng `AncestorsContinue` thay IndentLevel). Hàm mới `GetFilteredChildren` (Pure, tách filter exclusion ra khỏi recursive function). Wrapper `BuildMoveFolderTargetList`→`BuildComboFolderTreeNodes(ExcludePath)` — **tên đổi so với plan gốc** (plan ghi "BuildFolderTree", trùng tên hàm cũ phía Material/Furniture catalog → đổi). Call site `OnRequestMoveFolder`/`CB_MoveCombo` cập nhật theo tên mới (Blueprint tự propagate qua rename). Test Print PASS trên data thật (8 combo, nested 3 tầng, tiếng Việt) — không lệch. Việc kế tiếp: Task Card #2 (`WBP_FolderTreePicker` UI component). Xem `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md`. |
 | 3.10 | 08/07/2026 (bổ sung) | Thay node flow "ghi theo suy luận" (v3.9) của `GetFilteredChildren`/`BuildFolderTreeRecursive`/`BuildComboFolderTreeNodes` bằng node flow THẬT (export K2Node) — kèm Local var đầy đủ + Q8 self-check mỗi hàm. Khác biệt nhỏ so với bản suy luận: `GetFilteredChildren` gọi 1 lần/child trong `BuildFolderTreeRecursive` (dùng chung cho `ChildCount`+`HasChildren`, không gọi 2 lần); node "(Gốc)" trong `BuildComboFolderTreeNodes` có `bIsLast=False` (không phải True như suy đoán trước). Test PASS thêm case `ExcludePath="Livingroom/Sofa"`, khớp 100%. Không đổi hành vi/kết luận đã ghi ở v3.9. |
+| 3.11 | 13/07/2026 — C5.8 Wire Move + Wire Save | `OnRequestMoveFolder`: `Dialog.InitPicker(Entries, ParentOf(FolderPath), True)` thay `PopulateRows`. `CB_MoveCombo`: `Dialog.InitPicker(Entries, MovingComboCurrentFolder, True)` thay `PopulateRows`. [BUG-FIX] cả 2 call site thực tế vẫn gọi `BuildMoveFolderTargetList` cũ (claim "Blueprint tự propagate" ở v3.9 SAI) — đã fix về `BuildComboFolderTreeNodes`, `BuildMoveFolderTargetList` xoá hẳn khỏi Blueprint. `OpenSaveComboDialog`: xoá `GetExistingFolders`/pin `ExistingFolders`; thêm Branch wire `Picker.SetFolders`/`bShowCurrentTag`/bind `OnRequestCreateFolder`→`HandleSaveDialogCreateFolder`+`Picker.OnRequestCommitRename`→`HandleSavePickerRenameCommitted`. 2 Custom Event mới: `HandleSaveDialogCreateFolder` (tạo folder rỗng qua `CreateEmptyFolder` → expand + `BeginRenameOnPath`), `HandleSavePickerRenameCommitted` (rename qua `RenameFolderPrefix`, KHÔNG gate theo Return Value — xem ghi chú C++). Var mới `SaveDlg_NewFolderPath`. Test PASS: S6a, S6c, M1-M6, Phần 2 test 1-2. |

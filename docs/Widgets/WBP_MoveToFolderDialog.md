@@ -1,12 +1,10 @@
 # WBP_MoveToFolderDialog
-**Phiên bản:** 1.0 | **Tạo:** 30/06/2026 — C5.4 Move Folder
+**Phiên bản:** 2.0 | **Tạo:** 30/06/2026 — C5.4 Move Folder | **Sửa:** 13/07/2026 — C5.8 Wire Move: thay `ScrollBox_FolderList`/`WBP_MoveFolderRow` bằng `WBP_FolderTreePicker`
 
 ---
 
 ## Tổng quan
-Dialog modal chọn folder cha đích khi move folder. List phẳng indent ảo (build từ WBP_MoveFolderRow), không dùng ComboBox/drag-drop (xung đột C4 drag behavior).
-
-> 🔲 **PLANNED (C5.8, chưa thực thi):** `ScrollBox_FolderList` (build từ `WBP_MoveFolderRow`) dự kiến thay bằng 1 `WBP_FolderTreePicker` full (guide line, search, expand/collapse) — `WBP_MoveFolderRow` superseded. Xem `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md` §5. Code/doc dưới đây CHƯA đổi — vẫn đúng hiện trạng.
+Dialog modal chọn folder cha đích khi move folder. Dùng `WBP_FolderTreePicker` (guide line, search, expand/collapse, inline rename) — thay `WBP_MoveFolderRow` (SUPERSEDED, không xoá file, đánh dấu tương tự pattern DA_FurnitureItem) + list phẳng `ScrollBox_FolderList` cũ.
 
 ## Layout
 ```
@@ -15,7 +13,7 @@ Canvas Panel
 └── Border_Content   (anchors center, ~420×480)
     └── Vertical Box
         ├── TextBlock_Title ("Chuyển vào folder")
-        ├── ScrollBox_FolderList
+        ├── Picker (WBP_FolderTreePicker)
         ├── Spacer
         └── Horizontal Box [BTN_Cancel, BTN_Confirm]
 ```
@@ -23,9 +21,9 @@ Canvas Panel
 ## Variables
 | Tên | Kiểu | Ghi chú |
 |---|---|---|
+| Picker | WBP_FolderTreePicker | Is Variable=✓ |
 | SelectedTargetPath | String | Path đang chọn |
 | bHasSelection | Boolean | False = chưa chọn gì, Confirm disabled |
-| CurrentSelectedRow | WBP_MoveFolderRow | Hard ref dòng đang chọn — SET None ở Event Destruct (R4) |
 
 ## Event Dispatchers
 ```
@@ -34,25 +32,21 @@ OnMoveFolderConfirmed(TargetParentPath : String)
 
 ## Functions
 
-### PopulateRows(Entries : Array\<S_FolderTreeNode\>)
-> `S_FolderTreeNode` — v3.9 rename của `S_FolderTargetEntry` (WBP_FurnitureInventory, C5.8 Task Card #1, 08/07). Struct auto-propagate tên mới qua rename, chưa đổi logic/layout của dialog này (C5.8 §5 — chờ Task Card #2).
+### InitPicker(Entries : Array\<S_FolderTreeNode\>, InCurrentPath : String, bInShowTag : Boolean)
 ```
-Clear Children(ScrollBox_FolderList)
-SET CurrentSelectedRow = None | bHasSelection = False
+SET Picker.CurrentPath = InCurrentPath
+SET Picker.bShowCurrentTag = bInShowTag
+Picker.ExpandToPath(InCurrentPath)
+Picker.SetFolders(Entries)
+SET SelectedTargetPath = "" | bHasSelection = False
 Set Is Enabled(BTN_Confirm, False)
-ForEach Entries:
-  Create Widget(WBP_MoveFolderRow) → Row
-  Row.SetRow(entry.Path, entry.DisplayLabel, entry.IndentLevel)
-  Bind Row.OnRowClicked → HandleRowSelected
-  Add Child(ScrollBox_FolderList, Row)
+Bind Picker.OnFolderSelected → HandlePickerFolderSelected
 ```
+> **[CEILING]** Bind đặt trong `InitPicker` (không phải Event Construct) — giả định 1 lần/instance. An toàn CHỈ KHI mỗi lần mở dialog là 1 instance mới (Create Widget mới, đúng hiện trạng). **trigger:** nếu sau này đổi sang tái dùng instance (gọi `InitPicker` nhiều lần/1 instance) → Bind sẽ chồng (double-fire) → phải dời sang Event Construct lúc đó. Xem `DEVIATIONS.md` 13/07/2026.
 
-### HandleRowSelected(TargetPath : String, RowWidget : WBP_MoveFolderRow) — Custom Event
+### HandlePickerFolderSelected(Path : String) — Custom Event
 ```
-IsValid(CurrentSelectedRow) True → CurrentSelectedRow.SetHighlight(False)
-[merge]
-SET CurrentSelectedRow = RowWidget | SelectedTargetPath = TargetPath | bHasSelection = True
-RowWidget.SetHighlight(True)
+SET SelectedTargetPath = Path | bHasSelection = True
 Set Is Enabled(BTN_Confirm, True)
 ```
 
@@ -69,11 +63,15 @@ Branch(bHasSelection)
           → Get Player Controller → Set Input Mode Game And UI → Remove from Parent
   False → dead-end (guard, lý thuyết không xảy ra vì nút disabled)
 ```
+`BTN_Confirm`/`BTN_Cancel` — giữ nguyên 100% so với v1.0.
 
 ### Event Destruct
-```
-SET CurrentSelectedRow = None
-```
+(Không còn hard ref cần clear — `CurrentSelectedRow` đã xoá cùng `ScrollBox_FolderList`/`WBP_MoveFolderRow` cũ.)
+
+---
+
+## Test PASS
+M1-M6 (Wire Move full flow, mirror REG A1-A2) — chi tiết xem `WBP_FolderTreePicker.md` §Test status.
 
 ---
 
@@ -81,3 +79,4 @@ SET CurrentSelectedRow = None
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 30/06/2026 | Khởi tạo — C5.4 Move Folder |
+| 2.0 | 13/07/2026 | **C5.8 Wire Move.** Xoá hẳn: `ScrollBox_FolderList`, `WBP_MoveFolderRow` reference, `PopulateRows`, `HandleRowSelected` (bản cũ của Dialog), var `CurrentSelectedRow`. Thêm: var `Picker : WBP_FolderTreePicker`; `InitPicker(Entries, InCurrentPath, bInShowTag)` (SET CurrentPath/bShowCurrentTag → ExpandToPath → SetFolders → reset selection → Bind OnFolderSelected); `HandlePickerFolderSelected` (Custom Event, thay `HandleRowSelected` cũ). `BTN_Confirm`/`BTN_Cancel` giữ nguyên 100%. `WBP_MoveFolderRow` SUPERSEDED (không xoá file). Test PASS: M1-M6. |

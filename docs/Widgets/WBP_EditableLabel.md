@@ -1,5 +1,5 @@
 # WBP_EditableLabel — Inline Rename Label
-**Phiên bản:** 1.0 | **Tạo:** 27/06/2026 | **Dùng bởi:** WBP_TreeNode (C5.2), WBP_ChipTag (C5.4+)
+**Phiên bản:** 1.1 | **Tạo:** 27/06/2026 | **Sửa:** 13/07/2026 — thêm `SetLabelColor` (C5.8 2d) | **Dùng bởi:** WBP_TreeNode (C5.2), WBP_ChipTag (C5.4+), WBP_FolderPickerRow (C5.8)
 
 ---
 
@@ -45,6 +45,12 @@ OnLabelRenameCommitted(NewName : String)
 ```
 Set Text(TextBlock_Label, To Text(NewText))
 ```
+
+### SetLabelColor(InColor : Slate Color) — MỚI 13/07/2026
+```
+▶ Set Color and Opacity(Target=TextBlock_Label, In Color and Opacity=InColor)
+```
+> `[CORRECTION]`: param type đúng là **Slate Color**, không phải Linear Color như patch gốc ghi — do `Set Color and Opacity` trên TextBlock (built-in UMG) khác API so với Image widget. Blueprint tự convert khi nối Linear Color var vào, không ảnh hưởng runtime.
 
 ### ValidateName(Candidate : String) → (bIsValid : Boolean, ErrorMsg : String) — Pure
 ```
@@ -117,3 +123,4 @@ Branch(bIsEditing):
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 27/06/2026 | Khởi tạo — C5.2 Inline Rename. Layout Overlay 3 con. ValidateName (empty/slash/dupe). EnterEditMode + Delay(0.0) focus. ExitEditMode guard bIsEditing. OnEditBoxCommitted Switch on ETextCommit. 3 bugs documented: Switch.Selection pin, Delay 0.0, Broadcast order. |
+| 1.1 | 13/07/2026 | C5.8 2d — thêm `SetLabelColor(InColor : Slate Color)` (relay cho `WBP_FolderPickerRow.SetSearchHighlight`, cách B: không đục thẳng widget con). `[CORRECTION]`: type đúng là Slate Color, không phải Linear Color như patch gốc giả định. |

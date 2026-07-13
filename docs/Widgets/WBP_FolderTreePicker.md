@@ -1,5 +1,5 @@
 # WBP_FolderTreePicker
-**Phiên bản:** 1.2 — ✅ DONE | **Tạo:** 11/07/2026 11:17 — C5.8 Task Card #2 Part B lần 1 | **Sửa:** 12/07/2026 16:03 — gỡ cờ ⚠️ SUY LUẬN `IsPathVisible` (K2Node export xác nhận, delta C5.8 Task Card #2 Giai đoạn 4)
+**Phiên bản:** 1.3 — ✅ DONE | **Tạo:** 11/07/2026 11:17 — C5.8 Task Card #2 Part B lần 1 | **Sửa:** 13/07/2026 — 2d Phần 2 (`BeginRenameOnPath`) + Card 1 (`ExpandToPath`, `CurrentPath`/`bShowCurrentTag`, `OnRequestCommitRename`) + bug fix `SetSelectedHighlight` so sai biến
 
 ---
 
@@ -25,10 +25,13 @@ VB_Picker
 | `bIsSearching` | Boolean | false | |
 | `SearchExpandOverride` | Array\<String\> | rỗng | tập force-expand lúc search, KHÔNG đụng ExpandedFolders |
 | `CurrentSearchFolder` | String | "" | Giai đoạn 2 (12/07) — class var, thay Local `QueryStr` cũ (`RefreshVisibleRows` không tự query widget, đọc lại biến này) |
+| `CurrentPath` | String | "" | MỚI 13/07 (Card 1) — path "hiện tại" (vd folder đang chứa combo đang move), dùng cho `SetCurrentTag` |
+| `bShowCurrentTag` | Boolean | false | MỚI 13/07 (Card 1) — bật/tắt hiển thị tag "hiện tại" (Save dialog không cần, Move dialog cần) |
 
 ## Event Dispatcher
 ```
-OnFolderSelected(Path : String)
+OnFolderSelected(Path : String)               ← đã có, xác nhận lại thật 13/07 (không còn ⚠️ SUY LUẬN)
+OnRequestCommitRename(OldPath : String, NewName : String)   ← MỚI 13/07 (Card 1)
 ```
 
 ## Functions
@@ -70,11 +73,16 @@ As-built export K2Node thật (cuhoang xác nhận PASS test mục 6-9 + bổ su
      Branch(bShow) True →
         Create Widget(WBP_FolderPickerRow) → Row
         Row.SetNode(node)
+        Row.SetCurrentTag( bShowCurrentTag AND (node.Path == CurrentPath) )       ← MỚI 13/07 (Card 1)
+        Row.SetSelectedHighlight( node.Path == SelectedPath )   ← MỚI 13/07, [BUG-FIX] TÁCH RIÊNG so sánh
+                                                                    (trước fix: dùng chung "===" với
+                                                                    nhánh CurrentTag, so nhầm CurrentPath)
         Branch(bIsSearching):
            True  → Row.SetExpanded(Array_Contains(ExpandedFolders,Path)) → Row.SetSearchHighlight(MatchBool)
            False → Row.SetExpanded(Array_Contains(ExpandedFolders,Path)) → Row.SetSearchHighlight(False)   ← wire cũ, giữ nguyên
         Bind Row.OnRowExpandClicked → HandleRowExpandClicked
         Bind Row.OnRowSelected → HandleRowSelected
+        Bind Row.OnRowRenameCommitted → HandleRowRenameCommitted   ← MỚI 13/07 (2d Phần 2), chỗ bind mỗi row đã có
         Add Child(SB_Rows, Row)
    Completed → hết hàm
 ```
@@ -114,6 +122,32 @@ Local var: `Segments : Array<String>`, `AccumPath : String`.
 ```
 Tìm dấu `/` CUỐI CÙNG (`Search from End=✓`, khác `Find` thường tìm từ đầu). Pure function vẫn dùng `Branch` — hợp lệ (không có exec pin ở Entry/Return, Branch chạy qua dependency chain của data pin).
 
+### `BeginRenameOnPath(Path : String, Siblings : Array<String>)` — Function MỚI (13/07, 2d Phần 2)
+Local: `Children`, `RowRef`, `bFound`
+```
+▶ SET Children = Get All Children(SB_Rows)
+▶ SET bFound = False
+▶ ForEachLoopWithBreak(Children):
+     Cast Element → WBP_FolderPickerRow → RowRef
+       Cast OK → Branch(RowRef.GetRowPath() == Path)
+                    True  → RowRef.EnterRenameMode(Siblings) → SET bFound=True → Break
+                    False → tiếp loop
+       Cast Failed → tiếp loop
+   Completed → Branch(NOT bFound) True → Print "không tìm thấy row" [DevelopmentOnly]
+```
+
+### `ExpandToPath(Path : String)` — Function MỚI (13/07, Card 1)
+Local: `Segments`, `AccumPath`
+```
+▶ ParseIntoArray(Path, "/", CullEmpty=✓) → SET Segments
+▶ SET AccumPath = ""
+▶ ForLoop(0 → Segments.LastIndex):        ← chạy TỚI HẾT (khác BuildSearchOverride n-2, chủ đích)
+     Branch(Index==0) True→ AccumPath=Segments[0]
+                      False→ AccumPath=Concat(AccumPath,"/",Segments[Index])
+     [merge] → Array_AddUnique(ExpandedFolders, AccumPath)
+Completed → hết (KHÔNG tự gọi RefreshVisibleRows — caller quyết định)
+```
+
 ### `SetFolders(Nodes)` — SỬA (bug đã fix, ghi lesson)
 Thân 2a cũ (tự loop tạo row) → thay bằng:
 ```
@@ -122,11 +156,21 @@ Thân 2a cũ (tự loop tạo row) → thay bằng:
 ```
 **Bug lesson:** Sonnet quên nhắc sửa theo bước 4e task card → breakpoint không fire. Phát hiện + fix bởi cuhoang, verify Print `IsPathVisible` PASS.
 
-## Custom Events (DONE, ⚠️ SUY LUẬN theo §5 task card)
+## Custom Events
 ```
-HandleRowExpandClicked(Path): Branch(Array_Contains(ExpandedFolders,Path))
+HandleRowExpandClicked(Path): Branch(Array_Contains(ExpandedFolders,Path))    ⚠️ SUY LUẬN theo §5 task card
    True→Remove Item · False→Add Unique · [merge] → RefreshVisibleRows()
-HandleRowSelected(Path): SET SelectedPath=Path → Broadcast OnFolderSelected(Path)
+
+HandleRowSelected(Path) — xác nhận thật 13/07, xoá cờ ⚠️ SUY LUẬN:
+  ▶ SET SelectedPath = Path
+  ▶ RefreshVisibleRows()
+  ▶ Broadcast OnFolderSelected(Path)
+```
+Thứ tự bắt buộc: `RefreshVisibleRows` TRƯỚC `Broadcast` — caller nhận event khi UI đã render highlight xong.
+
+### `HandleRowRenameCommitted(Path, NewName)` — Custom Event MỚI (bound, 13/07, 2d Phần 2)
+```
+▶ Broadcast OnRequestCommitRename(Path, NewName)
 ```
 
 ## Events — BTN_ExpandAll / BTN_CollapseAll (DONE, Giai đoạn 1, 11/07)
@@ -157,13 +201,22 @@ BoundEvent(Text)
 Ghi chú as-built: `Conv_TextToString(Text)` gọi 2 lần độc lập (1 cho `SET CurrentSearchFolder`, 1 cho `Trim`) — cùng input `Text` từ delegate pin, không phải bug, chỉ 2 pure node riêng thay vì dùng chung 1 local var trung gian. Không ảnh hưởng hành vi.
 
 ## Chưa build
-`2d — rename host` (xem `02_Current_Sprint.md`). `PathMatchesQuery` · `BuildSearchOverride` · nhánh search trong `RefreshVisibleRows` · `SB_SearchFolder.OnSearchTextChanged` · `GetParentPath` — đều đã DONE (Giai đoạn 2).
+(Không còn — `2d — rename host` DONE 13/07: `BeginRenameOnPath` + `ExpandToPath` + Card 1. `PathMatchesQuery` · `BuildSearchOverride` · nhánh search trong `RefreshVisibleRows` · `SB_SearchFolder.OnSearchTextChanged` · `GetParentPath` — đều đã DONE (Giai đoạn 2).)
 
 ## Test status
 Mục 1-5 PASS (Giai đoạn 1, xác nhận 11/07).
 Mục 6 (search "sofa" → chỉ đường Livingroom→Sofa hiện, Sofa highlight vàng), 7 (search "com" → mọi đường tới node khớp hiện, mỗi match highlight riêng), 8/6A (xóa query → về đúng state expand trước search), 9 (search "zzz" → SB_Rows trống, không crash) — PASS (Giai đoạn 2, 12/07).
 Bổ sung: click arrow node đang match trong lúc search → lộ con — PASS (sau fix bug 2.3/2.4).
-Mục 10 (click tên → SelectedPath đúng, UI không đổi; click arrow → không fire OnFolderSelected) — PASS (Giai đoạn 3, 12/07).
+Mục 10 (click tên → SelectedPath đúng, UI PHẢI đổi highlight xanh — [SCOPE] kỳ vọng test cũ "UI không đổi" SUPERSEDED sau Card 1; click arrow → không fire OnFolderSelected) — PASS (Giai đoạn 3, 12/07 + xác nhận lại 13/07).
+
+**13/07 (2d + Card 1):**
+```
+Phần 2 test 1, 2 (BeginRenameOnPath tìm đúng row + commit qua Picker)   ✅
+Test 6 (path không tồn tại) — CHƯA TEST, rủi ro thấp, defer
+M1-M6 (Wire Move full flow, mirror REG A1-A2)                            ✅ tất cả PASS
+  M3 lúc đầu FAIL (highlight sai biến) → fix → PASS lần 2
+0.3 hồi quy hiển thị (ExpandAll/CollapseAll + expand/collapse lẻ)       ✅
+```
 
 ---
 
@@ -174,3 +227,4 @@ Mục 10 (click tên → SelectedPath đúng, UI không đổi; click arrow → 
 | 1.0 | 11/07/2026 13:14 | Giai đoạn 1 DONE — thêm 2 handler mới `BTN_ExpandAll`/`BTN_CollapseAll.OnClicked` (nối thẳng, không Custom Event trung gian). Cập nhật "Chưa build" (bỏ ExpandAll/CollapseAll — đã DONE). Test status: mục 1-5 PASS (expand/collapse + Mở tất cả/Thu gọn + nhớ state con cháu, 6A xác nhận); mục 6-10 chưa chạy (Giai đoạn 2 — search). |
 | 1.1 | 12/07/2026 10:40 | Giai đoạn 2 (Search) + Giai đoạn 3 (Select) DONE. Thêm 3 Function mới: `PathMatchesQuery` (Pure), `BuildSearchOverride`, `GetParentPath` (Pure, hỗ trợ bug 2.3). `RefreshVisibleRows` ghép xong nhánh search (as-built thật, không còn ⚠️ SUY LUẬN) — `SetExpanded` bỏ hardcode `True`, dùng chung công thức `Array_Contains(ExpandedFolders,Path)` cả 2 nhánh. Thêm Event `SB_SearchFolder.OnSearchTextChanged`. Thêm class var `CurrentSearchFolder` (thay Local `QueryStr`). Bug fix: 2.1 (`PathMatchesQuery` dùng `DisplayLabel` thay `Path` đầy đủ), 2.3 (`bShow` thêm điều kiện qua `GetParentPath` để lộ con khi manual-expand trong lúc search). Test mục 1-10 PASS hết. |
 | 1.2 | 12/07/2026 16:03 | Giai đoạn 4 (Chốt sổ) — gỡ cờ ⚠️ SUY LUẬN của `IsPathVisible`: thay bằng node flow as-built đầy đủ (K2Node export xác nhận). Loop = `ForEachLoopWithBreak` (thoát sớm khi gặp tổ tiên chưa mở), `CurrentPrefix` build tích lũy qua từng segment, bỏ qua segment cuối (chính node). Không đổi hành vi — chỉ hoàn thiện tài liệu. |
+| 1.3 | 13/07/2026 | **2d Phần 2 (rename host) + Card 1 (current tag/select) DONE.** Var mới `CurrentPath`/`bShowCurrentTag`. Dispatcher mới `OnRequestCommitRename`; `OnFolderSelected` xác nhận thật (gỡ cờ SUY LUẬN). Function mới `BeginRenameOnPath` (tìm row qua `GetRowPath()`, gọi `EnterRenameMode`) + `ExpandToPath` (Card 1, chạy hết mảng — khác `BuildSearchOverride`). `RefreshVisibleRows`: thêm `Row.SetCurrentTag`/`Row.SetSelectedHighlight` ngay sau `SetNode`, thêm bind `Row.OnRowRenameCommitted`→`HandleRowRenameCommitted`. `HandleRowSelected`: xác nhận thật + thêm `RefreshVisibleRows()` TRƯỚC `Broadcast`. Custom Event mới `HandleRowRenameCommitted` (relay `OnRequestCommitRename`). [BUG-FIX] `SetSelectedHighlight` trước đó so sai biến (dùng chung so sánh với nhánh CurrentTag) — tách riêng so với `SelectedPath`. Test PASS: Phần 2 (1,2), M1-M6, 0.3. Xóa "Chưa build". |

@@ -1,25 +1,23 @@
 # WBP_SaveComboDialog — Dialog Lưu Combo
-**Version:** 1.0 | **Ngày:** 24/06/2026 | **Widget BP — dialog async nhập tên/folder/tags khi lưu combo**
+**Version:** 2.0 | **Ngày:** 24/06/2026 | **Sửa:** 13/07/2026 — C5.8 Wire Save: thay field Folder cũ bằng `WBP_FolderTreePicker` + `BTN_AddFolder` | **Widget BP — dialog async nhập tên/folder/tags khi lưu combo**
 
 ## Mục đích
 Dialog nhập thông tin trước khi lưu combo. Thay hardcode "MyCombo" tạm (C3b). Async — đóng băng selection trước khi mở.
 
-> 🔲 **PLANNED (C5.8, chưa thực thi):** field Folder (`CMB_Folder`+`BTN_NewFolder`+`TextBox_FolderPath`, `bIsCreatingNewFolder`, `ExistingFolders`) dự kiến thay bằng 1 `WBP_FolderTreePicker` compact + nút "+" (inline create qua dispatcher `OnRequestCreateFolder`). Xem `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md` §5, §6. Code/doc dưới đây CHƯA đổi — vẫn đúng hiện trạng.
-
 ## Expose on Spawn
 | Tên | Kiểu | Vai trò |
 |-----|------|---------|
-| ExistingFolders | Array String | Folder có sẵn → nguồn cho CMB_Folder |
 | TagVocabulary | Array String | Tags đã dùng → nguồn gợi ý (autocomplete defer) |
 
 ## Class Variables
 | Tên | Kiểu | Vai trò |
 |-----|------|---------|
-| bIsCreatingNewFolder | Boolean | True khi user đang nhập folder mới thay chọn dropdown |
+| Picker | WBP_FolderTreePicker | Is Variable=✓ — picker compact chọn folder lưu |
 
 ## Event Dispatchers (public)
 - `OnDialogConfirmed(ComboName : String, FolderPath : String, Description : String, Tags : Array String)` — broadcast khi BTN_Confirm, trước Remove from Parent.
 - `OnDialogCancelled()` — broadcast khi BTN_Cancel.
+- `OnRequestCreateFolder(ParentPath : String)` — MỚI 13/07 — broadcast khi BTN_AddFolder.OnClicked.
 
 ## Layout
 ```
@@ -36,10 +34,8 @@ CanvasPanel (root — Anchors Fill, Hit-Test Invisible để block click xuyên)
                 │   └── TextBox_ComboName (placeholder "Nhập tên...")
                 ├── VB_Field_Folder
                 │   ├── TextBlock "Folder"
-                │   └── HB_Folder_Row
-                │       ├── CMB_Folder (ComboBox String, chiếm không gian còn lại)
-                │       └── BTN_NewFolder (text TXT_NewFolderBtn = "+ Tạo mới")
-                │   └── TextBox_FolderPath (Collapsed mặc định, placeholder "vd: Phòng khách/Ghế")
+                │   ├── SizeBox (~180px cao) → Picker (WBP_FolderTreePicker, compact)
+                │   └── BTN_AddFolder (text "+ Thư mục mới")
                 ├── VB_Field_Description
                 │   ├── TextBlock "Mô tả"
                 │   └── TextBox_Description_MultiLine (multi-line, 3 dòng)
@@ -55,13 +51,10 @@ CanvasPanel (root — Anchors Fill, Hit-Test Invisible để block click xuyên)
 
 ## Event Construct
 ```
-CLEAR Options CMB_Folder
-ForEach ExistingFolders:
-  Loop Body → Add Option(CMB_Folder, ArrayElement)
-Completed:
-  Set Is Enabled(BTN_Confirm, false)    ← tên rỗng → không confirm
-  Bind OnTextChanged(TextBox_ComboName) → ValidateComboName
+Set Is Enabled(BTN_Confirm, false)    ← tên rỗng → không confirm
+Bind OnTextChanged(TextBox_ComboName) → ValidateComboName
 ```
+> **13/07:** xoá đoạn cũ `CLEAR Options CMB_Folder` + `ForEach ExistingFolders → Add Option` — `CMB_Folder` không còn tồn tại. Folder data giờ nạp từ ngoài qua `Picker.SetFolders(Entries)` (gọi từ `WBP_FurnitureInventory.OpenSaveComboDialog`), không tự load trong Construct.
 
 ## Functions
 
@@ -89,19 +82,9 @@ Completed → Return(Tags = ResultArray)
 
 ## Button Handlers
 
-### BTN_NewFolder — OnClicked
+### BTN_AddFolder — OnClicked (MỚI 13/07, thay BTN_NewFolder cũ)
 ```
-SET bIsCreatingNewFolder = NOT bIsCreatingNewFolder
-Branch bIsCreatingNewFolder:
-  True:
-    Set Visibility(CMB_Folder, Collapsed)
-    Set Visibility(TextBox_FolderPath, Visible)
-    Set Text(TextBox_FolderPath, "")
-    Set Text(TXT_NewFolderBtn, "✕ Huỷ")
-  False:
-    Set Visibility(CMB_Folder, Visible)
-    Set Visibility(TextBox_FolderPath, Collapsed)
-    Set Text(TXT_NewFolderBtn, "+ Tạo mới")
+Broadcast OnRequestCreateFolder(Picker.SelectedPath)
 ```
 
 ### BTN_Cancel — OnClicked
@@ -116,17 +99,21 @@ Local: TempName (String), TempDesc (String), TempFolder (String), TempTags (Arra
 GET Text(TextBox_ComboName) → ToString → SET TempName
 GET Text(TextBox_Description_MultiLine) → ToString → SET TempDesc
 GET Text(TextBox_Tags) → ToString → ParseTags → SET TempTags
-Branch bIsCreatingNewFolder:
-  True  → GET Text(TextBox_FolderPath) → ToString → Trim → SET TempFolder
-  False → Get Selected Option(CMB_Folder) → SET TempFolder
+GET Picker.SelectedPath → SET TempFolder            ← 13/07: thay nhánh Branch bIsCreatingNewFolder cũ
 Broadcast OnDialogConfirmed(TempName, TempFolder, TempDesc, TempTags)
 Remove from Parent
 ```
 
+`TagVocabulary`, field Name/Description/Tags, `ValidateComboName`, `ParseTags` — giữ nguyên.
+
 ## Event Destruct
 (Không có ref hard cần clear trực tiếp — R4 OK. Ref dialog giữ ở WBP_FurnitureInventory.SaveComboDialogRef, clear ở OnSaveComboDialogClosed.)
+
+## Test PASS: S6a, S6c
+## Test [SCOPE — không áp dụng]: S6b (context-menu rename không tồn tại theo thiết kế 2d)
 
 ## Lịch sử cập nhật
 | Ngày | Version | Nội dung |
 |------|---------|----------|
 | 24/06/2026 | 1.0 | Tạo mới — C3b: dialog async lưu combo (ExistingFolders, TagVocabulary, bIsCreatingNewFolder, 2 dispatcher, ValidateComboName, ParseTags, BTN_NewFolder/Cancel/Confirm) |
+| 13/07/2026 | 2.0 | **C5.8 Wire Save.** Xoá hẳn: `CMB_Folder`, `BTN_NewFolder`, `TextBox_FolderPath`, `HB_Folder_Row`, var `bIsCreatingNewFolder`, pin `ExistingFolders` (Expose on Spawn), đoạn Event Construct cũ (CLEAR Options + ForEach ExistingFolders). Thêm: var `Picker : WBP_FolderTreePicker` (SizeBox ~180px, compact); `BTN_AddFolder` (text "+ Thư mục mới"); dispatcher `OnRequestCreateFolder(ParentPath)`; `BTN_AddFolder.OnClicked` broadcast `OnRequestCreateFolder(Picker.SelectedPath)`; `BTN_Confirm` đổi nhánh folder sang `GET Picker.SelectedPath`. `TagVocabulary`/field Name-Description-Tags/`ValidateComboName`/`ParseTags` giữ nguyên. Test PASS: S6a, S6c. S6b [SCOPE — không áp dụng]. |
