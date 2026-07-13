@@ -1,6 +1,6 @@
 # Open Bugs — Bugs đang mở
 **Tạo từ:** `00_Core/DEVIATIONS.md` (mục BUGS DEFERRED) + `00_Core/01_Session_State.md` (BUG CÒN MỞ) + `00_Core/02_Current_Sprint.md` (bối cảnh Gate 1)
-**Cập nhật:** 17/06/2026 — Sprint D.T6
+**Cập nhật:** 13/07/2026 — REG C5.8 (2 bug mới: Bug-SaveConfirm-EmptyName, Bug-MoveFolder-Collision)
 
 ---
 
@@ -15,6 +15,8 @@
 | Bug-Pagination | ✅ FIXED (17/06, D.T9) — Furniture pagination dừng ở 7/8 thay vì 8/8 | — | Xem WBP_FurnitureInventory.md v2.6, mục Pagination |
 | Bug-Maximize | ✅ FIXED (17/06, D.T9) — BTN_Maximize không nhảy về góc trên-trái | — | Xem WBP_ResizeWindow.md v1.1 |
 | K3 | SpawnFurnitureCopy gọi AddRecentMesh unconditional → spawn combo nhồi 20 mesh lẻ vào Recent + mỗi Undo cũng nhồi | 🟡 Trung bình | Planned — Sprint 5, áp lúc đụng C2/RestoreSnapshot. Fix: param bAddToRecent |
+| Bug-SaveConfirm-EmptyName | WBP_SaveComboDialog: BTN_Confirm không disable khi tên combo trống nếu user chưa gõ gì | 🟡 Trung bình-Thấp | Phát hiện REG C5.8 khối A6 (13/07) — ngoài scope C5.8, chưa fix |
+| Bug-MoveFolder-Collision | Move Folder: không check trùng tên khi đích đã có con cùng tên với folder đang move | 🟡 Trung bình | Phát hiện REG C5.8 khối A7 (13/07) — backlog, task riêng ngoài scope C5.8 |
 
 ---
 
@@ -228,6 +230,48 @@ Thêm `Set Position` vào cùng node `Slot as Canvas Slot(VerticalBox_0)` đang 
 
 ### Trạng thái
 - **Planned.** Áp lúc đụng C2/RestoreSnapshot trong Sprint 5.
+
+---
+
+## Bug-SaveConfirm-EmptyName — BTN_Confirm Save dialog không disable khi tên trống chưa gõ gì
+
+**ID:** Bug-SaveConfirm-EmptyName
+**Phát hiện:** REG C5.8 khối A6, 13/07/2026
+**Ưu tiên:** 🟡 Trung bình-Thấp
+
+### Triệu chứng
+`WBP_SaveComboDialog`: nếu user CHƯA gõ gì vào ô tên combo (chỉ để trống từ đầu), `BTN_Confirm` vẫn Enabled — save được combo không tên.
+
+### Root Cause
+`ValidateComboName` chỉ bind vào `OnTextChanged(TextBox_ComboName)` — không tự chạy ở Event Construct. Nếu user không gõ gì, hàm chưa từng được gọi → `BTN_Confirm` giữ trạng thái mặc định Designer (Enabled=True).
+
+Bug có sẵn từ C3b (24/06/2026) — KHÔNG phải do Wire Save C5.8, chỉ mới lộ ra lúc test REG.
+
+### Fix đề xuất
+Gọi `ValidateComboName` (hoặc `Set Is Enabled(BTN_Confirm, false)` trực tiếp) ngay trong Event Construct, không chỉ chờ `OnTextChanged`.
+
+### Trạng thái
+- **Open.** Ngoài scope C5.8 — không sửa trong đợt này.
+
+---
+
+## Bug-MoveFolder-Collision — Move Folder không check trùng tên khi đích đã có con cùng tên
+
+**ID:** Bug-MoveFolder-Collision
+**Phát hiện:** REG C5.8 khối A7, 13/07/2026
+**Ưu tiên:** 🟡 Trung bình
+
+### Triệu chứng
+Move folder tới đích mà đích đã có sẵn 1 con cùng tên với folder đang move — không có cảnh báo/chặn.
+
+### Root Cause
+`RenameFolderPrefix` (C++) không validate collision trước khi ghi path mới — nếu 2 path cuối cùng trùng nhau sau move, dữ liệu combo/folder có thể chồng lẫn trong `Folders.json` / file combo `.json` (chưa rõ mức độ hỏng — cần điều tra thêm nếu ưu tiên làm sớm).
+
+### Fix đề xuất (backlog, task riêng)
+Validate collision (ở Blueprint trước khi gọi `RenameFolderPrefix`, hoặc thêm check trong chính hàm C++) + UX báo lỗi cho user (toast "đã tồn tại folder cùng tên" hoặc auto-merge). Ngoài scope C5.8 — component chỉ hiển thị/chọn, không có logic validate move.
+
+### Trạng thái
+- **Open / Backlog.** Data integrity risk nhưng case hiếm (cần cùng tên folder ở 2 nhánh khác nhau của cây). Ngoài scope C5.8.
 
 ---
 

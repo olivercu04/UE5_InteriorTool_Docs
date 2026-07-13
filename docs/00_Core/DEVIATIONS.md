@@ -467,6 +467,16 @@ Dùng `EnabledState=DevelopmentOnly` (property node, tự strip khỏi Shipping 
 
 ---
 
+## SPRINT 5 — 13/07/2026 (REG) — C5.8 Chốt sổ (Khối A/B/C/D)
+
+### [CLARIFICATION] A1 (REG Task Card gốc) mô tả nhầm case
+Task card gốc viết A1 = "right-click combo → folder chứa nó bị loại khỏi cây" — đây thực ra là mô tả hành vi của MOVE FOLDER (`OnRequestMoveFolder`), không phải MOVE COMBO (`CB_MoveCombo`). 2 nhánh khác nhau theo đúng thiết kế Wire Move đã build: Move FOLDER — `ExcludePath` = chính nó+con cháu → BỊ LOẠI, tag "hiện tại" → trên CHA. Move COMBO — `ExcludePath` = "" → KHÔNG loại gì, tag "hiện tại" → trên chính folder đang chứa combo đó. Test bằng right-click combo cho kết quả ĐÚNG theo nhánh Move Combo (không loại + tag đúng vị trí). Nhánh Move Folder đã verify đúng ở lần test khác trong session (di chuyển "New Folder(2)"). Không sửa code — chỉ đính chính wording task card.
+
+### [SCOPE] Save dialog không live-sync sang cây inventory đang mở phía sau
+Tạo/rename folder trong Save dialog KHÔNG tự đẩy cập nhật sang cây inventory chính nếu đang mở đồng thời (bị dialog che) — ĐÚNG THEO THIẾT KẾ (Wire_ExecutionPlan Bước 4/5: "KHÔNG gọi `RefreshComboFolderUI` ở 2 handler — nó refresh cây inventory đang bị che, không phải picker"). Cây inventory tự đồng bộ ở lần load/refresh tự nhiên tiếp theo (đổi tab, mở lại app). Phát hiện REG khối B4, 13/07/2026 — không phải bug. Nếu cần live-sync 2 chiều sau này → task riêng, ngoài scope C5.8.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -532,3 +542,5 @@ Dùng `EnabledState=DevelopmentOnly` (property node, tự strip khỏi Shipping 
 | 11/07/2026 13:14 | Thêm section "SPRINT 5 — 11/07/2026 (tiếp) — C5.8 Task Card #2 Part B, Giai đoạn 1": [BUG-FIX] `SetNode` thiếu `SET RowNode = Node` (root cause bug #2); [BUG-FIX] `BTN_Arrow` không đồng bộ Visibility với `TXT_Arrow`; [DOC-FIX] FixPlan v1.1 đính chính SAI về Custom Event trung gian — export K2Node thật xác nhận nối THẲNG (đảo ngược lại entry [DOC-FIX] 11/07/2026 trước đó). |
 | 12/07/2026 10:40 | Thêm section "SPRINT 5 — 12/07/2026 — C5.8 Task Card #2 Giai đoạn 2+3": [BUG] `PathMatchesQuery` dùng nhầm `node.Path` thay vì `node.DisplayLabel` (substring match nhầm con); [ARCH] `CurrentSearchFolder` đổi Local→Class Variable (`Get Initial Text` trả rỗng); [BUG] arrow-click trong lúc search không lộ con — thêm `GetParentPath` + điều kiện `bShow` + bỏ hardcode `SetExpanded`; [ARCH] `GetParentPath` function mới ngoài plan gốc; [SCOPE] Select (mục 10) không cần sửa gì, chỉ verify. |
 | 12/07/2026 15:30 | Thêm dòng vào section "SPRINT 5 — 12/07/2026 — C5.8 Task Card #2 Giai đoạn 2+3": [SCOPE] Bỏ Print debug gate bằng `bDebugMode` (FixPlan mục 1) — dùng breakpoint/watch pin (UE5 built-in) thay thế, thêm biến+Branch riêng cho từng Print là thừa so với lợi ích ở quy mô hiện tại. |
+| 13/07/2026 | Thêm section "SPRINT 5 — 13/07/2026 — C5.8 2d (rename host) + Wire Move + Wire Save": 8 entry (2 [BUG-FIX] BuildMoveFolderTargetList sót call site + SetSelectedHighlight sai biến, 1 [CORRECTION] SetLabelColor Slate Color, 3 [SCOPE] rename context-menu không tồn tại/test TC#2 SUPERSEDED/6A Create Folder chấp nhận, 1 [CEILING] Bind OnFolderSelected 1 lần/instance, 1 [CLEANUP] Print debug DevelopmentOnly). |
+| 13/07/2026 (REG) | Thêm section "SPRINT 5 — 13/07/2026 (REG) — C5.8 Chốt sổ (Khối A/B/C/D)": [CLARIFICATION] A1 REG Task Card mô tả nhầm case Move Folder/Move Combo (không sửa code, chỉ đính chính wording); [SCOPE] Save dialog không live-sync sang cây inventory đang mở phía sau (đúng thiết kế, không phải bug). REG PASS toàn bộ Khối A/B/C, D5 comprehension check PASS — **C5.8 CHÍNH THỨC DONE**, mở khóa C9. |

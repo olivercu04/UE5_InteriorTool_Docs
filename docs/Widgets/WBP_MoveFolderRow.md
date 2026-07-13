@@ -1,12 +1,12 @@
 # WBP_MoveFolderRow
-**Phiên bản:** 1.0 | **Tạo:** 30/06/2026 — C5.4 Move Folder
+**Phiên bản:** 1.0 | **Tạo:** 30/06/2026 — C5.4 Move Folder | **[SUPERSEDED]** 13/07/2026 — thay bởi `WBP_FolderPickerRow` (C5.8)
 
 ---
 
-## Tổng quan
-1 dòng trong danh sách chọn folder đích của WBP_MoveToFolderDialog. Thụt lề theo cấp, click để chọn, highlight khi đang chọn. Pattern tương tự WBP_ContextMenuItem.
+> ⚠️ **[SUPERSEDED]** — Xác nhận 13/07/2026 (REG C5.8 mục 7): không còn `Create Widget(WBP_MoveFolderRow)` ở đâu trong `WBP_FurnitureInventory` (`BuildMoveFolderTargetList` — nơi duy nhất từng dùng — đã xoá hẳn). `WBP_MoveToFolderDialog` nay dùng `WBP_FolderTreePicker`. File này KHÔNG xoá (giữ tham chiếu lịch sử, pattern giống DA_FurnitureItem).
 
-> 🔲 **[SUPERSEDED-candidate] (C5.8, chưa thực thi):** dự kiến thay bằng `WBP_FolderPickerRow` (mới, host `WBP_EditableLabel` + guide line + badge). Xem `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md` §4. Widget này CHƯA đổi/xóa — vẫn đang chạy.
+## Tổng quan
+1 dòng trong danh sách chọn folder đích của WBP_MoveToFolderDialog (bản CŨ, trước C5.8). Thụt lề theo cấp, click để chọn, highlight khi đang chọn. Pattern tương tự WBP_ContextMenuItem.
 
 ## Layout
 ```
@@ -50,3 +50,4 @@ Branch(bSelected)
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 30/06/2026 | Khởi tạo — C5.4 Move Folder |
+| — | 13/07/2026 | [SUPERSEDED] — không xoá file. Xác nhận qua REG C5.8: không còn call site nào dùng widget này. |
