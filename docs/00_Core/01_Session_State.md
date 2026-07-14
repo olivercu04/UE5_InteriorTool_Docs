@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 14/07/2026 — **P1 Combo Thumbnail Gate G0-R DONE** — capture đổi kiến trúc latent Begin/Finish (xem mục P1) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
+**Phiên bản:** 14/07/2026 — **P1 Combo Thumbnail Gate G1 DONE** — `LoadComboThumbnail` hoàn chỉnh, chuyển sang G2 (xem mục P1) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
 
 ---
 
@@ -178,11 +178,15 @@
 
 Gate G0-R: DONE (14/07/2026) — one-shot capture (G0 gốc) bị loại bỏ do ảnh xám phẳng (Lumen/TAA chưa hội tụ). Đổi kiến trúc sang Begin/Finish + Delay latent (xem `DEVIATIONS.md` [ARCH] 14/07/2026). Test debug bằng phím T trong `BP_ComboManager`, Delay warm-up thử 0.5s (chưa đủ, còn tối) → 3s/6s/10s (đẹp, khác biệt không đáng kể). Chốt tạm 3.0s cho gate này — số chính xác dời sang G4 (lúc wire thật vào UX Save Combo, đánh giá bằng cảm giác thật thay vì đoán).
 
+Gate G1: DONE (14/07/2026) — `LoadComboThumbnail` thân hàm đầy đủ (đọc PNG từ đĩa → `IImageWrapper` `SetCompressed` → `GetRaw` BGRA8 → optional `FImageUtils::ImageResize` xuống `MaxSize` → `UTexture2D::CreateTransient` + memcpy vào Mip 0). Build PASS, test phím Y độc lập (tách khỏi phím T capture) → "G1 Load OK, size=256" đúng kỳ vọng.
+
+Thêm dependency module `ImageCore` vào `FurnitureToolkit.Build.cs` (cần cho `FImageUtils::ImageResize`) + include mới trong `ComboThumbnail.cpp`: `"Engine/Texture2D.h"`, `"ImageUtils.h"`.
+
 2 điểm đã quan sát, KHÔNG phải bug, xử ở gate sau:
 - Ảnh hơi sharpen quá đà / chưa mịn — nghi do capture ở resolution native, không qua TSR như viewport chính. Xử ở G2 (tinh chỉnh PostProcessSettings) cùng lúc chỉnh khung hình.
 - Góc chụp hiện là "camera lúc bấm nút", chưa auto-fit theo bounding box combo — đúng dự kiến G0, G2 mới thay bằng FitRatio.
 
-Tiếp theo: G1 — đọc PNG → Texture2D (thay thân `LoadComboThumbnail`, hiện đang stub `return nullptr`).
+Tiếp theo: G2 — auto-fit khung hình theo bounding box (FitRatio) + ẩn gizmo/outline lúc capture + tinh chỉnh sharpen/PostProcess (ảnh G0-R hơi sharpen quá đà, nghi do capture ở resolution native không qua TSR).
 
 **Roadmap v3.3 (chia 3 giai đoạn — scope phình to sau 23/06):**
 ```
@@ -256,3 +260,4 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 14/07/2026 | **P1 Combo Thumbnail — Gate G0-R DONE.** One-shot capture (G0 gốc) loại bỏ do ảnh xám phẳng — Lumen GI/TAA/auto-exposure cần nhiều frame thật mới hội tụ, camera phụ vừa spawn chụp 1 frame không đủ. Đổi kiến trúc: `BeginComboCapture`/`FinishComboCapture` bọc bởi Custom Event dùng `Delay` latent (L8), thay `CaptureComboThumbnail` đồng bộ cũ (giữ `[LEGACY]`, không xóa/gọi). Test debug phím T trong `BP_ComboManager` — Delay warm-up 0.5s chưa đủ, 3s/6s/10s đều đẹp, chốt tạm 3.0s (số chính xác dời G4). Ảnh hưởng: Save Combo có thêm độ trễ latent, Broadcast dời xuống SAU FinishComboCapture, capture fail vẫn Broadcast (fallback icon 🧩). `.h` bị đụng lần 2 (chấp nhận). Tiếp theo: G1 (đọc PNG→Texture2D, thay stub `LoadComboThumbnail`). |
 | 14/07/2026 (dọn nợ) | **Dọn stale content C5.8 trong `## TIẾP THEO`** (đã báo 2 lần ở các lần phân phối trước, cuhoang xác nhận gộp dọn cùng lúc P1, KHÔNG thuộc nội dung delta P1 gốc): block prose "C5.8 — Folder Tree Picker Unify" (dòng cạnh mục P1) và dòng trong Roadmap v3.3 ASCII (Giai đoạn 2) sửa từ 🔄 IN PROGRESS (mô tả trạng thái 11/07, đã lỗi thời) → ✅ DONE (13/07/2026, REG PASS) — khớp với changelog 13/07/2026 (REG) đã ghi trước đó. |
 | 14/07/2026 (roadmap reorder) | **Sửa thứ tự + trạng thái Roadmap v3.3** (theo yêu cầu cuhoang): C4 và C8 sửa ⏳→✅ DONE (đã xong từ 25/06 và 24/06, marker cũ sai/lỗi thời). Dòng "C5 — Folder tree tab 🧩 Combo" viết lại thành "C5 — Folder Management đầy đủ... TOÀN BỘ HOÀN TẤT" (khớp phát biểu C5 đã dùng ở mục TIẾP THEO). **Dời C5.8** từ cuối Giai đoạn 2 → ngay sau C5 trong Giai đoạn 1 — khớp đúng ghi chú gốc "chốt slot NGAY SAU C5, TRƯỚC C9" (trước đó bị đặt sai chỗ, nằm sau cả WBP_Toast/C8/Xoay combo). Thumbnail System (P1) gắn nhãn "ĐANG LÀM" khớp `02_Current_Sprint.md`. |
+| 14/07/2026 (P1 G1) | **P1 Combo Thumbnail — Gate G1 DONE.** `LoadComboThumbnail` thân hàm đầy đủ: đọc PNG từ đĩa → `IImageWrapper` `SetCompressed`/`GetRaw` BGRA8 → optional `FImageUtils::ImageResize` xuống `MaxSize` → `UTexture2D::CreateTransient` + memcpy Mip 0. Build PASS, test phím Y (tách riêng khỏi phím T capture) → "G1 Load OK, size=256" đúng kỳ vọng. Thêm module `ImageCore` vào `FurnitureToolkit.Build.cs` + include `Engine/Texture2D.h`/`ImageUtils.h` trong `ComboThumbnail.cpp` — bắt buộc để build, KHÔNG phải deviation kiến trúc (đúng plan gốc). Tiếp theo: G2 (auto-fit FitRatio + ẩn gizmo/outline lúc capture + tinh chỉnh sharpen/PostProcess). |

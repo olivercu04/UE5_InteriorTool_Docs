@@ -85,7 +85,7 @@ static TArray<FString> GetAllFolderPaths();
 
 ---
 
-## Class: UComboThumbnail (P1, MỚI 14/07/2026 — Gate G0-R)
+## Class: UComboThumbnail (P1, MỚI 14/07/2026 — Gate G0-R + G1 DONE)
 **Plugin:** FurnitureToolkit | **Files:** `ComboThumbnail.h` (chưa có `.cpp`) | Base: `UBlueprintFunctionLibrary`
 > Xem bối cảnh kiến trúc (vì sao tách Begin/Finish thay vì 1 hàm one-shot): `DEVIATIONS.md` [ARCH] 14/07/2026, node flow debug: `Blueprints/Blueprint_Logic_NodeFlow.md` §BP_ComboManager.
 
@@ -122,7 +122,7 @@ Bước 2/2: đọc frame đã hội tụ → ghi `<ComboID>.png` cạnh file co
 ```cpp
 static UTexture2D* LoadComboThumbnail(const FString& ComboID, int32 MaxSize = 256);
 ```
-Đọc PNG → `Texture2D` transient. `MaxSize>0` = thu nhỏ về `MaxSize`; `0` = giữ nguyên 1024 (resolution capture gốc). **Hiện đang STUB `return nullptr`** — đây chính là Gate P1.G1 (đọc PNG→Texture2D), chưa implement thân hàm thật.
+Đọc PNG → `Texture2D` transient. `MaxSize>0` = thu nhỏ về `MaxSize`; `0` = giữ nguyên 1024 (resolution capture gốc). **[DONE 14/07/2026 — Gate P1.G1]** Thân hàm đầy đủ: đọc PNG từ đĩa → `IImageWrapper` `SetCompressed` → `GetRaw` BGRA8 → optional `FImageUtils::ImageResize` xuống `MaxSize` → `UTexture2D::CreateTransient` + memcpy vào Mip 0. Build PASS, test phím Y (`BP_ComboManager`, tách riêng khỏi phím T capture) → "G1 Load OK, size=256" đúng kỳ vọng.
 
 ### GetThumbnailPath(ComboID) → FString (BlueprintPure) / ThumbnailExists(ComboID) → bool (BlueprintPure) / DeleteThumbnail(ComboID) → bool
 ```cpp
@@ -138,7 +138,6 @@ Helper path/tồn tại/xóa — suy đoán hợp lý từ tên hàm + Category,
 
 | Hàm | Gate | Mô tả |
 |---|---|---|
-| `LoadComboThumbnail` thân thật | P1.G1 | Đang stub `return nullptr` |
 | Auto-fit khung hình (FitRatio dùng thật) | P1.G2 | `CaptureComboThumbnail` có param `FitRatio` nhưng `BeginComboCapture` KHÔNG có — cần xác nhận field này còn áp dụng ở đâu trong pipeline mới |
 | Cache ảnh trong BP_ComboManager | P1.G3 | Node Map — chưa xác nhận, xem `Rules/AI_Implementation_Rules.md` mục "Nodes chờ xác nhận" |
 
@@ -150,4 +149,4 @@ Xem checklist đầy đủ: `00_Core/PROGRESS.md` mục P1.
 
 - Plugin: `FurnitureToolkit` — cùng plugin với `FurnitureFilterLibrary`, `UComboSerializer`, `UComboThumbnail`.
 - `ComboThumbnail.h` include forward-declare `class ASceneCapture2D;` — không include full header `SceneCapture2D.h` ở `.h` (giữ nhẹ), thật ra include ở `.cpp` (chưa có để đối chiếu).
-- Dependency: `FJsonObjectConverter` (module `JsonUtilities`) cho `ComboSerializer`; `.cpp` `ComboThumbnail` chắc chắn cần `ImageWrapper`/`ImageUtils` (PNG I/O) — chưa xác nhận Build.cs vì chưa có `.cpp`.
+- Dependency: `FJsonObjectConverter` (module `JsonUtilities`) cho `ComboSerializer`. `ComboThumbnail` — **[CONFIRMED 14/07/2026, Gate G1]** module `ImageCore` thêm vào `FurnitureToolkit.Build.cs` (cần cho `FImageUtils::ImageResize`) + include `"Engine/Texture2D.h"`, `"ImageUtils.h"` trong `ComboThumbnail.cpp`. Chưa xác nhận module cho phần đọc PNG (`IImageWrapper` — thường cần module `ImageWrapper`, chưa thấy nhắc trong delta G1) và phần capture/RenderTarget (G0-R, `.cpp` vẫn chưa có để đối chiếu).
