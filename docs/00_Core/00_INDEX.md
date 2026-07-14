@@ -1,5 +1,5 @@
 # Index — Toàn bộ tài liệu docs/
-**Cập nhật:** 11/07/2026 13:14 (bảng Widgets/ bổ sung đủ 16 file thật + fix tổng số file lỗi thời) | **Tổng số file:** 100 .md files (đếm thật `find docs -iname *.md`, 11/07/2026)
+**Cập nhật:** 14/07/2026 (bổ sung docs/Data — 3+ tuần chưa cập nhật: `ComboSerializer_Reference.md` mới + 3 Blueprint Combo bị sót trước đó) | **Tổng số file:** 104 .md files (đếm thật `find docs -iname *.md`, 14/07/2026)
 **Ghi chú:** File này là index điều hướng — không chứa nội dung kỹ thuật.
 
 ---
@@ -19,6 +19,9 @@
 | Gizmo movement / ray-plane / snap / rotation delta | [Blueprints/BP_GizmoController.md](../Blueprints/BP_GizmoController.md) |
 | Pivot multi-select move/rotate/scale | [Blueprints/BP_PivotActor.md](../Blueprints/BP_PivotActor.md) |
 | EMS Save/Load / spawn/destroy actor | [Blueprints/BP_FurnitureSceneManager.md](../Blueprints/BP_FurnitureSceneManager.md) + [Blueprints/BP_FurnitureActor.md](../Blueprints/BP_FurnitureActor.md) |
+| Combo save/spawn/replace / thumbnail capture (P1) | [Blueprints/BP_ComboManager.md](../Blueprints/BP_ComboManager.md) |
+| Combo C++ backend (save file/folder ops/thumbnail PNG) | [Data/ComboSerializer_Reference.md](../Data/ComboSerializer_Reference.md) |
+| Combo struct thật (FComboData/Group/Item) | [Data/Data_Structures.md](../Data/Data_Structures.md) |
 | Player controller (input routing) | [Blueprints/BP_FoffPlayerController.md](../Blueprints/BP_FoffPlayerController.md) |
 | Filter logic chi tiết | [Data/FilterBySearch_Logic.md](../Data/FilterBySearch_Logic.md), [Data/FilterByCategory_Logic.md](../Data/FilterByCategory_Logic.md) |
 | Node flow Sprint 1-4 tổng hợp | [Blueprints/Blueprint_Logic_NodeFlow.md](../Blueprints/Blueprint_Logic_NodeFlow.md) |
@@ -71,6 +74,9 @@
 
 | File | Nội dung |
 |---|---|
+| [BP_ComboGhostActor.md](../Blueprints/BP_ComboGhostActor.md) | Ghost actor tạm thời — preview bounding box combo lúc drag, spawn bởi WBP_ComboCard.OnDragDetected |
+| [BP_ComboItemView.md](../Blueprints/BP_ComboItemView.md) | Object class bọc FComboData — dùng cho CTV_ComboCard (TileView tab 🧩 Combo) |
+| [BP_ComboManager.md](../Blueprints/BP_ComboManager.md) | Actor xử lý combo logic (save/spawn/replace) — Sprint 5, nhận data qua param, không hard ref InputManager (R2) |
 | [BP_FoffPlayerController.md](../Blueprints/BP_FoffPlayerController.md) | Player Controller gốc — 04/2026 |
 | [BP_FurnitureActor.md](../Blueprints/BP_FurnitureActor.md) | Actor từng đồ nội thất — SaveGame vars, Sprint D RowName |
 | [BP_FurnitureInputManager.md](../Blueprints/BP_FurnitureInputManager.md) | **⭐ Core** — Selection, Gizmo, Group, Clipboard, v1.9 |
@@ -100,7 +106,8 @@
 
 | File | Nội dung |
 |---|---|
-| [Data_Structures.md](../Data/Data_Structures.md) | S_SceneSnapshot V4, S_FurniturePlacement, S_GroupEntry |
+| [ComboSerializer_Reference.md](../Data/ComboSerializer_Reference.md) | C++ `UComboSerializer` (save/load/folder ops) + `UComboThumbnail` (capture/load PNG, P1) — Sprint 5 |
+| [Data_Structures.md](../Data/Data_Structures.md) | S_SceneSnapshot V4, S_FurniturePlacement, S_GroupEntry, FComboData/Group/Item (Sprint 5) |
 | [FilterByCategory_Logic.md](../Data/FilterByCategory_Logic.md) | Logic lọc theo category trong WBP_FurnitureInventory |
 | [FilterBySearch_Logic.md](../Data/FilterBySearch_Logic.md) | Logic tìm kiếm text trong inventory |
 | [FurnitureFilterLibrary_Reference.md](../Data/FurnitureFilterLibrary_Reference.md) | C++ UFurnitureFilterLibrary — 4 hàm, pattern Sprint D |

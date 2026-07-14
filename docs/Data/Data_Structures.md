@@ -1,5 +1,6 @@
 # 05 — Data Structures
 **Mục đích:** Tham chiếu đầy đủ struct, enum, variables.
+**Cập nhật:** 14/07/2026 — đối chiếu C++ thật (`ComboTypes.h`/`ComboSerializer.h`), sửa mảng Combo lỗi thời (3+ tuần chưa cập nhật): `S_FolderTargetEntry`→`S_FolderTreeNode`, +`S_GroupData.SourceComboID`, `S_ComboMeshData`/`DT_ComboMeshCatalog`/`S_ComboJSONEntry` (planned, chưa từng xây) → `FComboData`/`FComboGroupData`/`FComboItemData` thật + JSON ví dụ, sửa vị trí function Combo (BP_ComboManager, không phải InputManager)
 
 ---
 
@@ -31,6 +32,7 @@
 | GroupName | String | "Nhóm" | User-facing |
 | ParentGroupID | String | "" | Empty = top-level |
 | bIsLocked | Boolean | False | Khóa group |
+| SourceComboID | String | "" | MỚI — Sprint 5 (C1). Group cha của 1 cụm combo = ComboID gốc (root group khi spawn combo). Group user tự tạo tay = "". Xem `BP_ComboManager.md` §F_RegisterComboGroups (Case A/B). |
 
 ### S_SceneSnapshot (mở rộng)
 
@@ -58,61 +60,107 @@
 | SurfaceType | Name | "Floor" | |
 | GroupID | String | "" | Sprint 3+ |
 
-### S_FolderTargetEntry — TẠO MỚI 30/06/2026 (C5.4)
-Dùng cho list chọn folder đích trong WBP_MoveToFolderDialog.
+### S_FolderTreeNode — RENAME 08/07/2026 (C5.8 Task Card #1, trước là S_FolderTargetEntry)
+Dùng cho `WBP_FolderTreePicker`/`WBP_FolderPickerRow` (Move + Save dialog) — thay list phẳng `S_FolderTargetEntry` cũ (C5.4). Sinh bởi `WBP_FurnitureInventory.BuildFolderTreeRecursive` → `BuildComboFolderTreeNodes`.
 | Field | Kiểu | Ghi chú |
 |---|---|---|
 | Path | String | Path đầy đủ. "" = "(Gốc)" |
 | DisplayLabel | String | Tên hiển thị (segment cuối hoặc "(Gốc)") |
-| IndentLevel | Integer | Cấp thụt lề khi vẽ trong ScrollBox |
+| Depth | Integer | Cấp thụt lề — RENAME từ `IndentLevel` (C5.4) |
+| HasChildren | Boolean | MỚI — có con hay không, quyết định hiện arrow/badge |
+| ChildCount | Integer | MỚI — số con trực tiếp, hiện trong badge `(N)` khi collapsed |
+| ContinuesAncestors | Array\<Boolean\> [?] | MỚI — cờ theo từng tổ tiên, dùng dựng guide line (│├└). Type suy luận từ cách gọi trong Blueprint (`WBP_FolderPickerRow.SetNode` ⚠️ SUY LUẬN — export K2Node đầy đủ chưa xác nhận riêng phần này) |
+| bIsLast | Boolean | MỚI — node có phải con cuối cùng của cha không (quyết định └ vs ├ ở guide line) |
 
-### S_ComboMeshData (mới — Sprint 5)
+> ⚠️ `S_FolderTargetEntry` cũ (Path/DisplayLabel/IndentLevel — 3 field) KHÔNG còn tồn tại trong Blueprint, chỉ còn nhắc tới trong lịch sử/`WBP_MoveFolderRow.md` (nay `[SUPERSEDED]`, không xoá file).
 
-DataTable Row struct cho DT_ComboMeshCatalog.
+### FComboData / FComboGroupData / FComboItemData — C++ USTRUCT thật (Sprint 5, `ComboTypes.h`, plugin FurnitureToolkit)
 
-| Field | Kiểu | Ghi chú |
+⚠️ **[CORRECTION 14/07/2026]** Struct/DataTable dưới đây (`S_ComboMeshData`, `DT_ComboMeshCatalog`, `S_ComboJSONEntry`) mô tả Ở BẢN NÀY TRƯỚC ĐÂY là kiến trúc **PLANNED, CHƯA BAO GIỜ ĐƯỢC XÂY**. Hệ thật KHÔNG dùng DataTable — mỗi combo lưu thành **1 file `.json` riêng** trong thư mục Combos (xem `GetCombosDir()`, `Data/ComboSerializer_Reference.md`). 3 struct thật (`FComboData`/`FComboGroupData`/`FComboItemData`) đối chiếu trực tiếp từ `ComboTypes.h` (cuhoang paste 14/07/2026):
+
+#### FComboData
+| Field | Kiểu C++ | Default | Ghi chú |
+|---|---|---|---|
+| Version | int32 | 1 | |
+| ComboID | FString | — | "combo_"+GUID, xem `BP_ComboManager.SaveComboFromSelection` Bước 5a |
+| Name | FString | — | Tên combo user nhập |
+| Description | FString | — | |
+| Tags | TArray\<FString\> | [] | |
+| Category | FString | — | Hardcode "MyCombo" tạm ở Bước 5e (chưa có UI chọn category — Phase B) |
+| CreatedAt | FString | — | UTC Now → string, set ở Blueprint |
+| AppVersion | FString | — | "1.0.0" hardcode |
+| FolderPath | FString | — | Sprint 5 C3a/C5 — path folder chứa combo |
+| Items | TArray\<FComboItemData\> | [] | |
+| Groups | TArray\<FComboGroupData\> | [] | |
+| AuthorID | FString | "" | Chừa sẵn cho Phase B (chưa dùng) |
+| Visibility | FString | "Private" | Chừa sẵn cho Phase B (Private/Public/Shared) |
+| BoundingBoxExtent | FVector | (0,0,0) | C4 — `CalculateComboBoundingExtent`, dùng cho ghost/anchor lúc drag-drop combo |
+
+#### FComboGroupData
+| Field | Kiểu C++ | Ghi chú |
 |---|---|---|
-| ComboName | String | "Bộ sofa Scandinavian" |
-| Category | String | Phòng khách / Phòng ăn / ... |
-| Style | String | Modern / Scandinavian / Industrial / ... |
-| Tags | String | Pipe-separated: "bàn ăn|6 ghế|gỗ sồi" |
-| ItemCount | Integer | Số mesh trong combo |
-| ThumbnailPath | Soft Object Ref Texture2D | Auto-gen từ SceneCapture2D |
-| ComboJSON | String | JSON serialized meshes + groups |
+| Token | FString | Token tạm ("g0", "g1"...) — resolve thành GUID thật lúc spawn (`F_BuildTokenGUIDMap`) |
+| Name | FString | GroupName hiển thị (Blueprint gọi local var là `CurGroupName` nhưng field JSON/C++ tên là `Name`) |
+| ParentToken | FString | "" = root group (nhận `SourceComboID` khi spawn — xem `S_GroupData.SourceComboID` ở trên) |
 
-⚠️ **Dependency Sprint 5 ↔ Sprint 7:** Combo JSON schema có `materialParams` (cho Color/Roughness từ v1.2). Nếu Sprint 7 làm TRƯỚC khi user tạo combo → SaveCurrentGroupAsCombo phải serialize cả materialParams, SpawnCombo phải restore. Nếu Sprint 7 chưa xong → `materialParams` để mảng rỗng, không lỗi. **Khi làm Sprint 5: include field materialParams ngay cả khi để rỗng**, tránh phải sửa schema sau.
+#### FComboItemData
+| Field | Kiểu C++ | Default | Ghi chú |
+|---|---|---|---|
+| RowName | FString | — | Khớp `DT_FurnitureCatalog` RowName |
+| SourceType | FString | "catalog" | Chưa thấy nhánh khác "catalog" được dùng trong Blueprint hiện tại — chừa sẵn |
+| RelLocation | FVector | (0,0,0) | Vị trí tương đối so với anchor combo |
+| RelRotation | FRotator | (0,0,0) | |
+| Scale | FVector | (1,1,1) | |
+| SurfaceType | FString | "Floor" | |
+| MaterialOverrides | TArray\<FString\> | [] | RowName vật liệu (KHÔNG phải path — resolve qua `FindMaterialRowNameByPath` lúc save, `Get Data Table Row(DT_Materials)` lúc spawn) |
+| GroupToken | FString | — | "" = không thuộc group nào (Case B ungrouped) hoặc thuộc wrapper (Case A) — xem `BP_ComboManager.F_RegisterComboGroups` |
 
-### S_ComboJSONEntry (struct nội bộ — không phải UE struct, JSON format)
+⚠️ **Dependency Sprint 5 ↔ Sprint 7 (vẫn treo, chưa làm):** `FComboItemData` **CHƯA có field `MaterialParams`** (Color/Roughness JSON cho Sprint 7 v1.2) — chỉ có `MaterialOverrides` (RowName). Nếu Sprint 7 cần persist material params qua combo save/load → phải thêm field mới vào `ComboTypes.h` (đụng schema, cần bump `Version`), KHÔNG tự có sẵn như plan gốc (23/06) từng giả định.
+
+⚠️ **[PHÁT HIỆN 14/07/2026 — cần cuhoang xác nhận]** `GetCombosDir()` thật trong `ComboSerializer.cpp` trả về `FPaths::ProjectSavedDir() / "Combos"` (= `<ProjectRoot>/Saved/Combos/`) — **KHÁC** quyết định P4 đã ghi trong `DEVIATIONS.md` 23/06/2026 ("đổi sang `FPlatformProcess::UserSettingsDir()/InteriorFOFFTool/Combos`, tức `%LOCALAPPDATA%`"). Khớp với đường dẫn thật quan sát được (`Saved/Combos/Folders.json`). Không rõ P4 bị revert hay chưa từng merge — DEVIATIONS.md giữ nguyên bản ghi lịch sử (không sửa), chỉ note ở đây là hiện trạng code THẬT khác quyết định đã chốt.
+
+### Combo JSON — ví dụ thật (đối chiếu 1 file `.json` thật cuhoang paste 14/07/2026, `Saved/Combos/combo_....json`)
+
+⚠️ **[CONFIRMED 14/07/2026]** Key JSON thật là **camelCase** (KHÔNG phải PascalCase giữ nguyên tên C++ như suy đoán trước) — `FJsonObjectConverter::UStructToJsonObjectString` mặc định tự chuyển case. `FVector`/`FRotator` serialize thành object `{x,y,z}` / `{pitch,yaw,roll}` (chữ thường).
 
 ```json
 {
-  "meshes": [
+  "version": 1,
+  "comboId": "combo_F8F7513C46921F3E383484A4E7BA489E",
+  "name": "Bàn học cho bé gái",
+  "description": "",
+  "tags": ["bàn học", "bé gái", "trẻ em"],
+  "category": "MyCombo",
+  "createdAt": "Year=2026 Month=7 Day=13 Hour=7 Minute=41 Second=46 Millisecond=816",
+  "appVersion": "1.0.0",
+  "folderPath": "Phòng làm việc/bàn học",
+  "items": [
     {
-      "meshPath": "/Game/.../SM_Chair.SM_Chair",
-      "dapath": "/Game/.../DA_Chair.DA_Chair",
-      "relativeLocation": {"x": 100, "y": 50, "z": 0},
-      "rotation": {"pitch": 0, "yaw": 45, "roll": 0},
+      "rowName": "StudyDesk_Adjustable_900",
+      "sourceType": "catalog",
+      "relLocation": {"x": -1.36, "y": -1.11, "z": 0},
+      "relRotation": {"pitch": 0, "yaw": -90.0, "roll": 0},
       "scale": {"x": 1, "y": 1, "z": 1},
-      "materialOverrides": ["/Game/.../MI_Fabric.MI_Fabric"],
-      "materialParams": ["{\"Tint\":[0.2,0.3,0.5,1],\"Roughness\":0.7}"],
       "surfaceType": "Floor",
-      "groupID": "g_inner_1"
+      "materialOverrides": [],
+      "groupToken": ""
     }
   ],
-  "groups": [
-    {
-      "groupID": "g_outer",
-      "groupName": "Bộ sofa",
-      "parentGroupID": ""
-    },
-    {
-      "groupID": "g_inner_1",
-      "groupName": "Cụm gối",
-      "parentGroupID": "g_outer"
-    }
-  ]
+  "groups": [],
+  "authorId": "",
+  "visibility": "Private",
+  "boundingBoxExtent": {"x": 34, "y": 45.0, "z": 47.79}
 }
 ```
+> **`createdAt`** — KHÔNG phải ISO8601 như đoán trước. Format thật là `FDateTime::ToString()` mặc định của UE (`Year=... Month=... Day=... Hour=... Minute=... Second=... Millisecond=...`) — literal string, không parse lại thành `FDateTime` ở đâu trong code hiện tại (chỉ hiển thị/lưu trữ).
+> `groups: []` + mọi `groupToken: ""` khi combo không có group con (item rời, chưa `Ctrl+G` trước khi save) — khớp Case B (ungrouped) trong `BP_ComboManager.F_RegisterComboGroups`.
+> File gốc cuhoang paste bị mojibake (UTF-8 hiển thị nhầm Latin-1) lúc copy — bản thân file trên đĩa đúng UTF-8 không BOM (`SaveStringToFile` dùng `ForceUTF8WithoutBOM`), không phải bug. Đã decode lại tiếng Việt đúng ở ví dụ trên.
+
+### Folders.json — manifest folder (registry, `ComboSerializer.cpp GetAllFolderPaths`/`CreateEmptyFolder`)
+```json
+["Livingroom", "Livingroom/Sofa", "Bedroom"]
+```
+Mảng phẳng `TArray<FString>` các path folder đã biết (kể cả cấp cha — `GetAllFolderPaths` tự ghi bổ sung cấp cha khi quét combo). Sống cạnh các file combo `.json` trong cùng `GetCombosDir()`, tên cố định `Folders.json`. Field thật ra là "empty folder registry" (tên hàm `GetEmptyFoldersFilePath`/`LoadEmptyFoldersInternal`) nhưng từ 03/07/2026 đã trở thành **nguồn sự thật DUY NHẤT cho MỌI folder** (kể cả folder có combo) — xem comment `B1, 03/07/2026` trong `ComboSerializer.cpp`.
 
 ---
 
@@ -306,9 +354,8 @@ IA_FocusSelected        (Boolean) — F
 - ~2738 rows
 - Path: /Game/cuong/UI/Data/DT_MaterialInstancesCatalog
 
-### DT_ComboMeshCatalog (mới — Sprint 5)
-- Row struct: S_ComboMeshData
-- Path: /Game/cuong/UI/Data/DT_ComboMeshCatalog
+### DT_ComboMeshCatalog — [CORRECTION 14/07/2026] KHÔNG TỒN TẠI
+Plan gốc Sprint 5 dự kiến DataTable này. Thực tế combo lưu file-based (`FComboData` → JSON, 1 file/combo trong `GetCombosDir()`), KHÔNG qua DataTable. Xem `FComboData`/`FComboGroupData`/`FComboItemData` ở mục STRUCTS trên + `Data/ComboSerializer_Reference.md`.
 
 ---
 
@@ -345,7 +392,7 @@ Tuân thủ R4:
 | WBP_ContextMenu | Callback delegates |
 | WBP_GroupNameDialog | (no actor refs) |
 | WBP_SaveComboDialog | TargetGroupID (string, safe) |
-| WBP_ComboCard | ComboRowName (Name, safe) |
+| WBP_ComboCard | ComboID (String, safe) — [CORRECTION 14/07/2026] tên field cũ ghi "ComboRowName (Name)" SAI kiểu, thật là `ComboID : String` (khớp `BP_ComboItemView.ComboID`). InventoryRef (WBP_FurnitureInventory, lazy-init) cũng cần clear — xem `01_Session_State.md` mục KIẾN TRÚC HIỆN TẠI |
 | WBP_SceneOutliner | OutlinerRows hard refs to actors → clear |
 | WBP_OutlinerRow | TargetActor, GroupRef |
 | WBP_MaterialEditPanel | TargetActors array (multi) |
@@ -412,11 +459,6 @@ GetSceneOutlinerData() → ...
 RenameActor(Actor, NewName : String)
 SetActorVisibility(Actor, bVisible : Boolean)
 
-// Combo (Sprint 5)
-SaveCurrentGroupAsCombo(GroupID, ComboName, Category, Style, Tags)
-SpawnCombo(RowName : Name, WorldLocation : Vector)
-GenerateComboThumbnail(Actors) → Texture2D
-
 // Material Edit (Sprint 7)
 SetMaterialColor(Color : LinearColor)
 SetMaterialRoughness(Value : Float)
@@ -426,6 +468,20 @@ SetMaterialUVRotation(Value : Float)
 ResetMaterialParams()
 SerializeMaterialParams(Actor, SlotIndex) → String (JSON)
 ApplySerializedMaterialParams(Actor, SlotIndex, JSON)
+```
+
+### BP_ComboManager Functions — [CORRECTION 14/07/2026] đúng vị trí thật (KHÔNG nằm trên BP_FurnitureInputManager)
+Actor riêng, tách khỏi InputManager (R2 — không hard ref). Signature Custom Event thật (xem `Blueprints/BP_ComboManager.md`):
+```
+SaveComboFromSelection(SelectedActors : Array<BP_FurnitureActor>, Center : Vector,
+  ComboName : String, Description : String, FolderPath : String, Tags : Array<String>)
+SpawnComboByID(ComboID : String, SpawnLocation : Vector)
+```
+Thumbnail (P1, C++ `UComboThumbnail` — xem `Data/ComboSerializer_Reference.md`):
+```
+BeginComboCapture(ComboActors, ExtraHiddenActors, Resolution) → ASceneCapture2D (handle)
+FinishComboCapture(CaptureHandle, ComboID) → bool
+LoadComboThumbnail(ComboID, MaxSize) → UTexture2D
 ```
 
 ### BP_UndoManager Functions (updated)

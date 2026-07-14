@@ -42,6 +42,9 @@ docs/
 │   ├── BP_FurnitureActor.md
 │   ├── BP_FurnitureSceneManager.md
 │   ├── BP_FoffPlayerController.md
+│   ├── BP_ComboManager.md                 ← Sprint 5 (T2/C0-C2) — save/spawn/replace combo logic
+│   ├── BP_ComboItemView.md                ← Sprint 5 (C3a/C4) — Object class bọc FComboData cho CTV_ComboCard
+│   ├── BP_ComboGhostActor.md              ← Sprint 5 (C4) — ghost preview bounding box lúc drag combo
 │   ├── Blueprint_Logic_NodeFlow.md
 │   └── Flows/
 │       ├── Nudge_Flow.md
@@ -57,7 +60,11 @@ docs/
 │   ├── WBP_ChipTag.md                     ← Sprint 5 (C5.0)
 │   ├── WBP_LibraryContextMenu.md          ← Sprint 5 (C5.0)
 │   ├── WBP_EditableLabel.md               ← Sprint 5 (C5.2)
-│   ├── WBP_ComboCard.md                   ← Sprint 5 (C4)
+│   ├── WBP_ComboCard.md                   ← Sprint 5 (C4) — [CHƯA TÁCH FILE] nội dung hiện nằm rải rác:
+│   │                                          tham chiếu trong WBP_FurnitureInventory.md (Entry Widget Class,
+│   │                                          OnComboCardRightClicked) + tóm tắt trong 01_Session_State.md
+│   │                                          mục KIẾN TRÚC HIỆN TẠI (OnListItemObjectSet/OnDragDetected/
+│   │                                          On Mouse Button Down). Chưa có file .md đầy đủ riêng.
 │   ├── WBP_DragOverlay_ComboCard.md       ← Sprint 5 (C4, nếu tách riêng file)
 │   ├── WBP_SaveComboDialog.md             ← Sprint 5 (C3b)
 │   ├── WBP_MoveToFolderDialog.md          ← Sprint 5 (C5.4) — MỚI 30/06
@@ -70,6 +77,7 @@ docs/
 │   ├── FilterByCategory_Logic.md
 │   ├── FilterBySearch_Logic.md
 │   ├── FurnitureFilterLibrary_Reference.md
+│   ├── ComboSerializer_Reference.md       ← Sprint 5 (C++ UComboSerializer/UComboThumbnail) — MỚI 14/07
 │   └── Python_Scripts.md
 ├── Features/
 │   ├── ChangeMaterial.md

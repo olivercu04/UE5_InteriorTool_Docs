@@ -70,6 +70,22 @@ Category         : Name
 
 ---
 
+## Combo Data (Sprint 5) — MỚI 14/07/2026
+
+Kiến trúc lưu trữ Combo TÁCH RIÊNG khỏi 2 DataTable trên — **KHÔNG phải DataTable**, mỗi combo là 1 file `.json` độc lập.
+
+```
+Storage: GetCombosDir() = <ProjectRoot>/Saved/Combos/   ← xem note lệch P4 trong Data_Structures.md
+  ├── <ComboID>.json     ← 1 file/combo, struct FComboData (ComboToJson/JsonToCombo)
+  ├── <ComboID>.png      ← thumbnail (P1, FinishComboCapture ghi cạnh json)
+  └── Folders.json       ← registry MỌI folder path (kể cả cấp cha), nguồn sự thật duy nhất
+```
+
+Struct đầy đủ: `Data_Structures.md` mục `FComboData`/`FComboGroupData`/`FComboItemData`.
+C++ backend đầy đủ: `Data/ComboSerializer_Reference.md` (`UComboSerializer` — save/load/folder ops, `UComboThumbnail` — capture/load PNG, P1).
+
+---
+
 ## Python population scripts
 
 `Python_Scripts.md` — script populate:
@@ -84,3 +100,4 @@ Category         : Name
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 17/06/2026 — Sprint D.T6 | Tạo mới — tổng hợp kiến trúc Data layer sau D.T6. GAP trước đó không có file overview. |
+| 1.1 | 14/07/2026 | Thêm mục "Combo Data (Sprint 5)" — file chỉ phủ Furniture data layer suốt 3+ tuần, thiếu hẳn Combo. Trỏ tới `Data_Structures.md` (struct) + `Data/ComboSerializer_Reference.md` (C++ backend, mới tạo). |
