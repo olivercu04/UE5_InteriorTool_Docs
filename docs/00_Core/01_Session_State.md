@@ -199,16 +199,16 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
   ⚠️ Fix K3 — SpawnFurnitureCopy bAddToRecent param (áp lúc đụng C2/RestoreSnapshot) — planned
 ──── Giai đoạn 1 (~25/06) ────
   ⏳ C3 — Save dialog + P4 (GetCombosDir→LOCALAPPDATA) + capture thumbnail sau save
-  🔄 Thumbnail System C++ (P1) — Gate G0-R ✅ DONE (14/07, xem mục P1 trên), G1-G5 còn lại
-  ⏳ C4 — WBP_ComboCard (thumbnail thật, badge ×N)
-  ⏳ C5 — Folder tree tab 🧩 Combo
+  🔄 Thumbnail System C++ (P1) — ĐANG LÀM: Gate G0-R ✅ DONE (14/07, xem mục P1 trên), G1-G5 còn lại
+  ✅ C4 — WBP_ComboCard (thumbnail thật, badge ×N) — DONE (25/06)
+  ✅ C5 — Folder Management đầy đủ (browse/tree/move/rename/xóa/chip) — TOÀN BỘ HOÀN TẤT (06/07)
+  ✅ C5.8 — Folder Tree Picker Unify (Move Dialog + Save Dialog) — DONE (13/07/2026, REG PASS), xem C5.8_FolderTreePicker_Unify_Plan.md
   ⏳ C6 — Favorite + Recent combo
   ⏳ C7 — WBP_ComboDetailPopup (thumbnail thật)
 ──── Giai đoạn 2 ────
   ⏳ WBP_Toast (K1) — TIÊN QUYẾT trước C8
-  ⏳ C8 — Drag-drop + surface-snap kiểu khối (P2) + fix drop-anchor Lỗ14
+  ✅ C8 — Drag-drop + surface-snap kiểu khối (P2) — DONE, MERGED vào C4 (24/06/2026)
   ⏳ Xoay combo (P3) — verify gizmo group + tùy chọn xoay-lúc-kéo
-  ✅ C5.8 — Folder Tree Picker Unify (Move Dialog + Save Dialog) — DONE (13/07/2026, REG PASS), xem C5.8_FolderTreePicker_Unify_Plan.md
   ⏳ C9 — Replace (+ verify K2 + CalculateCenter chung + auto-rollback)
 ──── Giai đoạn 3 ────
   ⏳ C11 — Export/Import cả 2 hướng (K5)
@@ -255,3 +255,4 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 13/07/2026 (REG) | **C5.8 (Folder Tree Picker Unify) — CHÍNH THỨC DONE.** REG (task card `C5.8_REG_TaskCard_11jul2026.md`) chạy đủ Khối A/B/C/D: A1-A7 PASS (A1 kèm clarification wording task card — xem DEVIATIONS), B1-B4 PASS (B4 kèm scope note không live-sync 2 cây), C1 SKIP (rủi ro thấp)/C2-C5 PASS (không VRAM leak). D5 comprehension check PASS. 2 bug mới phát hiện qua REG — GHI Open_Bugs.md, KHÔNG sửa trong C5.8 (ngoài scope): (1) BTN_Confirm Save dialog không disable khi tên trống chưa gõ gì (bug có sẵn từ C3b, không phải do C5.8); (2) Move Folder không check trùng tên đích (backlog, cần task riêng). **Roadmap: mở khóa C9 (Replace).** |
 | 14/07/2026 | **P1 Combo Thumbnail — Gate G0-R DONE.** One-shot capture (G0 gốc) loại bỏ do ảnh xám phẳng — Lumen GI/TAA/auto-exposure cần nhiều frame thật mới hội tụ, camera phụ vừa spawn chụp 1 frame không đủ. Đổi kiến trúc: `BeginComboCapture`/`FinishComboCapture` bọc bởi Custom Event dùng `Delay` latent (L8), thay `CaptureComboThumbnail` đồng bộ cũ (giữ `[LEGACY]`, không xóa/gọi). Test debug phím T trong `BP_ComboManager` — Delay warm-up 0.5s chưa đủ, 3s/6s/10s đều đẹp, chốt tạm 3.0s (số chính xác dời G4). Ảnh hưởng: Save Combo có thêm độ trễ latent, Broadcast dời xuống SAU FinishComboCapture, capture fail vẫn Broadcast (fallback icon 🧩). `.h` bị đụng lần 2 (chấp nhận). Tiếp theo: G1 (đọc PNG→Texture2D, thay stub `LoadComboThumbnail`). |
 | 14/07/2026 (dọn nợ) | **Dọn stale content C5.8 trong `## TIẾP THEO`** (đã báo 2 lần ở các lần phân phối trước, cuhoang xác nhận gộp dọn cùng lúc P1, KHÔNG thuộc nội dung delta P1 gốc): block prose "C5.8 — Folder Tree Picker Unify" (dòng cạnh mục P1) và dòng trong Roadmap v3.3 ASCII (Giai đoạn 2) sửa từ 🔄 IN PROGRESS (mô tả trạng thái 11/07, đã lỗi thời) → ✅ DONE (13/07/2026, REG PASS) — khớp với changelog 13/07/2026 (REG) đã ghi trước đó. |
+| 14/07/2026 (roadmap reorder) | **Sửa thứ tự + trạng thái Roadmap v3.3** (theo yêu cầu cuhoang): C4 và C8 sửa ⏳→✅ DONE (đã xong từ 25/06 và 24/06, marker cũ sai/lỗi thời). Dòng "C5 — Folder tree tab 🧩 Combo" viết lại thành "C5 — Folder Management đầy đủ... TOÀN BỘ HOÀN TẤT" (khớp phát biểu C5 đã dùng ở mục TIẾP THEO). **Dời C5.8** từ cuối Giai đoạn 2 → ngay sau C5 trong Giai đoạn 1 — khớp đúng ghi chú gốc "chốt slot NGAY SAU C5, TRƯỚC C9" (trước đó bị đặt sai chỗ, nằm sau cả WBP_Toast/C8/Xoay combo). Thumbnail System (P1) gắn nhãn "ĐANG LÀM" khớp `02_Current_Sprint.md`. |
