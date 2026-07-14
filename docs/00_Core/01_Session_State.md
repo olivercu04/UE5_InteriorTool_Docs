@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 13/07/2026 (REG) — **C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE** — REG Khối A/B/C/D PASS, mở khóa C9 (Replace) | WBP_FurnitureInventory v3.11
+**Phiên bản:** 14/07/2026 — **P1 Combo Thumbnail Gate G0-R DONE** — capture đổi kiến trúc latent Begin/Finish (xem mục P1) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
 
 ---
 
@@ -169,9 +169,20 @@
 
 → **REG (regression 12 bước)** → C5 chốt sổ hoàn toàn → **C5.8 (Folder Tree Picker Unify)** → C6/C7 (defer) hoặc WBP_Toast → C9.
 
-**C5.8 — Folder Tree Picker Unify** 🔄 IN PROGRESS (chốt slot 07/07/2026 — NGAY SAU C5, TRƯỚC C9). Gộp lõi data+component cho `WBP_MoveToFolderDialog` + `WBP_SaveComboDialog` (tree picker có guide line/search/inline-create, thay `WBP_MoveFolderRow` + folder-field cũ của Save). Chi tiết đầy đủ + Task Card: `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md`.
+**C5.8 — Folder Tree Picker Unify** ✅ DONE (13/07/2026, REG PASS). Gộp lõi data+component cho `WBP_MoveToFolderDialog` + `WBP_SaveComboDialog` (tree picker có guide line/search/inline-create, thay `WBP_MoveFolderRow` + folder-field cũ của Save). Chi tiết đầy đủ + Task Card: `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md`.
 - ✅ **Task Card #1 (Data Layer)** — DONE (08/07): rename `S_FolderTargetEntry`→`S_FolderTreeNode` (+4 field mới); `CollectFolderTargets`→`BuildFolderTreeRecursive` (đệ quy, depth guard=12) + hàm mới `GetFilteredChildren`; wrapper `BuildComboFolderTreeNodes(ExcludePath)` (tên đổi khác plan gốc — trùng tên hàm cũ Material/Furniture catalog). Test Print PASS (8 combo, nested 3 tầng, tiếng Việt). WBP_FurnitureInventory v3.9.
-- 🔄 **Task Card #2 (UI component)** — Part B đang IN PROGRESS (11/07): DONE = Phần 1/2 (Variables + layout toolbar `SB_SearchFolder`), `IsPathVisible`, `RefreshVisibleRows`, `SetFolders` bug fix, 2 Custom Event handler (`HandleRowExpandClicked`/`HandleRowSelected`). ĐANG: bug #2 (test mục 2 — click ▶ Livingroom không hiện gì) — debug theo `docs/Sprints/Sprint5/C5.8_TaskCard2_FixPlan_11jul2026.md`. TIẾP THEO trỏ về FixPlan Giai đoạn 0. Doc: `WBP_FolderTreePicker.md` v0.9, `WBP_FolderPickerRow.md` v1.0.
+- ✅ **Task Card #2 (UI component, 2a→2d rename host) + Wire Move + Wire Save** — DONE (13/07): build + test node-level xong, trả nợ test toàn bộ (M1-M6, S6a-c, 0.3, Phần 2 test 1-2). WBP_FurnitureInventory v3.11.
+- ✅ **REG (Khối A/B/C/D)** — PASS (13/07/2026): A1-A7, B1-B4, C1 SKIP (rủi ro thấp)/C2-C5, D5 comprehension check. 2 bug mới ghi `Bugs/Open_Bugs.md` (ngoài scope C5.8): Bug-SaveConfirm-EmptyName, Bug-MoveFolder-Collision. Chi tiết: `PROGRESS.md`, `DEVIATIONS.md` 13/07/2026 (REG).
+
+### P1 — Combo Thumbnail (Thumbnail System C++)
+
+Gate G0-R: DONE (14/07/2026) — one-shot capture (G0 gốc) bị loại bỏ do ảnh xám phẳng (Lumen/TAA chưa hội tụ). Đổi kiến trúc sang Begin/Finish + Delay latent (xem `DEVIATIONS.md` [ARCH] 14/07/2026). Test debug bằng phím T trong `BP_ComboManager`, Delay warm-up thử 0.5s (chưa đủ, còn tối) → 3s/6s/10s (đẹp, khác biệt không đáng kể). Chốt tạm 3.0s cho gate này — số chính xác dời sang G4 (lúc wire thật vào UX Save Combo, đánh giá bằng cảm giác thật thay vì đoán).
+
+2 điểm đã quan sát, KHÔNG phải bug, xử ở gate sau:
+- Ảnh hơi sharpen quá đà / chưa mịn — nghi do capture ở resolution native, không qua TSR như viewport chính. Xử ở G2 (tinh chỉnh PostProcessSettings) cùng lúc chỉnh khung hình.
+- Góc chụp hiện là "camera lúc bấm nút", chưa auto-fit theo bounding box combo — đúng dự kiến G0, G2 mới thay bằng FitRatio.
+
+Tiếp theo: G1 — đọc PNG → Texture2D (thay thân `LoadComboThumbnail`, hiện đang stub `return nullptr`).
 
 **Roadmap v3.3 (chia 3 giai đoạn — scope phình to sau 23/06):**
 ```
@@ -188,7 +199,7 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
   ⚠️ Fix K3 — SpawnFurnitureCopy bAddToRecent param (áp lúc đụng C2/RestoreSnapshot) — planned
 ──── Giai đoạn 1 (~25/06) ────
   ⏳ C3 — Save dialog + P4 (GetCombosDir→LOCALAPPDATA) + capture thumbnail sau save
-  ⏳ Thumbnail System C++ (P1) — SaveRenderTargetToPNG + LoadTexture2DFromFile
+  🔄 Thumbnail System C++ (P1) — Gate G0-R ✅ DONE (14/07, xem mục P1 trên), G1-G5 còn lại
   ⏳ C4 — WBP_ComboCard (thumbnail thật, badge ×N)
   ⏳ C5 — Folder tree tab 🧩 Combo
   ⏳ C6 — Favorite + Recent combo
@@ -197,7 +208,7 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
   ⏳ WBP_Toast (K1) — TIÊN QUYẾT trước C8
   ⏳ C8 — Drag-drop + surface-snap kiểu khối (P2) + fix drop-anchor Lỗ14
   ⏳ Xoay combo (P3) — verify gizmo group + tùy chọn xoay-lúc-kéo
-  🔄 C5.8 — Folder Tree Picker Unify (Move Dialog + Save Dialog) — Task Card #1 (Data) ✅ DONE 08/07, Task Card #2 (UI) Part B 🔄 IN PROGRESS (bug #2 đang debug, 11/07), xem C5.8_FolderTreePicker_Unify_Plan.md
+  ✅ C5.8 — Folder Tree Picker Unify (Move Dialog + Save Dialog) — DONE (13/07/2026, REG PASS), xem C5.8_FolderTreePicker_Unify_Plan.md
   ⏳ C9 — Replace (+ verify K2 + CalculateCenter chung + auto-rollback)
 ──── Giai đoạn 3 ────
   ⏳ C11 — Export/Import cả 2 hướng (K5)
@@ -242,3 +253,5 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 12/07/2026 10:40 | **C5.8 Task Card #2 Part B — Giai đoạn 2 (Search) + Giai đoạn 3 (Select) ✅ DONE** — 3 Function mới trên `WBP_FolderTreePicker`: `PathMatchesQuery` (Pure, Contains không phân biệt hoa thường), `BuildSearchOverride` (build `SearchExpandOverride` từ tổ tiên các node match), `GetParentPath` (Pure, hỗ trợ bug arrow-click trong lúc search). `RefreshVisibleRows` ghép xong nhánh search thật (không còn ⚠️ SUY LUẬN) + wire `SB_SearchFolder.OnSearchTextChanged` → class var `CurrentSearchFolder` (thay Local `QueryStr`). `SetSearchHighlight(bMatch)` DONE trên `WBP_FolderPickerRow` (2 class var màu `Color Match`/`Color Default`). Bug fix: `PathMatchesQuery` dùng nhầm `Path` đầy đủ thay `DisplayLabel` (substring match nhầm con); arrow-click node đang match trong lúc search không lộ con (`GetParentPath` + sửa `bShow`/`SetExpanded` bỏ hardcode). Test mục 1-10 PASS hết — Task Card #2 Part B + 2c HOÀN TẤT. TIẾP THEO: Giai đoạn 4 (Chốt sổ — comprehension check còn nợ 2 câu, cuhoang đang trả lời) → 2d (rename host) → wire Move → wire Save + Create Folder → REG C5.8 (thứ tự đã khoá). |
 | 13/07/2026 | **C5.8 — 2d + Wire Move + Wire Save build + test DONE**. 3 bug fix: (1) OnRequestMoveFolder/CB_MoveCombo sót gọi BuildMoveFolderTargetList (hàm cũ, thiếu HasChildren/ChildCount) — đổi sang BuildComboFolderTreeNodes, xoá hàm cũ; (2) SetSelectedHighlight so sai biến (CurrentPath thay SelectedPath) — tách so sánh riêng; (3) SetLabelColor type Slate Color không phải Linear Color. Test PASS: Phần 2 (1,2), 0.3, M1-M6, S6a/S6c. S6b [SCOPE] không áp dụng (context-menu rename không tồn tại theo thiết kế 2d). Version bump: WBP_FolderPickerRow v1.3, WBP_FolderTreePicker v1.3, WBP_EditableLabel v1.1, WBP_MoveToFolderDialog v2.0, WBP_SaveComboDialog v2.0, WBP_FurnitureInventory v3.11. TIẾP THEO: REG C5.8 (task card chốt sổ, khối A/B/C) → sau đó mới cho phép sang C9. |
 | 13/07/2026 (REG) | **C5.8 (Folder Tree Picker Unify) — CHÍNH THỨC DONE.** REG (task card `C5.8_REG_TaskCard_11jul2026.md`) chạy đủ Khối A/B/C/D: A1-A7 PASS (A1 kèm clarification wording task card — xem DEVIATIONS), B1-B4 PASS (B4 kèm scope note không live-sync 2 cây), C1 SKIP (rủi ro thấp)/C2-C5 PASS (không VRAM leak). D5 comprehension check PASS. 2 bug mới phát hiện qua REG — GHI Open_Bugs.md, KHÔNG sửa trong C5.8 (ngoài scope): (1) BTN_Confirm Save dialog không disable khi tên trống chưa gõ gì (bug có sẵn từ C3b, không phải do C5.8); (2) Move Folder không check trùng tên đích (backlog, cần task riêng). **Roadmap: mở khóa C9 (Replace).** |
+| 14/07/2026 | **P1 Combo Thumbnail — Gate G0-R DONE.** One-shot capture (G0 gốc) loại bỏ do ảnh xám phẳng — Lumen GI/TAA/auto-exposure cần nhiều frame thật mới hội tụ, camera phụ vừa spawn chụp 1 frame không đủ. Đổi kiến trúc: `BeginComboCapture`/`FinishComboCapture` bọc bởi Custom Event dùng `Delay` latent (L8), thay `CaptureComboThumbnail` đồng bộ cũ (giữ `[LEGACY]`, không xóa/gọi). Test debug phím T trong `BP_ComboManager` — Delay warm-up 0.5s chưa đủ, 3s/6s/10s đều đẹp, chốt tạm 3.0s (số chính xác dời G4). Ảnh hưởng: Save Combo có thêm độ trễ latent, Broadcast dời xuống SAU FinishComboCapture, capture fail vẫn Broadcast (fallback icon 🧩). `.h` bị đụng lần 2 (chấp nhận). Tiếp theo: G1 (đọc PNG→Texture2D, thay stub `LoadComboThumbnail`). |
+| 14/07/2026 (dọn nợ) | **Dọn stale content C5.8 trong `## TIẾP THEO`** (đã báo 2 lần ở các lần phân phối trước, cuhoang xác nhận gộp dọn cùng lúc P1, KHÔNG thuộc nội dung delta P1 gốc): block prose "C5.8 — Folder Tree Picker Unify" (dòng cạnh mục P1) và dòng trong Roadmap v3.3 ASCII (Giai đoạn 2) sửa từ 🔄 IN PROGRESS (mô tả trạng thái 11/07, đã lỗi thời) → ✅ DONE (13/07/2026, REG PASS) — khớp với changelog 13/07/2026 (REG) đã ghi trước đó. |

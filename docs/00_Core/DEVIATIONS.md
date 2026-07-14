@@ -477,6 +477,26 @@ Tạo/rename folder trong Save dialog KHÔNG tự đẩy cập nhật sang cây 
 
 ---
 
+## SPRINT 5 — 14/07/2026 — P1 Combo Thumbnail: đổi kiến trúc capture
+
+### [ARCH] Đổi kiến trúc capture: one-shot → Begin/Finish latent
+Plan gốc (`P1_ComboThumbnail_Execution.md`, G0): 1 hàm C++ đồng bộ `CaptureComboThumbnail` — spawn `SceneCapture2D`, `CaptureScene()` 1 phát, `ReadPixels`, Destroy ngay trong cùng 1 lần gọi.
+
+Thực tế: one-shot capture cho ảnh xám phẳng, thiếu bounce light, sai màu rõ rệt so với viewport thật. Lý do: Lumen GI + TAA + auto-exposure là hệ tích lũy qua NHIỀU FRAME THẬT mới hội tụ — camera chính đã chạy hàng nghìn frame nên luôn nhìn cảnh hội tụ, camera phụ vừa spawn chụp NGAY 1 frame duy nhất thì không bao giờ đủ.
+
+Đã thử và loại 2 giả thuyết sai trước khi tìm ra nguyên nhân thật:
+1. Auto-exposure lock (ép EV cố định) — SAI, làm ảnh tối hơn.
+2. Override Lumen GI/Reflection Method — đúng hướng nhưng không đủ, ảnh vẫn xám (thiếu do chưa đủ FRAME, không phải thiếu METHOD).
+3. **[ĐÚNG]** Multi-frame warm-up — xác nhận qua đối chiếu plugin Easy Multi Save đã có sẵn trong project (component `ThumbnailCapture` gắn cố định dưới `FollowCamera`, sống suốt session; nút Save của EMS có độ trễ ~5-7s bất thường — nghi cố ý giữ capture hội tụ).
+
+Quyết định kiến trúc (Fable review 14/07): tách `CaptureComboThumbnail` thành cặp `BeginComboCapture` (spawn, bật `bCaptureEveryFrame=true`) + `FinishComboCapture` (tắt cờ, `ReadPixels`, ghi PNG, Destroy — dọn kể cả khi đọc fail). Bọc bởi Custom Event Blueprint dùng `Delay` (latent hợp lệ theo L8 vì nằm trong Event, không phải Function). Hàm `CaptureComboThumbnail` cũ giữ nguyên, đánh dấu `[LEGACY]`, không xóa, không gọi.
+
+**Ảnh hưởng:** "Nối 1" trong plan gốc (gọi capture đồng bộ ngay trong `SaveComboFromSelection`) phải đổi thành latent — Save Combo sẽ có độ trễ thêm (giá trị Delay warm-up, xem `01_Session_State.md` mục P1) trước khi Broadcast hoàn tất. Broadcast dời xuống SAU `FinishComboCapture`; capture fail vẫn Broadcast bình thường (combo lưu OK, card fallback icon 🧩).
+
+`.h` bị đụng lần 2 (thêm 2 khai báo hàm + forward declare `class ASceneCapture2D;`) — phá lời hứa "chỉ đụng 1 lần" của kế hoạch gốc P1 v1.1. Chấp nhận vì đổi kiến trúc là ngoại lệ hợp lý.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -544,3 +564,4 @@ Tạo/rename folder trong Save dialog KHÔNG tự đẩy cập nhật sang cây 
 | 12/07/2026 15:30 | Thêm dòng vào section "SPRINT 5 — 12/07/2026 — C5.8 Task Card #2 Giai đoạn 2+3": [SCOPE] Bỏ Print debug gate bằng `bDebugMode` (FixPlan mục 1) — dùng breakpoint/watch pin (UE5 built-in) thay thế, thêm biến+Branch riêng cho từng Print là thừa so với lợi ích ở quy mô hiện tại. |
 | 13/07/2026 | Thêm section "SPRINT 5 — 13/07/2026 — C5.8 2d (rename host) + Wire Move + Wire Save": 8 entry (2 [BUG-FIX] BuildMoveFolderTargetList sót call site + SetSelectedHighlight sai biến, 1 [CORRECTION] SetLabelColor Slate Color, 3 [SCOPE] rename context-menu không tồn tại/test TC#2 SUPERSEDED/6A Create Folder chấp nhận, 1 [CEILING] Bind OnFolderSelected 1 lần/instance, 1 [CLEANUP] Print debug DevelopmentOnly). |
 | 13/07/2026 (REG) | Thêm section "SPRINT 5 — 13/07/2026 (REG) — C5.8 Chốt sổ (Khối A/B/C/D)": [CLARIFICATION] A1 REG Task Card mô tả nhầm case Move Folder/Move Combo (không sửa code, chỉ đính chính wording); [SCOPE] Save dialog không live-sync sang cây inventory đang mở phía sau (đúng thiết kế, không phải bug). REG PASS toàn bộ Khối A/B/C, D5 comprehension check PASS — **C5.8 CHÍNH THỨC DONE**, mở khóa C9. |
+| 14/07/2026 | Thêm section "SPRINT 5 — 14/07/2026 — P1 Combo Thumbnail: đổi kiến trúc capture": [ARCH] one-shot `CaptureComboThumbnail` (plan gốc G0) loại bỏ do ảnh xám phẳng (Lumen/TAA/auto-exposure chưa hội tụ qua đủ frame) — đổi sang cặp `BeginComboCapture`/`FinishComboCapture` bọc bởi Custom Event dùng `Delay` latent (L8). Hàm cũ giữ `[LEGACY]`, không xóa. `.h` bị đụng lần 2 (chấp nhận, đổi kiến trúc là ngoại lệ). |

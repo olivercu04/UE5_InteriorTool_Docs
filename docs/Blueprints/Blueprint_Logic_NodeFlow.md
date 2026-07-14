@@ -1,6 +1,6 @@
 # Blueprint Logic — Node Flow Reference
 **HỢP NHẤT TỪ 3 file:** v1.3 base (07/06) + v1.4_patch (12/06) + v1.5_patch (15/06)
-**Phiên bản:** 1.7 | **Cập nhật:** 06/07/2026 — 21:15 ICT — NF.G3 (nút "+") + RebuildChipRowForPath/RefreshChipBreadcrumb node flow
+**Phiên bản:** 1.8 | **Cập nhật:** 14/07/2026 — BP_ComboManager debug capture thumbnail (phím T), P1 Gate G0-R
 **Mục đích:** Ghi lại thứ tự node logic để không cần chụp ảnh lại Blueprint. Full flows sống trong file BP_*.md / WBP_*.md tương ứng — file này ghi node-by-node diff và cross-BP flows.
 
 ---
@@ -1020,6 +1020,47 @@ ComputeSelectionUnits(SelectedActors) → (GroupUnits, LooseActors)
 
 ---
 
+## BP_ComboManager — Debug capture thumbnail (phím T)
+
+Biến: `Cmb_CaptureHandle` (Scene Capture 2D, Object Reference, default None). Biến debug `bDebugTestThumb` (Boolean, default False) dùng chung với Enable Input ở BeginPlay — gỡ cả 2 sau khi G4 PASS.
+
+Event BeginPlay:
+```
+▶→ Branch(bDebugTestThumb)
+     True ▶→ Enable Input(Target=self,
+               Player Controller ●← Get Player Controller(0))
+```
+
+Keyboard Event T (Pressed):
+```
+▶→ Branch(IsValid(Cmb_CaptureHandle))
+     True  ▶→ [dead-end — chặn double-trigger, đang chụp dở]
+     False ▶→ Get All Actors with Tag("FurnitureSpawned") ●→ Actors
+              ▶→ Begin Combo Capture(Combo Actors=Actors,
+                   Extra Hidden Actors=[mảng rỗng], Resolution=1024)
+                   ●→ SET Cmb_CaptureHandle
+              ▶→ Delay(Duration=3.0)
+              ▶→ Finish Combo Capture(
+                   Capture Handle=Get Cmb_CaptureHandle,
+                   Combo ID="TestThumb") ●→ bOK
+              ▶→ SET Cmb_CaptureHandle (= None)
+              ▶→ Print String("G0R Capture = " + bOK)
+                   [Development Only]
+```
+
+Event End Play (R4 — dọn nếu tắt PIE giữa lúc Delay):
+```
+▶→ Branch(IsValid(Cmb_CaptureHandle))
+     True ▶→ Destroy Actor(Target=Get Cmb_CaptureHandle)
+           ▶→ SET Cmb_CaptureHandle (= None)
+```
+
+Q8: Keyboard Event, latent Delay hợp lệ (nằm trong Event, không Function) | IsValid: guard handle đầu chain (chặn double-trigger) + Finish tự guard nội bộ + EndPlay guard | L2: nhánh True của guard đầu là dead-end chấp nhận được (pattern nuốt lệnh khi đang bận) — còn lại mọi nhánh merge về Print | Latent nằm trong Event, không Function | 6A: Finish tự dọn actor+RT kể cả đọc fail; EndPlay dọn nếu tắt PIE giữa Delay.
+
+> Full context kiến trúc (BeginComboCapture/FinishComboCapture, đổi từ one-shot): xem `DEVIATIONS.md` [ARCH] 14/07/2026 + `01_Session_State.md` mục P1.
+
+---
+
 ## NODE FLOW ĐÃ CONFIRM
 
 | Node display name | Ghi chú |
@@ -1042,3 +1083,4 @@ ComputeSelectionUnits(SelectedActors) → (GroupUnits, LooseActors)
 | 1.5 | 15/06/2026 — 20:30 ICT | **Sprint 4 Bug Fix Learnings:** L-NEW-1 (Branch dead-end Sequence vs Event), L-NEW-2 (output pins + Temp buffer), L-NEW-3 (ComputeSelectionUnits trước guard), L-NEW-4 (Blueprint export text debug), L-NEW-5 (EditModeStack runtime → snapshot), L-NEW-6 (ValidateEditMode restore order). NODE FLOW ĐÃ CONFIRM table. |
 | 1.6 | 04/07/2026 — 22:10 ICT | **NF — New Folder (context menu, dưới §C5.0 combo):** node flow GetChildFolderNames, GetUniqueNewFolderName, GetNewFolderParent, OnRequestNewFolder, CB_CreateNewFolder + ghi chú OnComboTreeNodeRightClicked thêm menu item đầu chuỗi. Full doc: WBP_FurnitureInventory.md v3.6. |
 | 1.7 | 06/07/2026 — 21:15 ICT | **NF.G3 (nút "+")** node flow: PopulateComboTreeColumn +PlusNode, OnComboTreeNodeClicked +guard đầu tiên. **RebuildChipRowForPath + RefreshChipBreadcrumb** node flow (gộp code ChipRow trùng lặp + tự vẽ lại chip breadcrumb sau Move/Xóa/Rename folder) + tóm tắt 3 bug fix (dead-end 2/3 nhánh, delimiter sai, BooleanAND→OR). Full doc: WBP_FurnitureInventory.md v3.7. |
+| 1.8 | 14/07/2026 | **BP_ComboManager — Debug capture thumbnail (phím T)**, P1 Gate G0-R: BeginPlay (Enable Input theo `bDebugTestThumb`), Keyboard Event T (guard double-trigger qua `Cmb_CaptureHandle` → `BeginComboCapture` → `Delay(3.0)` → `FinishComboCapture` → Print debug), Event End Play (R4, dọn actor nếu tắt PIE giữa Delay). Xem `DEVIATIONS.md` [ARCH] 14/07/2026 cho bối cảnh kiến trúc Begin/Finish. |

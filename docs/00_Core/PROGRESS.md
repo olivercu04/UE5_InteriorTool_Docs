@@ -1,6 +1,6 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
-**Cập nhật:** 13/07/2026 (REG) — C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE, REG Khối A/B/C/D PASS
+**Cập nhật:** 14/07/2026 — P1 Combo Thumbnail Gate G0-R DONE (đổi kiến trúc capture latent) | C5.8 CHÍNH THỨC DONE (13/07)
 
 ---
 
@@ -253,6 +253,12 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 ──── **Giai đoạn 1 (~25/06): combo Tạo + Duyệt + Đặt qua nút** ────
 - [ ] **C3** — Save dialog + gộp P4 (GetCombosDir → `%LOCALAPPDATA%/InteriorFOFFTool/Combos`) + móc capture thumbnail sau SaveComboFromSelection thành công
 - [ ] **Thumbnail System C++ (P1)** — `SaveRenderTargetToPNG` + `LoadTexture2DFromFile`; SceneCapture2D theo góc camera → PNG. Gắn vào C3/C4.
+  - [x] P1.G0-R (đổi từ G0 gốc — kiến trúc latent) — DONE 14/07/2026. Ảnh capture đúng màu/sáng/GI, xác nhận bằng so sánh trực tiếp với viewport thật (screenshot đối chiếu). Event End Play dọn rác actor/RT đã thêm (R4).
+  - [ ] P1.G1 — đọc PNG → Texture2D (LoadComboThumbnail)
+  - [ ] P1.G2 — auto-fit khung hình + ẩn gizmo/outline + tinh chỉnh sharpen/PostProcess
+  - [ ] P1.G3 — cache ảnh trong BP_ComboManager (Map — node chưa xác nhận, cần cuhoang confirm trong project trước khi dùng chính thức, xem AI_Implementation_Rules.md mục "Nodes chờ xác nhận")
+  - [ ] P1.G4 — wire full vào Save/Load flow + 6 test case end-to-end + chốt số Delay warm-up chính xác (đang tạm 3.0s)
+  - [ ] P1.G5 — regression VRAM (stat rhi 4 mốc)
 - [x] **C4** — WBP_ComboCard + ghost + drag-drop + CalculateComboAnchor + CTV_ComboCard. Ghost offset FIXED (Approach B). ✅ 25/06/2026
 - [ ] **C5** ⏳ IN PROGRESS — 7 sub-task:
   - [x] C5.1 — C++ 3 helper (UpdateComboFolder/RenameFolderPrefix/ClearFolderPrefix) ✅ 25/06
@@ -315,3 +321,4 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 12/07/2026 10:40 | **C5.8 Task Card #2 Part B — Giai đoạn 2 (Search) + Giai đoạn 3 (Select) ✅ DONE**: 3 Function mới trên `WBP_FolderTreePicker` (`PathMatchesQuery`/`BuildSearchOverride`/`GetParentPath`) + `RefreshVisibleRows` ghép xong nhánh search + wire `SB_SearchFolder.OnSearchTextChanged` (`WBP_FolderTreePicker.md` v1.1). `SetSearchHighlight(bMatch)` DONE trên `WBP_FolderPickerRow` (`WBP_FolderPickerRow.md` v1.2). Bug fix: `PathMatchesQuery` dùng nhầm `Path` đầy đủ thay `DisplayLabel`; arrow-click node đang match trong lúc search không lộ con (thêm `GetParentPath`). Test mục 1-10 PASS hết — **Task Card #2 Part B + 2c HOÀN TẤT.** Tiếp theo: Giai đoạn 4 (Chốt sổ — comprehension check còn nợ 2 câu) → 2d (rename host) → wire Move → wire Save + Create Folder → REG C5.8. |
 | 13/07/2026 | **C5.8 Task Card #2 (2d rename host) + Wire Move + Wire Save — build + test node-level DONE** (chưa tính vào task count): `WBP_FolderPickerRow.md` v1.3 (`TXT_Name`→`EditableLabel_Name` + `EnterRenameMode`/`HandleLabelCommitted`/dispatcher `OnRowRenameCommitted`/`GetRowPath` (2d Phần 1); `TXT_CurrentTag`+`SetCurrentTag`/`SetSelectedHighlight` (Card 1)). `WBP_EditableLabel.md` v1.1 (`SetLabelColor`). `WBP_FolderTreePicker.md` v1.3 (`BeginRenameOnPath`/`ExpandToPath` (2d Phần 2); var `CurrentPath`/`bShowCurrentTag` + dispatcher `OnRequestCommitRename` (Card 1)). `WBP_MoveToFolderDialog.md` v2.0 + `WBP_SaveComboDialog.md` v2.0 — cả 2 chuyển hẳn sang dùng `WBP_FolderTreePicker` (xoá `WBP_MoveFolderRow`/`CMB_Folder` cũ, SUPERSEDED không xoá file). `WBP_FurnitureInventory.md` v3.11 — `OnRequestMoveFolder`/`CB_MoveCombo` gọi `Dialog.InitPicker`; `OpenSaveComboDialog` wire Picker + 2 Custom Event mới `HandleSaveDialogCreateFolder`/`HandleSavePickerRenameCommitted`; `BuildMoveFolderTargetList` xoá hẳn khỏi Blueprint. 3 bug fix phát hiện lúc test: `BuildMoveFolderTargetList` sót 2 call site (claim "Blueprint tự propagate" ở v3.9 SAI), `SetSelectedHighlight` so sai biến (CurrentPath thay SelectedPath), `SetLabelColor` type correction (Slate Color không phải Linear Color). Test PASS: M1-M6, S6a/S6c, 0.3, Phần 2 test 1-2. **REG C5.8 (regression cuối) CHƯA chạy — bước tiếp theo, sau đó mới cho phép sang C9.** |
 | 13/07/2026 (REG) | **C5.8 — REG (Khối A/B/C/D) PASS — CHÍNH THỨC DONE.** A1-A7 PASS (A1 clarification wording task card), B1-B4 PASS (B4 scope note không live-sync), C1 SKIP (rủi ro thấp)/C2-C5 PASS (không VRAM leak), D5 comprehension check PASS. 2 bug mới ghi `Bugs/Open_Bugs.md` (ngoài scope, không sửa ở đây): Bug-SaveConfirm-EmptyName, Bug-MoveFolder-Collision. `WBP_MoveFolderRow.md` đánh dấu [SUPERSEDED]. **Roadmap: mở khóa C9 (Replace).** |
+| 14/07/2026 | **P1 Combo Thumbnail — Gate G0-R DONE.** One-shot capture (G0 gốc) loại bỏ — ảnh xám phẳng do Lumen GI/TAA/auto-exposure chưa hội tụ đủ frame. Đổi kiến trúc: `BeginComboCapture`/`FinishComboCapture` + Custom Event `Delay` latent, thay hàm đồng bộ cũ (giữ `[LEGACY]`). Test debug phím T (`BP_ComboManager`) — chốt tạm Delay 3.0s. Checklist P1 mở rộng thành G0-R→G5, G0-R tick DONE. Xem `DEVIATIONS.md` [ARCH] 14/07/2026 + `01_Session_State.md` mục P1. |
