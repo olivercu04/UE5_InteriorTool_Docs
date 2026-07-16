@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.5 | **Ngày:** 24/06/2026 | **Actor class, không Tick**
+**Version:** 1.6 | **Ngày:** 15/07/2026 | **Actor class, không Tick**
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -23,6 +23,8 @@ Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, K
 | MaterialOverrides_SaveCombo | Array String | Buffer RowName per actor (C0) |
 | ItemRowName_SaveCombo | String | Buffer RowName sau fallback parse MeshPath (Bước 5d, C0) |
 | SaveCombo_BoundingExtent | Vector | Buffer tạm BoundingBoxExtent tính từ CalculateComboBoundingExtent (Bước 5e, C4) |
+| Cmb_ThumbnailCache | Map<String,Texture2D> | Cache thumbnail, key=ComboID (G3) |
+| Cmb_CaptureHandle | SceneCapture2D | Handle tạm giữa Begin/Delay/Finish (debug + Bước 7 thật) |
 
 ## Functions (có local variable)
 ### GetPathToRoot_Combo(InGroupID → Path: Array String)
@@ -60,6 +62,17 @@ Branch(InActors.Length == 0):
   Completed →
     Make Vector(X=(MaxX-MinX)/2, Y=(MaxY-MinY)/2, Z=(MaxZ-MinZ)/2) → Return
 
+### GetComboThumbnail(ComboID) → Texture2D — MỚI G3
+Branch(Map Find(Cmb_ThumbnailCache, ComboID) → Value, bFound):
+- True → Return(Value)
+- False → LoadComboThumbnail(ComboID, MaxSize=256) → LoadedTex
+  Branch(IsValid(LoadedTex)):
+  - True  → Map Add(Cmb_ThumbnailCache, ComboID, LoadedTex) → Return(LoadedTex)
+  - False → Return(None) 🔴 Return Node bắt buộc ở CẢ 2 nhánh — xem DEVIATIONS 15/07/2026.
+
+### InvalidateThumbnail(ComboID) — MỚI G3
+Map Remove(Cmb_ThumbnailCache, ComboID).
+
 ---
 
 ## Custom Events
@@ -90,8 +103,12 @@ Branch(InActors.Length == 0):
 - Visibility = "Private" (default)
 - BoundingBoxExtent ← SaveCombo_BoundingExtent  ← C4
 **Bước 6:** GetCombosDir → MakeDirectory → ComboToJson → SaveStringToFile  
-**Bước 7:** (thumbnail — pending C3)  
-**Bước 8:** Broadcast OnComboLibraryChanged  
+**Bước 7 (G4 — hoàn chỉnh, trước là "pending C3"):** Sau SaveStringToFile → Branch(bSaveOK):
+  - True → build ExtraHiddenActors tươi (BaseGizmo + FurniturePivot) → BeginComboCapture
+    → Delay(3.0) → FinishComboCapture(ComboActors=SelectedActors) → Print debug
+  - False → (bỏ qua capture)
+  [MERGE cả 2 nhánh] → Broadcast OnComboLibraryChanged
+**Bước 8:** Broadcast OnComboLibraryChanged (gộp vào merge Bước 7 ở trên)  
 
 ---
 
@@ -315,3 +332,4 @@ Branch(Cmb_SpawnedActors.Length == 0):
 | 22/06/2026 | 1.3 | C2 SpawnComboByID DONE — 5 class var mới, 4 functions (F_LoadComboData, F_BuildTokenGUIDMap, F_RegisterComboGroups, F_ApplyMaterialOverrides), Custom Event SpawnComboByID (4 sub-steps). 7/7 test PASS. Group nesting fix: Case A (no groups→wrapper) / Case B (has groups→no wrapper, root groups nhận SourceComboID). |
 | 23/06/2026 | 1.4 | C3a: SaveComboFromSelection mở rộng signature (thêm FolderPath, Tags). Bước 5e: Make FComboData đầy đủ tất cả fields (Category hardcode "MyCombo" tạm, CreatedAt UTC Now, AppVersion 1.0.0, AuthorID/Visibility default, FolderPath+Tags từ param). |
 | 24/06/2026 | 1.5 | C4: thêm CalculateComboBoundingExtent function; class var SaveCombo_BoundingExtent; Bước 5e tính BoundingBoxExtent trước Make FComboData + gán vào field. |
+| 15/07/2026 | 1.6 | G2+G3+G4: class var Cmb_ThumbnailCache + Cmb_CaptureHandle. Function GetComboThumbnail (🔴 Return Node bắt buộc cả 2 nhánh — bug fix, xem DEVIATIONS) + InvalidateThumbnail. Bước 7 SaveComboFromSelection hoàn chỉnh (capture thật, nối vào bSaveOK Branch, merge về Broadcast). |

@@ -103,20 +103,41 @@ static bool CaptureComboThumbnail(UObject* WorldContextObject,
 ```
 One-shot capture (G0 gốc) — giữ nguyên trong code, đánh dấu `[LEGACY]`, KHÔNG xóa/gọi. Bị loại bỏ vì ảnh xám phẳng (Lumen GI/TAA/auto-exposure chưa hội tụ đủ frame — camera phụ chụp ngay 1 frame duy nhất). Thay bằng cặp `BeginComboCapture`/`FinishComboCapture` bên dưới.
 
-### BeginComboCapture(...) → ASceneCapture2D* (handle)
+### BeginComboCapture(WorldContextObject, ComboActors, ExtraHiddenActors, Resolution=1024,
+FitRatio=0.85, bIsolateCombo=false, bUseFixedAngle=false, FixedAngle=(0,0,0)) → ASceneCapture2D
 ```cpp
 static ASceneCapture2D* BeginComboCapture(UObject* WorldContextObject,
     const TArray<AActor*>& ComboActors,
     const TArray<AActor*>& ExtraHiddenActors,
-    int32 Resolution = 1024);
+    int32 Resolution = 1024,
+    float FitRatio = 0.85f,
+    bool bIsolateCombo = false,
+    bool bUseFixedAngle = false,
+    FRotator FixedAngle = FRotator::ZeroRotator);
 ```
-Bước 1/2: spawn camera phụ tại vị trí camera hiện hành, bật render liên tục (`bCaptureEveryFrame=true`, warm-up cho Lumen GI/TAA hội tụ). Trả về handle — caller (Blueprint) giữ trong class var, `Delay` một khoảng rồi gọi `FinishComboCapture`. Test debug (phím T, `BP_ComboManager`) chốt tạm `Delay(3.0)` — xem `01_Session_State.md` mục P1.
+**[UPDATED 15/07/2026, Gate G2]** Thêm 4 param mới so với G0-R: FitRatio (auto-fit theo
+bounding box), bIsolateCombo/bUseFixedAngle/FixedAngle (chuẩn bị B3, chưa dùng thật). Vị trí
+camera phụ tính từ Center - Dir*Distance (bounding box cầu bao + FitRatio), KHÔNG còn là vị
+trí camera thật như bản G0-R.
 
-### FinishComboCapture(CaptureHandle, ComboID) → bool
+Bước 1/2: spawn camera phụ, bật render liên tục (`bCaptureEveryFrame=true`, warm-up cho Lumen GI/TAA hội tụ). Trả về handle — caller (Blueprint) giữ trong class var, `Delay` một khoảng rồi gọi `FinishComboCapture`. Test debug (phím T, `BP_ComboManager`) chốt tạm `Delay(3.0)` — xem `01_Session_State.md` mục P1.
+
+### FinishComboCapture(CaptureHandle, ComboID, ComboActors) → bool
 ```cpp
-static bool FinishComboCapture(ASceneCapture2D* CaptureHandle, const FString& ComboID);
+static bool FinishComboCapture(ASceneCapture2D* CaptureHandle, const FString& ComboID,
+    const TArray<AActor*>& ComboActors);
 ```
+**[UPDATED 15/07/2026, Gate G2]** Thêm param ComboActors (Array<AActor*>) — dùng để khôi phục
+Custom Depth (outline) đúng actor đã tắt lúc BeginComboCapture. PHẢI đưa CÙNG mảng
+ComboActors ở cả Begin và Finish (không track state qua static function — đơn giản hơn bản
+DepthOn array của legacy CaptureComboThumbnail).
+
 Bước 2/2: đọc frame đã hội tụ → ghi `<ComboID>.png` cạnh file combo `.json` (cùng `GetCombosDir()`) → tự dọn actor + RenderTarget, **kể cả khi đọc/ghi fail** (R4-style cleanup). Trả `false` nếu ghi file thất bại — Blueprint KHÔNG gate Save Combo theo giá trị này (combo vẫn lưu OK, card fallback icon 🧩 nếu capture fail).
+
+### GetComboThumbnail(ComboID) → Texture2D [BP_ComboManager, không phải C++]
+**[MỚI 15/07/2026, Gate G3]** Cache qua Cmb_ThumbnailCache (Map<String,Texture2D>). Lật album
+nếu đã cache, LoadComboThumbnail(256) nếu chưa. 🔴 Có bug Return Node đã fix — xem DEVIATIONS
+15/07/2026 nếu cần đối chiếu lịch sử.
 
 ### LoadComboThumbnail(ComboID, MaxSize) → UTexture2D*
 ```cpp

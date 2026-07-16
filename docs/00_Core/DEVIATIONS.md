@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 11/07/2026 13:14
+**Cập nhật:** 15/07/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -497,6 +497,52 @@ Quyết định kiến trúc (Fable review 14/07): tách `CaptureComboThumbnail`
 
 ---
 
+## SPRINT 5 — 15/07/2026 — P1 G2/G3/G4: bug dead-end Return Node + wiring
+
+### [BUG-FIX, NGHIÊM TRỌNG] Function thiếu Return Node ở 1 nhánh → output tái sử dụng giá trị cũ
+`BP_ComboManager.GetComboThumbnail` — nhánh False của IfThenElse kiểm IsValid(LoadedTex) không
+nối Return Node nào (dead-end). Ngộ nhận trước đó (G0 review) "dead-end vô hại với Function" —
+SAI với Function CÓ RETURN VALUE: Blueprint không tự trả None, mà GIỮ NGUYÊN output từ lần
+gọi hàm TRƯỚC ĐÓ trong cùng frame/vòng lặp. Hậu quả thực tế: LoadComboLibrary gọi
+GetComboThumbnail liên tục trong ForEach — combo đầu tiên load thumbnail thành công, MỌI
+combo sau đó (chưa có PNG, LoadComboThumbnail trả fail) đều hiện NHẦM đúng ảnh của combo đầu
+tiên. Phát hiện qua Print String debug 2 điểm (LoadComboLibrary + OnListItemObjectSet) sau
+khi soát tĩnh 3 lớp code (LoadComboLibrary/WBP_ComboCard/GetComboThumbnail) đều "đúng" mà bug
+vẫn còn — bài học: đọc code tĩnh có giới hạn, cần runtime Print khi đã loại hết giả thuyết
+static. Fix: thêm Return Node tường minh ở nhánh False, Texture2D để trống (None).
+**Quy tắc mới thêm AI_Implementation_Rules.md:** mọi Function có Return Value → Q8 L2 phải
+kiểm 100% exec path chạm Return Node, không có ngoại lệ "dead-end chấp nhận được" như với
+Event/Custom Event.
+
+### [BUG-FIX] 2 dead-end trong SaveComboFromSelection Bước 7 (P1.G4 wiring)
+- Nhánh False "không có Pivot" (trường hợp phổ biến nhất) dead-end → combo save nhưng KHÔNG
+  capture thumbnail, im lặng không báo lỗi. Fix: nối vào Array_Add (Pivot=None vô hại,
+  IsValid tự guard trong C++).
+- Nhánh False "ghi JSON fail" (bSaveOK) dead-end → Broadcast OnComboLibraryChanged không
+  chạy dù thiết kế gốc yêu cầu luôn broadcast bất kể capture/save thumbnail có fail hay không.
+  Fix: nối vào Call Delegate.
+
+### [BACKLOG — chưa fix] Dead-end ComboManagerRef trong LoadComboLibrary
+Nhánh False của IsValid(ComboManagerRef) dead-end → combo đó bị loại khỏi AllComboViews_Combo
+hoàn toàn (không chỉ thiếu thumbnail). Rủi ro thấp, chưa quan sát thực tế xảy ra. Cần fix
+trước khi coi P1 hoàn tất 100%.
+
+### [CORRECTION] Delete combo KHÔNG PHẢI = C8
+Plan gốc (`P1_ComboThumbnail_Execution.md` V5) ghi nhầm "flow xóa combo (C8)". Thực tế C8 =
+"Drag-drop + surface-snap", đã MERGED vào C4 (24/06/2026) — không liên quan xóa combo. Tính
+năng xóa combo (BTN_DeleteCombo có layout từ C4, chưa bind handler) CHƯA TỪNG được implement.
+Nối 3 (DeleteThumbnail/InvalidateThumbnail khi xóa combo) trong plan G4 gốc BỊ BỎ QUA có chủ
+đích trong session 15/07 vì tính năng nền (xóa combo) chưa tồn tại — cần làm khi có task
+riêng cho delete combo.
+
+### [ARCH — đã note trước, xác nhận lại] Exposure bug — 2 lần thử Auto-exposure lock đều fail
+Lần 2 (15/07, retry sau khi G0-R warmup đã fix vấn đề "ảnh xám phẳng") — VẪN fail, xác nhận
+đây là vấn đề KHÁC (nghi ngược sáng/backlit khi khung hình chứa vùng cực sáng), không phải
+thiếu warm-up. Deferred, cần Fable review kiến trúc — KHÔNG thử lại Auto-exposure Min/Max
+lock lần 3 nếu chưa có hướng mới từ Fable.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -565,3 +611,4 @@ Quyết định kiến trúc (Fable review 14/07): tách `CaptureComboThumbnail`
 | 13/07/2026 | Thêm section "SPRINT 5 — 13/07/2026 — C5.8 2d (rename host) + Wire Move + Wire Save": 8 entry (2 [BUG-FIX] BuildMoveFolderTargetList sót call site + SetSelectedHighlight sai biến, 1 [CORRECTION] SetLabelColor Slate Color, 3 [SCOPE] rename context-menu không tồn tại/test TC#2 SUPERSEDED/6A Create Folder chấp nhận, 1 [CEILING] Bind OnFolderSelected 1 lần/instance, 1 [CLEANUP] Print debug DevelopmentOnly). |
 | 13/07/2026 (REG) | Thêm section "SPRINT 5 — 13/07/2026 (REG) — C5.8 Chốt sổ (Khối A/B/C/D)": [CLARIFICATION] A1 REG Task Card mô tả nhầm case Move Folder/Move Combo (không sửa code, chỉ đính chính wording); [SCOPE] Save dialog không live-sync sang cây inventory đang mở phía sau (đúng thiết kế, không phải bug). REG PASS toàn bộ Khối A/B/C, D5 comprehension check PASS — **C5.8 CHÍNH THỨC DONE**, mở khóa C9. |
 | 14/07/2026 | Thêm section "SPRINT 5 — 14/07/2026 — P1 Combo Thumbnail: đổi kiến trúc capture": [ARCH] one-shot `CaptureComboThumbnail` (plan gốc G0) loại bỏ do ảnh xám phẳng (Lumen/TAA/auto-exposure chưa hội tụ qua đủ frame) — đổi sang cặp `BeginComboCapture`/`FinishComboCapture` bọc bởi Custom Event dùng `Delay` latent (L8). Hàm cũ giữ `[LEGACY]`, không xóa. `.h` bị đụng lần 2 (chấp nhận, đổi kiến trúc là ngoại lệ). |
+| 15/07/2026 | Thêm section "SPRINT 5 — 15/07/2026 — P1 G2/G3/G4: bug dead-end Return Node + wiring": [BUG-FIX, NGHIÊM TRỌNG] `GetComboThumbnail` thiếu Return Node ở nhánh False → cross-combo thumbnail bleeding (đọc lại rule L2 — ngoại lệ "dead-end vô hại" KHÔNG áp dụng cho Function có return type); [BUG-FIX] 2 dead-end trong SaveComboFromSelection Bước 7 (Pivot not-found + bSaveOK fail); [BACKLOG] dead-end ComboManagerRef trong LoadComboLibrary chưa fix; [CORRECTION] Delete combo KHÔNG PHẢI = C8 (C8 = Drag-drop/surface-snap); [ARCH] exposure bug retry lần 2 vẫn fail, xác nhận không phải warm-up issue. |

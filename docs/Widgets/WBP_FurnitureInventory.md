@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.11 | **Cập nhật:** 13/07/2026 — C5.8 Wire Move + Wire Save: `OnRequestMoveFolder`/`CB_MoveCombo` gọi `Dialog.InitPicker` thay `PopulateRows`; `OpenSaveComboDialog` wire `Picker.SetFolders`+`OnRequestCreateFolder`+`OnRequestCommitRename`; 2 Custom Event mới `HandleSaveDialogCreateFolder`/`HandleSavePickerRenameCommitted`
+**Phiên bản:** 3.12 | **Cập nhật:** 15/07/2026 — P1.G4: `ComboManagerRef` mới (set Construct/clear Destruct) + `LoadComboLibrary` mở rộng gọi `GetComboThumbnail` → SET `view.Thumbnail` (bug dead-end nhánh False CÒN MỞ, xem DEVIATIONS 15/07/2026)
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -110,8 +110,10 @@ Python 1: populate BoundingSize | Python 2: update MeshFolderPath | (Sprint D: P
 | `PendingDeleteFolderPath` | String | Path folder chờ xác nhận xóa — SET khi mở WBP_ConfirmDialog, đọc trong HandleDeleteFolderConfirmed, clear cuối hàm |
 | **— C5.8 Wire Save —** | | |
 | `SaveDlg_NewFolderPath` | String | Path folder rỗng mới tạo qua `BTN_AddFolder` — SET trong `HandleSaveDialogCreateFolder`, dùng để ExpandToPath + BeginRenameOnPath |
+| **— G4 Combo Thumbnail —** | | |
+| `ComboManagerRef` | BP_ComboManager | Set 1 lần ở Event Construct, clear ở Event Destruct (R4). Dùng làm Target cho `GetComboThumbnail` trong `LoadComboLibrary` (KHÔNG dùng self — self là Widget, không phải BP_ComboManager). |
 
-⚠️ **VRAM leak:** TargetFurnitureActor + PendingRestoredActor + SaveComboDialogRef + RenameTargetNode + LibraryMenuRef + MoveComboDialogRef là hard ref → SET None ở Event Destruct.
+⚠️ **VRAM leak:** TargetFurnitureActor + PendingRestoredActor + SaveComboDialogRef + RenameTargetNode + LibraryMenuRef + MoveComboDialogRef + ComboManagerRef là hard ref → SET None ở Event Destruct.
 
 ---
 
@@ -491,12 +493,30 @@ ForEach AllComboViews_Combo:
   Loop Body: CTV_ComboCard.Add Item(ArrayElement)
 ```
 
+### LoadComboLibrary — mở rộng (G4, trong ForEach, sau build BP_ComboItemView)
+```
+Branch(IsValid(ComboManagerRef)):
+  True  → GetComboThumbnail(Target=ComboManagerRef, ComboID=view.ComboID) → SET view.Thumbnail
+  False → (bỏ qua — BUG CÒN MỞ, xem DEVIATIONS 15/07/2026: nhánh False hiện dead-end thật,
+          làm combo bị rớt khỏi AllComboViews_Combo, cần fix)
+```
+
 **Test PASS (24/06/2026):** 19 combo hiện đúng tên + badge ×N món.
 
 ### Event Construct (cập nhật C4 — thêm vào Sequence)
 ```
 Then 5: Bind OnComboLibraryChanged → LoadComboLibrary
         LoadComboLibrary  ← gọi ngay lần đầu để populate CTV khi mở inventory
+```
+
+### Event Construct (cập nhật G4 — thêm vào Sequence)
+```
+Then 6: Get All Actors Of Class(BP_ComboManager) → Get(0) → SET ComboManagerRef
+```
+
+### Event Destruct (cập nhật G4 — thêm)
+```
+SET ComboManagerRef = None
 ```
 
 ---
@@ -1542,3 +1562,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.9 | 08/07/2026 — C5.8 Task Card #1 (Data Layer) DONE | RENAME struct `S_FolderTargetEntry`→`S_FolderTreeNode` (Depth thay IndentLevel, +HasChildren/ChildCount/ContinuesAncestors/bIsLast). RENAME function `CollectFolderTargets`→`BuildFolderTreeRecursive` (đệ quy, depth guard=12, dùng `AncestorsContinue` thay IndentLevel). Hàm mới `GetFilteredChildren` (Pure, tách filter exclusion ra khỏi recursive function). Wrapper `BuildMoveFolderTargetList`→`BuildComboFolderTreeNodes(ExcludePath)` — **tên đổi so với plan gốc** (plan ghi "BuildFolderTree", trùng tên hàm cũ phía Material/Furniture catalog → đổi). Call site `OnRequestMoveFolder`/`CB_MoveCombo` cập nhật theo tên mới (Blueprint tự propagate qua rename). Test Print PASS trên data thật (8 combo, nested 3 tầng, tiếng Việt) — không lệch. Việc kế tiếp: Task Card #2 (`WBP_FolderTreePicker` UI component). Xem `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md`. |
 | 3.10 | 08/07/2026 (bổ sung) | Thay node flow "ghi theo suy luận" (v3.9) của `GetFilteredChildren`/`BuildFolderTreeRecursive`/`BuildComboFolderTreeNodes` bằng node flow THẬT (export K2Node) — kèm Local var đầy đủ + Q8 self-check mỗi hàm. Khác biệt nhỏ so với bản suy luận: `GetFilteredChildren` gọi 1 lần/child trong `BuildFolderTreeRecursive` (dùng chung cho `ChildCount`+`HasChildren`, không gọi 2 lần); node "(Gốc)" trong `BuildComboFolderTreeNodes` có `bIsLast=False` (không phải True như suy đoán trước). Test PASS thêm case `ExcludePath="Livingroom/Sofa"`, khớp 100%. Không đổi hành vi/kết luận đã ghi ở v3.9. |
 | 3.11 | 13/07/2026 — C5.8 Wire Move + Wire Save | `OnRequestMoveFolder`: `Dialog.InitPicker(Entries, ParentOf(FolderPath), True)` thay `PopulateRows`. `CB_MoveCombo`: `Dialog.InitPicker(Entries, MovingComboCurrentFolder, True)` thay `PopulateRows`. [BUG-FIX] cả 2 call site thực tế vẫn gọi `BuildMoveFolderTargetList` cũ (claim "Blueprint tự propagate" ở v3.9 SAI) — đã fix về `BuildComboFolderTreeNodes`, `BuildMoveFolderTargetList` xoá hẳn khỏi Blueprint. `OpenSaveComboDialog`: xoá `GetExistingFolders`/pin `ExistingFolders`; thêm Branch wire `Picker.SetFolders`/`bShowCurrentTag`/bind `OnRequestCreateFolder`→`HandleSaveDialogCreateFolder`+`Picker.OnRequestCommitRename`→`HandleSavePickerRenameCommitted`. 2 Custom Event mới: `HandleSaveDialogCreateFolder` (tạo folder rỗng qua `CreateEmptyFolder` → expand + `BeginRenameOnPath`), `HandleSavePickerRenameCommitted` (rename qua `RenameFolderPrefix`, KHÔNG gate theo Return Value — xem ghi chú C++). Var mới `SaveDlg_NewFolderPath`. Test PASS: S6a, S6c, M1-M6, Phần 2 test 1-2. |
+| 3.12 | 15/07/2026 — P1.G4 wire thumbnail hiển thị | Class var mới `ComboManagerRef` (BP_ComboManager) — set Event Construct (Then 6, Get All Actors Of Class→Get(0)), clear Event Destruct (R4). `LoadComboLibrary` mở rộng: trong ForEach sau build BP_ComboItemView, Branch IsValid(ComboManagerRef) → GetComboThumbnail(Target=ComboManagerRef) → SET view.Thumbnail. ⚠️ Nhánh False hiện dead-end thật (bug CÒN MỞ, backlog — xem DEVIATIONS 15/07/2026 + Session_State mục P1). |

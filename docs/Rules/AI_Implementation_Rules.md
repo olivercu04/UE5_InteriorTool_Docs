@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.7 | **Cập nhật:** 14/07/2026 — thêm `Delay` vào "Nodes chờ xác nhận" (P1 Combo Thumbnail)
+**Phiên bản:** 2.8 | **Cập nhật:** 15/07/2026 — thêm L12 (Function Return Value 100% exec path) + chuyển 3 node P1.G2-G4 vào bảng NODE CHÍNH XÁC
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -148,6 +148,19 @@ FIX ĐÚNG: đặt Custom Event trong chính actor sở hữu asset (BP_Furnitur
 
 TỔNG QUÁT: Manager gọi hộ + latent + nhiều target đồng thời = aliasing. Giải pháp: "actor tự lo asset của nó".
 
+### L12 — Function CÓ Return Value phải kiểm 100% exec path chạm Return Node (15/07/2026)
+```
+"Dead-end chấp nhận được" (L2 ngoại lệ trong Sequence.Then) CHỈ áp dụng cho Event/Custom
+Event side-effect thuần (không có return type). Với Function có return type: dead-end
+KHÔNG tự động trả None — Blueprint runtime TÁI SỬ DỤNG giá trị output từ lần gọi hàm
+TRƯỚC ĐÓ trong cùng frame/vòng lặp.
+```
+Bài học từ bug 15/07/2026 (`BP_ComboManager.GetComboThumbnail`): nhánh False của
+IfThenElse kiểm IsValid(LoadedTex) dead-end → khi gọi liên tục trong ForEach
+(LoadComboLibrary), combo chưa có thumbnail hiện NHẦM ảnh của combo trước đó trong vòng
+lặp. Q8 self-check L2 khi audit Function có Return Value: liệt kê ĐỦ từng nhánh, xác nhận
+mỗi nhánh có Return Node riêng.
+
 ---
 
 ## ⭐ Q8 — SELF-CHECK GATE (cổng bắt buộc trước khi đưa BẤT KỲ node flow nào)
@@ -233,7 +246,9 @@ Dùng đúng tên này, KHÔNG bịa tên khác:
 | Is Valid Index | Array → kiểm tra index có hợp lệ không (không out of bounds). Input: Array + Index. Return: bool. Dùng thay thế cho Branch Array.Length > Index. ✅ xác nhận 19/06/2026 | |
 | String → Array | `Parse Into Array(SourceString, Delimiter)` → Array\<String\>. Chia chuỗi theo separator. ✅ C5 25/06 | |
 | Array exact match | `Array Contains(Array, Item)` — so sánh EXACT STRING. **KHÁC** `String Contains` (substring). Dùng để dedup CSV array. ✅ C5 25/06 | `String Contains` (substring match sai) |
-| Map thao tác | `Map Clear(Map)` · `Map Find(Map, Key → Value, bFound)` · `Map Add(Map, Key, Value)` · `Map Contains(Map, Key → bool)`. ✅ C5 25/06 | |
+| Map thao tác | `Map Clear(Map)` · `Map Find(Map, Key → Value, bFound)` · `Map Add(Map, Key, Value)` · `Map Contains(Map, Key → bool)` · `Map Remove(Map, Key)`. ✅ C5 25/06, Map Remove ✅ P1.G3 15/07 | |
+| Ẩn gizmo lúc capture | `Get All Actors Of Class(BaseGizmo)` — class chung của RuntimeTransformer cho cả 3 loại gizmo (Translation/Rotation/Scale). ✅ P1.G2 15/07 | ~~BP_TransformerPawn/GizmoController~~ (không ổn định lúc đứng yên) |
+| Brush trên Image/CommonLazyImage | `Set Brush` / `Get Brush` (property trực tiếp) · `SetBrushFromTexture` (nhận Texture2D* thẳng). ✅ P1.G4 15/07 | `SetBrushFromLazyTexture` (chỉ cho Soft Object Reference tới UAsset thật, không áp dụng texture runtime CreateTransient) |
 | TileView bulk set | `Set List Items(TileView, Array)` — set toàn bộ 1 lần (stable render, thay N lần Add Item). ✅ C5 25/06 | Add Item lặp nhiều lần |
 | String prefix check | `String Starts With(SourceString, InPrefix)` → bool. ✅ C5 25/06 | |
 | Bind TreeNode event | `Bind Event to On Node Selected(Widget)` + `Create Event(HandlerFunc, self)` — binding dispatch từ WBP_TreeNode lên inventory. ✅ C5 25/06 | |
@@ -511,3 +526,4 @@ Sau khi 1 sprint/task lớn xong:
 | 2.5 | 04/07/2026 | Thêm mục NGUYÊN TẮC KP (KP1 giả định tường minh, KP2 prep-phải-duyệt, KP3 surgical) — cherry-pick từ karpathy-guidelines |
 | 2.6 | 04/07/2026 | KP2 bổ sung quy ước ceiling + trigger cho shortcut được duyệt (từ ponytail-debt) |
 | 2.7 | 14/07/2026 | Thêm `Delay` vào mục "Nodes chờ xác nhận" (Thumbnail System) — dùng trong Custom Event/Keyboard Event để chờ warm-up capture, P1.G0-R. Chờ cuhoang confirm trước khi chuyển vào bảng NODE CHÍNH XÁC chính thức. |
+| 2.8 | 15/07/2026 | Thêm **L12** — Function có Return Value phải kiểm 100% exec path chạm Return Node (bài học bug `GetComboThumbnail` cross-combo thumbnail bleeding, P1.G3). Chuyển vào bảng NODE CHÍNH XÁC: `Map Remove` (bổ sung dòng Map thao tác), `Get All Actors Of Class(BaseGizmo)` (ẩn gizmo lúc capture, P1.G2), `Set Brush`/`Get Brush`/`SetBrushFromTexture` (P1.G4). |

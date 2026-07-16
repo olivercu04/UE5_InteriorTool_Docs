@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 14/07/2026 — **P1 Combo Thumbnail Gate G1 DONE** — `LoadComboThumbnail` hoàn chỉnh, chuyển sang G2 (xem mục P1) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
+**Phiên bản:** 15/07/2026 — **P1 Combo Thumbnail Gate G2+G3+G4 DONE** — auto-fit+ẩn gizmo, cache thumbnail (bug Return Node fix), wire full Save/Load/Display (xem mục P1) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
 
 ---
 
@@ -186,7 +186,68 @@ Thêm dependency module `ImageCore` vào `FurnitureToolkit.Build.cs` (cần cho 
 - Ảnh hơi sharpen quá đà / chưa mịn — nghi do capture ở resolution native, không qua TSR như viewport chính. Xử ở G2 (tinh chỉnh PostProcessSettings) cùng lúc chỉnh khung hình.
 - Góc chụp hiện là "camera lúc bấm nút", chưa auto-fit theo bounding box combo — đúng dự kiến G0, G2 mới thay bằng FitRatio.
 
-Tiếp theo: G2 — auto-fit khung hình theo bounding box (FitRatio) + ẩn gizmo/outline lúc capture + tinh chỉnh sharpen/PostProcess (ảnh G0-R hơi sharpen quá đà, nghi do capture ở resolution native không qua TSR).
+Gate G2: DONE (15/07/2026) — auto-fit khung hình theo bounding box combo (FitRatio) + ẩn
+gizmo/outline lúc capture. BeginComboCapture/FinishComboCapture đổi signature: Begin thêm
+FitRatio/bIsolateCombo/bUseFixedAngle/FixedAngle; Finish thêm param ComboActors (cần để khôi
+phục Custom Depth đúng actor đã tắt ở Begin — không track state qua static function, đưa lại
+CÙNG mảng ComboActors ở cả 2 lần gọi). Vị trí camera phụ giờ tính từ Center - Dir*Distance
+(bounding box + FitRatio=0.85), không còn đúng vị trí camera thật như G0-R.
+
+Ẩn gizmo: dùng Get All Actors Of Class(BaseGizmo) — class chung của RuntimeTransformer cho
+cả 3 loại gizmo (Translation/Rotation/Scale), KHÔNG dùng BP_TransformerPawn/GizmoController.
+TargetActor (dự kiến ban đầu) không ổn định lúc đứng yên — bỏ.
+
+[DEFERRED] Exposure bug: ảnh capture tối hơn viewport thật ở cảnh có vùng sáng mạnh trong
+khung (nghi ngược sáng/backlit). Đã thử 2 lần Auto-exposure Min/Max lock (1 lần cũ ghi
+14/07, 1 lần lặp lại 15/07) — CẢ 2 ĐỀU FAIL, không dùng hướng này nữa. Cần Fable review kiến
+trúc — việc đưa lên Fable dời sang session khác, không chặn G3/G4.
+
+Gate G3: DONE (15/07/2026) — cache Cmb_ThumbnailCache : Map<String,Texture2D> trong
+BP_ComboManager. GetComboThumbnail/InvalidateThumbnail + EndPlay Map Clear (R4). 4 node Map
+Find/Add/Remove/Clear đã dùng thật, PASS test — chuyển vào bảng node chính thức
+(AI_Implementation_Rules.md, xóa khỏi "Nodes chờ xác nhận").
+
+🔴 BUG NGHIÊM TRỌNG phát hiện + fix trong G3: GetComboThumbnail (Function, có Return Value)
+thiếu Return Node ở nhánh False của IfThenElse kiểm IsValid(LoadedTex) — khi LoadComboThumbnail
+fail (file chưa tồn tại), hàm KHÔNG chạm Return Node nào → Blueprint runtime TÁI SỬ DỤNG giá
+trị output CÒN SÓT LẠI từ lần gọi TRƯỚC (không tự động None như tưởng). Hậu quả: mọi combo
+CHƯA CÓ thumbnail đều hiện NHẦM ảnh của combo có thumbnail load thành công gần nhất trong
+cùng vòng lặp LoadComboLibrary. Fix: thêm Return Node tường minh ở nhánh False, Texture2D để
+trống (None). BÀI HỌC: mọi Function có Return Value phải kiểm 100% exec path chạm Return Node
+— "dead-end vô hại" KHÔNG áp dụng cho Function có return type, chỉ áp dụng cho Event/side-effect
+thuần. Thêm rule này vào AI_Implementation_Rules.md L-series.
+
+Gate G4: DONE (15/07/2026) — nối capture vào SaveComboFromSelection (Bước 7, đúng placeholder
+có sẵn từ doc cũ), hiển thị thumbnail trong WBP_ComboCard + WBP_FurnitureInventory.
+
+🔴 2 bug dead-end khác phát hiện + fix trong lúc nối Bước 7 (SaveComboFromSelection):
+- IfThenElse kiểm Pivot found (Length>0 GetAllActorsWithTag) — nhánh False (KHÔNG có Pivot,
+  TRƯỜNG HỢP PHỔ BIẾN NHẤT vì Pivot chỉ tồn tại lúc multi-select) dead-end thật → combo save
+  im lặng KHÔNG capture, KHÔNG hiện trong inventory. Fix: nối thẳng vào Array_Add.
+- IfThenElse kiểm bSaveOK (SaveStringToFile) — nhánh False (ghi JSON fail) dead-end thật →
+  Broadcast OnComboLibraryChanged không chạy dù JSON fail thì vẫn nên broadcast bình thường
+  (đúng thiết kế gốc). Fix: nối thẳng vào Call Delegate.
+
+⚠️ 1 bug dead-end CÒN MỞ, CHƯA FIX (ghi backlog): WBP_FurnitureInventory.LoadComboLibrary,
+IfThenElse kiểm IsValid(ComboManagerRef) — nhánh False dead-end thật → nếu ComboManagerRef
+invalid tại thời điểm đó, combo đó bị RỚT KHỎI TOÀN BỘ DANH SÁCH (không chỉ thiếu ảnh, biến
+mất khỏi AllComboViews_Combo luôn vì Array_Add nằm sau nhánh True). Rủi ro thấp (ComboManagerRef
+set 1 lần ở Construct, hiếm khi invalid) nhưng cần fix sau — nối False → vẫn Array_Add nhưng
+bỏ qua bước gán Thumbnail.
+
+Field ThumbnailPath (String) trong BP_ComboItemView — XÁC NHẬN dead field, không dùng ở đâu
+trong BP_ComboManager. Giữ nguyên (KP3, dọn sau).
+
+Delete combo: XÁC NHẬN CHƯA TỪNG IMPLEMENT. Note cũ ghi nhầm "C8 = delete combo" — thực ra
+C8 = "Drag-drop + surface-snap", đã MERGED vào C4 (24/06). Tính năng xóa combo (BTN_DeleteCombo
+có sẵn trong layout WBP_ComboCard từ C4 nhưng chưa bind handler) là task RIÊNG, chưa làm.
+
+Test G4: case 1,2,3,5,6 PASS (case 4 xóa combo N/A — chưa có tính năng). Bug cross-combo
+thumbnail phát hiện qua case thao tác folder (move combo) — đã fix (xem G3 bug ở trên).
+
+Tiếp theo: G5 (regression VRAM, stat rhi 4 mốc) — CHƯA BẮT ĐẦU. Trước G5 cần: fix bug
+ComboManagerRef dead-end (backlog trên), xóa toàn bộ chuỗi debug phím T/Y (Enable Input,
+Cmb_CaptureHandle test vars, Print debug) theo điều kiện PASS G4 đã ghi trong plan gốc.
 
 **Roadmap v3.3 (chia 3 giai đoạn — scope phình to sau 23/06):**
 ```
