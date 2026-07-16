@@ -1,6 +1,6 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
-**Cập nhật:** 15/07/2026 — P1 Combo Thumbnail Gate G2+G3+G4 DONE | C5.8 CHÍNH THỨC DONE (13/07)
+**Cập nhật:** 16/07/2026 — P2 Studio Thumbnail plan v1.0 chốt | P1 Combo Thumbnail DONE về tính năng | C5.8 CHÍNH THỨC DONE (13/07)
 
 ---
 
@@ -330,8 +330,5 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 13/07/2026 (REG) | **C5.8 — REG (Khối A/B/C/D) PASS — CHÍNH THỨC DONE.** A1-A7 PASS (A1 clarification wording task card), B1-B4 PASS (B4 scope note không live-sync), C1 SKIP (rủi ro thấp)/C2-C5 PASS (không VRAM leak), D5 comprehension check PASS. 2 bug mới ghi `Bugs/Open_Bugs.md` (ngoài scope, không sửa ở đây): Bug-SaveConfirm-EmptyName, Bug-MoveFolder-Collision. `WBP_MoveFolderRow.md` đánh dấu [SUPERSEDED]. **Roadmap: mở khóa C9 (Replace).** |
 | 14/07/2026 | **P1 Combo Thumbnail — Gate G0-R DONE.** One-shot capture (G0 gốc) loại bỏ — ảnh xám phẳng do Lumen GI/TAA/auto-exposure chưa hội tụ đủ frame. Đổi kiến trúc: `BeginComboCapture`/`FinishComboCapture` + Custom Event `Delay` latent, thay hàm đồng bộ cũ (giữ `[LEGACY]`). Test debug phím T (`BP_ComboManager`) — chốt tạm Delay 3.0s. Checklist P1 mở rộng thành G0-R→G5, G0-R tick DONE. Xem `DEVIATIONS.md` [ARCH] 14/07/2026 + `01_Session_State.md` mục P1. |
 | 14/07/2026 (P1 G1) | **P1 Combo Thumbnail — Gate G1 DONE.** `LoadComboThumbnail` thân hàm đầy đủ (PNG→IImageWrapper→GetRaw BGRA8→optional FImageUtils::ImageResize→UTexture2D::CreateTransient). Build PASS, test phím Y độc lập → size=256 đúng. Thêm module `ImageCore` (Build.cs) + include Engine/Texture2D.h, ImageUtils.h — không phải deviation (đúng plan gốc). Checklist P1.G1 tick DONE. Tiếp theo: G2 (auto-fit FitRatio + ẩn gizmo/outline + PostProcess). |
-| 15/07/2026 | **P1 Combo Thumbnail — Gate G2+G3+G4 DONE.** Auto-fit + ẩn gizmo (G2). Cache
-thumbnail + fix bug nghiêm trọng "Function thiếu Return Node ở 1 nhánh → tái sử dụng output
-cũ, cross-combo thumbnail bleeding" (G3). Nối full vào Save/Load/Display flow, fix 2/3 bug
-dead-end phát hiện trong lúc wiring (G4). Delete combo xác nhận CHƯA implement (note cũ ghi
-nhầm C8). Xem `01_Session_State.md` mục P1 + `DEVIATIONS.md` 15/07/2026 cho chi tiết đầy đủ. |
+| 15/07/2026 | **P1 Combo Thumbnail — Gate G2+G3+G4 DONE.** Auto-fit + ẩn gizmo (G2). Cache thumbnail + fix bug nghiêm trọng "Function thiếu Return Node ở 1 nhánh → tái sử dụng output cũ, cross-combo thumbnail bleeding" (G3). Nối full vào Save/Load/Display flow, fix 2/3 bug dead-end phát hiện trong lúc wiring (G4). Delete combo xác nhận CHƯA implement (note cũ ghi nhầm C8). Xem `01_Session_State.md` mục P1 + `DEVIATIONS.md` 15/07/2026 cho chi tiết đầy đủ. |
+| 16/07/2026 | **P2 plan v1.0 chốt** (Fable review ×2 vòng: 8 điểm mù M1-M8 + 4 lỗ hổng H1-H4). Kiến trúc: Remote Studio + H-B turntable + Key/Fill RectLight + Manual EV100. Gate A card v1.1 giao Sonnet. Plan: `docs/Plans/P2_StudioThumbnail_Execution.md`. |

@@ -1,6 +1,6 @@
 # Open Bugs — Bugs đang mở
 **Tạo từ:** `00_Core/DEVIATIONS.md` (mục BUGS DEFERRED) + `00_Core/01_Session_State.md` (BUG CÒN MỞ) + `00_Core/02_Current_Sprint.md` (bối cảnh Gate 1)
-**Cập nhật:** 13/07/2026 — REG C5.8 (2 bug mới: Bug-SaveConfirm-EmptyName, Bug-MoveFolder-Collision)
+**Cập nhật:** 16/07/2026 — P2 backlog: Task-RegenThumbnails (mới) + K3 addendum (hạ tầng param từ P2.A)
 
 ---
 
@@ -17,6 +17,7 @@
 | K3 | SpawnFurnitureCopy gọi AddRecentMesh unconditional → spawn combo nhồi 20 mesh lẻ vào Recent + mỗi Undo cũng nhồi | 🟡 Trung bình | Planned — Sprint 5, áp lúc đụng C2/RestoreSnapshot. Fix: param bAddToRecent |
 | Bug-SaveConfirm-EmptyName | WBP_SaveComboDialog: BTN_Confirm không disable khi tên combo trống nếu user chưa gõ gì | 🟡 Trung bình-Thấp | Phát hiện REG C5.8 khối A6 (13/07) — ngoài scope C5.8, chưa fix |
 | Bug-MoveFolder-Collision | Move Folder: không check trùng tên khi đích đã có con cùng tên với folder đang move | 🟡 Trung bình | Phát hiện REG C5.8 khối A7 (13/07) — backlog, task riêng ngoài scope C5.8 |
+| Task-RegenThumbnails | Regenerate all thumbnails cho combo library cũ (sau P2.F) | 🟢 Thấp | Backlog 16/07 — combo lưu trước P2 vẫn có ảnh capture kiểu cũ (không phải Studio Look), cần công cụ batch regenerate sau khi P2 Gate F đóng |
 
 ---
 
@@ -230,6 +231,7 @@ Thêm `Set Position` vào cùng node `Slot as Canvas Slot(VerticalBox_0)` đang 
 
 ### Trạng thái
 - **Planned.** Áp lúc đụng C2/RestoreSnapshot trong Sprint 5.
+- **[16/07/2026]** Hạ tầng param `bAddToRecent` ĐÃ CÓ từ P2 Gate A Việc 1 (`docs/Plans/P2_StudioThumbnail_Execution.md`) — thêm param + Branch bọc Add Recent Mesh. Còn lại: các call site `SpawnFurnitureCopy` KHÁC (ngoài combo thumbnail) cân nhắc truyền `bAddToRecent` phù hợp (vd RestoreSnapshot → False). Chưa audit hết call site.
 
 ---
 
@@ -272,6 +274,28 @@ Validate collision (ở Blueprint trước khi gọi `RenameFolderPrefix`, hoặ
 
 ### Trạng thái
 - **Open / Backlog.** Data integrity risk nhưng case hiếm (cần cùng tên folder ở 2 nhánh khác nhau của cây). Ngoài scope C5.8.
+
+---
+
+## Task-RegenThumbnails — Regenerate all thumbnails cho combo library cũ
+
+**ID:** Task-RegenThumbnails
+**Phát hiện:** 16/07/2026 — chốt plan P2 Studio Thumbnail
+**Ưu tiên:** 🟢 Thấp
+
+### Bối cảnh
+P2 (`docs/Plans/P2_StudioThumbnail_Execution.md`) đổi kiến trúc capture sang "Studio Look"
+(Remote Studio, đèn chuẩn hóa, Manual EV100). Combo đã lưu TRƯỚC khi P2 xong (Gate F đóng)
+vẫn giữ PNG capture kiểu cũ (P1, chụp tại vị trí thật trong phòng) — không đồng bộ hình ảnh
+với combo mới.
+
+### Việc cần làm (chưa có plan chi tiết)
+Công cụ/flow batch: với mỗi combo cũ trong `Saved/Combos/`, gọi lại
+`SpawnComboForThumbnail` + capture pipeline mới, ghi đè PNG, `InvalidateThumbnail` cache.
+
+### Trạng thái
+- **Backlog.** Chỉ làm SAU khi P2 Gate F đóng (pipeline Studio Look ổn định). Task riêng,
+  chưa có execution plan.
 
 ---
 

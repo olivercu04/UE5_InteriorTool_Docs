@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 15/07/2026
+**Cập nhật:** 16/07/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -544,6 +544,21 @@ lock lần 3 nếu chưa có hướng mới từ Fable.
 
 ---
 
+## P2 — 16/07/2026 — Quyết định kiến trúc Studio Thumbnail
+
+- **[ARCH]** S8 (bật bIsolateCombo) thay bằng Remote Studio — mục tiêu giữ nguyên (hết chữ đỏ
+  BP_Khung + background lộn xộn), cơ chế đổi: studio cách ly thay vì isolation trong capture.
+  Đã được cuhoang duyệt 16/07.
+- **[ARCH]** Exposure bug DEFERRED (14-15/07, 2 lần Auto-exposure lock fail) — GỘP vào P2 Gate C:
+  ánh sáng studio chuẩn hóa làm Manual EV100 khả thi lần đầu. Không review riêng nữa.
+- **[SCOPE]** SpawnComboByID KHÔNG tái dùng trực tiếp cho thumbnail — trace K2Node 16/07 xác nhận
+  5 side effects (ExitEditModeFull, Register groups, Deselect/Select, CaptureSnapshot,
+  Cmb_SpawnedActors clear cuối event). Thay bằng Custom Event mới SpawnComboForThumbnail.
+- **[CLEANUP backlog]** Node Delay mồ côi trong SpawnComboByID Step D (CallFunction_32, execute
+  không nối, Duration=0) — nghi rác thử nghiệm cũ, dọn khi có dịp đụng event này.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -614,3 +629,4 @@ lock lần 3 nếu chưa có hướng mới từ Fable.
 | 14/07/2026 | Thêm section "SPRINT 5 — 14/07/2026 — P1 Combo Thumbnail: đổi kiến trúc capture": [ARCH] one-shot `CaptureComboThumbnail` (plan gốc G0) loại bỏ do ảnh xám phẳng (Lumen/TAA/auto-exposure chưa hội tụ qua đủ frame) — đổi sang cặp `BeginComboCapture`/`FinishComboCapture` bọc bởi Custom Event dùng `Delay` latent (L8). Hàm cũ giữ `[LEGACY]`, không xóa. `.h` bị đụng lần 2 (chấp nhận, đổi kiến trúc là ngoại lệ). |
 | 15/07/2026 | Thêm section "SPRINT 5 — 15/07/2026 — P1 G2/G3/G4: bug dead-end Return Node + wiring": [BUG-FIX, NGHIÊM TRỌNG] `GetComboThumbnail` thiếu Return Node ở nhánh False → cross-combo thumbnail bleeding (đọc lại rule L2 — ngoại lệ "dead-end vô hại" KHÔNG áp dụng cho Function có return type); [BUG-FIX] 2 dead-end trong SaveComboFromSelection Bước 7 (Pivot not-found + bSaveOK fail); [BACKLOG] dead-end ComboManagerRef trong LoadComboLibrary chưa fix; [CORRECTION] Delete combo KHÔNG PHẢI = C8 (C8 = Drag-drop/surface-snap); [ARCH] exposure bug retry lần 2 vẫn fail, xác nhận không phải warm-up issue. |
 | 15/07/2026 (G5 + reconcile) | P1 Gate G5 (regression VRAM) DEFERRED — phương pháp đo (stat rhi lỗi, MemReport nhiễu bởi texture streaming theo camera) không tách được đóng góp riêng của combo thumbnail; cần RenderDoc/Nsight. Không chặn P1 (coi DONE về tính năng, G0→G4). Cập nhật mục "[BACKLOG — chưa fix] Dead-end ComboManagerRef" ở trên → FIXED 15/07/2026 (xác nhận cuhoang: fix trực tiếp trong UE5 Editor, ngoài phiên Claude Code). |
+| 16/07/2026 | Thêm section "P2 — 16/07/2026 — Quyết định kiến trúc Studio Thumbnail": [ARCH] S8 isolation → Remote Studio (duyệt 16/07); [ARCH] exposure bug deferred GỘP vào P2 Gate C (Manual EV100 thay Auto-exposure lock); [SCOPE] SpawnComboByID không tái dùng cho thumbnail (5 side effects xác nhận qua trace K2Node) → Custom Event mới SpawnComboForThumbnail; [CLEANUP backlog] node Delay mồ côi trong SpawnComboByID Step D, dọn khi có dịp. Plan đầy đủ: `docs/Plans/P2_StudioThumbnail_Execution.md` v1.0. |

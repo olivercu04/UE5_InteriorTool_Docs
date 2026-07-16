@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 15/07/2026 — **P1 Combo Thumbnail Gate G2+G3+G4 DONE** — auto-fit+ẩn gizmo, cache thumbnail (bug Return Node fix), wire full Save/Load/Display (xem mục P1) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
+**Phiên bản:** 16/07/2026 — **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) — **P2 (Studio Thumbnail) plan v1.0 chốt**, Gate A sẵn sàng thực thi (xem mục P2) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
 
 ---
 
@@ -259,6 +259,12 @@ RenderDoc/Nsight thay vì so sánh MemReport thô — xem docs/Bugs/Bug_GPU_VRAM
 Lưu ý phụ: trong lúc thử stat rhi, gặp crash D3D12 PageFault 1 lần (Local Used 6517MB/Budget
 7262MB) — KHỚP đúng bug đã biết Bug_GPU_VRAM_Crash.md (PIE tích lũy VRAM qua nhiều lần
 Play/Stop liên tiếp trong cùng session Editor), KHÔNG liên quan riêng combo thumbnail.
+
+### P2 (Studio Thumbnail) — plan v1.0 chốt (16/07/2026)
+
+Plan v1.0 tại `Plans/P2_StudioThumbnail_Execution.md` — Gate A sẵn sàng thực thi (task card
+v1.1 trong file plan). Thứ tự sau P2: K1 (có thể chen trước Gate F, quyết tại F) → K3 còn lại
+→ C9 → C6 → C7 → C11 → C10 → Gate 2.
 
 **Roadmap v3.3 (chia 3 giai đoạn — scope phình to sau 23/06):**
 ```
