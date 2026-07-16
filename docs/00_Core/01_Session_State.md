@@ -228,12 +228,13 @@ có sẵn từ doc cũ), hiển thị thumbnail trong WBP_ComboCard + WBP_Furnit
   Broadcast OnComboLibraryChanged không chạy dù JSON fail thì vẫn nên broadcast bình thường
   (đúng thiết kế gốc). Fix: nối thẳng vào Call Delegate.
 
-⚠️ 1 bug dead-end CÒN MỞ, CHƯA FIX (ghi backlog): WBP_FurnitureInventory.LoadComboLibrary,
-IfThenElse kiểm IsValid(ComboManagerRef) — nhánh False dead-end thật → nếu ComboManagerRef
-invalid tại thời điểm đó, combo đó bị RỚT KHỎI TOÀN BỘ DANH SÁCH (không chỉ thiếu ảnh, biến
-mất khỏi AllComboViews_Combo luôn vì Array_Add nằm sau nhánh True). Rủi ro thấp (ComboManagerRef
-set 1 lần ở Construct, hiếm khi invalid) nhưng cần fix sau — nối False → vẫn Array_Add nhưng
-bỏ qua bước gán Thumbnail.
+✅ Bug dead-end ComboManagerRef: FIXED (15/07/2026, thực hiện trực tiếp trong UE5 Editor,
+ngoài phiên Claude Code này) — WBP_FurnitureInventory.LoadComboLibrary, IfThenElse kiểm
+IsValid(ComboManagerRef), nhánh False nối vào Array_Add (bỏ qua bước gán Thumbnail) thay vì
+dead-end. Không còn rủi ro combo bị rớt khỏi AllComboViews_Combo khi ComboManagerRef invalid.
+
+✅ Debug chain phím T/Y: ĐÃ DỌN (15/07/2026, ngoài phiên Claude Code này) — theo điều kiện
+PASS G4 đã ghi trong plan gốc.
 
 Field ThumbnailPath (String) trong BP_ComboItemView — XÁC NHẬN dead field, không dùng ở đâu
 trong BP_ComboManager. Giữ nguyên (KP3, dọn sau).
@@ -245,9 +246,19 @@ có sẵn trong layout WBP_ComboCard từ C4 nhưng chưa bind handler) là task
 Test G4: case 1,2,3,5,6 PASS (case 4 xóa combo N/A — chưa có tính năng). Bug cross-combo
 thumbnail phát hiện qua case thao tác folder (move combo) — đã fix (xem G3 bug ở trên).
 
-Tiếp theo: G5 (regression VRAM, stat rhi 4 mốc) — CHƯA BẮT ĐẦU. Trước G5 cần: fix bug
-ComboManagerRef dead-end (backlog trên), xóa toàn bộ chuỗi debug phím T/Y (Enable Input,
-Cmb_CaptureHandle test vars, Print debug) theo điều kiện PASS G4 đã ghi trong plan gốc.
+Gate G5: DEFERRED (15/07/2026) — thử đo bằng stat rhi (lỗi thao tác console, không ra kết
+quả) rồi MemReport -full (ra kết quả nhưng nhiễu nặng: baseline sau khi camera quét toàn
+scene nội thất đầy đủ của đồng nghiệp làm VRAM tăng ~1421MB giữa 2 mốc đo do texture streaming
+theo tầm nhìn camera, KHÔNG TÁCH ĐƯỢC phần đóng góp riêng của combo thumbnail). Cách đo "đứng
+yên camera, không di chuyển" cho số liệu sạch nhưng xung đột với luồng tạo combo thật (phải
+chọn đồ + xoay góc chụp tự nhiên). Quyết định: NỢ G5, cần nghĩ lại phương pháp đo (cân nhắc
+RenderDoc/Nsight thay vì so sánh MemReport thô — xem docs/Bugs/Bug_GPU_VRAM_Crash.md mục
+"Tools chuyên nghiệp") trước khi thử lại. KHÔNG CHẶN tiến độ — P1 coi như DONE về tính năng
+(G0→G4 hoàn chỉnh, test PASS).
+
+Lưu ý phụ: trong lúc thử stat rhi, gặp crash D3D12 PageFault 1 lần (Local Used 6517MB/Budget
+7262MB) — KHỚP đúng bug đã biết Bug_GPU_VRAM_Crash.md (PIE tích lũy VRAM qua nhiều lần
+Play/Stop liên tiếp trong cùng session Editor), KHÔNG liên quan riêng combo thumbnail.
 
 **Roadmap v3.3 (chia 3 giai đoạn — scope phình to sau 23/06):**
 ```

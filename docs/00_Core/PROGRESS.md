@@ -264,7 +264,8 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
   - [x] P1.G4 — wire full vào Save/Load flow + hiển thị WBP_ComboCard/WBP_FurnitureInventory.
         3 bug dead-end phát hiện (2 fixed, 1 backlog — xem Session_State). Test case 1,2,3,5,6
         PASS (case 4 xóa combo N/A, tính năng chưa tồn tại). 15/07/2026.
-  - [ ] P1.G5 — regression VRAM (stat rhi 4 mốc) — CHƯA BẮT ĐẦU.
+  - [~] P1.G5 — regression VRAM — DEFERRED 15/07/2026 (phương pháp đo bị nhiễu, cần
+        RenderDoc/Nsight thay vì MemReport thô). Không chặn P1, coi P1 DONE tính năng.
 - [x] **C4** — WBP_ComboCard + ghost + drag-drop + CalculateComboAnchor + CTV_ComboCard. Ghost offset FIXED (Approach B). ✅ 25/06/2026
 - [ ] **C5** ⏳ IN PROGRESS — 7 sub-task:
   - [x] C5.1 — C++ 3 helper (UpdateComboFolder/RenameFolderPrefix/ClearFolderPrefix) ✅ 25/06

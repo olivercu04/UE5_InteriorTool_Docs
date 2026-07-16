@@ -522,10 +522,11 @@ Event/Custom Event.
   chạy dù thiết kế gốc yêu cầu luôn broadcast bất kể capture/save thumbnail có fail hay không.
   Fix: nối vào Call Delegate.
 
-### [BACKLOG — chưa fix] Dead-end ComboManagerRef trong LoadComboLibrary
+### [BUG-FIX] Dead-end ComboManagerRef trong LoadComboLibrary
 Nhánh False của IsValid(ComboManagerRef) dead-end → combo đó bị loại khỏi AllComboViews_Combo
-hoàn toàn (không chỉ thiếu thumbnail). Rủi ro thấp, chưa quan sát thực tế xảy ra. Cần fix
-trước khi coi P1 hoàn tất 100%.
+hoàn toàn (không chỉ thiếu thumbnail). Rủi ro thấp, chưa quan sát thực tế xảy ra khi phát hiện
+(ghi backlog cùng ngày). FIXED 15/07/2026 (thực hiện trực tiếp trong UE5 Editor, ngoài phiên
+Claude Code) — nối False vào Array_Add, bỏ qua bước gán Thumbnail.
 
 ### [CORRECTION] Delete combo KHÔNG PHẢI = C8
 Plan gốc (`P1_ComboThumbnail_Execution.md` V5) ghi nhầm "flow xóa combo (C8)". Thực tế C8 =
@@ -612,3 +613,4 @@ lock lần 3 nếu chưa có hướng mới từ Fable.
 | 13/07/2026 (REG) | Thêm section "SPRINT 5 — 13/07/2026 (REG) — C5.8 Chốt sổ (Khối A/B/C/D)": [CLARIFICATION] A1 REG Task Card mô tả nhầm case Move Folder/Move Combo (không sửa code, chỉ đính chính wording); [SCOPE] Save dialog không live-sync sang cây inventory đang mở phía sau (đúng thiết kế, không phải bug). REG PASS toàn bộ Khối A/B/C, D5 comprehension check PASS — **C5.8 CHÍNH THỨC DONE**, mở khóa C9. |
 | 14/07/2026 | Thêm section "SPRINT 5 — 14/07/2026 — P1 Combo Thumbnail: đổi kiến trúc capture": [ARCH] one-shot `CaptureComboThumbnail` (plan gốc G0) loại bỏ do ảnh xám phẳng (Lumen/TAA/auto-exposure chưa hội tụ qua đủ frame) — đổi sang cặp `BeginComboCapture`/`FinishComboCapture` bọc bởi Custom Event dùng `Delay` latent (L8). Hàm cũ giữ `[LEGACY]`, không xóa. `.h` bị đụng lần 2 (chấp nhận, đổi kiến trúc là ngoại lệ). |
 | 15/07/2026 | Thêm section "SPRINT 5 — 15/07/2026 — P1 G2/G3/G4: bug dead-end Return Node + wiring": [BUG-FIX, NGHIÊM TRỌNG] `GetComboThumbnail` thiếu Return Node ở nhánh False → cross-combo thumbnail bleeding (đọc lại rule L2 — ngoại lệ "dead-end vô hại" KHÔNG áp dụng cho Function có return type); [BUG-FIX] 2 dead-end trong SaveComboFromSelection Bước 7 (Pivot not-found + bSaveOK fail); [BACKLOG] dead-end ComboManagerRef trong LoadComboLibrary chưa fix; [CORRECTION] Delete combo KHÔNG PHẢI = C8 (C8 = Drag-drop/surface-snap); [ARCH] exposure bug retry lần 2 vẫn fail, xác nhận không phải warm-up issue. |
+| 15/07/2026 (G5 + reconcile) | P1 Gate G5 (regression VRAM) DEFERRED — phương pháp đo (stat rhi lỗi, MemReport nhiễu bởi texture streaming theo camera) không tách được đóng góp riêng của combo thumbnail; cần RenderDoc/Nsight. Không chặn P1 (coi DONE về tính năng, G0→G4). Cập nhật mục "[BACKLOG — chưa fix] Dead-end ComboManagerRef" ở trên → FIXED 15/07/2026 (xác nhận cuhoang: fix trực tiếp trong UE5 Editor, ngoài phiên Claude Code). |
