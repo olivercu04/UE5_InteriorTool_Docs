@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.6 | **Ngày:** 15/07/2026 | **Actor class, không Tick**
+**Version:** 1.7 | **Ngày:** 17/07/2026 | **Actor class, không Tick**
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -61,6 +61,83 @@ Branch(InActors.Length == 0):
 
   Completed →
     Make Vector(X=(MaxX-MinX)/2, Y=(MaxY-MinY)/2, Z=(MaxZ-MinZ)/2) → Return
+
+## SpawnComboForThumbnail(ComboID : String, DeltaYaw : Float = 0) — MỚI P2 Gate A (17/07/2026)
+
+Custom Event (Latent — BeginComboCapture/Delay ở Việc 4 gọi từ đây).
+
+```
+▶→ Branch(Cmb_bThumbBusy)
+     True  ▶→ HẾT (guard đầu)
+     False ▶→ SET Cmb_bThumbBusy = True
+▶→ F_LoadComboData(ComboID) ●→ OutData, bSuccess
+▶→ Branch(bSuccess)
+     False ▶→ SET Cmb_bThumbBusy = False → HẾT
+     True  ▶→ Break ComboData ●→ Items
+▶→ ForEach(Items) LoopBody:
+     Get Data Table Row(DT_FurnitureCatalog, RowName) — Row Found:
+       T ▶→ MeshPath = MeshFolderPath + "/" + RowName + "." + RowName  (Concat, y hệt SpawnComboByID)
+          ▶→ SpawnFurnitureCopy(
+                self = InputManagerRef,
+                MeshPath, DAPath="",
+                SpawnLocation = Cmb_StudioAnchor + RelLocation,
+                SpawnRotation = RelRotation, SpawnScale = Scale,
+                MaterialOverrides, SurfaceType,
+                bAutoSelect = False, bAddToRecent = False) ●→ NewActor
+          ▶→ Branch(IsValid(NewActor))
+               True  ▶→ GET Tags → Array Remove Item("FurnitureSpawned")
+                       → SET GroupID = "" → Array Add(Cmb_StudioClones, NewActor)
+               False ▶→ dead-end (hợp lệ, Loop Body)
+       F (Row not found) ▶→ dead-end (item lỗi bỏ qua, không báo — ⚠️ chưa có log skip)
+   Completed ▶→ [Việc 4 — chuỗi debug U, xem bên dưới]
+```
+
+`DeltaYaw` khai param nhưng CHƯA dùng ở Gate A (default 0) — dành cho Gate C (xoay camera H-B).
+`InputManagerRef` = class var đã cache sẵn từ BeginPlay, không Get All Actors lại.
+
+## Việc 4 — Chuỗi debug phím U (Input Event, chỉ tồn tại tới Gate F)
+
+```
+Input Event "U" [Pressed]
+▶→ Branch(bDebugMode)
+     True  ▶→ SpawnComboForThumbnail(ComboID="<hardcode debug>", DeltaYaw=0)
+     False ▶→ HẾT
+▶→ Delay(3.0)   ← [CEILING] xem DEVIATIONS 17/07/2026, gốc là 0.5 không đủ
+▶→ CalculateComboBoundingExtent(Cmb_StudioClones) ●→ Extent
+   ▶→ Branch(bDebugMode) True → Print "Extent=" + ToString(Extent)
+                          False → (hội tụ cùng node kế — KHÔNG chặn main flow)
+▶→ SET Cmb_ThumbMinZ = 999999.0
+▶→ ForEach(Cmb_StudioClones) [Loop 1 — tính MinZ]
+     LoopBody ▶→ Branch(IsValid(Item))
+                  True  ▶→ Get Actor Bounds(Item) ●→ Origin, BoxExtent
+                          BottomZ = Origin.Z - BoxExtent.Z
+                          SET Cmb_ThumbMinZ = Min(Cmb_ThumbMinZ, BottomZ)
+                  False ▶→ dead-end
+     Completed ▶→
+        DeltaZ = Cmb_StudioAnchor.Z - Cmb_ThumbMinZ
+        ▶→ ForEach(Cmb_StudioClones) [Loop 2 — áp offset]
+             LoopBody ▶→ Add Actor World Offset(
+                            Target = Array Element CỦA LOOP 2 (không phải Loop 1 — xem
+                            [BUG-FIX] 17/07/2026 nếu cần đối chiếu),
+                            DeltaLocation=(0,0,DeltaZ), bSweep=False)
+             Completed ▶→
+▶→ BeginComboCapture(Cmb_StudioClones, ExtraHiddenActors=[], Resolution=1024,
+                       FitRatio=0.85, bIsolateCombo=False, bUseFixedAngle=False,
+                       FixedAngle=(0,0,0)) ●→ SET Cmb_CaptureHandle
+▶→ Delay(3.0)
+▶→ FinishComboCapture(Cmb_CaptureHandle, ComboID="<...>_studio", Cmb_StudioClones) ●→ bSuccess
+   ▶→ Branch(bDebugMode) True → Print "Capture " + (bSuccess?"OK":"FAIL")
+                          False → (hội tụ, không chặn)
+▶→ ForEach(Cmb_StudioClones)
+     LoopBody ▶→ Branch(IsValid) True → Destroy Actor / False → dead-end
+     Completed ▶→ Array Clear(Cmb_StudioClones)
+▶→ SET Cmb_CaptureHandle = None
+▶→ SET Cmb_bThumbBusy = False
+```
+
+**Bài học chốt:** cả 2 Branch(bDebugMode) trong chuỗi này đều PHẢI hội tụ 2 nhánh về cùng
+1 điểm tiếp theo — Print chỉ là phụ, không được gate luồng chính (bug đã xảy ra + fix trong
+session 17/07, xem lịch sử chat nếu cần chi tiết).
 
 ### GetComboThumbnail(ComboID) → Texture2D — MỚI G3
 Branch(Map Find(Cmb_ThumbnailCache, ComboID) → Value, bFound):
@@ -333,3 +410,4 @@ Branch(Cmb_SpawnedActors.Length == 0):
 | 23/06/2026 | 1.4 | C3a: SaveComboFromSelection mở rộng signature (thêm FolderPath, Tags). Bước 5e: Make FComboData đầy đủ tất cả fields (Category hardcode "MyCombo" tạm, CreatedAt UTC Now, AppVersion 1.0.0, AuthorID/Visibility default, FolderPath+Tags từ param). |
 | 24/06/2026 | 1.5 | C4: thêm CalculateComboBoundingExtent function; class var SaveCombo_BoundingExtent; Bước 5e tính BoundingBoxExtent trước Make FComboData + gán vào field. |
 | 15/07/2026 | 1.6 | G2+G3+G4: class var Cmb_ThumbnailCache + Cmb_CaptureHandle. Function GetComboThumbnail (🔴 Return Node bắt buộc cả 2 nhánh — bug fix, xem DEVIATIONS) + InvalidateThumbnail. Bước 7 SaveComboFromSelection hoàn chỉnh (capture thật, nối vào bSaveOK Branch, merge về Broadcast). |
+| 17/07/2026 | 1.7 | P2 Gate A DONE: Custom Event `SpawnComboForThumbnail(ComboID, DeltaYaw=0)` mới (guard Cmb_bThumbBusy → F_LoadComboData → ForEach spawn clone sạch → Cmb_StudioClones) + chuỗi debug phím U (ground-align, BeginComboCapture/FinishComboCapture, Delay 0.5→3.0 ceiling tạm). Bug fix aliasing `Add Actor World Offset` dùng nhầm Array Element giữa 2 For Each Loop liên tiếp. Test PASS 6/7 case. |

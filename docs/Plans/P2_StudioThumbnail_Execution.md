@@ -1,5 +1,5 @@
 P2 — Combo Thumbnail "Studio Look" — Execution Plan
-v1.0 — 16/07/2026 — Fable authored. Kế thừa P1 (Begin/Finish pipeline, DONE 15/07). Plan là giả thuyết: lệch thì ghi DEVIATIONS, không tiếc plan.
+v1.1 — 17/07/2026 — Fable authored (v1.0 16/07), Gate A test kết quả thêm 17/07. Kế thừa P1 (Begin/Finish pipeline, DONE 15/07). Plan là giả thuyết: lệch thì ghi DEVIATIONS, không tiếc plan.
 0. Mục tiêu & phạm vi
 Thumbnail combo chuẩn ảnh sản phẩm (tham chiếu IKEA, ảnh cuhoang gửi 15/07): nền đơn sắc liền mạch không horizon, sáng đều, bóng mềm dưới đồ, khung hình + góc + sáng đồng nhất mọi combo (cảm giác UE Content Browser).
 Trong scopeNgoài scopeRemote Studio + clone pipeline sạchHướng 2 (preview/xoay tay)Dome + Key/Fill light + Manual EV100Regenerate-all combo cũ (backlog)Camera H-B turntable + DOFDọn Delay mồ côi SpawnComboByID (backlog)Thay capture in-place trong Save flow (Gate F)K3 ngoài phần hạ tầng param
@@ -80,6 +80,19 @@ U ×2 trong 3s → lần 2 "Thumb busy", không chồng clone
 Đang Edit Mode group → U → group KHÔNG dính clone
 Tắt PIE giữa Delay → mở lại → Outliner sạch
 Fail ×3 cùng chỗ → STOP leo thang Fable.
+
+### Kết quả TEST Gate A — 17/07/2026
+| # | Case | Kết quả |
+|---|---|---|
+| 1 | Đủ đồ, không chữ đỏ, không dính đồ thật | ✅ PASS |
+| 2 | Print Bounds ×3 trùng | ✅ PASS |
+| 3 | Ground-align chạm sàn | ✅ PASS |
+| 4 | Undo/Recent/EMS sạch | ✅ PASS |
+| 5 | Double-U trong 3s → "Thumb busy" | ✅ PASS |
+| 6 | Edit Mode group không dính clone | ✅ PASS |
+| 7 | Tắt PIE giữa Delay | ⏳ Dời Gate F |
+
+**Gate A: DONE.** Sang Gate B.
 
 4. GATE B — dome
 

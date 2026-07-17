@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 16/07/2026
+**Cập nhật:** 17/07/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -559,6 +559,33 @@ lock lần 3 nếu chưa có hướng mới từ Fable.
 
 ---
 
+## P2 — 17/07/2026 — Gate A DONE: Delay ceiling + bug fix aliasing
+
+### [SCOPE] Delay(0.5) → Delay(3.0) hardcode trong SpawnComboForThumbnail
+Delay(0.5) sau SpawnComboForThumbnail không đủ cho LoadMeshAsync hoàn tất với combo nhiều món
+(bàn/ghế/kệ) → actor tồn tại nhưng mesh rỗng (vô hình, không phải lỗi material đỏ) → Extent tính
+thiếu, đồ nhỏ trên bàn lơ lửng giữa trời (bàn invisible bên dưới). Fix tạm: Delay(0.5) → Delay(3.0).
+Verify bằng ảnh chụp thật: đủ đồ, ground-align đúng.
+Ceiling: chỉ đúng với combo hiện tại (7-8 món, asset resident từ session). Combo nặng hơn / máy
+chậm hơn / cold-start asset → có thể vẫn thiếu đồ, fail êm không báo lỗi.
+Trigger: trước Gate F (nối dây thật vào SaveComboFromSelection) — bắt buộc thay bằng dispatcher
+OnMeshLoaded (BP_FurnitureActor) hoặc cơ chế đếm N asset load xong, thay vì đoán thời gian cố
+định. Quyết định kiến trúc dispatcher cần Fable/Opus — đụng BP_FurnitureActor dùng chung toàn
+hệ thống (không riêng P2), không tự quyết ở cấp Sonnet.
+
+### [BUG-FIX] Add Actor World Offset dùng nhầm Array Element giữa 2 For Each Loop liên tiếp
+Root cause: 2 For Each Loop liên tiếp (Loop 1 tính Cmb_ThumbMinZ, Loop 2 áp DeltaZ qua Add Actor
+World Offset) — dây Target của Add Actor World Offset bị kéo nhầm từ Array Element của Loop 1
+(qua chuỗi Knot reroute) thay vì Array Element của Loop 2. TypeCheck vẫn pass (cùng kiểu
+BP_FurnitureActor) → không lỗi compile, chỉ lộ khi test bằng mắt: 1 actor (cuối Loop 1) bị dịch
+chuyển N lần cộng dồn, các actor còn lại đứng yên (lơ lửng). Fix: nối lại Target = Array Element
+của chính Loop 2 (MacroInstance_10), không qua Knot cũ của Loop 1.
+Bài học: Reroute (Knot) node cho object reference dễ gây aliasing câm khi có ≥2 For Each Loop
+liên tiếp cùng thao tác trên actor cùng kiểu — luôn verify Target/nguồn dữ liệu trỏ đúng Loop
+đang đứng, không suy luận theo vị trí node trên canvas.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -630,3 +657,4 @@ lock lần 3 nếu chưa có hướng mới từ Fable.
 | 15/07/2026 | Thêm section "SPRINT 5 — 15/07/2026 — P1 G2/G3/G4: bug dead-end Return Node + wiring": [BUG-FIX, NGHIÊM TRỌNG] `GetComboThumbnail` thiếu Return Node ở nhánh False → cross-combo thumbnail bleeding (đọc lại rule L2 — ngoại lệ "dead-end vô hại" KHÔNG áp dụng cho Function có return type); [BUG-FIX] 2 dead-end trong SaveComboFromSelection Bước 7 (Pivot not-found + bSaveOK fail); [BACKLOG] dead-end ComboManagerRef trong LoadComboLibrary chưa fix; [CORRECTION] Delete combo KHÔNG PHẢI = C8 (C8 = Drag-drop/surface-snap); [ARCH] exposure bug retry lần 2 vẫn fail, xác nhận không phải warm-up issue. |
 | 15/07/2026 (G5 + reconcile) | P1 Gate G5 (regression VRAM) DEFERRED — phương pháp đo (stat rhi lỗi, MemReport nhiễu bởi texture streaming theo camera) không tách được đóng góp riêng của combo thumbnail; cần RenderDoc/Nsight. Không chặn P1 (coi DONE về tính năng, G0→G4). Cập nhật mục "[BACKLOG — chưa fix] Dead-end ComboManagerRef" ở trên → FIXED 15/07/2026 (xác nhận cuhoang: fix trực tiếp trong UE5 Editor, ngoài phiên Claude Code). |
 | 16/07/2026 | Thêm section "P2 — 16/07/2026 — Quyết định kiến trúc Studio Thumbnail": [ARCH] S8 isolation → Remote Studio (duyệt 16/07); [ARCH] exposure bug deferred GỘP vào P2 Gate C (Manual EV100 thay Auto-exposure lock); [SCOPE] SpawnComboByID không tái dùng cho thumbnail (5 side effects xác nhận qua trace K2Node) → Custom Event mới SpawnComboForThumbnail; [CLEANUP backlog] node Delay mồ côi trong SpawnComboByID Step D, dọn khi có dịp. Plan đầy đủ: `docs/Plans/P2_StudioThumbnail_Execution.md` v1.0. |
+| 17/07/2026 | Thêm section "P2 — 17/07/2026 — Gate A DONE: Delay ceiling + bug fix aliasing": [SCOPE] Delay(0.5)→Delay(3.0) hardcode trong SpawnComboForThumbnail (LoadMeshAsync chưa kịp với combo nhiều món), ceiling = combo 7-8 món/asset resident, trigger = trước Gate F thay bằng dispatcher OnMeshLoaded (quyết định cần Fable/Opus); [BUG-FIX] Add Actor World Offset dùng nhầm Array Element của Loop 1 (qua Knot reroute) thay vì Loop 2 trong chuỗi ground-align — 1 actor bị dịch chuyển cộng dồn, còn lại đứng yên. Gate A: TEST PASS 6/7 case (case 7 dời Gate F). |

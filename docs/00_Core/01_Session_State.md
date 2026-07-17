@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 16/07/2026 — **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) — **P2 (Studio Thumbnail) plan v1.0 chốt**, Gate A sẵn sàng thực thi (xem mục P2) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
+**Phiên bản:** 17/07/2026 — **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) — **P2 (Studio Thumbnail) Gate A DONE** (Việc 1-4, PASS 6/7 case, xem mục P2) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
 
 ---
 
@@ -93,6 +93,7 @@
 - **Sprint D — Data Layer v2 (D.T1-D.T9, 17/06/2026) ✅**
 - **TreeNode/Chip active-folder highlight (18/06/2026, tính năng bổ sung) ✅**
 - **Sprint 5 T1+T2+T3+C1 (21/06/2026) ✅** — ComboTypes C++, ComboSerializer, BP_ComboItemView, LoadComboLibrary, FolderPath, FindMaterialRowNameByPath, SourceComboID, Favorite/RecentComboIDs
+- P2 Gate A (Studio Thumbnail vertical slice): Việc 1-4 DONE, TEST PASS 6/7 case (case 7 — tắt PIE giữa Delay — dời kiểm tra sang Gate F). Chi tiết: P2_StudioThumbnail_Execution.md.
 
 ### VRAM Fixes (19/06/2026)
 - Giai đoạn 1: Xác nhận card là RTX 3060 8GB (không phải 12GB). Budget UE = 7.26GB. Workaround: dùng Standalone Game (Alt+P) thay PIE cho session dài — mỗi lần tắt OS reclaim VRAM sạch 100%. Peak VRAM lúc chạy = 7.2/8.0GB, không cộng dồn qua nhiều lần launch. ✅ PASS
@@ -148,6 +149,10 @@
 **WBP_ConfirmDialog** — TẠO MỚI (06/07): dialog xác nhận generic (Yes/No), Expose on Spawn Message/ConfirmLabel, dispatcher OnConfirmed. Dùng đầu tiên cho C5.6 Xóa folder.
 **S_GroupData** — ✅ field `SourceComboID : String` (default "") đã thêm (C1 DONE). Group cha cụm combo = ComboID gốc; group user tạo tay = "". Đã add vào snapshot capture/restore.
 **C++ FurnitureToolkit** — FComboData.FolderPath (field mới), FindMaterialRowNameByPath (function mới). Compile xanh. Full rebuild (Binaries/Intermediate xóa + rebuild) ✅
+**BP_FurnitureInputManager** — SpawnFurnitureCopy +param bAddToRecent : Bool = True (default, Branch bọc khối AddRecentMesh trong Sequence.Then_2, dead-end hợp lệ)
+**BP_ComboManager** — SpawnComboForThumbnail(ComboID, DeltaYaw=0) Custom Event MỚI (P2 Gate A): guard Cmb_bThumbBusy → F_LoadComboData → ForEach Items → SpawnFurnitureCopy (bAutoSelect=False, bAddToRecent=False) → strip tag "FurnitureSpawned" → GroupID="" → Cmb_StudioClones. Biến mới: Cmb_StudioClones, Cmb_bThumbBusy, Cmb_StudioAnchor, Cmb_StudioFloor, Cmb_ThumbMinZ, Cmb_CaptureHandle (P1, tái dùng).
+**BP_ComboManager** — chuỗi debug phím U (Input Event, gate bDebugMode + bDebugTestThumb ở BeginPlay EnableInput): SpawnComboForThumbnail → Delay(3.0, tạm — xem DEVIATIONS) → ground-align (ForEach tính Cmb_ThumbMinZ qua Get Actor Bounds, DeltaZ = Cmb_StudioAnchor.Z − Cmb_ThumbMinZ, ForEach Add Actor World Offset) → BeginComboCapture → Delay(3.0) → FinishComboCapture → ForEach Destroy → Clear.
+**BeginPlay BP_ComboManager** — Spawn sàn tạm (StaticMeshActor, mesh Plane, scale 50×50×1, location=Cmb_StudioAnchor) chạy VÔ ĐIỀU KIỆN (KHÔNG nằm trong Branch bDebugTestThumb — quyết định 17/07, tránh coupling ẩn với ground-align).
 
 **Snapshot version history:**
 - V1: single select (legacy)
@@ -339,3 +344,4 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 14/07/2026 (dọn nợ) | **Dọn stale content C5.8 trong `## TIẾP THEO`** (đã báo 2 lần ở các lần phân phối trước, cuhoang xác nhận gộp dọn cùng lúc P1, KHÔNG thuộc nội dung delta P1 gốc): block prose "C5.8 — Folder Tree Picker Unify" (dòng cạnh mục P1) và dòng trong Roadmap v3.3 ASCII (Giai đoạn 2) sửa từ 🔄 IN PROGRESS (mô tả trạng thái 11/07, đã lỗi thời) → ✅ DONE (13/07/2026, REG PASS) — khớp với changelog 13/07/2026 (REG) đã ghi trước đó. |
 | 14/07/2026 (roadmap reorder) | **Sửa thứ tự + trạng thái Roadmap v3.3** (theo yêu cầu cuhoang): C4 và C8 sửa ⏳→✅ DONE (đã xong từ 25/06 và 24/06, marker cũ sai/lỗi thời). Dòng "C5 — Folder tree tab 🧩 Combo" viết lại thành "C5 — Folder Management đầy đủ... TOÀN BỘ HOÀN TẤT" (khớp phát biểu C5 đã dùng ở mục TIẾP THEO). **Dời C5.8** từ cuối Giai đoạn 2 → ngay sau C5 trong Giai đoạn 1 — khớp đúng ghi chú gốc "chốt slot NGAY SAU C5, TRƯỚC C9" (trước đó bị đặt sai chỗ, nằm sau cả WBP_Toast/C8/Xoay combo). Thumbnail System (P1) gắn nhãn "ĐANG LÀM" khớp `02_Current_Sprint.md`. |
 | 14/07/2026 (P1 G1) | **P1 Combo Thumbnail — Gate G1 DONE.** `LoadComboThumbnail` thân hàm đầy đủ: đọc PNG từ đĩa → `IImageWrapper` `SetCompressed`/`GetRaw` BGRA8 → optional `FImageUtils::ImageResize` xuống `MaxSize` → `UTexture2D::CreateTransient` + memcpy Mip 0. Build PASS, test phím Y (tách riêng khỏi phím T capture) → "G1 Load OK, size=256" đúng kỳ vọng. Thêm module `ImageCore` vào `FurnitureToolkit.Build.cs` + include `Engine/Texture2D.h`/`ImageUtils.h` trong `ComboThumbnail.cpp` — bắt buộc để build, KHÔNG phải deviation kiến trúc (đúng plan gốc). Tiếp theo: G2 (auto-fit FitRatio + ẩn gizmo/outline lúc capture + tinh chỉnh sharpen/PostProcess). |
+| 17/07/2026 | **P2 (Studio Thumbnail) — Gate A DONE.** Việc 1-4 hoàn tất, TEST PASS 6/7 case (case 7 — tắt PIE giữa Delay — dời kiểm tra sang Gate F). BP_ComboManager: `SpawnComboForThumbnail(ComboID, DeltaYaw=0)` Custom Event mới + chuỗi debug phím U (ground-align, BeginComboCapture/FinishComboCapture). BP_FurnitureInputManager: `SpawnFurnitureCopy` +param `bAddToRecent`. Fix aliasing `Add Actor World Offset` dùng nhầm Array Element giữa 2 For Each Loop liên tiếp. Delay(0.5→3.0) ceiling tạm cho LoadMeshAsync — xem DEVIATIONS. Chi tiết: `P2_StudioThumbnail_Execution.md`. Tiếp theo: Gate B (dome). |
