@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 17/07/2026
+**Cập nhật:** 17/07/2026 (cuối phiên)
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -586,6 +586,76 @@ liên tiếp cùng thao tác trên actor cùng kiểu — luôn verify Target/ng
 
 ---
 
+## P2 — 17/07/2026 (cuối phiên) — Gate B + Gate C DONE
+
+- **[ARCH]** Cast Shadow=False trên dome (Gate B) — quyết định kiến trúc quan trọng nhất phiên:
+  dome đặc chặn hoàn toàn ánh sáng nếu đèn đứng ngoài bán kính R (ràng buộc hình học không thể
+  đồng thời thỏa "đèn trong dome" và "góc chiếu đúng theo ảnh sản phẩm chuẩn"). Tắt Cast Shadow
+  biến dome thành "chỉ nhận bóng, không chặn sáng" — đúng bản chất backdrop vải/giấy thật, không
+  phải vật cản. Receive Shadow giữ nguyên. Root cause thật của chuỗi bug đèn bên dưới — Fable chỉ
+  ra sau khi Sonnet loay hoay dịch số vị trí đèn nhiều vòng.
+- **[SCOPE]** Màu dome S1 (3 tông #F5F5F5/#EAE8E4/#E8EDF2) dời từ Gate B sang đợt "tối ưu cuối"
+  (gộp cùng sofa/mesh/màu) — lúc Gate B chưa có đèn để soi màu đúng, cuhoang quyết định gộp.
+- **[BACKLOG]** Faceting/horizon line của sphere dome — quan sát ban đầu nghi có vấn đề (blur do
+  đứng sát camera Editor) nhưng chưa xác nhận (chưa test Wireframe). Dời kiểm tra kỹ + custom
+  cove mesh (nếu cần) sang đợt tối ưu cuối.
+- **[BUG-FIX]** `Rotate Vector Around Axis` InVect.X = 150 thay vì 1500 — gõ tay thiếu 1 số 0 lúc
+  refactor Key/Fill sang Function `SpawnStudioLight`. Sửa lại 1500.0.
+- **[BUG-FIX]** RectLight Mobility mặc định = Stationary — phụ thuộc Lightmass bake, Remote
+  Studio spawn runtime chưa từng bake → gần như không chiếu sáng lên actor động. Fix:
+  `Set Mobility(Movable)` ngay sau spawn, trước IsValid.
+- **[ARCH]** `Cmb_StudioAnchor` Default Value thực tế = (0,0,0), không phải (500000,500000,Z)
+  như plan gốc định — biến khai đúng comment nhưng số thật chưa từng gõ vào Default Value. Sửa
+  Default Value → X=500000, Y=500000, Z=0 (Z=0 hợp lệ vì X/Y đã đưa studio ra xa, không còn "sàn
+  phòng thật" nào gần để khớp).
+- **[CORRECTION]** Nghĩ sai: cộng `+DomeRadius` vào Z đèn để "nằm trong dome" — nhầm ràng buộc
+  hình học (quên rằng combo đứng gần ĐÁY dome/gần anchor, không phải giữa dome); cộng DomeRadius
+  đẩy đèn lên góc chiếu quá dốc (gần thẳng đứng), sáng lướt qua mặt trước combo. Revert, quay về
+  `WorldLoc = Anchor + LightOffset` thuần.
+- **[ARCH]** Xung đột hình học: Distance=1500 cố định + Height thấp (250) → đèn lọt RA NGOÀI
+  dome, không thể đồng thời thỏa "đèn trong dome" và "góc chiếu đúng" nếu dome là khối cầu đặc
+  chặn sáng. Leo thang Fable — giải quyết bằng Cast Shadow=False (xem [ARCH] ở trên), không phải
+  bằng dịch số vị trí đèn.
+- **[BUG-FIX]** Sau khi Cast Shadow=False, Attenuation Radius mặc định 4000 hụt tầm (đèn cách
+  tâm dome ~1920, điểm xa nhất mặt cầu = 3920, sát nút 4000) → góc dome vẫn tối. Tăng lên 8000.0.
+- **[ARCH]** HeightOffset=250 tạo góc chiếu quá dốc (elevation ~9° từ Distance=1500) → mặt trước
+  combo tối dù nền sáng — nhầm lẫn giữa "đủ thấp để chiếu trực diện" và số liệu thực tế. Đổi
+  HeightOffset (Z trong `RotateAngleAxis` InVect) từ 250 → 1500, tạo elevation 45°.
+- **[ARCH]** Đề xuất cuối cùng (tưởng đúng nhất): đổi sang Directional Light — Fable bác bỏ vì
+  Directional chiếu toàn world (phá phòng thật của đồng nghiệp) + vẫn bị dome chặn (không giải
+  quyết gì). Giữ RectLight, dùng Cast Shadow=False làm giải pháp đúng.
+- **[BUG-FIX]** `bUseFixedAngle` chưa từng được tick trên node `Begin Combo Capture` trong chuỗi
+  debug phím U — việc tick bị bỏ sót giữa các lượt làm, chuỗi U thực ra spawn xong không capture
+  đúng góc cố định (tưởng nhầm là đang test fixed-angle). Tick `Use Fixed Angle=True`,
+  `Fixed Angle=(Pitch=-15, Yaw=0, Roll=0)`.
+- **[BUG-FIX]** `Set Post Process Settings` (Manual EV100) dùng node `Make Post Process Settings`
+  — struct MỚI, ghi đè xoá 4 field Lumen override (`DynamicGlobalIlluminationMethod`,
+  `ReflectionMethod`) mà C++ `BeginComboCapture` đã set. Không phân biệt "Make" (tạo struct mới,
+  mất field khác) và "Set members in struct" (đọc struct hiện có, sửa tại chỗ). Fix:
+  `Get Post Process Settings` → `Set members in Post Process Settings` (chỉ sửa Metering Mode +
+  Exposure Compensation) → `Set Post Process Settings`.
+- **[BUG-FIX]** Thiếu `IsValid(Cmb_CaptureHandle)` sau `BeginComboCapture` trong chuỗi U — nếu
+  Begin trả None (Bounds invalid...) → Accessed None, và `Cmb_bThumbBusy` không bao giờ về False
+  → kẹt "Thumb busy" vĩnh viễn, cần restart PIE. Thêm IsValid guard: True→chuỗi cũ, False→Print +
+  SET bThumbBusy=False.
+- **[LESSON]** Bài học quy trình (không phải bug code): nhiều lần đoán sai liên tiếp quanh cùng 1
+  vị trí đèn (các bug [ARCH]/[CORRECTION] phía trên) — đúng lúc nên leo thang theo luật "3 lần
+  sai cùng chỗ → STOP, hỏi Fable" nhưng bị trễ. Fable review chỉ đúng nguyên nhân gốc (Cast
+  Shadow) mà Sonnet không nhìn ra vì cứ cố sửa bằng cách dịch chuyển số vị trí đèn thay vì xét
+  lại ràng buộc kiến trúc.
+
+**Verify cuối Gate C — PASS:** bấm phím U với 2 Combo ID khác nhau (sofa trắng, bàn trang điểm
+gỗ tối) → cùng góc camera, cùng mức sáng nền.
+
+**Ghi chú vặt cần dọn (không chặn Gate D):**
+- `ComboID` spawn (`combo_0BDBFB18...`) vs `ComboID` ghi file `FinishComboCapture`
+  (`Combo_0BDBFB18..._studio`, khác hoa/thường + suffix `_studio`) — chỉ ảnh hưởng debug, dọn ở
+  Gate F khi bỏ hẳn suffix theo plan.
+- Node mới cần xác nhận vào bảng chính thức `AI_Implementation_Rules.md`: `Set Mobility`,
+  `Set members in [Struct]` (dùng cho Post Process Settings, có thể dùng lại chỗ khác).
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -658,3 +728,4 @@ liên tiếp cùng thao tác trên actor cùng kiểu — luôn verify Target/ng
 | 15/07/2026 (G5 + reconcile) | P1 Gate G5 (regression VRAM) DEFERRED — phương pháp đo (stat rhi lỗi, MemReport nhiễu bởi texture streaming theo camera) không tách được đóng góp riêng của combo thumbnail; cần RenderDoc/Nsight. Không chặn P1 (coi DONE về tính năng, G0→G4). Cập nhật mục "[BACKLOG — chưa fix] Dead-end ComboManagerRef" ở trên → FIXED 15/07/2026 (xác nhận cuhoang: fix trực tiếp trong UE5 Editor, ngoài phiên Claude Code). |
 | 16/07/2026 | Thêm section "P2 — 16/07/2026 — Quyết định kiến trúc Studio Thumbnail": [ARCH] S8 isolation → Remote Studio (duyệt 16/07); [ARCH] exposure bug deferred GỘP vào P2 Gate C (Manual EV100 thay Auto-exposure lock); [SCOPE] SpawnComboByID không tái dùng cho thumbnail (5 side effects xác nhận qua trace K2Node) → Custom Event mới SpawnComboForThumbnail; [CLEANUP backlog] node Delay mồ côi trong SpawnComboByID Step D, dọn khi có dịp. Plan đầy đủ: `docs/Plans/P2_StudioThumbnail_Execution.md` v1.0. |
 | 17/07/2026 | Thêm section "P2 — 17/07/2026 — Gate A DONE: Delay ceiling + bug fix aliasing": [SCOPE] Delay(0.5)→Delay(3.0) hardcode trong SpawnComboForThumbnail (LoadMeshAsync chưa kịp với combo nhiều món), ceiling = combo 7-8 món/asset resident, trigger = trước Gate F thay bằng dispatcher OnMeshLoaded (quyết định cần Fable/Opus); [BUG-FIX] Add Actor World Offset dùng nhầm Array Element của Loop 1 (qua Knot reroute) thay vì Loop 2 trong chuỗi ground-align — 1 actor bị dịch chuyển cộng dồn, còn lại đứng yên. Gate A: TEST PASS 6/7 case (case 7 dời Gate F). |
+| 17/07/2026 (cuối phiên) | Thêm section "P2 — 17/07/2026 (cuối phiên) — Gate B + Gate C DONE": Gate B [ARCH] Cast Shadow=False trên dome (quyết định quan trọng nhất, gỡ ràng buộc "đèn phải trong dome") + [SCOPE] màu dome S1 dời tối ưu cuối + [BACKLOG] faceting sphere chưa xác nhận. Gate C — 12 bug/quyết định trong `SpawnStudioLight` (Key/Fill RectLight): [BUG-FIX] InVect.X 150→1500, Mobility Stationary→Movable, Attenuation Radius 4000→8000, `bUseFixedAngle` chưa tick, `Make`→`Get/Set members in` Post Process Settings (tránh xoá Lumen override C++), thiếu IsValid(Cmb_CaptureHandle) guard; [ARCH] Cmb_StudioAnchor Default Value (0,0,0)→(500000,500000,0), HeightOffset 250→1500 (elevation 45°), đề xuất Directional Light bị Fable bác bỏ; [CORRECTION] nhầm cộng +DomeRadius vào Z đèn; [LESSON] 3-lần-sai-cùng-chỗ→STOP-hỏi-Fable bị áp dụng trễ. Verify PASS: 2 combo khác nhau → cùng góc + cùng độ sáng. |

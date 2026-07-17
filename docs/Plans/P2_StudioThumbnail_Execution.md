@@ -1,5 +1,5 @@
 P2 — Combo Thumbnail "Studio Look" — Execution Plan
-v1.1 — 17/07/2026 — Fable authored (v1.0 16/07), Gate A test kết quả thêm 17/07. Kế thừa P1 (Begin/Finish pipeline, DONE 15/07). Plan là giả thuyết: lệch thì ghi DEVIATIONS, không tiếc plan.
+v1.2 — 17/07/2026 (cuối phiên) — Fable authored (v1.0 16/07), Gate A test kết quả thêm 17/07, Gate B+C kết quả thêm 17/07 cuối phiên. Kế thừa P1 (Begin/Finish pipeline, DONE 15/07). Plan là giả thuyết: lệch thì ghi DEVIATIONS, không tiếc plan.
 0. Mục tiêu & phạm vi
 Thumbnail combo chuẩn ảnh sản phẩm (tham chiếu IKEA, ảnh cuhoang gửi 15/07): nền đơn sắc liền mạch không horizon, sáng đều, bóng mềm dưới đồ, khung hình + góc + sáng đồng nhất mọi combo (cảm giác UE Content Browser).
 Trong scopeNgoài scopeRemote Studio + clone pipeline sạchHướng 2 (preview/xoay tay)Dome + Key/Fill light + Manual EV100Regenerate-all combo cũ (backlog)Camera H-B turntable + DOFDọn Delay mồ côi SpawnComboByID (backlog)Thay capture in-place trong Save flow (Gate F)K3 ngoài phần hạ tầng param
@@ -100,6 +100,9 @@ Spawn 1 lần BeginPlay (thay plane Gate A — bỏ Việc 2 plane, giữ ref do
 Material: cuhoang tạo tay trong editor M_StudioBackdrop — Lit, Two-Sided (không scale âm), BaseColor = param, Roughness 0.9. 3 tông chụp thử: #F5F5F5 / #EAE8E4 / #E8EDF2 → cuhoang duyệt S1 bằng ảnh thật tại gate này.
 Verify: không horizon line mọi hướng chụp · không faceting sphere lộ (lộ → Plan B: custom cove mesh nhờ đồng nghiệp DCC ~30') · PP volume phòng thật không rò màu (rò → xử ở Gate C cùng PostProcessSettings).
 
+### Kết quả Gate B — 17/07/2026
+**DONE.** R hardcode = `Cmb_StudioDomeRadius` = 2000.0 (biến, không phải literal ước lượng ×~5 như plan). **[ARCH] Cast Shadow=False trên dome** — quyết định quan trọng nhất gate này: dome đặc chặn hoàn toàn ánh sáng nếu đèn đứng ngoài bán kính R, tắt Cast Shadow biến dome thành "chỉ nhận bóng, không chặn sáng" (đúng bản chất backdrop vải/giấy thật). Receive Shadow giữ nguyên. Màu dome S1 (3 tông #F5F5F5/#EAE8E4/#E8EDF2) **CHƯA chốt** — dời sang đợt "tối ưu cuối" (gộp cùng sofa/mesh/màu), quyết định cuhoang vì lúc Gate B chưa có đèn để soi màu đúng. Faceting/horizon line sphere — quan sát ban đầu nghi có vấn đề nhưng chưa xác nhận (chưa test Wireframe), dời cùng đợt tối ưu cuối. Chi tiết: `DEVIATIONS.md` mục "P2 — 17/07/2026 (cuối phiên)".
+
 5. GATE C — đèn + Manual EV100 + camera H-B (gate nặng nhất)
 [VERIFY] trước khi làm — 2 điểm quyết có đụng C++ không:
 
@@ -109,6 +112,15 @@ V-C2: BP set được PostProcessSettings (ExposureMethod=Manual, EV100, DOF) qu
 Camera H-B: bUseFixedAngle=True, FixedAngle=(Pitch −15, Yaw = StudioCamYaw hằng); toán xoay clone trong SpawnComboForThumbnail dùng DeltaYaw thật: RotatedRel = Rotate Vector Around Axis(Item.RelLocation, DeltaYaw, Z-up) + RelRotation.Yaw += DeltaYaw (xoay CẢ FORMATION quanh anchor, không phải từng món tự quay tại chỗ). Debug phím U: DeltaYaw = StudioCamYaw − yaw camera hiện tại.
 EV100: tune 1 lần với tông màu S1 đã chốt.
 Verify — exposure bug CHẾT: chụp lại đúng 4 combo cũ (gồm case ngược sáng) → 4 ảnh cùng độ sáng; combo user xoay 180° trong phòng → ảnh vẫn ra mặt user đang nhìn. Plan B: dome kín tối hơn kỳ vọng → tăng Fill/thêm top light + bù EV — tune, không đổi kiến trúc.
+
+### Kết quả Gate C — 17/07/2026
+**DONE.** V-C1: `bUseFixedAngle`/`FixedAngle` đã implement sẵn trong .cpp (không cần đụng C++) — bug thật là node `Begin Combo Capture` trong chuỗi debug U chưa từng tick `Use Fixed Angle=True` (bỏ sót giữa các lượt làm), không phải thiếu thân hàm. V-C2: BP set được PostProcessSettings qua `Get/Set members in Post Process Settings` (đọc struct hiện có từ Capture Component, sửa tại chỗ) — KHÔNG cần thêm param C++ mới, nhưng phải dùng đúng node "Set members in Struct", không phải `Make Post Process Settings` (Make tạo struct mới, xoá mất 2 field Lumen override C++ đã set — bug #11 xem DEVIATIONS).
+
+Function mới `SpawnStudioLight(AngleOffsetDeg, Intensity) → RectLight` thay 2 khối node lặp Key/Fill: `RotateAngleAxis((1500,0,1500), AngleOffsetDeg, Z-up)` → LightOffset, WorldLoc = `Cmb_StudioAnchor + LightOffset`, Mobility=Movable (bắt buộc — Stationary phụ thuộc Lightmass bake, Remote Studio runtime chưa bake), FindLookAtRotation về anchor, Source Width/Height=150, Attenuation Radius=8000 (4000 mặc định hụt tầm với Distance~1920). Gọi: `SpawnStudioLight(45.0, 5000000.0)` → Cmb_StudioKeyLight, `SpawnStudioLight(-45.0, 1666667.0)` → Cmb_StudioFillLight (ratio 3:1 đúng plan).
+
+12 bug/quyết định trong lúc làm gate này (lịch sử đầy đủ: `DEVIATIONS.md` mục "P2 — 17/07/2026 (cuối phiên)") — đáng chú ý: `Cmb_StudioAnchor` Default Value từng là (0,0,0) thay vì (500000,500000,Z) như plan gốc định (biến khai đúng nhưng số thật chưa gõ); 5 vòng đoán sai liên tiếp quanh vị trí đèn trước khi leo thang Fable, Fable chỉ ra Cast Shadow=False (Gate B) là root cause thật; thêm `IsValid(Cmb_CaptureHandle)` guard sau Begin (thiếu → kẹt "Thumb busy" vĩnh viễn nếu Begin fail).
+
+Verify PASS: bấm U với 2 Combo ID khác nhau (sofa trắng, bàn trang điểm gỗ tối) → cùng góc camera, cùng mức sáng nền.
 
 6. GATE D — bóng + sweep hình dáng
 Source Size Key tune bóng mềm khớp ảnh IKEA. Sweep: combo nhỏ (1 ghế) / to (sofa L+bàn) / dẹt (thảm) / cao (kệ) / tường (known-limitation H1: ground-align đặt đồ tường xuống sàn — duyệt chấp nhận được hay cần xử riêng, quyết tại đây). Combo nhỏ lệch sáng → nâng cấp vị trí đèn scale theo R_bao (công thức Center + Dir×m×R_bao).

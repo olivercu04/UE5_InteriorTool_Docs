@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 17/07/2026 — **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) — **P2 (Studio Thumbnail) Gate A DONE** (Việc 1-4, PASS 6/7 case, xem mục P2) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
+**Phiên bản:** 17/07/2026 (cuối phiên) — **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) — **P2 (Studio Thumbnail) Gate A+B+C DONE**, Gate D chưa bắt đầu (xem mục P2) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
 
 ---
 
@@ -153,6 +153,9 @@
 **BP_ComboManager** — SpawnComboForThumbnail(ComboID, DeltaYaw=0) Custom Event MỚI (P2 Gate A): guard Cmb_bThumbBusy → F_LoadComboData → ForEach Items → SpawnFurnitureCopy (bAutoSelect=False, bAddToRecent=False) → strip tag "FurnitureSpawned" → GroupID="" → Cmb_StudioClones. Biến mới: Cmb_StudioClones, Cmb_bThumbBusy, Cmb_StudioAnchor, Cmb_StudioFloor, Cmb_ThumbMinZ, Cmb_CaptureHandle (P1, tái dùng).
 **BP_ComboManager** — chuỗi debug phím U (Input Event, gate bDebugMode + bDebugTestThumb ở BeginPlay EnableInput): SpawnComboForThumbnail → Delay(3.0, tạm — xem DEVIATIONS) → ground-align (ForEach tính Cmb_ThumbMinZ qua Get Actor Bounds, DeltaZ = Cmb_StudioAnchor.Z − Cmb_ThumbMinZ, ForEach Add Actor World Offset) → BeginComboCapture → Delay(3.0) → FinishComboCapture → ForEach Destroy → Clear.
 **BeginPlay BP_ComboManager** — Spawn sàn tạm (StaticMeshActor, mesh Plane, scale 50×50×1, location=Cmb_StudioAnchor) chạy VÔ ĐIỀU KIỆN (KHÔNG nằm trong Branch bDebugTestThumb — quyết định 17/07, tránh coupling ẩn với ground-align).
+**BP_ComboManager** — Gate B (dome, thay sàn plane Gate A): BeginPlay spawn `/Engine/BasicShapes/Sphere` R=`Cmb_StudioDomeRadius` (2000.0), Location Z = Cmb_StudioAnchor.Z + R, Scale = R/50 cả 3 trục (1 phép chia qua Make Vector). Material `M_StudioBackdrop` (Lit/Two-Sided/Roughness 0.9, màu CHƯA chốt — dời đợt tối ưu cuối). **Cast Shadow = False** trên dome (quyết định kiến trúc quan trọng nhất Gate B — dome chỉ nhận bóng, không chặn sáng đèn ngoài bán kính R). Receive Shadow giữ nguyên.
+**BP_ComboManager** — Gate C: Function mới `SpawnStudioLight(AngleOffsetDeg, Intensity) → RectLight` (Q8 đầy đủ, Return Node cả 2 nhánh) — RotateAngleAxis((1500,0,1500), AngleOffsetDeg, Z-up) làm LightOffset, WorldLoc = Cmb_StudioAnchor + LightOffset, spawn RectLight Mobility=Movable (bắt buộc — Stationary phụ thuộc Lightmass bake, Remote Studio runtime chưa bake), FindLookAtRotation về anchor, Source Width/Height=150, Attenuation Radius=8000. Gọi 2 lần ở BeginPlay: `SpawnStudioLight(45.0, 5000000.0)` → Cmb_StudioKeyLight, `SpawnStudioLight(-45.0, 1666667.0)` → Cmb_StudioFillLight. Biến mới: Cmb_StudioDomeRadius (Float, 2000.0), Cmb_StudioKeyLight/Cmb_StudioFillLight (RectLight ref). Biến đã xoá (refactor thành Local trong function): KeyOffset, FillOffset.
+**BP_ComboManager** — chuỗi debug phím U cập nhật Gate C: `Begin Combo Capture` tick `bUseFixedAngle=True`, `FixedAngle=(Pitch=-15, Yaw=0, Roll=0)` (trước đó bị bỏ sót); thêm `IsValid(Cmb_CaptureHandle)` guard ngay sau Begin (False → Print + SET Cmb_bThumbBusy=False, tránh kẹt "Thumb busy" vĩnh viễn); Manual EV100 set qua `Get Post Process Settings` (đọc struct hiện có từ Capture Component) → `Set members in Post Process Settings` (chỉ Metering Mode + Exposure Compensation) → `Set Post Process Settings` — KHÔNG dùng `Make Post Process Settings` (sẽ ghi đè mất 2 field Lumen override C++ đã set).
 
 **Snapshot version history:**
 - V1: single select (legacy)
@@ -267,9 +270,13 @@ Play/Stop liên tiếp trong cùng session Editor), KHÔNG liên quan riêng com
 
 ### P2 (Studio Thumbnail) — plan v1.0 chốt (16/07/2026)
 
-Plan v1.0 tại `Plans/P2_StudioThumbnail_Execution.md` — Gate A sẵn sàng thực thi (task card
-v1.1 trong file plan). Thứ tự sau P2: K1 (có thể chen trước Gate F, quyết tại F) → K3 còn lại
-→ C9 → C6 → C7 → C11 → C10 → Gate 2.
+Plan v1.0 tại `Plans/P2_StudioThumbnail_Execution.md` — Gate A DONE (đầu phiên 17/07, PASS 6/7,
+case 7 dời Gate F). Gate B DONE (dome hình học + Cast Shadow=False; màu dome S1 dời sang đợt
+"tối ưu cuối"). Gate C DONE (đèn Key/Fill RectLight qua `SpawnStudioLight` + Manual EV100 +
+camera H-B `bUseFixedAngle`; verify 2 combo khác nhau ra cùng góc + cùng độ sáng). Gate D
+(bóng + sweep hình dáng) chưa bắt đầu — việc kế tiếp. Chi tiết bug/quyết định kiến trúc Gate
+B/C: xem `DEVIATIONS.md` mục "P2 — 17/07/2026 (cuối phiên)". Thứ tự sau P2: K1 (có thể chen
+trước Gate F, quyết tại F) → K3 còn lại → C9 → C6 → C7 → C11 → C10 → Gate 2.
 
 **Roadmap v3.3 (chia 3 giai đoạn — scope phình to sau 23/06):**
 ```
@@ -345,3 +352,4 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 14/07/2026 (roadmap reorder) | **Sửa thứ tự + trạng thái Roadmap v3.3** (theo yêu cầu cuhoang): C4 và C8 sửa ⏳→✅ DONE (đã xong từ 25/06 và 24/06, marker cũ sai/lỗi thời). Dòng "C5 — Folder tree tab 🧩 Combo" viết lại thành "C5 — Folder Management đầy đủ... TOÀN BỘ HOÀN TẤT" (khớp phát biểu C5 đã dùng ở mục TIẾP THEO). **Dời C5.8** từ cuối Giai đoạn 2 → ngay sau C5 trong Giai đoạn 1 — khớp đúng ghi chú gốc "chốt slot NGAY SAU C5, TRƯỚC C9" (trước đó bị đặt sai chỗ, nằm sau cả WBP_Toast/C8/Xoay combo). Thumbnail System (P1) gắn nhãn "ĐANG LÀM" khớp `02_Current_Sprint.md`. |
 | 14/07/2026 (P1 G1) | **P1 Combo Thumbnail — Gate G1 DONE.** `LoadComboThumbnail` thân hàm đầy đủ: đọc PNG từ đĩa → `IImageWrapper` `SetCompressed`/`GetRaw` BGRA8 → optional `FImageUtils::ImageResize` xuống `MaxSize` → `UTexture2D::CreateTransient` + memcpy Mip 0. Build PASS, test phím Y (tách riêng khỏi phím T capture) → "G1 Load OK, size=256" đúng kỳ vọng. Thêm module `ImageCore` vào `FurnitureToolkit.Build.cs` + include `Engine/Texture2D.h`/`ImageUtils.h` trong `ComboThumbnail.cpp` — bắt buộc để build, KHÔNG phải deviation kiến trúc (đúng plan gốc). Tiếp theo: G2 (auto-fit FitRatio + ẩn gizmo/outline lúc capture + tinh chỉnh sharpen/PostProcess). |
 | 17/07/2026 | **P2 (Studio Thumbnail) — Gate A DONE.** Việc 1-4 hoàn tất, TEST PASS 6/7 case (case 7 — tắt PIE giữa Delay — dời kiểm tra sang Gate F). BP_ComboManager: `SpawnComboForThumbnail(ComboID, DeltaYaw=0)` Custom Event mới + chuỗi debug phím U (ground-align, BeginComboCapture/FinishComboCapture). BP_FurnitureInputManager: `SpawnFurnitureCopy` +param `bAddToRecent`. Fix aliasing `Add Actor World Offset` dùng nhầm Array Element giữa 2 For Each Loop liên tiếp. Delay(0.5→3.0) ceiling tạm cho LoadMeshAsync — xem DEVIATIONS. Chi tiết: `P2_StudioThumbnail_Execution.md`. Tiếp theo: Gate B (dome). |
+| 17/07/2026 (cuối phiên) | **P2 (Studio Thumbnail) — Gate B + Gate C DONE.** Gate B: dome hình học (`Cmb_StudioDomeRadius`, Scale=R/50) + `M_StudioBackdrop`; **Cast Shadow=False** trên dome (quyết định kiến trúc quan trọng nhất — dome chỉ nhận bóng, không chặn sáng đèn ngoài bán kính R); màu dome S1 dời sang đợt "tối ưu cuối" cùng cove mesh custom (nếu faceting xác nhận là vấn đề thật). Gate C: Function mới `SpawnStudioLight(AngleOffsetDeg, Intensity)` dùng chung cho Key/Fill RectLight (Mobility=Movable bắt buộc, Attenuation Radius=8000, elevation 45°); Manual EV100 qua `Get/Set members in Post Process Settings` (không dùng `Make`, tránh ghi đè Lumen override C++); camera H-B tick `bUseFixedAngle`. 12 bug/quyết định trong lúc làm Gate C (chi tiết đầy đủ: `DEVIATIONS.md` mục "P2 — 17/07/2026 (cuối phiên)") — đáng chú ý nhất: dịch số vị trí đèn sai hướng 5 lần liên tiếp trước khi Fable chỉ ra root cause thật là Cast Shadow, bài học "3 lần sai cùng chỗ → STOP hỏi Fable" bị áp dụng trễ. Verify PASS: 2 combo khác nhau → cùng góc + cùng độ sáng. Tiếp theo: Gate D (bóng + sweep hình dáng). |

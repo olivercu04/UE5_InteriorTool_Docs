@@ -1,6 +1,6 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
-**Cập nhật:** 16/07/2026 — P2 Studio Thumbnail plan v1.0 chốt | P1 Combo Thumbnail DONE về tính năng | C5.8 CHÍNH THỨC DONE (13/07)
+**Cập nhật:** 17/07/2026 (cuối phiên) — P2 Studio Thumbnail Gate A+B+C DONE, Gate D chưa bắt đầu | P1 Combo Thumbnail DONE về tính năng | C5.8 CHÍNH THỨC DONE (13/07)
 
 ---
 
@@ -266,6 +266,21 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
         PASS (case 4 xóa combo N/A, tính năng chưa tồn tại). 15/07/2026.
   - [~] P1.G5 — regression VRAM — DEFERRED 15/07/2026 (phương pháp đo bị nhiễu, cần
         RenderDoc/Nsight thay vì MemReport thô). Không chặn P1, coi P1 DONE tính năng.
+- [ ] **Studio Thumbnail (P2)** — Remote Studio + H-B turntable + Key/Fill RectLight + Manual
+      EV100. Plan: `docs/Plans/P2_StudioThumbnail_Execution.md`. (chưa tính vào task count,
+      cùng quy ước với P1 ở trên)
+  - [x] P2.Gate A — vertical slice: `SpawnComboForThumbnail` clone sạch + ground-align. TEST
+        PASS 6/7 case (case 7 — tắt PIE giữa Delay — dời Gate F). 17/07/2026.
+  - [x] P2.Gate B — dome: hình học + Material `M_StudioBackdrop`. Cast Shadow=False (quyết
+        định kiến trúc quan trọng nhất). Màu dome S1 + faceting sphere dời đợt tối ưu cuối.
+        17/07/2026 (cuối phiên).
+  - [x] P2.Gate C — đèn Key/Fill qua `SpawnStudioLight` (Mobility=Movable, Attenuation
+        Radius=8000) + Manual EV100 (Get/Set members in Post Process Settings) + camera H-B
+        `bUseFixedAngle`. 12 bug/quyết định trong lúc làm — xem DEVIATIONS.md. Verify PASS:
+        2 combo khác nhau → cùng góc + cùng độ sáng. 17/07/2026 (cuối phiên).
+  - [ ] P2.Gate D — bóng + sweep hình dáng (nhỏ/to/dẹt/cao/tường)
+  - [ ] P2.Gate E — DOF
+  - [ ] P2.Gate F — nối dây thật vào SaveComboFromSelection + closure
 - [x] **C4** — WBP_ComboCard + ghost + drag-drop + CalculateComboAnchor + CTV_ComboCard. Ghost offset FIXED (Approach B). ✅ 25/06/2026
 - [ ] **C5** ⏳ IN PROGRESS — 7 sub-task:
   - [x] C5.1 — C++ 3 helper (UpdateComboFolder/RenameFolderPrefix/ClearFolderPrefix) ✅ 25/06
@@ -332,3 +347,5 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 14/07/2026 (P1 G1) | **P1 Combo Thumbnail — Gate G1 DONE.** `LoadComboThumbnail` thân hàm đầy đủ (PNG→IImageWrapper→GetRaw BGRA8→optional FImageUtils::ImageResize→UTexture2D::CreateTransient). Build PASS, test phím Y độc lập → size=256 đúng. Thêm module `ImageCore` (Build.cs) + include Engine/Texture2D.h, ImageUtils.h — không phải deviation (đúng plan gốc). Checklist P1.G1 tick DONE. Tiếp theo: G2 (auto-fit FitRatio + ẩn gizmo/outline + PostProcess). |
 | 15/07/2026 | **P1 Combo Thumbnail — Gate G2+G3+G4 DONE.** Auto-fit + ẩn gizmo (G2). Cache thumbnail + fix bug nghiêm trọng "Function thiếu Return Node ở 1 nhánh → tái sử dụng output cũ, cross-combo thumbnail bleeding" (G3). Nối full vào Save/Load/Display flow, fix 2/3 bug dead-end phát hiện trong lúc wiring (G4). Delete combo xác nhận CHƯA implement (note cũ ghi nhầm C8). Xem `01_Session_State.md` mục P1 + `DEVIATIONS.md` 15/07/2026 cho chi tiết đầy đủ. |
 | 16/07/2026 | **P2 plan v1.0 chốt** (Fable review ×2 vòng: 8 điểm mù M1-M8 + 4 lỗ hổng H1-H4). Kiến trúc: Remote Studio + H-B turntable + Key/Fill RectLight + Manual EV100. Gate A card v1.1 giao Sonnet. Plan: `docs/Plans/P2_StudioThumbnail_Execution.md`. |
+| 17/07/2026 | **P2 Gate A DONE** — `SpawnComboForThumbnail(ComboID, DeltaYaw=0)` Custom Event mới (clone sạch: strip tag FurnitureSpawned, GroupID="", bAutoSelect/bAddToRecent=False) + chuỗi debug phím U (ground-align, BeginComboCapture/FinishComboCapture). `SpawnFurnitureCopy` +param `bAddToRecent`. Fix aliasing Add Actor World Offset (2 For Each Loop liên tiếp dùng nhầm Array Element). TEST PASS 6/7 case (case 7 dời Gate F). |
+| 17/07/2026 (cuối phiên) | **P2 Gate B + Gate C DONE.** Gate B: dome hình học (`Cmb_StudioDomeRadius`) + Cast Shadow=False (quyết định kiến trúc quan trọng nhất — gỡ ràng buộc "đèn phải đứng trong dome"); màu dome S1 + faceting sphere dời đợt tối ưu cuối. Gate C: Function mới `SpawnStudioLight(AngleOffsetDeg, Intensity)` dùng chung cho Key/Fill RectLight (Mobility=Movable bắt buộc, Attenuation Radius=8000, elevation 45°); Manual EV100 qua `Get/Set members in Post Process Settings` (không dùng `Make`, tránh ghi đè Lumen override C++); camera H-B tick `bUseFixedAngle`. 12 bug/quyết định trong lúc làm Gate C (5 vòng đoán sai vị trí đèn trước khi Fable chỉ ra root cause = Cast Shadow) — chi tiết đầy đủ: `DEVIATIONS.md`. Verify PASS: 2 combo khác nhau → cùng góc + cùng độ sáng. Tiếp theo: Gate D (bóng + sweep hình dáng). |
