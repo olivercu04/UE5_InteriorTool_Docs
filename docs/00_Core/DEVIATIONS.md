@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 17/07/2026 (cuối phiên)
+**Cập nhật:** 18/07/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -656,6 +656,84 @@ gỗ tối) → cùng góc camera, cùng mức sáng nền.
 
 ---
 
+## P2 — 18/07/2026 — Gate D prerequisite: lighting isolation
+
+Bối cảnh: Gate D bắt đầu với task "Source Size Key tune bóng mềm khớp ảnh IKEA" — ảnh capture
+đầu tiên bị lỗi nặng (cháy sáng, vệt đen, bóng cứng, tông ấm/lạnh đổi theo giờ UDS), không đáng
+tin để tune bằng mắt. Toàn phiên dành để điều tra + fix 3 nguyên nhân gốc chặn (blocking); task
+gốc Gate D (tune Source Size + sweep 5 combo) CHƯA bắt đầu.
+
+### [CORRECTION] RectLight offset vector — sửa giá trị sai trong trí nhớ/doc cũ
+Giá trị THẬT xác nhận qua export K2Node: `RotateAngleAxis(InVect=(1500.0, 0.0, 1200.0),
+Axis=(0,0,1))`. Doc cũ ghi `(1500, 0, 1500)` là sai (Z=1200, không phải 1500). Anchor spawn
+dome lệch tâm dome đúng 1 Dome Radius theo Z (`Dome Location = Anchor + (0,0,Radius)`) — Anchor
+nằm ở ĐÁY dome, không phải tâm. Khoảng cách đèn → TÂM dome = `√(1500² + (1200−Radius)²)`. Với
+Radius=2000 hiện tại ⇒ ≈ 1700 < 2000 → đèn nằm SÂU TRONG dome ~300 unit, không đứng ngoài như
+nghi ngờ ban đầu — giả thuyết "đèn ngoài bán kính" (xem entry [ARCH] "Xung đột hình học" 17/07)
+đã bị LOẠI, không phải nguyên nhân thật.
+
+### [BUG-FIX] Distance Field của mesh Sphere gây tự triệt tiêu RectLight khi Cast Shadow=True
+Triệu chứng: Cast Shadow=True trên dome → capture đen 100% dù RectLight nằm trong dome. Cast
+Shadow=False → sáng nhưng lẫn ánh sáng ngoài (Sun/SkyLight xuyên qua). Nguyên nhân:
+`Engine/BasicShapes/Sphere` build Distance Field dạng khối ĐẶC (tài liệu Epic: mọi điểm trong
+mesh lưu khoảng cách ÂM, tức "trong khối đặc") — camera/RectLight/furniture đứng bên trong dome
+bị Lumen/DF-shadow coi là nằm trong khối đặc → self-occlusion toàn phần. Fix: Duplicate
+`Engine/BasicShapes/Sphere` → asset riêng project `SM_StudioDome` (không sửa Engine gốc — KP3).
+Static Mesh Editor → Build Settings → bật **Two-Sided Distance Field Generation**. Đổi
+`New Mesh` trong node `Set Static Mesh` của dome sang `SM_StudioDome`.
+Ceiling: tài liệu Epic cảnh báo Two-Sided DF tốn ray-marching cost cao hơn — chưa đo tác động
+hiệu năng thật. Trigger: verify performance ở Gate 2 (packaged build).
+
+### [ARCH] Lighting Channels cô lập Directional Light (Sun/UDS) khỏi Remote Studio
+Thêm node `Set Lighting Channels(Channel0=False, Channel1=True)` cho: `SM_StudioDome` (Static
+Mesh Component, sau `Set Cast Shadow=True`, cùng chỗ vừa thêm `Set Mobility=Movable`); RectLight
+Key + Fill trong `SpawnStudioLight` (Target=**Light Component**, không phải Primitive Component
+— 2 node khác nhau cùng tên "Set Lighting Channels", chọn sai Target type sẽ không compile);
+furniture clone `FurnitureMesh` (biến riêng `BP_FurnitureActor`, KHÔNG dùng
+`Get Static Mesh Component` — trả rỗng, gotcha đã biết) trong `SpawnComboForThumbnail`. Điều
+kiện bắt buộc đã verify: Lighting Channels chỉ hoạt động động (dynamic) khi Mobility=Movable cho
+CẢ actor/component VÀ light — dome phải đổi Static→Movable mới (mặc định SpawnActor Static Mesh
+Actor ra Static); RectLight và `FurnitureMesh` vốn đã Movable sẵn. Sun (Directional Light UDS)
+giữ nguyên Channel 0 mặc định — không đụng, vẫn chiếu sáng phòng thật của user bình thường.
+Domain fact (tài liệu Epic): Lighting Channels chỉ áp dụng cho *direct lighting* của dynamic
+light (Directional/Point/Spot/Rect) — KHÔNG áp dụng cho SkyLight (ambient/IBL). Giải quyết được
+1/2 vấn đề, cần thêm entry dưới.
+
+### [ARCH] Show Flag Settings chặn SkyLight ambient — không đụng biến/actor của đồng nghiệp
+Trong `BeginComboCapture`: ngay sau nhánh `Is Valid(Cmb_CaptureHandle) → True`, TRƯỚC Delay
+warmup 3.0s, thêm: `Cmb_CaptureHandle` → `Get Capture Component 2D` (bắt buộc lấy Component —
+`Cmb_CaptureHandle` là kiểu Actor `SceneCapture2D`, không compatible thẳng với Target của
+`Set Show Flag Settings`) → `Make Engine Show Flags Setting(ShowFlagName="SkyLighting",
+Enabled=False)` → `Make Array` (1 phần tử) → gán vào pin `Show Flag Settings` của
+`Set Show Flag Settings` (Target = Capture Component 2D vừa lấy). Lý do chọn hướng này thay vì
+set/restore `Alpha_BP_Master_LightManager_EV.Sky Light Intensity` (biến của đồng nghiệp, quản
+lý ánh sáng CẢ LEVEL): không đụng code/actor không thuộc quyền sở hữu combo system; zero ảnh
+hưởng lên viewport chính lúc bấm Save combo (set-tạm-rồi-restore sẽ làm cả phòng tối đi ~4s,
+thấy được); không có rủi ro race condition (capture fail giữa chừng không làm kẹt biến đồng
+nghiệp ở giá trị sai). Kết quả verify: 2 ảnh cùng combo, Time Of Day=960 và Time Of Day=0
+(chênh lệch tối đa), Sky Light Intensity giữ nguyên gốc — ra gần như giống hệt nhau. Xác nhận
+cô lập hoàn toàn khỏi trạng thái UDS.
+Ceiling: có báo cáo cũ trên forum Epic là Show Flags trên Scene Capture có thể bị ignore sau khi
+package (chưa rõ còn đúng ở UE5.5.4). Trigger: bắt buộc verify lại ở Gate 2 checklist deploy.
+
+### [CEILING / ⚠️ SUY LUẬN — chưa verify bằng test] Dải đen viền trên khung hình
+Vẫn xuất hiện trong mọi ảnh test gần đây, không đổi theo Time Of Day/Sky Light Intensity — độc
+lập với 3 fix trên. Giải thích của cuhoang (CHƯA kiểm chứng bằng test hình học cụ thể): là vùng
+dome nằm ngoài phạm vi chiếu của RectLight Key/Fill (RectLight là nguồn 1 hướng, có "mặt cắt
+zero" ngoài góc lệch — 2 đèn hiện tại lệch ±45° quanh anchor, để lại 1 cung không được chiếu
+trực tiếp). Chưa xử lý — để dành cho đúng task Gate D gốc (tune Source Size + sweep 5 combo),
+lúc đó mới quyết định có cần mở góc phủ / thêm nguồn sáng nền hay không.
+
+**Việc chờ xác nhận/mở, chưa xử lý trong phiên này:**
+- Tên hàm/vị trí chính xác của logic spawn dome (cần export K2Node đầy đủ, phiên này chỉ có
+  screenshot node rời).
+- Verify Two-Sided DF Generation + Set Show Flag Settings hoạt động đúng trong PACKAGED BUILD
+  (2 ceiling ở trên — thêm vào checklist Gate 2).
+- Test hình học xác nhận dải đen viền trên khung hình — chưa làm, để dành lúc sweep Gate D.
+- Task gốc Gate D (Source Size Key tune, sweep 5 combo) — CHƯA bắt đầu, làm tiếp ở phiên sau.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -729,3 +807,4 @@ gỗ tối) → cùng góc camera, cùng mức sáng nền.
 | 16/07/2026 | Thêm section "P2 — 16/07/2026 — Quyết định kiến trúc Studio Thumbnail": [ARCH] S8 isolation → Remote Studio (duyệt 16/07); [ARCH] exposure bug deferred GỘP vào P2 Gate C (Manual EV100 thay Auto-exposure lock); [SCOPE] SpawnComboByID không tái dùng cho thumbnail (5 side effects xác nhận qua trace K2Node) → Custom Event mới SpawnComboForThumbnail; [CLEANUP backlog] node Delay mồ côi trong SpawnComboByID Step D, dọn khi có dịp. Plan đầy đủ: `docs/Plans/P2_StudioThumbnail_Execution.md` v1.0. |
 | 17/07/2026 | Thêm section "P2 — 17/07/2026 — Gate A DONE: Delay ceiling + bug fix aliasing": [SCOPE] Delay(0.5)→Delay(3.0) hardcode trong SpawnComboForThumbnail (LoadMeshAsync chưa kịp với combo nhiều món), ceiling = combo 7-8 món/asset resident, trigger = trước Gate F thay bằng dispatcher OnMeshLoaded (quyết định cần Fable/Opus); [BUG-FIX] Add Actor World Offset dùng nhầm Array Element của Loop 1 (qua Knot reroute) thay vì Loop 2 trong chuỗi ground-align — 1 actor bị dịch chuyển cộng dồn, còn lại đứng yên. Gate A: TEST PASS 6/7 case (case 7 dời Gate F). |
 | 17/07/2026 (cuối phiên) | Thêm section "P2 — 17/07/2026 (cuối phiên) — Gate B + Gate C DONE": Gate B [ARCH] Cast Shadow=False trên dome (quyết định quan trọng nhất, gỡ ràng buộc "đèn phải trong dome") + [SCOPE] màu dome S1 dời tối ưu cuối + [BACKLOG] faceting sphere chưa xác nhận. Gate C — 12 bug/quyết định trong `SpawnStudioLight` (Key/Fill RectLight): [BUG-FIX] InVect.X 150→1500, Mobility Stationary→Movable, Attenuation Radius 4000→8000, `bUseFixedAngle` chưa tick, `Make`→`Get/Set members in` Post Process Settings (tránh xoá Lumen override C++), thiếu IsValid(Cmb_CaptureHandle) guard; [ARCH] Cmb_StudioAnchor Default Value (0,0,0)→(500000,500000,0), HeightOffset 250→1500 (elevation 45°), đề xuất Directional Light bị Fable bác bỏ; [CORRECTION] nhầm cộng +DomeRadius vào Z đèn; [LESSON] 3-lần-sai-cùng-chỗ→STOP-hỏi-Fable bị áp dụng trễ. Verify PASS: 2 combo khác nhau → cùng góc + cùng độ sáng. |
+| 18/07/2026 | Thêm section "P2 — 18/07/2026 — Gate D prerequisite: lighting isolation": [CORRECTION] RectLight offset Z thật = 1200 (không phải 1500 như ghi trước) + tính lại khoảng cách đèn→tâm dome (~1700 < Radius 2000, đèn nằm TRONG dome, loại giả thuyết "đèn ngoài bán kính"); [BUG-FIX] Distance Field khối đặc của Sphere engine tự triệt tiêu RectLight khi Cast Shadow=True → fix bằng `SM_StudioDome` (duplicate asset riêng) + Two-Sided Distance Field Generation; [ARCH] `Set Lighting Channels` cô lập dome+đèn+furniture clone khỏi Sun/UDS (Channel 1, yêu cầu Mobility=Movable); [ARCH] `Set Show Flag Settings(SkyLighting=False)` trên Capture Component riêng — không đụng biến LightManager của đồng nghiệp; [CEILING/SUY LUẬN chưa verify] dải đen viền khung hình, dời xử lý sang đúng task Gate D. Task gốc Gate D (Source Size Key tune + sweep 5 combo) CHƯA bắt đầu. |

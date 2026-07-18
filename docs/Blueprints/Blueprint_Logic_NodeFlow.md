@@ -1,6 +1,6 @@
 # Blueprint Logic — Node Flow Reference
 **HỢP NHẤT TỪ 3 file:** v1.3 base (07/06) + v1.4_patch (12/06) + v1.5_patch (15/06)
-**Phiên bản:** 1.8 | **Cập nhật:** 14/07/2026 — BP_ComboManager debug capture thumbnail (phím T), P1 Gate G0-R
+**Phiên bản:** 1.9 | **Cập nhật:** 18/07/2026 — BP_ComboManager Gate D prerequisite: Lighting Channels isolation (SpawnStudioLight, spawn dome, SpawnComboForThumbnail, BeginComboCapture)
 **Mục đích:** Ghi lại thứ tự node logic để không cần chụp ảnh lại Blueprint. Full flows sống trong file BP_*.md / WBP_*.md tương ứng — file này ghi node-by-node diff và cross-BP flows.
 
 ---
@@ -1061,6 +1061,58 @@ Q8: Keyboard Event, latent Delay hợp lệ (nằm trong Event, không Function)
 
 ---
 
+## BP_ComboManager — Gate D prerequisite: Lighting Channels isolation (18/07/2026)
+
+Diff trên các function đã có (full flow sống trong `BP_ComboManager.md` — file đó hiện CHƯA
+đồng bộ với các diff Gate B/C/D, xem ghi chú cuối các lần phân phối P2 trước). Bối cảnh đầy đủ
+(root cause Distance Field self-occlusion, quyết định không đụng
+`Alpha_BP_Master_LightManager_EV` của đồng nghiệp, 2 ceiling packaged-build): xem `DEVIATIONS.md`
+mục "P2 — 18/07/2026 — Gate D prerequisite: lighting isolation".
+
+### SpawnStudioLight — sửa offset value + thêm Lighting Channels
+```
+RotateAngleAxis(InVect=(1500.0, 0.0, 1200.0), Axis=(0,0,1))
+  ← SỬA: doc trước ghi nhầm Z=1500, giá trị THẬT xác nhận qua export K2Node = Z=1200
+...(giữ nguyên từ Gate C: WorldLoc = Anchor + LightOffset, Mobility=Movable,
+    FindLookAtRotation về anchor, Source Width/Height=150, Attenuation Radius=8000)...
+▶→ Set Lighting Channels(Target=Light Component, Channel1=True)   ← MỚI, cuối chuỗi function
+```
+
+### Spawn dome (BeginPlay) — thêm Movable + Lighting Channels + đổi mesh
+⚠️ Vị trí graph chính xác CHƯA export đầy đủ (phiên 18/07 chỉ có screenshot node rời) — cần
+cuhoang xác nhận lại tên hàm/node thật trước khi coi đoạn dưới là chuẩn:
+```
+Set Static Mesh(New Mesh = SM_StudioDome)   ← ĐỔI, trước là /Engine/BasicShapes/Sphere
+Set Cast Shadow=True                          (giữ nguyên, Gate C)
+▶→ Set Mobility(Movable)                     ← MỚI (bắt buộc để Lighting Channels hoạt động)
+▶→ Set Lighting Channels(Target=Static Mesh Component, Channel1=True)   ← MỚI
+```
+
+### SpawnComboForThumbnail — thêm Lighting Channels cho furniture clone
+```
+...Array_RemoveItem(Tags,"FurnitureSpawned") → Set GroupID=""...
+▶→ NewActor → Get FurnitureMesh
+     (biến riêng BP_FurnitureActor — KHÔNG dùng Get Static Mesh Component, trả rỗng)
+▶→ Set Lighting Channels(Target=Primitive Component, Channel1=True)   ← MỚI
+▶→ Array_Add(Cmb_StudioClones, NewActor)   (giữ nguyên vị trí cũ)
+```
+
+### BeginComboCapture — thêm Set Show Flag Settings (SkyLighting=False)
+```
+Branch(IsValid(Cmb_CaptureHandle))
+  True ▶→ Cmb_CaptureHandle → Get Capture Component 2D                       ← MỚI
+          ▶→ Make Engine Show Flags Setting(ShowFlagName="SkyLighting",
+               Enabled=False) → Make Array (1 phần tử)
+          ▶→ Set Show Flag Settings(Target=Capture Component 2D vừa lấy)     ← MỚI
+          ▶→ Delay(3.0)   (giữ nguyên vị trí — chuỗi cũ tiếp tục sau đây)
+```
+
+Q8: 5 node mới ở trên đều CHỜ XÁC NHẬN (`Set Lighting Channels` ×2 Target khác nhau,
+`Get Capture Component 2D`, `Set Show Flag Settings`, `Make Engine Show Flags Setting`) — xem
+`AI_Implementation_Rules.md` mục "Nodes chờ xác nhận" trước khi coi là chuẩn chính thức.
+
+---
+
 ## NODE FLOW ĐÃ CONFIRM
 
 | Node display name | Ghi chú |
@@ -1084,3 +1136,4 @@ Q8: Keyboard Event, latent Delay hợp lệ (nằm trong Event, không Function)
 | 1.6 | 04/07/2026 — 22:10 ICT | **NF — New Folder (context menu, dưới §C5.0 combo):** node flow GetChildFolderNames, GetUniqueNewFolderName, GetNewFolderParent, OnRequestNewFolder, CB_CreateNewFolder + ghi chú OnComboTreeNodeRightClicked thêm menu item đầu chuỗi. Full doc: WBP_FurnitureInventory.md v3.6. |
 | 1.7 | 06/07/2026 — 21:15 ICT | **NF.G3 (nút "+")** node flow: PopulateComboTreeColumn +PlusNode, OnComboTreeNodeClicked +guard đầu tiên. **RebuildChipRowForPath + RefreshChipBreadcrumb** node flow (gộp code ChipRow trùng lặp + tự vẽ lại chip breadcrumb sau Move/Xóa/Rename folder) + tóm tắt 3 bug fix (dead-end 2/3 nhánh, delimiter sai, BooleanAND→OR). Full doc: WBP_FurnitureInventory.md v3.7. |
 | 1.8 | 14/07/2026 | **BP_ComboManager — Debug capture thumbnail (phím T)**, P1 Gate G0-R: BeginPlay (Enable Input theo `bDebugTestThumb`), Keyboard Event T (guard double-trigger qua `Cmb_CaptureHandle` → `BeginComboCapture` → `Delay(3.0)` → `FinishComboCapture` → Print debug), Event End Play (R4, dọn actor nếu tắt PIE giữa Delay). Xem `DEVIATIONS.md` [ARCH] 14/07/2026 cho bối cảnh kiến trúc Begin/Finish. |
+| 1.9 | 18/07/2026 | **BP_ComboManager — Gate D prerequisite: Lighting Channels isolation.** `SpawnStudioLight`: sửa offset value (Z=1200, không phải 1500) + thêm `Set Lighting Channels` (Target=Light Component). Spawn dome: thêm `Set Mobility(Movable)` + `Set Lighting Channels` (Target=Static Mesh Component) + đổi mesh sang `SM_StudioDome` (⚠️ vị trí graph chưa export đầy đủ, cần cuhoang xác nhận). `SpawnComboForThumbnail`: thêm `Set Lighting Channels` (Target=Primitive Component) trên `FurnitureMesh` clone. `BeginComboCapture`: thêm `Get Capture Component 2D` → `Set Show Flag Settings(SkyLighting=False)` trước Delay warmup. 5 node mới đều chờ xác nhận — xem `AI_Implementation_Rules.md`. Bối cảnh đầy đủ: `DEVIATIONS.md` 18/07/2026. |

@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 17/07/2026 (cuối phiên) — **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) — **P2 (Studio Thumbnail) Gate A+B+C DONE**, Gate D chưa bắt đầu (xem mục P2) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
+**Phiên bản:** 18/07/2026 — **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) — **P2 (Studio Thumbnail) Gate A+B+C DONE**, Gate D prerequisite lighting-isolation bugs fixed, task chính chưa bắt đầu (xem mục P2) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
 
 ---
 
@@ -274,9 +274,14 @@ Plan v1.0 tại `Plans/P2_StudioThumbnail_Execution.md` — Gate A DONE (đầu 
 case 7 dời Gate F). Gate B DONE (dome hình học + Cast Shadow=False; màu dome S1 dời sang đợt
 "tối ưu cuối"). Gate C DONE (đèn Key/Fill RectLight qua `SpawnStudioLight` + Manual EV100 +
 camera H-B `bUseFixedAngle`; verify 2 combo khác nhau ra cùng góc + cùng độ sáng). Gate D
-(bóng + sweep hình dáng) chưa bắt đầu — việc kế tiếp. Chi tiết bug/quyết định kiến trúc Gate
-B/C: xem `DEVIATIONS.md` mục "P2 — 17/07/2026 (cuối phiên)". Thứ tự sau P2: K1 (có thể chen
-trước Gate F, quyết tại F) → K3 còn lại → C9 → C6 → C7 → C11 → C10 → Gate 2.
+(bóng + sweep hình dáng): **prerequisite lighting-isolation bugs đã fix (18/07), task chính
+(Source Size Key tune + sweep 5 combo) CHƯA bắt đầu.** Việc tiếp theo khi vào lại: bắt đầu đúng
+task Gate D gốc — tune Source Size Key khớp ảnh IKEA tham chiếu (cuhoang gửi 15/07), sau đó
+sweep 5 loại combo (nhỏ/to/dẹt/cao/tường — case tường: known-limitation ground-align, quyết
+định tại gate này). Chi tiết bug/quyết định kiến trúc Gate B/C: xem `DEVIATIONS.md` mục
+"P2 — 17/07/2026 (cuối phiên)"; Gate D prerequisite (Distance Field self-occlusion, Lighting
+Channels, Show Flag Settings): xem `DEVIATIONS.md` mục "P2 — 18/07/2026". Thứ tự sau P2: K1
+(có thể chen trước Gate F, quyết tại F) → K3 còn lại → C9 → C6 → C7 → C11 → C10 → Gate 2.
 
 **Roadmap v3.3 (chia 3 giai đoạn — scope phình to sau 23/06):**
 ```
@@ -353,3 +358,4 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 14/07/2026 (P1 G1) | **P1 Combo Thumbnail — Gate G1 DONE.** `LoadComboThumbnail` thân hàm đầy đủ: đọc PNG từ đĩa → `IImageWrapper` `SetCompressed`/`GetRaw` BGRA8 → optional `FImageUtils::ImageResize` xuống `MaxSize` → `UTexture2D::CreateTransient` + memcpy Mip 0. Build PASS, test phím Y (tách riêng khỏi phím T capture) → "G1 Load OK, size=256" đúng kỳ vọng. Thêm module `ImageCore` vào `FurnitureToolkit.Build.cs` + include `Engine/Texture2D.h`/`ImageUtils.h` trong `ComboThumbnail.cpp` — bắt buộc để build, KHÔNG phải deviation kiến trúc (đúng plan gốc). Tiếp theo: G2 (auto-fit FitRatio + ẩn gizmo/outline lúc capture + tinh chỉnh sharpen/PostProcess). |
 | 17/07/2026 | **P2 (Studio Thumbnail) — Gate A DONE.** Việc 1-4 hoàn tất, TEST PASS 6/7 case (case 7 — tắt PIE giữa Delay — dời kiểm tra sang Gate F). BP_ComboManager: `SpawnComboForThumbnail(ComboID, DeltaYaw=0)` Custom Event mới + chuỗi debug phím U (ground-align, BeginComboCapture/FinishComboCapture). BP_FurnitureInputManager: `SpawnFurnitureCopy` +param `bAddToRecent`. Fix aliasing `Add Actor World Offset` dùng nhầm Array Element giữa 2 For Each Loop liên tiếp. Delay(0.5→3.0) ceiling tạm cho LoadMeshAsync — xem DEVIATIONS. Chi tiết: `P2_StudioThumbnail_Execution.md`. Tiếp theo: Gate B (dome). |
 | 17/07/2026 (cuối phiên) | **P2 (Studio Thumbnail) — Gate B + Gate C DONE.** Gate B: dome hình học (`Cmb_StudioDomeRadius`, Scale=R/50) + `M_StudioBackdrop`; **Cast Shadow=False** trên dome (quyết định kiến trúc quan trọng nhất — dome chỉ nhận bóng, không chặn sáng đèn ngoài bán kính R); màu dome S1 dời sang đợt "tối ưu cuối" cùng cove mesh custom (nếu faceting xác nhận là vấn đề thật). Gate C: Function mới `SpawnStudioLight(AngleOffsetDeg, Intensity)` dùng chung cho Key/Fill RectLight (Mobility=Movable bắt buộc, Attenuation Radius=8000, elevation 45°); Manual EV100 qua `Get/Set members in Post Process Settings` (không dùng `Make`, tránh ghi đè Lumen override C++); camera H-B tick `bUseFixedAngle`. 12 bug/quyết định trong lúc làm Gate C (chi tiết đầy đủ: `DEVIATIONS.md` mục "P2 — 17/07/2026 (cuối phiên)") — đáng chú ý nhất: dịch số vị trí đèn sai hướng 5 lần liên tiếp trước khi Fable chỉ ra root cause thật là Cast Shadow, bài học "3 lần sai cùng chỗ → STOP hỏi Fable" bị áp dụng trễ. Verify PASS: 2 combo khác nhau → cùng góc + cùng độ sáng. Tiếp theo: Gate D (bóng + sweep hình dáng). |
+| 18/07/2026 | **P2 (Studio Thumbnail) — Gate D prerequisite: lighting isolation.** Task gốc Gate D (Source Size Key tune + sweep 5 combo) chưa chạm — capture đầu tiên lỗi nặng (cháy sáng, vệt đen, bóng cứng, tông đổi theo giờ UDS), toàn phiên dành điều tra + fix 3 nguyên nhân gốc chặn: [CORRECTION] RectLight offset Z thật = 1200 (không phải 1500), đèn thật ra nằm TRONG dome (~1700 < R=2000) — loại giả thuyết "đèn ngoài bán kính"; [BUG-FIX] Distance Field khối đặc của Sphere engine tự triệt tiêu RectLight khi Cast Shadow=True → duplicate asset riêng `SM_StudioDome` + Two-Sided Distance Field Generation; [ARCH] `Set Lighting Channels` cô lập dome+đèn+furniture clone khỏi Sun/UDS (Channel 1); [ARCH] `Set Show Flag Settings(SkyLighting=False)` trên Capture Component riêng, không đụng LightManager của đồng nghiệp. Dải đen viền khung hình còn lại — [SUY LUẬN chưa verify], dời xử lý sang đúng task Gate D. Chi tiết đầy đủ: `DEVIATIONS.md` mục "P2 — 18/07/2026". Tiếp theo: tune Source Size Key + sweep 5 combo (task gốc Gate D). |

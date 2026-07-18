@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.8 | **Cập nhật:** 15/07/2026 — thêm L12 (Function Return Value 100% exec path) + chuyển 3 node P1.G2-G4 vào bảng NODE CHÍNH XÁC
+**Phiên bản:** 2.9 | **Cập nhật:** 18/07/2026 — thêm 5 node chờ xác nhận (P2 Gate D prerequisite: Lighting Channels, Capture Component 2D, Show Flag Settings)
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -510,6 +510,11 @@ Sau khi 1 sprint/task lớn xong:
 | `SaveRenderTargetToPNG` | C++ FurnitureToolkit — lưu RT→PNG (FImageUtils / FImageWrapperModule) | ⏳ Tên hàm xác nhận khi code C++ tại C4 |
 | `LoadTexture2DFromFile` | C++ FurnitureToolkit — load PNG→Texture2D runtime (IImageWrapperModule) | ⏳ Tên hàm xác nhận khi code C++ tại C4 |
 | `Delay` (node engine chuẩn, dùng trong Custom Event/Keyboard Event để chờ warm-up capture — P1.G0-R, 14/07/2026) | Chờ N giây trước khi `FinishComboCapture` (multi-frame warm-up cho Lumen GI/TAA hội tụ) | ⏳ Chờ cuhoang confirm trong project rồi chuyển vào bảng NODE CHÍNH XÁC chính thức |
+| `Set Lighting Channels` (Target=Primitive Component) | Cô lập Static Mesh Component (dome, furniture clone) khỏi Directional Light Channel 0 — P2 Gate D prerequisite, 18/07/2026 | ⏳ Cần cuhoang confirm trong project |
+| `Set Lighting Channels` (Target=Light Component) | Cô lập RectLightComponent (Key/Fill) — TÊN GIỐNG HỆT bản Primitive Component nhưng khác Target, dễ chọn nhầm — P2 Gate D prerequisite, 18/07/2026 | ⏳ Cần cuhoang confirm trong project |
+| `Get Capture Component 2D` (Target=Actor SceneCapture2D → trả SceneCaptureComponent2D) | Lấy Component từ Actor capture để set Show Flag Settings — P2 Gate D prerequisite, 18/07/2026 | ⏳ Cần cuhoang confirm trong project |
+| `Set Show Flag Settings` (Target=Scene Capture Component, nhận Array of `Engine Show Flags Setting`) | Tắt SkyLighting riêng cho camera capture, không đụng biến LightManager của đồng nghiệp — P2 Gate D prerequisite, 18/07/2026 | ⏳ Cần cuhoang confirm trong project |
+| `Make Engine Show Flags Setting` (Struct, pure — input Show Flag Name String case-sensitive, Enabled bool) | Build phần tử cho `Set Show Flag Settings` — P2 Gate D prerequisite, 18/07/2026 | ⏳ Cần cuhoang confirm trong project |
 
 ---
 
@@ -527,3 +532,4 @@ Sau khi 1 sprint/task lớn xong:
 | 2.6 | 04/07/2026 | KP2 bổ sung quy ước ceiling + trigger cho shortcut được duyệt (từ ponytail-debt) |
 | 2.7 | 14/07/2026 | Thêm `Delay` vào mục "Nodes chờ xác nhận" (Thumbnail System) — dùng trong Custom Event/Keyboard Event để chờ warm-up capture, P1.G0-R. Chờ cuhoang confirm trước khi chuyển vào bảng NODE CHÍNH XÁC chính thức. |
 | 2.8 | 15/07/2026 | Thêm **L12** — Function có Return Value phải kiểm 100% exec path chạm Return Node (bài học bug `GetComboThumbnail` cross-combo thumbnail bleeding, P1.G3). Chuyển vào bảng NODE CHÍNH XÁC: `Map Remove` (bổ sung dòng Map thao tác), `Get All Actors Of Class(BaseGizmo)` (ẩn gizmo lúc capture, P1.G2), `Set Brush`/`Get Brush`/`SetBrushFromTexture` (P1.G4). |
+| 2.9 | 18/07/2026 | Thêm 5 dòng vào "Nodes chờ xác nhận" — P2 Gate D prerequisite (lighting isolation): `Set Lighting Channels` (2 bản Target khác nhau: Primitive Component / Light Component — dễ chọn nhầm vì tên giống hệt), `Get Capture Component 2D`, `Set Show Flag Settings`, `Make Engine Show Flags Setting`. Bối cảnh: xem `DEVIATIONS.md` 18/07/2026. |

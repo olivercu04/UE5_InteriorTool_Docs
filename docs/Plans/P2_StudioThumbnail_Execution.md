@@ -1,5 +1,5 @@
 P2 — Combo Thumbnail "Studio Look" — Execution Plan
-v1.2 — 17/07/2026 (cuối phiên) — Fable authored (v1.0 16/07), Gate A test kết quả thêm 17/07, Gate B+C kết quả thêm 17/07 cuối phiên. Kế thừa P1 (Begin/Finish pipeline, DONE 15/07). Plan là giả thuyết: lệch thì ghi DEVIATIONS, không tiếc plan.
+v1.3 — 18/07/2026 — Fable authored (v1.0 16/07), Gate A test kết quả thêm 17/07, Gate B+C kết quả thêm 17/07 cuối phiên, Gate D prerequisite (lighting isolation) thêm 18/07. Kế thừa P1 (Begin/Finish pipeline, DONE 15/07). Plan là giả thuyết: lệch thì ghi DEVIATIONS, không tiếc plan.
 0. Mục tiêu & phạm vi
 Thumbnail combo chuẩn ảnh sản phẩm (tham chiếu IKEA, ảnh cuhoang gửi 15/07): nền đơn sắc liền mạch không horizon, sáng đều, bóng mềm dưới đồ, khung hình + góc + sáng đồng nhất mọi combo (cảm giác UE Content Browser).
 Trong scopeNgoài scopeRemote Studio + clone pipeline sạchHướng 2 (preview/xoay tay)Dome + Key/Fill light + Manual EV100Regenerate-all combo cũ (backlog)Camera H-B turntable + DOFDọn Delay mồ côi SpawnComboByID (backlog)Thay capture in-place trong Save flow (Gate F)K3 ngoài phần hạ tầng param
@@ -124,6 +124,15 @@ Verify PASS: bấm U với 2 Combo ID khác nhau (sofa trắng, bàn trang đi�
 
 6. GATE D — bóng + sweep hình dáng
 Source Size Key tune bóng mềm khớp ảnh IKEA. Sweep: combo nhỏ (1 ghế) / to (sofa L+bàn) / dẹt (thảm) / cao (kệ) / tường (known-limitation H1: ground-align đặt đồ tường xuống sàn — duyệt chấp nhận được hay cần xử riêng, quyết tại đây). Combo nhỏ lệch sáng → nâng cấp vị trí đèn scale theo R_bao (công thức Center + Dir×m×R_bao).
+
+### Kết quả Gate D — 18/07/2026 (prerequisite, task gốc CHƯA bắt đầu)
+Capture đầu tiên lỗi nặng (cháy sáng, vệt đen, bóng cứng, tông ấm/lạnh đổi theo giờ UDS) — không đáng tin để tune bằng mắt. Toàn phiên dành điều tra + fix 3 nguyên nhân gốc chặn, **chưa** chạm task tune Source Size / sweep 5 combo thật:
+- Distance Field khối đặc của Sphere engine tự triệt tiêu RectLight khi Cast Shadow=True → `SM_StudioDome` (asset riêng) + Two-Sided Distance Field Generation.
+- `Set Lighting Channels` cô lập dome + đèn Key/Fill + furniture clone khỏi Sun/UDS (Channel 1, yêu cầu Mobility=Movable).
+- `Set Show Flag Settings(SkyLighting=False)` trên Capture Component riêng — cô lập khỏi SkyLight ambient của UDS mà không đụng biến LightManager của đồng nghiệp.
+- Còn lại: dải đen viền khung hình — [SUY LUẬN chưa verify bằng test hình học], dời xử lý đúng lúc sweep task gốc.
+Chi tiết đầy đủ + ceiling/trigger: `DEVIATIONS.md` mục "P2 — 18/07/2026 — Gate D prerequisite: lighting isolation". **Task gốc Gate D (Source Size Key tune + sweep 5 combo) vẫn CHƯA bắt đầu** — làm tiếp ở phiên sau.
+
 7. GATE E — DOF
 FocalDistance = Distance auto-fit (số có sẵn trong Begin), aperture f/2.8–f/4, cuhoang duyệt mức mờ bằng mắt. DOF ăn không đều trong capture → giảm aperture hoặc bỏ (S5 nice-to-have, không chặn F).
 8. GATE F — nối dây thật + closure
