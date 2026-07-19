@@ -1,6 +1,6 @@
 # Blueprint Logic — Node Flow Reference
 **HỢP NHẤT TỪ 3 file:** v1.3 base (07/06) + v1.4_patch (12/06) + v1.5_patch (15/06)
-**Phiên bản:** 1.9 | **Cập nhật:** 18/07/2026 — BP_ComboManager Gate D prerequisite: Lighting Channels isolation (SpawnStudioLight, spawn dome, SpawnComboForThumbnail, BeginComboCapture)
+**Phiên bản:** 1.10 | **Cập nhật:** 19/07/2026 — BP_ComboManager Gate D: Noise + Aliasing Fix (Event Tick mượn cho temporal accumulation, EndPlay mở rộng)
 **Mục đích:** Ghi lại thứ tự node logic để không cần chụp ảnh lại Blueprint. Full flows sống trong file BP_*.md / WBP_*.md tương ứng — file này ghi node-by-node diff và cross-BP flows.
 
 ---
@@ -1113,6 +1113,58 @@ Q8: 5 node mới ở trên đều CHỜ XÁC NHẬN (`Set Lighting Channels` ×2
 
 ---
 
+## BP_ComboManager — P2 Gate D: Noise + Aliasing Fix (19/07/2026)
+
+⚠️ Mô tả theo hướng dẫn session, cuhoang xác nhận test PASS — CHƯA có export K2Node để đối
+chiếu node-by-node. **Ghi đè lên mô tả `BeginComboCapture` phía trên (18/07):** dòng
+"`Delay(3.0)` → chuỗi cũ tiếp tục sau đây" (ý nói `FinishComboCapture` gọi thẳng sau Delay) nay
+KHÔNG còn đúng — `FinishComboCapture` tách khỏi `Delay`, nối lại ở cuối Event Tick mới bên dưới.
+Full context (7 giả thuyết đã loại, root cause SceneCapture2D không temporal thật): xem
+`DEVIATIONS.md` mục "SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix".
+
+Biến mới: `Cmb_AccumFramesLeft` (Integer, default 0), `Cmb_AccumTargetFrames` (Integer,
+default 24, tunable Class Defaults).
+
+### Sửa chuỗi sau Delay(3.0) warmup
+```
+Delay(3.0) hoàn tất
+▶→ ResetComboAccumulation(Cmb_CaptureHandle)
+▶→ SET Cmb_AccumFramesLeft = Cmb_AccumTargetFrames
+▶→ Set Actor Tick Enabled(Target=self, bEnabled=true)
+```
+
+### Event Tick (self) — mới
+```
+Event Tick
+▶→ Branch(Cmb_AccumFramesLeft <= 0)
+     True  ▶→ dead-end (không accumulate → không làm gì, rẻ)
+     False ▶→ AccumulateComboFrame(Cmb_CaptureHandle)
+           ▶→ SET Cmb_AccumFramesLeft = Cmb_AccumFramesLeft - 1
+           ▶→ Branch(Cmb_AccumFramesLeft <= 0)
+                True  ▶→ Set Actor Tick Enabled(self, false)
+                      ▶→ FinishComboCapture(Cmb_CaptureHandle, ComboID, ComboActors)
+                False ▶→ dead-end (chờ frame sau)
+```
+
+### Event End Play — mở rộng bắt buộc
+```
+▶→ Set Actor Tick Enabled(self, false)
+▶→ ResetComboAccumulation(Cmb_CaptureHandle)
+```
+Không thêm = leak buffer C++ nếu PIE tắt giữa lúc accumulate — cùng loại bug với
+`Bugs/Bug_GPU_VRAM_Crash.md`, lần này RAM chứ không VRAM.
+
+Q8: Event Tick (self) — không phải Custom Event/Function nên dead-end tính khác | IsValid:
+`AccumulateComboFrame`/`ResetComboAccumulation` tự IsValid(CaptureHandle) trong C++ | L2:
+dead-end nhánh "chưa đủ frame" HỢP LỆ — giống Sequence.Then, Tick tự gọi lại mỗi frame |
+No Latent ✓ | 6A: EndPlay đã mở rộng ✓ | `Set Actor Tick Enabled` CHỜ XÁC NHẬN — xem
+`AI_Implementation_Rules.md` mục "Nodes chờ xác nhận".
+
+Test: noise (temporal N=24) ✅ CONFIRM. Aliasing/SSAA ✅ CONFIRM DONE (cuhoang tự chạy lại
+checklist test đầy đủ).
+
+---
+
 ## NODE FLOW ĐÃ CONFIRM
 
 | Node display name | Ghi chú |
@@ -1137,3 +1189,4 @@ Q8: 5 node mới ở trên đều CHỜ XÁC NHẬN (`Set Lighting Channels` ×2
 | 1.7 | 06/07/2026 — 21:15 ICT | **NF.G3 (nút "+")** node flow: PopulateComboTreeColumn +PlusNode, OnComboTreeNodeClicked +guard đầu tiên. **RebuildChipRowForPath + RefreshChipBreadcrumb** node flow (gộp code ChipRow trùng lặp + tự vẽ lại chip breadcrumb sau Move/Xóa/Rename folder) + tóm tắt 3 bug fix (dead-end 2/3 nhánh, delimiter sai, BooleanAND→OR). Full doc: WBP_FurnitureInventory.md v3.7. |
 | 1.8 | 14/07/2026 | **BP_ComboManager — Debug capture thumbnail (phím T)**, P1 Gate G0-R: BeginPlay (Enable Input theo `bDebugTestThumb`), Keyboard Event T (guard double-trigger qua `Cmb_CaptureHandle` → `BeginComboCapture` → `Delay(3.0)` → `FinishComboCapture` → Print debug), Event End Play (R4, dọn actor nếu tắt PIE giữa Delay). Xem `DEVIATIONS.md` [ARCH] 14/07/2026 cho bối cảnh kiến trúc Begin/Finish. |
 | 1.9 | 18/07/2026 | **BP_ComboManager — Gate D prerequisite: Lighting Channels isolation.** `SpawnStudioLight`: sửa offset value (Z=1200, không phải 1500) + thêm `Set Lighting Channels` (Target=Light Component). Spawn dome: thêm `Set Mobility(Movable)` + `Set Lighting Channels` (Target=Static Mesh Component) + đổi mesh sang `SM_StudioDome` (⚠️ vị trí graph chưa export đầy đủ, cần cuhoang xác nhận). `SpawnComboForThumbnail`: thêm `Set Lighting Channels` (Target=Primitive Component) trên `FurnitureMesh` clone. `BeginComboCapture`: thêm `Get Capture Component 2D` → `Set Show Flag Settings(SkyLighting=False)` trước Delay warmup. 5 node mới đều chờ xác nhận — xem `AI_Implementation_Rules.md`. Bối cảnh đầy đủ: `DEVIATIONS.md` 18/07/2026. |
+| 1.10 | 19/07/2026 | **BP_ComboManager — Gate D: Noise + Aliasing Fix.** Class var mới `Cmb_AccumFramesLeft`/`Cmb_AccumTargetFrames` (default 24). `FinishComboCapture` tách khỏi `Delay(3.0)` — nối lại cuối Event Tick mới (mượn Tick cho temporal accumulation: `AccumulateComboFrame` mỗi frame + `Set Actor Tick Enabled` bật/tắt, node chờ xác nhận). Event End Play mở rộng: `Set Actor Tick Enabled(false)` + `ResetComboAccumulation`. ⚠️ Chưa có export K2Node đối chiếu — mô tả theo hướng dẫn session, cuhoang xác nhận test PASS (noise CONFIRM, aliasing/SSAA CONFIRM DONE). Ghi đè mô tả "Delay→chuỗi cũ" ở entry 1.9. Bối cảnh đầy đủ: `DEVIATIONS.md` 19/07/2026, `Data/ComboSerializer_Reference.md`. |

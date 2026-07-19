@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.7 | **Ngày:** 17/07/2026 | **Actor class, không Tick**
+**Version:** 1.8 | **Ngày:** 19/07/2026 | **Actor class, Event Tick dùng có điều kiện** (mượn cho temporal accumulation P2 Noise Fix — xem mục Gate D bên dưới, KHÔNG chạy logic mỗi frame ngoài lúc accumulate)
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -25,6 +25,8 @@ Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, K
 | SaveCombo_BoundingExtent | Vector | Buffer tạm BoundingBoxExtent tính từ CalculateComboBoundingExtent (Bước 5e, C4) |
 | Cmb_ThumbnailCache | Map<String,Texture2D> | Cache thumbnail, key=ComboID (G3) |
 | Cmb_CaptureHandle | SceneCapture2D | Handle tạm giữa Begin/Delay/Finish (debug + Bước 7 thật) |
+| Cmb_AccumFramesLeft | Integer | Default 0. Đếm ngược frame còn lại cần accumulate — dùng ở cả Custom Event lẫn Event Tick (P2 Noise Fix, 19/07/2026) |
+| Cmb_AccumTargetFrames | Integer | Default 24. Số frame cộng dồn cho temporal accumulation — tunable ở Class Defaults, không cần build lại C++ (P2 Noise Fix, 19/07/2026) |
 
 ## Functions (có local variable)
 ### GetPathToRoot_Combo(InGroupID → Path: Array String)
@@ -401,6 +403,64 @@ Branch(Cmb_SpawnedActors.Length == 0):
 
 ---
 
+## P2 Gate D — Noise + Aliasing Fix (19/07/2026)
+
+⚠️ Mục này mô tả theo hướng dẫn đưa trong session, cuhoang xác nhận test PASS (mịn hơn, không
+giật) — nhưng CHƯA có export K2Node để đối chiếu node-by-node. Coi graph dưới đây là mô tả dự
+kiến, không phải sự thật tuyệt đối; nếu khác graph thật, sửa lại theo graph thật. Đè lên chuỗi
+debug phím U (Việc 4, Gate A) — phần build Function/Event mới nối vào sau `Delay(3.0)` warmup,
+TRƯỚC khi gọi `FinishComboCapture` (trước đây gọi thẳng ngay sau Delay).
+
+Bối cảnh đầy đủ (7 giả thuyết đã loại, quyết định temporal accumulation thủ công thay Viewport
+Capture, root cause SceneCapture2D không có temporal thật): xem `DEVIATIONS.md` mục
+"SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix". Signature C++ mới (`AccumulateComboFrame`,
+`ResetComboAccumulation`) + hành vi đổi của `BeginComboCapture`/`FinishComboCapture` (SSAA 2×,
+temporal N=24, linear-space accumulate): xem `Data/ComboSerializer_Reference.md` mục
+"Class: UComboThumbnail".
+
+### Sửa chuỗi sau Delay(3.0) warmup
+`FinishComboCapture` (giữ nguyên dây `ComboID`/`ComboActors`) tách khỏi `Delay`, nối lại ở cuối
+Event Tick thay vì gọi thẳng. Chèn giữa:
+```
+Delay(3.0) hoàn tất
+▶→ ResetComboAccumulation(Cmb_CaptureHandle)
+▶→ SET Cmb_AccumFramesLeft = Cmb_AccumTargetFrames
+▶→ Set Actor Tick Enabled(Target=self, bEnabled=true)
+```
+
+### Event Tick (self) — mới
+```
+Event Tick
+▶→ Branch(Cmb_AccumFramesLeft <= 0)
+     True  ▶→ dead-end (không accumulate → không làm gì, rẻ)
+     False ▶→ AccumulateComboFrame(Cmb_CaptureHandle)
+           ▶→ SET Cmb_AccumFramesLeft = Cmb_AccumFramesLeft - 1
+           ▶→ Branch(Cmb_AccumFramesLeft <= 0)
+                True  ▶→ Set Actor Tick Enabled(self, false)
+                      ▶→ FinishComboCapture(Cmb_CaptureHandle, ComboID, ComboActors)
+                False ▶→ dead-end (chờ frame sau)
+```
+Q8: Event Tick (self) — không phải Custom Event/Function nên dead-end tính khác | IsValid:
+`AccumulateComboFrame`/`ResetComboAccumulation` tự IsValid(CaptureHandle) trong C++ | L2:
+dead-end nhánh "chưa đủ frame" HỢP LỆ — giống Sequence.Then, Tick tự gọi lại mỗi frame |
+No Latent ✓ | 6A: EndPlay đã mở rộng (xem dưới) ✓
+
+### Event End Play — mở rộng bắt buộc
+EndPlay hiện có (dọn `Cmb_CaptureHandle` nếu tắt PIE giữa Delay, R4 — xem Gate A Việc 5) —
+thêm:
+```
+▶→ Set Actor Tick Enabled(self, false)
+▶→ ResetComboAccumulation(Cmb_CaptureHandle)
+```
+Không thêm = leak buffer C++ nếu PIE tắt giữa lúc accumulate (con trỏ key chết, không ai dọn)
+— cùng loại bug với `Bugs/Bug_GPU_VRAM_Crash.md`, lần này RAM chứ không VRAM.
+
+**Test:** noise (temporal accumulation N=24) ✅ CONFIRM — mịn hơn rõ, không giật lúc chụp.
+Aliasing/SSAA ✅ CONFIRM DONE — cuhoang tự chạy lại checklist test đầy đủ (kích thước ảnh đúng,
+không giật thêm dù RT giờ 2048²).
+
+---
+
 ## Lịch sử cập nhật
 | Ngày | Version | Nội dung |
 |------|---------|----------|
@@ -411,3 +471,4 @@ Branch(Cmb_SpawnedActors.Length == 0):
 | 24/06/2026 | 1.5 | C4: thêm CalculateComboBoundingExtent function; class var SaveCombo_BoundingExtent; Bước 5e tính BoundingBoxExtent trước Make FComboData + gán vào field. |
 | 15/07/2026 | 1.6 | G2+G3+G4: class var Cmb_ThumbnailCache + Cmb_CaptureHandle. Function GetComboThumbnail (🔴 Return Node bắt buộc cả 2 nhánh — bug fix, xem DEVIATIONS) + InvalidateThumbnail. Bước 7 SaveComboFromSelection hoàn chỉnh (capture thật, nối vào bSaveOK Branch, merge về Broadcast). |
 | 17/07/2026 | 1.7 | P2 Gate A DONE: Custom Event `SpawnComboForThumbnail(ComboID, DeltaYaw=0)` mới (guard Cmb_bThumbBusy → F_LoadComboData → ForEach spawn clone sạch → Cmb_StudioClones) + chuỗi debug phím U (ground-align, BeginComboCapture/FinishComboCapture, Delay 0.5→3.0 ceiling tạm). Bug fix aliasing `Add Actor World Offset` dùng nhầm Array Element giữa 2 For Each Loop liên tiếp. Test PASS 6/7 case. |
+| 19/07/2026 | 1.8 | P2 Gate D — Noise + Aliasing Fix: class var mới `Cmb_AccumFramesLeft`/`Cmb_AccumTargetFrames` (default 24); `FinishComboCapture` tách khỏi `Delay(3.0)`, nối lại cuối Event Tick mới (mượn Tick cho temporal accumulation N frame — `AccumulateComboFrame` mỗi frame, `Set Actor Tick Enabled` bật/tắt); Event End Play mở rộng thêm `Set Actor Tick Enabled(false)` + `ResetComboAccumulation`. ⚠️ Chưa có export K2Node đối chiếu — mô tả theo hướng dẫn session, cuhoang xác nhận test PASS. Chi tiết C++: `Data/ComboSerializer_Reference.md`, `DEVIATIONS.md` 19/07/2026. |

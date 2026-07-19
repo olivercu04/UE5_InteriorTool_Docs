@@ -1,6 +1,7 @@
 # ComboSerializer / ComboThumbnail — C++ Blueprint Function Library Reference
-**Nguồn:** `ComboSerializer.h`/`.cpp` + `ComboThumbnail.h` (cuhoang paste 14/07/2026 — source thật, không copy `.cpp` ComboThumbnail vì chưa có)
+**Nguồn:** `ComboSerializer.h`/`.cpp` + `ComboThumbnail.h` (cuhoang paste 14/07/2026 — source thật, không copy `.cpp` ComboThumbnail vì chưa có) + `ComboThumbnail.cpp` đoạn noise/SSAA (delta 19/07/2026, chưa phải full file paste)
 **Tạo:** 14/07/2026 — bổ sung docs/Data (3+ tuần chưa cập nhật theo Sprint 5 Combo + P1 Thumbnail)
+**Cập nhật:** 19/07/2026 — P2 Noise + Aliasing Fix: `AccumulateComboFrame`/`ResetComboAccumulation` mới, `BeginComboCapture`/`FinishComboCapture` đổi hành vi (SSAA 2× + temporal accumulation N=24)
 
 > File này là TÀI LIỆU THAM KHẢO — liệt kê function signature + hành vi thật từ source. Struct `FComboData`/`FComboGroupData`/`FComboItemData` xem `Data_Structures.md`.
 
@@ -85,9 +86,9 @@ static TArray<FString> GetAllFolderPaths();
 
 ---
 
-## Class: UComboThumbnail (P1, MỚI 14/07/2026 — Gate G0-R + G1 DONE)
-**Plugin:** FurnitureToolkit | **Files:** `ComboThumbnail.h` (chưa có `.cpp`) | Base: `UBlueprintFunctionLibrary`
-> Xem bối cảnh kiến trúc (vì sao tách Begin/Finish thay vì 1 hàm one-shot): `DEVIATIONS.md` [ARCH] 14/07/2026, node flow debug: `Blueprints/Blueprint_Logic_NodeFlow.md` §BP_ComboManager.
+## Class: UComboThumbnail (P1, MỚI 14/07/2026 — Gate G0-R + G1 DONE; P2 19/07/2026 — Noise + Aliasing Fix)
+**Plugin:** FurnitureToolkit | **Files:** `ComboThumbnail.h` / `.cpp` (đoạn noise/SSAA đã đối chiếu source thật 19/07/2026 — phần còn lại của `.cpp` vẫn chưa full-paste) | Base: `UBlueprintFunctionLibrary`
+> Xem bối cảnh kiến trúc (vì sao tách Begin/Finish thay vì 1 hàm one-shot): `DEVIATIONS.md` [ARCH] 14/07/2026, node flow debug: `Blueprints/Blueprint_Logic_NodeFlow.md` §BP_ComboManager. Bối cảnh noise/SSAA (19/07): `DEVIATIONS.md` mục "SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix".
 
 ### CaptureComboThumbnail(...) → bool — **[LEGACY], không gọi**
 ```cpp
@@ -122,6 +123,34 @@ trí camera thật như bản G0-R.
 
 Bước 1/2: spawn camera phụ, bật render liên tục (`bCaptureEveryFrame=true`, warm-up cho Lumen GI/TAA hội tụ). Trả về handle — caller (Blueprint) giữ trong class var, `Delay` một khoảng rồi gọi `FinishComboCapture`. Test debug (phím T, `BP_ComboManager`) chốt tạm `Delay(3.0)` — xem `01_Session_State.md` mục P1.
 
+**[UPDATED 19/07/2026, P2 Noise + Aliasing Fix]** RenderTarget tạo ở `Resolution * ComboSSAAFactor`
+(constexpr = 2, file-scope trong `.cpp`) thay vì `Resolution` thẳng — capture 2048² khi
+`Resolution=1024`, downscale về `Resolution` xảy ra ở `FinishComboCapture` (box filter, xem
+dưới). ⚠️ Gotcha: file có 2 chỗ gọi `CreateRenderTarget2D` gần giống hệt nhau
+(`CaptureComboThumbnail` [LEGACY] vs `BeginComboCapture` thật) — phân biệt bằng
+`bCaptureEveryFrame` (LEGACY=false, thật=true), sửa nhầm bản LEGACY vẫn build pass nhưng RT
+thật không đổi kích thước.
+
+### AccumulateComboFrame(CaptureHandle) — MỚI 19/07/2026, P2 Noise Fix
+```cpp
+static void AccumulateComboFrame(ASceneCapture2D* CaptureHandle);
+```
+Đọc 1 frame hiện tại của `CaptureHandle`, cộng dồn vào buffer nội bộ không gian linear
+(`FLinearColor`, tự giải mã sRGB→linear khi đọc từ `FColor`). Gọi 1 lần MỖI FRAME (Event Tick,
+`BP_ComboManager`) trong lúc accumulate — N=24 frame mặc định (`Cmb_AccumTargetFrames`, tunable
+Class Defaults). Buffer sống ở C++ file-scope static (`TMap<ASceneCapture2D*, FComboAccumState>`,
+anonymous namespace, KHÔNG khai báo `.h`, KHÔNG lên Blueprint — BP loop 1M phần tử ở 2048² sẽ
+treo máy). IsValid(CaptureHandle) tự guard trong thân hàm.
+
+### ResetComboAccumulation(CaptureHandle) — MỚI 19/07/2026, P2 Noise Fix
+```cpp
+static void ResetComboAccumulation(ASceneCapture2D* CaptureHandle);
+```
+Xoá buffer cộng dồn cũ của `CaptureHandle` này (nếu có). Gọi TRƯỚC khi bắt đầu 1 đợt accumulate
+mới, VÀ bắt buộc gọi ở `Event End Play` (cleanup/cancel giữa chừng) — không gọi = leak ~16MB RAM
+(1024²) hoặc ~64MB (2048² sau SSAA) mỗi lần treo giữa chừng, cùng loại bug với
+`Bugs/Bug_GPU_VRAM_Crash.md` nhưng RAM chứ không VRAM.
+
 ### FinishComboCapture(CaptureHandle, ComboID, ComboActors) → bool
 ```cpp
 static bool FinishComboCapture(ASceneCapture2D* CaptureHandle, const FString& ComboID,
@@ -133,6 +162,16 @@ ComboActors ở cả Begin và Finish (không track state qua static function �
 DepthOn array của legacy CaptureComboThumbnail).
 
 Bước 2/2: đọc frame đã hội tụ → ghi `<ComboID>.png` cạnh file combo `.json` (cùng `GetCombosDir()`) → tự dọn actor + RenderTarget, **kể cả khi đọc/ghi fail** (R4-style cleanup). Trả `false` nếu ghi file thất bại — Blueprint KHÔNG gate Save Combo theo giá trị này (combo vẫn lưu OK, card fallback icon 🧩 nếu capture fail).
+
+**[UPDATED 19/07/2026, P2 Noise + Aliasing Fix]** Đoạn đọc pixel đổi hoàn toàn: nếu buffer
+accumulate của `CaptureHandle` tồn tại (`FrameCount > 0`) → (1) trung bình temporal trong không
+gian linear (`Sum / FrameCount`, CHƯA encode `FColor`) → (2) downscale spatial box-filter
+`ComboSSAAFactor × ComboSSAAFactor` (vẫn linear) → encode `FColor` (`.ToFColor(true)`, áp gamma
+sRGB) **ĐÚNG 1 LẦN** ở bước cuối — cộng thẳng giá trị 8-bit rồi chia trung bình sẽ lệch sáng
+(gamma không cộng tuyến tính), rõ nhất ở vùng tối/bóng đổ. Không có buffer (quên gọi
+`AccumulateComboFrame`) → fallback `ReadPixels` 1 frame ở kích thước RT thật (2048² sau SSAA,
+KHÔNG downscale) — ảnh ra sai kích thước, dấu hiệu dễ nhận. `GComboAccumStates.Remove(CaptureHandle)`
+luôn chạy ở cuối, kể cả RT null.
 
 ### GetComboThumbnail(ComboID) → Texture2D [BP_ComboManager, không phải C++]
 **[MỚI 15/07/2026, Gate G3]** Cache qua Cmb_ThumbnailCache (Map<String,Texture2D>). Lật album

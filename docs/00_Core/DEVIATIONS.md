@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 18/07/2026
+**Cập nhật:** 19/07/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -734,6 +734,63 @@ lúc đó mới quyết định có cần mở góc phủ / thêm nguồn sáng 
 
 ---
 
+## SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix
+
+Bối cảnh: sau Gate D prerequisite (18/07, lighting isolation), ảnh thumbnail vẫn còn noise nặng
+(đốm blotchy ở nền dome + bóng mềm) — đã loại 7 giả thuyết (Delay warmup, Lumen quality
+override, TAA showflag, RectLight size, console var temporal, TAA toàn cục, per-component AA —
+không compile). Chẩn đoán: `SceneCapture2D` không có temporal accumulation thực sự (TSR không
+hỗ trợ scene capture, TAA history không hoạt động dù đủ flags) — khác viewport chính (có
+temporal thật, ảnh sạch).
+
+### [ARCH] Mượn Event Tick của BP_ComboManager thay vì subclass/FTickableGameObject cho temporal accumulation
+`UComboThumbnail` là `UBlueprintFunctionLibrary` (static function) → không có Tick sẵn trong
+C++. Chọn mượn Tick có sẵn của `BP_ComboManager` (đã là Actor, đã có `Cmb_CaptureHandle`, đã có
+`EndPlay` cleanup) thay vì subclass `ASceneCapture2D` hoặc dùng `FTickableGameObject`. Lý do:
+tối thiểu concept C++ mới cho cuhoang (đang học C++ qua sửa code thật), tái dùng nguyên
+`EndPlay` cleanup mechanism sẵn có thay vì phải xây thêm 1 lifecycle riêng. Buffer cộng dồn
+(`TArray<FLinearColor>`, ~1M phần tử ở 2048²) sống ở C++ file-scope static
+(`TMap<ASceneCapture2D*, FComboAccumState>`, anonymous namespace trong `.cpp`, KHÔNG khai báo
+`.h`) — key theo con trỏ `CaptureHandle` (mỗi lần capture = actor mới, không đụng nhau). KHÔNG
+đưa buffer lên Blueprint — BP loop qua 1M phần tử sẽ treo máy (VM overhead).
+
+### [ARCH] Cộng dồn temporal + downscale spatial đều làm ở không gian linear color
+Cộng dồn temporal (chia N frame, N=24 mặc định qua `Cmb_AccumTargetFrames`) VÀ downscale
+spatial (SSAA box filter 2×2, `ComboSSAAFactor` constexpr) đều làm ở `FLinearColor` — chỉ
+encode về `FColor` (`.ToFColor(true)`, áp lại gamma sRGB) ĐÚNG 1 LẦN ở cuối cùng.
+`FLinearColor(FColor)` tự giải mã sRGB→linear lúc đọc vào. Lý do bắt buộc: gamma không cộng
+tuyến tính — cộng thẳng giá trị 8-bit rồi chia trung bình sẽ lệch sáng, rõ nhất ở vùng
+tối/bóng đổ (đúng chỗ noise nặng nhất). SSAA factor cố định = 2: RT capture ở
+`Resolution × 2` (2048 khi `Resolution=1024`), downscale còn `Resolution` trước khi encode PNG.
+
+### [BUG-FIX] Sửa nhầm hàm CreateRenderTarget2D LEGACY khi áp SSAA factor
+File có 2 chỗ gọi `CreateRenderTarget2D` với signature gần giống hệt nhau —
+`CaptureComboThumbnail` ([LEGACY], không gọi) và `BeginComboCapture` (hàm thật, có
+`bCaptureEveryFrame=true`). Trong session đã từng sửa nhầm vào bản LEGACY trước — build pass
+(không báo lỗi vì code hợp lệ) nhưng ảnh ra sai kích thước (512×512 thay vì 1024×1024) vì RT
+thật không đổi. Fix: xác nhận đang sửa đúng hàm bằng cách nhìn `bCaptureEveryFrame` — LEGACY
+set `false`, thật set `true`. **Bài học ghi lại cho lần sau:** 2 hàm cùng signature gần giống
+hệt nhau trong cùng file rất dễ gây sửa nhầm — luôn xác nhận qua 1 field/behavior khác biệt
+(ở đây là `bCaptureEveryFrame`) trước khi sửa, không suy luận theo vị trí/thứ tự hàm trong file.
+
+**Test kết quả:**
+- Noise (temporal accumulation, N=24): ✅ CONFIRM — "mịn hơn rõ và không giật lúc chụp" (cuhoang
+  test trực tiếp, sau khi build pass Bước 1+2 C++ + wiring Bước 3 BP).
+- Aliasing/SSAA: ✅ CONFIRM DONE — cuhoang xác nhận đã tự chạy lại checklist test đầy đủ (kích
+  thước ảnh ra đúng, không giật thêm so với bản chỉ-noise-fix dù RT giờ 2048²).
+
+Gán vào Gate D (tiếp nối prerequisite 18/07 — lighting isolation) theo quyết định cuhoang lúc
+merge delta này; task gốc Gate D (Source Size Key tune + sweep 5 combo) vẫn CHƯA bắt đầu.
+
+**Backlog / chưa làm:**
+- Gate G5-style regression VRAM/RAM riêng cho buffer SSAA 2048² — chưa đo.
+- Nếu máy yếu giật khi test thật: hạ `Cmb_AccumTargetFrames` (24→16) TRƯỚC, rồi mới hạ
+  `ComboSSAAFactor` (2→1) — không đổi 2 biến cùng lúc.
+- Dòng code cũ comment lại (`//if (RT) {...}` bản trước SSAA) trong `FinishComboCapture` — còn
+  sót lại trong file, dọn khi có dịp (không gấp).
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -808,3 +865,4 @@ lúc đó mới quyết định có cần mở góc phủ / thêm nguồn sáng 
 | 17/07/2026 | Thêm section "P2 — 17/07/2026 — Gate A DONE: Delay ceiling + bug fix aliasing": [SCOPE] Delay(0.5)→Delay(3.0) hardcode trong SpawnComboForThumbnail (LoadMeshAsync chưa kịp với combo nhiều món), ceiling = combo 7-8 món/asset resident, trigger = trước Gate F thay bằng dispatcher OnMeshLoaded (quyết định cần Fable/Opus); [BUG-FIX] Add Actor World Offset dùng nhầm Array Element của Loop 1 (qua Knot reroute) thay vì Loop 2 trong chuỗi ground-align — 1 actor bị dịch chuyển cộng dồn, còn lại đứng yên. Gate A: TEST PASS 6/7 case (case 7 dời Gate F). |
 | 17/07/2026 (cuối phiên) | Thêm section "P2 — 17/07/2026 (cuối phiên) — Gate B + Gate C DONE": Gate B [ARCH] Cast Shadow=False trên dome (quyết định quan trọng nhất, gỡ ràng buộc "đèn phải trong dome") + [SCOPE] màu dome S1 dời tối ưu cuối + [BACKLOG] faceting sphere chưa xác nhận. Gate C — 12 bug/quyết định trong `SpawnStudioLight` (Key/Fill RectLight): [BUG-FIX] InVect.X 150→1500, Mobility Stationary→Movable, Attenuation Radius 4000→8000, `bUseFixedAngle` chưa tick, `Make`→`Get/Set members in` Post Process Settings (tránh xoá Lumen override C++), thiếu IsValid(Cmb_CaptureHandle) guard; [ARCH] Cmb_StudioAnchor Default Value (0,0,0)→(500000,500000,0), HeightOffset 250→1500 (elevation 45°), đề xuất Directional Light bị Fable bác bỏ; [CORRECTION] nhầm cộng +DomeRadius vào Z đèn; [LESSON] 3-lần-sai-cùng-chỗ→STOP-hỏi-Fable bị áp dụng trễ. Verify PASS: 2 combo khác nhau → cùng góc + cùng độ sáng. |
 | 18/07/2026 | Thêm section "P2 — 18/07/2026 — Gate D prerequisite: lighting isolation": [CORRECTION] RectLight offset Z thật = 1200 (không phải 1500 như ghi trước) + tính lại khoảng cách đèn→tâm dome (~1700 < Radius 2000, đèn nằm TRONG dome, loại giả thuyết "đèn ngoài bán kính"); [BUG-FIX] Distance Field khối đặc của Sphere engine tự triệt tiêu RectLight khi Cast Shadow=True → fix bằng `SM_StudioDome` (duplicate asset riêng) + Two-Sided Distance Field Generation; [ARCH] `Set Lighting Channels` cô lập dome+đèn+furniture clone khỏi Sun/UDS (Channel 1, yêu cầu Mobility=Movable); [ARCH] `Set Show Flag Settings(SkyLighting=False)` trên Capture Component riêng — không đụng biến LightManager của đồng nghiệp; [CEILING/SUY LUẬN chưa verify] dải đen viền khung hình, dời xử lý sang đúng task Gate D. Task gốc Gate D (Source Size Key tune + sweep 5 combo) CHƯA bắt đầu. |
+| 19/07/2026 | Thêm section "SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix": [ARCH] mượn Event Tick của BP_ComboManager cho temporal accumulation (N=24 frame) thay vì subclass SceneCapture2D/FTickableGameObject — buffer `TMap<ASceneCapture2D*, FComboAccumState>` file-scope static, không lên Blueprint; [ARCH] cộng dồn temporal + downscale SSAA 2× đều ở không gian linear color, encode FColor đúng 1 lần cuối (tránh lệch sáng do gamma không cộng tuyến tính); [BUG-FIX] sửa nhầm `CreateRenderTarget2D` bản LEGACY thay vì bản thật khi áp SSAA factor (build pass nhưng ảnh sai kích thước) — bài học: 2 hàm cùng signature cần phân biệt qua field khác (`bCaptureEveryFrame`), không suy luận theo vị trí trong file. Test: noise CONFIRM, aliasing/SSAA CONFIRM DONE (cuhoang tự chạy lại checklist đầy đủ). Gán vào Gate D (tiếp nối prerequisite 18/07). |
