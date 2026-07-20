@@ -294,8 +294,13 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
         - [ ] Nấc 2 (below-front key + camera from-below cho pure Ceiling/Wall) — backlog,
               Switch stub đã dựng sẵn trong chuỗi phím U.
         - [ ] Gate D — CHƯA đóng (còn treo case Cao). Đóng khi có combo thật test bổ sung.
-  - [ ] P2.Gate E — DOF
-  - [ ] P2.Gate F — nối dây thật vào SaveComboFromSelection + closure
+  - [x] P2.Gate E — DOF. Mở rộng Post Process Settings node sẵn có (Focal Distance xấp xỉ qua
+        Vector Distance, Aperture=2.8 chốt bằng test đối chứng f/1.0). DONE 20/07/2026.
+  - [ ] P2.Gate F — nối dây thật + closure. Thay capture in-place cũ bằng
+        SpawnComboForThumbnail thật trong SaveComboFromSelection; DeltaYaw từ
+        Cmb_PendingUserCamYaw (SET lúc bấm Save, trước dialog mở); bỏ suffix _studio, dùng
+        ComboID thật; xóa chuỗi debug phím U; verify end-to-end 6 case + stat rhi baseline.
+        CHƯA bắt đầu.
 - [x] **C4** — WBP_ComboCard + ghost + drag-drop + CalculateComboAnchor + CTV_ComboCard. Ghost offset FIXED (Approach B). ✅ 25/06/2026
 - [ ] **C5** ⏳ IN PROGRESS — 7 sub-task:
   - [x] C5.1 — C++ 3 helper (UpdateComboFolder/RenameFolderPrefix/ClearFolderPrefix) ✅ 25/06

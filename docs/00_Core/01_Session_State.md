@@ -312,6 +312,14 @@ Gate B/C: xem `DEVIATIONS.md` mục "P2 — 17/07/2026 (cuối phiên)"; Gate D 
 isolation: xem `DEVIATIONS.md` mục "P2 — 18/07/2026"; Gate D prerequisite noise/aliasing: xem
 `DEVIATIONS.md` mục "SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix"; Gate D Rim Light + VRAM
 fix + 2 bug kiến trúc mới: xem `DEVIATIONS.md` mục "P2 — 20/07/2026" và `Bugs/Open_Bugs.md`.
+
+**Gate E (DOF) DONE 20/07/2026 (cùng ngày).** Mở rộng node Set Post Process Settings sẵn có
+(EV100) thêm Focal Distance (xấp xỉ qua Vector Distance CaptureHandle↔Anchor, do biến Distance
+C++ không xuất Blueprint) + Aperture (F-stop)=2.8 (chốt sau test đối chứng f/1.0, khớp gu ảnh
+tham chiếu IKEA). Chi tiết: DEVIATIONS mục "P2 — 20/07/2026 (Gate E)".
+**Tiếp theo: Gate F** — nối dây thật (thay chuỗi debug phím U bằng Save Combo thật, DeltaYaw
+theo hướng camera user, xóa chuỗi debug, verify end-to-end).
+
 Thứ tự sau P2: K1 (có thể chen trước Gate F, quyết tại F) → K3 còn lại → C9 → C6
 → C7 → C11 → C10 → Gate 2.
 

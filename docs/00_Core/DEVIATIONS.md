@@ -1014,6 +1014,35 @@ KHÔNG chặn các việc khác (Nấc 2, tối ưu cuối, Sprint kế tiếp).
 
 ---
 
+### [ARCH] P2 — 20/07/2026 (Gate E) — Depth of Field DONE
+
+**Node:** mở rộng "Set members in Post Process Settings" (Gate C, dùng chung với Manual EV100)
+— tick thêm 2 field trong panel Pin Options: `Lens | Depth of Field → Focal Distance` và
+`Aperture (F-stop)`. Không tạo node Set mới.
+
+**[VERIFY — phát hiện, không phải bug] Plan gốc sai giả định:** §7 Gate E ghi "FocalDistance =
+Distance auto-fit (số có sẵn trong Begin)" — thực tế biến `Distance` chỉ tồn tại CỤC BỘ bên
+trong C++ `BeginComboCapture`, KHÔNG xuất ra output pin nào cho Blueprint đọc. Xử lý: xấp xỉ
+bằng `Vector Distance(GetActorLocation(Cmb_CaptureHandle), Cmb_StudioAnchor)` — không cần sửa
+C++. Ceiling: đủ chính xác cho mọi combo hiện có (tọa độ tương đối cân quanh gốc). Trigger: nếu
+sau này có combo relLocation lệch tâm rất xa (design bất thường) → sai số FocalDistance tăng,
+cân nhắc thêm out-param `Distance` thật vào `BeginComboCapture` (C++, .h chạm thêm 1 lần).
+
+**Aperture (F-stop) = 2.8 — chốt bằng test đối chứng:**
+- f/2.8 (giá trị chọn): blur rất nhẹ trên combo hiện có (Nhỏ/To/Dẹt — độ sâu Z-spread nông) —
+  ban đầu cuhoang thấy "không rõ nét để phân biệt trước/sau".
+- Test chẩn đoán f/1.0 (tạm thời, phóng đại lỗi để loại trừ khả năng pipeline không chạy): blur
+  mạnh rõ rệt → xác nhận pipeline HOẠT ĐỘNG ĐÚNG, không phải bug. Kết luận: combo hiện có không
+  đủ độ sâu để f/2.8 tạo blur rõ mắt — đây là hành vi đúng vật lý, không phải thiếu sót.
+- Quyết định giữ 2.8: khớp gu ảnh tham chiếu IKEA (catalog sản phẩm sắc nét gần như toàn bộ,
+  DOF chỉ tách nhẹ khỏi nền, không tạo hiệu ứng "chụp máy ảnh chuyên nghiệp" rõ rệt).
+
+**Trạng thái:** ✅ DONE. Gate F là bước tiếp theo (nối dây thật + closure), không phụ thuộc
+Gate E ngoài việc field DOF đã có sẵn trong Post Process Settings, tự động áp dụng khi Save
+Combo thật chạy qua cùng pipeline.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -1092,3 +1121,4 @@ KHÔNG chặn các việc khác (Nấc 2, tối ưu cuối, Sprint kế tiếp).
 | 20/07/2026 | Thêm section "P2 — 20/07/2026 — Gate D: Rim Light + VRAM Fix + Source Size chốt + 2 bug kiến trúc mới (OPEN)": [SCOPE] Rim Light 3-point lighting (`Cmb_StudioRimLight` mới) + đổi InVect/SourceSize/AttenRadius cả 3 đèn + Exposure Compensation +6.0; [BUG-FIX] ×2 VRAM/GPU crash EndPlay `BP_ComboManager` (`Map_Clear` lồng sai nhánh Branch + thứ tự đọc/ghi `Cmb_CaptureHandle` khiến `ResetComboAccumulation` no-op); [CORRECTION] `Cmb_KeySourceSize`=500 chốt bằng mắt; [ARCH — OPEN] bug #1 dome cong nuốt chân đồ footprint rộng (đảo ngược 1 phần Gate B, 3 phương án chờ Fable/Opus quyết); [ARCH — OPEN] bug #2 combo Ceiling dính lỗi ground-align giống Tường (H1), chưa từng ghi trong plan — đề xuất gộp quyết định cùng H1. Gate D sweep TẠM DỪNG chờ hướng đi kiến trúc. 2 bug mới ghi `Bugs/Open_Bugs.md`. |
 | 20/07/2026 (Nấc 1) | Thêm section "P2 — 20/07/2026 (Nấc 1) — Surface-Aware Ground-Align, Bug-CeilingGroundAlign FIXED": [ARCH] Function mới `ResolveThumbAlign(Clones) → DeltaZ, Category` thay khối align inline đơn nhất, phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType`; [SCOPE] chốt ranh giới Nấc 1 (surface-aware align) vs Nấc 2 (rig-trần below-front, backlog); [ARCH — mở rộng ngoài scope, KP2 duyệt] Wall-priority rule (so `FloorMinZ`/`WallMinZ`, phát hiện qua test combo bàn thờ thật) + margin fix (đáy non-Floor nổi trên Anchor.Z +10, không center); [DỌN] xóa `Cmb_ThumbMinZ` dead var. Test 6/6 case PASS. Bug-CeilingGroundAlign đóng — Bug-DomeCurvature vẫn Open (đồng nghiệp dựng dome custom riêng), độc lập với Nấc 1. |
 | 20/07/2026 (Dome Custom) | Thêm 2 section: "P2 — 20/07/2026 (Dome Custom) — Bug-DomeCurvature FIXED, Sweep 4/5 Loại" — [ARCH] dome custom (cylinder kín, đáy bo cong, ~500 unit vùng phẳng) thay `/Engine/BasicShapes/Sphere` (đảo ngược Gate B); [ARCH — đảo ngược Gate B] Cast Shadow=True verify an toàn trên dome mới (khác sphere cũ). Test PASS combo Dẹt (thảm) + To (sofa 15 món, worst-case footprint). "P2 — 20/07/2026 (Sweep 5 Loại)" — [SCOPE] 4/5 loại (Nhỏ/To/Dẹt/Tường) PASS chính thức; case Cao PASS sơ bộ bằng stack dựng tay (không phải combo tự nhiên) — quyết định Lựa chọn B: giữ làm bằng chứng sơ bộ, chờ combo kệ/tủ cao thật để đóng hẳn, không chặn việc khác. Bug-DomeCurvature cập nhật đồng thời `Bugs/Open_Bugs.md`. |
+| 20/07/2026 (Gate E) | Thêm section "P2 — 20/07/2026 (Gate E) — Depth of Field DONE": mở rộng node "Set members in Post Process Settings" sẵn có (Gate C) thêm Focal Distance + Aperture (F-stop), không tạo node mới; [VERIFY] plan gốc sai giả định — biến `Distance` C++ không xuất Blueprint, xấp xỉ bằng `Vector Distance(CaptureHandle, Cmb_StudioAnchor)`; Aperture=2.8 chốt sau test đối chứng f/1.0 (xác nhận pipeline chạy đúng, combo hiện có Z-spread nông nên f/2.8 blur khó thấy — đúng vật lý, không phải bug), khớp gu ảnh tham chiếu IKEA. Gate E DONE — tiếp theo Gate F (nối dây thật + closure). |
