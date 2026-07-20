@@ -150,12 +150,32 @@
 **S_GroupData** — ✅ field `SourceComboID : String` (default "") đã thêm (C1 DONE). Group cha cụm combo = ComboID gốc; group user tạo tay = "". Đã add vào snapshot capture/restore.
 **C++ FurnitureToolkit** — FComboData.FolderPath (field mới), FindMaterialRowNameByPath (function mới). Compile xanh. Full rebuild (Binaries/Intermediate xóa + rebuild) ✅
 **BP_FurnitureInputManager** — SpawnFurnitureCopy +param bAddToRecent : Bool = True (default, Branch bọc khối AddRecentMesh trong Sequence.Then_2, dead-end hợp lệ)
-**BP_ComboManager** — SpawnComboForThumbnail(ComboID, DeltaYaw=0) Custom Event MỚI (P2 Gate A): guard Cmb_bThumbBusy → F_LoadComboData → ForEach Items → SpawnFurnitureCopy (bAutoSelect=False, bAddToRecent=False) → strip tag "FurnitureSpawned" → GroupID="" → Cmb_StudioClones. Biến mới: Cmb_StudioClones, Cmb_bThumbBusy, Cmb_StudioAnchor, Cmb_StudioFloor, Cmb_ThumbMinZ, Cmb_CaptureHandle (P1, tái dùng).
+**BP_ComboManager** — SpawnComboForThumbnail(ComboID, DeltaYaw=0) Custom Event MỚI (P2 Gate A): guard Cmb_bThumbBusy → F_LoadComboData → ForEach Items → SpawnFurnitureCopy (bAutoSelect=False, bAddToRecent=False) → strip tag "FurnitureSpawned" → GroupID="" → Cmb_StudioClones. Biến mới: Cmb_StudioClones, Cmb_bThumbBusy, Cmb_StudioAnchor, Cmb_StudioFloor, Cmb_CaptureHandle (P1, tái dùng).
+Cmb_ThumbMinZ (Gate A) đã XÓA 20/07/2026 — dead sau khi thay align inline bằng Function
+ResolveThumbAlign. Xem DEVIATIONS mục "P2 — 20/07/2026 (Nấc 1)".
 **BP_ComboManager** — chuỗi debug phím U (Input Event, gate bDebugMode + bDebugTestThumb ở BeginPlay EnableInput): SpawnComboForThumbnail → Delay(3.0, tạm — xem DEVIATIONS) → ground-align (ForEach tính Cmb_ThumbMinZ qua Get Actor Bounds, DeltaZ = Cmb_StudioAnchor.Z − Cmb_ThumbMinZ, ForEach Add Actor World Offset) → BeginComboCapture → Delay(3.0) → FinishComboCapture → ForEach Destroy → Clear.
 **BeginPlay BP_ComboManager** — Spawn sàn tạm (StaticMeshActor, mesh Plane, scale 50×50×1, location=Cmb_StudioAnchor) chạy VÔ ĐIỀU KIỆN (KHÔNG nằm trong Branch bDebugTestThumb — quyết định 17/07, tránh coupling ẩn với ground-align).
 **BP_ComboManager** — Gate B (dome, thay sàn plane Gate A): BeginPlay spawn `/Engine/BasicShapes/Sphere` R=`Cmb_StudioDomeRadius` (2000.0), Location Z = Cmb_StudioAnchor.Z + R, Scale = R/50 cả 3 trục (1 phép chia qua Make Vector). Material `M_StudioBackdrop` (Lit/Two-Sided/Roughness 0.9, màu CHƯA chốt — dời đợt tối ưu cuối). **Cast Shadow = False** trên dome (quyết định kiến trúc quan trọng nhất Gate B — dome chỉ nhận bóng, không chặn sáng đèn ngoài bán kính R). Receive Shadow giữ nguyên.
 **BP_ComboManager** — Gate C: Function mới `SpawnStudioLight(AngleOffsetDeg, Intensity) → RectLight` (Q8 đầy đủ, Return Node cả 2 nhánh) — RotateAngleAxis((1500,0,1500), AngleOffsetDeg, Z-up) làm LightOffset, WorldLoc = Cmb_StudioAnchor + LightOffset, spawn RectLight Mobility=Movable (bắt buộc — Stationary phụ thuộc Lightmass bake, Remote Studio runtime chưa bake), FindLookAtRotation về anchor, Source Width/Height=150, Attenuation Radius=8000. Gọi 2 lần ở BeginPlay: `SpawnStudioLight(45.0, 5000000.0)` → Cmb_StudioKeyLight, `SpawnStudioLight(-45.0, 1666667.0)` → Cmb_StudioFillLight. Biến mới: Cmb_StudioDomeRadius (Float, 2000.0), Cmb_StudioKeyLight/Cmb_StudioFillLight (RectLight ref). Biến đã xoá (refactor thành Local trong function): KeyOffset, FillOffset.
 **BP_ComboManager** — chuỗi debug phím U cập nhật Gate C: `Begin Combo Capture` tick `bUseFixedAngle=True`, `FixedAngle=(Pitch=-15, Yaw=0, Roll=0)` (trước đó bị bỏ sót); thêm `IsValid(Cmb_CaptureHandle)` guard ngay sau Begin (False → Print + SET Cmb_bThumbBusy=False, tránh kẹt "Thumb busy" vĩnh viễn); Manual EV100 set qua `Get Post Process Settings` (đọc struct hiện có từ Capture Component) → `Set members in Post Process Settings` (chỉ Metering Mode + Exposure Compensation) → `Set Post Process Settings` — KHÔNG dùng `Make Post Process Settings` (sẽ ghi đè mất 2 field Lumen override C++ đã set).
+
+**BP_ComboManager — Gate D Nấc 1 (20/07/2026):** Function mới `ResolveThumbAlign(Clones) →
+DeltaZ, Category` (Enum `E_ThumbAlignCategory`: Floor/Ceiling/Wall/Other) thay khối align inline
+cũ trong chuỗi phím U. Phân loại theo `PlacementSurfaceType` (type Name) của từng clone:
+- ≥1 item Floor VÀ (không có Wall HOẶC FloorMinZ < WallMinZ) → Category=Floor, neo theo MinZ
+  riêng nhóm Floor (item Wall/Ceiling trong cùng combo giữ nguyên offset tương đối).
+- Có Wall VÀ FloorMinZ ≥ WallMinZ (đồ Floor "tựa" trên vật Wall, vd bàn thờ) → Category=Wall.
+- Không Floor, có Ceiling (không Wall) → Category=Ceiling.
+- Không Floor, có Wall (không Ceiling) → Category=Wall.
+- Còn lại → Category=Other.
+Nhóm non-Floor (Ceiling/Wall/Other): DeltaZ = AnchorZ − AllMinZ + 10 (margin cố định, đáy combo
+nổi TRÊN mặt dome, không center vào Anchor.Z — tránh chìm dome với combo extent lớn, phát hiện
+qua test combo bàn thờ Z-extent=43.8). Switch on E_ThumbAlignCategory sau khi áp DeltaZ hiện là
+STUB — cả 4 pin (Floor/Ceiling/Wall/Other) gộp chung vào BeginComboCapture, chưa tách camera/đèn
+riêng (Nấc 2, backlog). Node flow đầy đủ: xem `Blueprints/BP_ComboManager.md` mục
+ResolveThumbAlign. Test 6/6 case PASS (Floor thuần, Ceiling thuần, bàn thờ Wall+Floor lẫn, Mixed
+sofa+quạt trần, combo cũ thiếu field surfaceType, Undo/Recent/EMS). Chi tiết đầy đủ + 3 lệch:
+`DEVIATIONS.md` mục "P2 — 20/07/2026 (Nấc 1)".
 
 **Snapshot version history:**
 - V1: single select (legacy)
@@ -280,8 +300,14 @@ lighting, [SCOPE] mở rộng Gate C) DONE + VRAM/GPU crash fix (EndPlay `BP_Com
 wiring) DONE + Source Size Key=500 chốt. Sweep 5 loại combo: 3/5 PASS (Nhỏ/To/Tường), 2/5 FAIL —
 phát hiện 2 bug kiến trúc MỚI chưa từng ghi trong plan: (1) dome cong (sphere) nuốt chân đồ
 footprint rộng (sofa/thảm); (2) combo "Cao" (surfaceType Ceiling) dính lỗi ground-align giống
-case Tường (H1) nhưng chưa từng ghi nhận. GATE D TẠM DỪNG — cần Fable/Opus quyết kiến trúc (đảo
-ngược 1 phần quyết định Gate B) trước khi tiếp tục sweep.** Chi tiết bug/quyết định kiến trúc
+case Tường (H1) nhưng chưa từng ghi nhận.** Nấc 1 (Bug-CeilingGroundAlign) đã DONE 20/07/2026 —
+xem đoạn ResolveThumbAlign ở trên.
+Bug-DomeCurvature đã FIXED 20/07/2026 (cùng ngày) — đồng nghiệp dựng dome custom (cylinder kín,
+đáy bo cong, vùng phẳng ~500 unit, Cast Shadow=True verify an toàn — đảo ngược Gate B cũ). Test
+PASS combo Dẹt (thảm) + To (sofa 15 món). Sweep 5 loại: 4/5 PASS chính thức (Nhỏ/To/Dẹt/Tường),
+1/5 (Cao) PASS sơ bộ bằng stack dựng tay — CHỜ combo kệ/tủ cao thật để đóng hẳn (Lựa chọn B,
+20/07). Chi tiết: `DEVIATIONS.md` mục "P2 — 20/07/2026 (Dome Custom)" và "(Sweep 5 Loại)".
+**Gate D CHƯA đóng** — còn treo case Cao, không chặn Nấc 2/Sprint kế tiếp. Chi tiết bug/quyết định kiến trúc
 Gate B/C: xem `DEVIATIONS.md` mục "P2 — 17/07/2026 (cuối phiên)"; Gate D prerequisite lighting
 isolation: xem `DEVIATIONS.md` mục "P2 — 18/07/2026"; Gate D prerequisite noise/aliasing: xem
 `DEVIATIONS.md` mục "SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix"; Gate D Rim Light + VRAM

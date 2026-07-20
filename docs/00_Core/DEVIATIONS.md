@@ -885,6 +885,135 @@ TOÀN BỘ item trong combo có `surfaceType` khác `"Floor"`. Bug ghi tại `Bu
 
 ---
 
+### [ARCH] P2 — 20/07/2026 (Nấc 1) — Surface-Aware Ground-Align, Bug-CeilingGroundAlign FIXED
+
+**Bối cảnh:** Bug-CeilingGroundAlign (combo trần bị chôn xuống sàn, phát hiện Gate D sweep sáng
+20/07) đã fix qua Function mới `ResolveThumbAlign` — thay khối align inline đơn nhất (1 DeltaZ
+cho cả combo) bằng phân loại theo `PlacementSurfaceType`. Node flow đầy đủ: xem
+`Blueprints/BP_ComboManager.md` mục ResolveThumbAlign.
+
+**[SCOPE] Nấc 1 vs Nấc 2 (quyết định 20/07):** chỉ làm surface-aware align (đổi công thức
+DeltaZ + category), KHÔNG làm rig-trần (below-front key light, camera from-below cho pure
+Ceiling/Wall) — đó là Nấc 2, backlog, chờ combo trần đủ quan trọng mới làm. Bar PASS Nấc 1 cho
+combo trần: không chôn sàn + gọn trong khung + đọc được món — KHÔNG đòi hero-from-below.
+
+**[ARCH — MỞ RỘNG NGOÀI SCOPE BAN ĐẦU, KP2 đã duyệt] Wall-priority rule:** Test combo bàn thờ
+thật (`combo_C470030D...`, 1 item Wall + 14 item Floor) lộ ra thiết kế Nấc 1 gốc (HasFloor luôn
+thắng tuyệt đối) sai — bàn thờ bị kéo chìm dome dù có mount Wall, vì đa số item mang tag Floor
+(đồ đặt trên kệ, không phải đứng sàn thật). Thêm `WallMinZ` + so sánh `FloorMinZ < WallMinZ`:
+Floor "tựa" trên Wall (bàn thờ) → Wall thắng; Floor đứng độc lập thấp hơn Wall (sofa+tranh
+tường) → Floor vẫn thắng như cũ. Verify: cả 2 case test PASS, không ảnh hưởng combo Mixed
+(sofa+quạt trần, không có Wall) đã PASS trước đó.
+
+**[ARCH — MỞ RỘNG NGOÀI SCOPE BAN ĐẦU, KP2 đã duyệt] Margin fix cho nhóm non-Floor:** Công thức
+gốc "center bounds vào Anchor.Z" (đã duyệt lúc thiết kế Nấc 1) vỡ khi combo extent Z lớn — bàn
+thờ (extent=43.8) có nửa dưới bounds xuyên qua mặt dome thật (Anchor.Z = điểm tiếp xúc vật lý
+đáy dome), gây chìm/khuất sau mesh dù Category đã đúng Wall. Sửa: `DeltaZ = AnchorZ − AllMinZ +
+10` (đáy combo luôn nổi TRÊN Anchor.Z, margin cố định 10 unit) thay vì center vào Anchor.Z.
+Verify bằng ảnh capture combo bàn thờ trước/sau fix — trước: chìm nặng, sau: đầy đủ toàn bộ đồ
+trên kệ, không cắt/khuất.
+
+**[LESSON]** Cả 2 mở rộng trên đều phát hiện qua test bằng **combo thật** (không phải combo dựng
+tay đơn giản) — combo bàn thờ (đồ thật + mount tường thật) lộ ra 2 lỗi thiết kế mà test case đơn
+giản (Floor thuần/Ceiling thuần/Mixed) không chạm tới. Bài học: ưu tiên test bằng data thư viện
+thật khi có sẵn, trước khi coi 1 nhánh logic là "đã đủ test".
+
+**[DỌN] Xóa `Cmb_ThumbMinZ`:** class var của align inline cũ (Gate A), dead sau khi thay bằng
+Function `ResolveThumbAlign`. Verify không còn tham chiếu (compile sạch sau xóa). Xóa 20/07/2026.
+
+**Test 6/6 case PASS:**
+| # | Combo | Category | Kết quả |
+|---|---|---|---|
+| 1 | Floor thuần (`combo_9706EBDF...`) | Floor | ✅ regression |
+| 2 | Ceiling thuần (`combo_057470B1...`) | Ceiling | ✅ |
+| 3 | Bàn thờ Wall+Floor lẫn (`combo_C470030D...`) | Wall | ✅ (sau 2 lần mở rộng) |
+| 4 | Mixed sofa+quạt trần (`combo_EB8A2889...`) | Floor | ✅ không đổi bởi Wall-priority |
+| 5 | Combo cũ thiếu field surfaceType (`banan01`/`combo_9ED326F2...`) | Floor | ✅ fallback đúng |
+| 6 | Undo/Recent/EMS Save→Load | — | ✅ sạch |
+
+**Ceiling/trigger:** margin=10 unit chốt bằng test 1 combo (bàn thờ). Ceiling: đủ cho combo hiện
+có trong thư viện. Trigger: nếu xuất hiện combo non-Floor có extent Z lớn hơn đáng kể — tăng
+margin hoặc tính margin theo % extent thay vì hằng số.
+
+**Việc còn Open (không thuộc Nấc 1):**
+- Bug-DomeCurvature (dome cong nuốt chân đồ Floor footprint rộng) — đồng nghiệp đang dựng dome
+  custom, báo khi xong.
+- Task gốc Gate D (Source Size Key tune + sweep 5 combo hình dáng) — chưa bắt đầu, chờ dome
+  custom xong mới tiếp tục (độc lập với Nấc 1, có thể chạy song song).
+- Nấc 2 (below-front key + camera from-below cho pure Ceiling/Wall) — backlog, Switch stub đã
+  dựng sẵn 4 pin trong chuỗi phím U, chờ quyết làm khi combo trần đủ quan trọng.
+- Triệu chứng "item combo trần không cùng mặt phẳng / bóng tách rời" (ghi nhận Gate D sweep sáng
+  20/07) — điều tra sơ bộ qua JSON `combo_057470B1...`: 3 item đều relLocation.Z≈0, combo được
+  thiết kế đặt dàn trải X/Y (mô phỏng bố trí thiết bị trần thật trong phòng, không phải 1 cụm
+  khít nhau) — không phải bug từ ResolveThumbAlign. Đóng, không cần xử thêm.
+
+---
+
+### [ARCH] P2 — 20/07/2026 (Dome Custom) — Bug-DomeCurvature FIXED, Sweep 4/5 Loại
+
+**Bối cảnh:** Bug-DomeCurvature (dome sphere cong nuốt chân đồ combo footprint rộng — sofa/thảm,
+phát hiện Gate D sweep sáng 20/07) đã fix qua dome custom do đồng nghiệp dựng, thay thế hoàn
+toàn quyết định [ARCH] Gate B (17/07) dùng `/Engine/BasicShapes/Sphere`.
+
+**Kiến trúc dome mới:**
+- Asset riêng: khối cylinder kín, đáy bo cong (không phải sphere đặc toàn phần).
+- Size gốc mesh: approx 501×501×501 unit.
+- Spawn: `New Scale 3D = Make Vector(Cmb_StudioDomeRadius/320.0, .../320.0, .../320.0)` — đổi
+  từ công thức cũ `R/50` (do đổi mesh gốc, không đổi ý nghĩa `Cmb_StudioDomeRadius` = 2000.0).
+- Location Z vẫn `Cmb_StudioAnchor.Z + ...` theo pattern cũ (không đổi biến `Cmb_StudioAnchor`).
+- **Vùng đáy phẳng tuyệt đối trong bán kính ~500 unit quanh tâm** — đủ bao mọi combo Floor hiện
+  có trong thư viện (combo To vừa test có bán kính footprint ~193-270 unit, vẫn nằm trong vùng
+  phẳng, không chạm phần bo cong).
+
+**[ARCH — ĐẢO NGƯỢC quyết định Gate B 17/07] Cast Shadow = True:** Dome cũ (sphere engine) chốt
+`Cast Shadow=False` vì lo sphere đặc chặn hoàn toàn ánh sáng đèn Key/Fill đứng ngoài bán kính R.
+Dome mới chạy `Cast Shadow=True` và verify KHÔNG có vệt tối/chặn sáng bất thường — kể cả với
+combo trải rộng nhất (sofa 15 món, item xa tâm nhất ở X≈±148, Y≈-65÷142). Giả thuyết: hình học
+mới (đáy phẳng bo cong, không phải cầu đặc bao quanh mọi phía) đủ khác để vấn đề chặn sáng gốc
+không còn xảy ra — Cast Shadow=True giờ an toàn, và cho bóng đổ tự nhiên hơn (contact shadow
+thật của dome lên chính nó/vật thể).
+
+**Test verify (2 combo worst-case, chọn vì bán kính footprint lớn nhất từng có trong thư viện):**
+| Combo | boundingBoxExtent (X,Y) | Kết quả |
+|---|---|---|
+| Dẹt — thảm tròn 3200mm (`combo_83D018984B2BAE3C346F3D8ED705480F`) | — (tròn, R≈160cm mesh gốc) | ✅ PASS — thảm hiện đầy đủ 4 cạnh, phẳng lì, đồ trên thảm không chìm |
+| To — sofa Đồng Gia 15 món (`combo_E1C979FA45360AEC3BC83C8F512FF78F`) | 192.9 / 186.2 | ✅ PASS — chân sofa 3 phần + đôn + thảm tròn đều chạm sàn phẳng mọi góc, bóng đổ tự nhiên, không vệt tối bất thường |
+
+**Trạng thái:** ✅ FIXED. `Bugs/Open_Bugs.md` cập nhật đồng thời.
+
+---
+
+### [SCOPE] P2 — 20/07/2026 (Sweep 5 Loại) — 4/5 PASS chính thức, "Cao" PASS sơ bộ (chờ data thật)
+
+Sau khi dome custom FIXED, chạy lại/tổng kết sweep 5 loại combo (task gốc Gate D, tạm dừng từ
+sáng 20/07):
+
+| Loại | Combo test | Kết quả | Ghi chú |
+|---|---|---|---|
+| Nhỏ | (test lần đầu, trước dome fix — không phụ thuộc bug curvature) | ✅ PASS | Regression, không cần test lại |
+| To | `combo_E1C979FA...` (sofa 15 món) | ✅ PASS | Trên dome mới, xem mục Dome Custom ở trên |
+| Dẹt | `combo_83D018984B...` (thảm tròn) | ✅ PASS | Trên dome mới, worst-case cũ đã fail, nay pass sạch |
+| Tường | `combo_C470030D...` (bàn thờ, qua Nấc 1 Wall-priority) | ✅ PASS | Xem DEVIATIONS mục "P2 — 20/07/2026 (Nấc 1)" |
+| Cao | Stack dựng tay (bàn tròn + ghế + đèn bàn + tượng gỗ, chồng thủ công) | ⚠️ PASS SƠ BỘ | Xem chi tiết bên dưới |
+
+**[QUYẾT ĐỊNH — Lựa chọn B, 20/07] Case "Cao" — PASS sơ bộ, chưa đóng hẳn:**
+Test bằng cách chồng tay 4 món rời (bàn tròn đáy → ghế → đèn bàn (lamp) → tượng gỗ trên cùng) để
+tạo 1 "combo" cao bất thường, không phải combo tự nhiên nào trong thư viện. Kết quả kỹ thuật
+PASS: toàn bộ stack nằm gọn trong khung (auto-fit đúng dù tỷ lệ cao bất thường), bàn đáy chạm
+sàn phẳng tốt, ánh sáng đều dọc suốt chiều cao không tối dần lên đỉnh.
+
+**Giới hạn của kết quả này:** stack dựng tay không đại diện đúng trải nghiệm thật với 1 combo
+kệ/tủ cao liền khối (trọng tâm, footprint, silhouette khác hẳn tháp đồ rời rạc). Quyết định
+20/07 (Lựa chọn B): giữ kết quả này làm **bằng chứng sơ bộ đã PASS** (không phải regression risk
+— hệ thống render đúng vật lý với input bất thường), nhưng **chưa coi case "Cao" đã đóng hoàn
+toàn**. Cần test bổ sung bằng 1 combo kệ/tủ cao thật khi có sẵn trong thư viện, trước khi tuyên
+bố Gate D sweep DONE 5/5.
+
+**Trạng thái Gate D tổng thể:** 4/5 loại đóng chính thức. 1/5 (Cao) mở treo — chờ combo thật,
+KHÔNG chặn các việc khác (Nấc 2, tối ưu cuối, Sprint kế tiếp).
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -961,3 +1090,5 @@ TOÀN BỘ item trong combo có `surfaceType` khác `"Floor"`. Bug ghi tại `Bu
 | 18/07/2026 | Thêm section "P2 — 18/07/2026 — Gate D prerequisite: lighting isolation": [CORRECTION] RectLight offset Z thật = 1200 (không phải 1500 như ghi trước) + tính lại khoảng cách đèn→tâm dome (~1700 < Radius 2000, đèn nằm TRONG dome, loại giả thuyết "đèn ngoài bán kính"); [BUG-FIX] Distance Field khối đặc của Sphere engine tự triệt tiêu RectLight khi Cast Shadow=True → fix bằng `SM_StudioDome` (duplicate asset riêng) + Two-Sided Distance Field Generation; [ARCH] `Set Lighting Channels` cô lập dome+đèn+furniture clone khỏi Sun/UDS (Channel 1, yêu cầu Mobility=Movable); [ARCH] `Set Show Flag Settings(SkyLighting=False)` trên Capture Component riêng — không đụng biến LightManager của đồng nghiệp; [CEILING/SUY LUẬN chưa verify] dải đen viền khung hình, dời xử lý sang đúng task Gate D. Task gốc Gate D (Source Size Key tune + sweep 5 combo) CHƯA bắt đầu. |
 | 19/07/2026 | Thêm section "SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix": [ARCH] mượn Event Tick của BP_ComboManager cho temporal accumulation (N=24 frame) thay vì subclass SceneCapture2D/FTickableGameObject — buffer `TMap<ASceneCapture2D*, FComboAccumState>` file-scope static, không lên Blueprint; [ARCH] cộng dồn temporal + downscale SSAA 2× đều ở không gian linear color, encode FColor đúng 1 lần cuối (tránh lệch sáng do gamma không cộng tuyến tính); [BUG-FIX] sửa nhầm `CreateRenderTarget2D` bản LEGACY thay vì bản thật khi áp SSAA factor (build pass nhưng ảnh sai kích thước) — bài học: 2 hàm cùng signature cần phân biệt qua field khác (`bCaptureEveryFrame`), không suy luận theo vị trí trong file. Test: noise CONFIRM, aliasing/SSAA CONFIRM DONE (cuhoang tự chạy lại checklist đầy đủ). Gán vào Gate D (tiếp nối prerequisite 18/07). |
 | 20/07/2026 | Thêm section "P2 — 20/07/2026 — Gate D: Rim Light + VRAM Fix + Source Size chốt + 2 bug kiến trúc mới (OPEN)": [SCOPE] Rim Light 3-point lighting (`Cmb_StudioRimLight` mới) + đổi InVect/SourceSize/AttenRadius cả 3 đèn + Exposure Compensation +6.0; [BUG-FIX] ×2 VRAM/GPU crash EndPlay `BP_ComboManager` (`Map_Clear` lồng sai nhánh Branch + thứ tự đọc/ghi `Cmb_CaptureHandle` khiến `ResetComboAccumulation` no-op); [CORRECTION] `Cmb_KeySourceSize`=500 chốt bằng mắt; [ARCH — OPEN] bug #1 dome cong nuốt chân đồ footprint rộng (đảo ngược 1 phần Gate B, 3 phương án chờ Fable/Opus quyết); [ARCH — OPEN] bug #2 combo Ceiling dính lỗi ground-align giống Tường (H1), chưa từng ghi trong plan — đề xuất gộp quyết định cùng H1. Gate D sweep TẠM DỪNG chờ hướng đi kiến trúc. 2 bug mới ghi `Bugs/Open_Bugs.md`. |
+| 20/07/2026 (Nấc 1) | Thêm section "P2 — 20/07/2026 (Nấc 1) — Surface-Aware Ground-Align, Bug-CeilingGroundAlign FIXED": [ARCH] Function mới `ResolveThumbAlign(Clones) → DeltaZ, Category` thay khối align inline đơn nhất, phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType`; [SCOPE] chốt ranh giới Nấc 1 (surface-aware align) vs Nấc 2 (rig-trần below-front, backlog); [ARCH — mở rộng ngoài scope, KP2 duyệt] Wall-priority rule (so `FloorMinZ`/`WallMinZ`, phát hiện qua test combo bàn thờ thật) + margin fix (đáy non-Floor nổi trên Anchor.Z +10, không center); [DỌN] xóa `Cmb_ThumbMinZ` dead var. Test 6/6 case PASS. Bug-CeilingGroundAlign đóng — Bug-DomeCurvature vẫn Open (đồng nghiệp dựng dome custom riêng), độc lập với Nấc 1. |
+| 20/07/2026 (Dome Custom) | Thêm 2 section: "P2 — 20/07/2026 (Dome Custom) — Bug-DomeCurvature FIXED, Sweep 4/5 Loại" — [ARCH] dome custom (cylinder kín, đáy bo cong, ~500 unit vùng phẳng) thay `/Engine/BasicShapes/Sphere` (đảo ngược Gate B); [ARCH — đảo ngược Gate B] Cast Shadow=True verify an toàn trên dome mới (khác sphere cũ). Test PASS combo Dẹt (thảm) + To (sofa 15 món, worst-case footprint). "P2 — 20/07/2026 (Sweep 5 Loại)" — [SCOPE] 4/5 loại (Nhỏ/To/Dẹt/Tường) PASS chính thức; case Cao PASS sơ bộ bằng stack dựng tay (không phải combo tự nhiên) — quyết định Lựa chọn B: giữ làm bằng chứng sơ bộ, chờ combo kệ/tủ cao thật để đóng hẳn, không chặn việc khác. Bug-DomeCurvature cập nhật đồng thời `Bugs/Open_Bugs.md`. |

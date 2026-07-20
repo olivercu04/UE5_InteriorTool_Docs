@@ -278,9 +278,22 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
         Radius=8000) + Manual EV100 (Get/Set members in Post Process Settings) + camera H-B
         `bUseFixedAngle`. 12 bug/quyết định trong lúc làm — xem DEVIATIONS.md. Verify PASS:
         2 combo khác nhau → cùng góc + cùng độ sáng. 17/07/2026 (cuối phiên).
-  - [ ] P2.Gate D — bóng + sweep hình dáng (nhỏ/to/dẹt/cao/tường). Rim Light + VRAM EndPlay
-        fix + Source Size Key=500 DONE (20/07); sweep 3/5 PASS (Nhỏ/To/Tường) — TẠM DỪNG, 2 bug
-        kiến trúc mới OPEN (dome curvature + Ceiling ground-align), chờ Fable/Opus quyết.
+  - [~] P2.Gate D — bóng + sweep hình dáng (nhỏ/to/dẹt/cao/tường). Rim Light + VRAM EndPlay
+        fix + Source Size Key=500 DONE (20/07). Sweep 3/5 PASS (Nhỏ/To/Tường) ban đầu, 2 bug
+        kiến trúc mới phát hiện — TÁCH XỬ LÝ:
+        - [x] Bug-CeilingGroundAlign FIXED 20/07/2026 (Nấc 1) — Function ResolveThumbAlign,
+              surface-aware align + Wall-priority rule + margin fix. Test 6/6 PASS (Floor,
+              Ceiling, bàn thờ Wall+Floor, Mixed, combo cũ thiếu field, Undo/Recent/EMS). Xem
+              DEVIATIONS mục "P2 — 20/07/2026 (Nấc 1)".
+        - [x] Bug-DomeCurvature FIXED 20/07/2026 — dome custom (cylinder đáy bo cong, vùng
+              phẳng ~500 unit, Cast Shadow=True). Test PASS combo Dẹt + To. Xem DEVIATIONS mục
+              "P2 — 20/07/2026 (Dome Custom)".
+        - [x] Sweep Nhỏ/To/Dẹt/Tường — 4/5 loại PASS chính thức.
+        - [ ] Sweep Cao — PASS SƠ BỘ (stack dựng tay), CHỜ combo kệ/tủ cao thật để đóng hẳn.
+              Không chặn việc khác. Xem DEVIATIONS mục "(Sweep 5 Loại)".
+        - [ ] Nấc 2 (below-front key + camera from-below cho pure Ceiling/Wall) — backlog,
+              Switch stub đã dựng sẵn trong chuỗi phím U.
+        - [ ] Gate D — CHƯA đóng (còn treo case Cao). Đóng khi có combo thật test bổ sung.
   - [ ] P2.Gate E — DOF
   - [ ] P2.Gate F — nối dây thật vào SaveComboFromSelection + closure
 - [x] **C4** — WBP_ComboCard + ghost + drag-drop + CalculateComboAnchor + CTV_ComboCard. Ghost offset FIXED (Approach B). ✅ 25/06/2026

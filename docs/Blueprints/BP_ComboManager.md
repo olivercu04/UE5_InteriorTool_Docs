@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.8 | **Ngày:** 19/07/2026 | **Actor class, Event Tick dùng có điều kiện** (mượn cho temporal accumulation P2 Noise Fix — xem mục Gate D bên dưới, KHÔNG chạy logic mỗi frame ngoài lúc accumulate)
+**Version:** 1.9 | **Ngày:** 20/07/2026 — 23:10 ICT | **Gate D Nấc 1 — Function `ResolveThumbAlign` (surface-aware ground-align), thay khối align inline cũ trong chuỗi debug phím U**
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -99,33 +99,29 @@ Custom Event (Latent — BeginComboCapture/Delay ở Việc 4 gọi từ đây).
 
 ## Việc 4 — Chuỗi debug phím U (Input Event, chỉ tồn tại tới Gate F)
 
+**Cập nhật 20/07/2026 (Gate D Nấc 1):** khối ground-align đơn nhất (2 ForEach dùng
+`Cmb_ThumbMinZ`) đã thay bằng gọi Function `ResolveThumbAlign` — xem node flow đầy đủ ở mục
+riêng bên dưới.
+
 ```
 Input Event "U" [Pressed]
 ▶→ Branch(bDebugMode)
      True  ▶→ SpawnComboForThumbnail(ComboID="<hardcode debug>", DeltaYaw=0)
      False ▶→ HẾT
 ▶→ Delay(3.0)   ← [CEILING] xem DEVIATIONS 17/07/2026, gốc là 0.5 không đủ
-▶→ CalculateComboBoundingExtent(Cmb_StudioClones) ●→ Extent
-   ▶→ Branch(bDebugMode) True → Print "Extent=" + ToString(Extent)
-                          False → (hội tụ cùng node kế — KHÔNG chặn main flow)
-▶→ SET Cmb_ThumbMinZ = 999999.0
-▶→ ForEach(Cmb_StudioClones) [Loop 1 — tính MinZ]
-     LoopBody ▶→ Branch(IsValid(Item))
-                  True  ▶→ Get Actor Bounds(Item) ●→ Origin, BoxExtent
-                          BottomZ = Origin.Z - BoxExtent.Z
-                          SET Cmb_ThumbMinZ = Min(Cmb_ThumbMinZ, BottomZ)
-                  False ▶→ dead-end
+▶→ ResolveThumbAlign(Clones=Cmb_StudioClones) ●→ DeltaZ, Category      ← MỚI 20/07
+▶→ Branch(bDebugMode) True → Print "ThumbAlign Category=" + (Category→String)
+                       False → (hội tụ cùng node kế — KHÔNG chặn main flow)
+▶→ ForEach(Cmb_StudioClones)
+     LoopBody ▶→ Branch(IsValid(Array Element))
+                  True  ▶→ Add Actor World Offset(Target=Array Element,
+                             DeltaLocation=(0,0,DeltaZ), bSweep=False)
+                  False ▶→ dead-end (hợp lệ trong Loop Body)
      Completed ▶→
-        DeltaZ = Cmb_StudioAnchor.Z - Cmb_ThumbMinZ
-        ▶→ ForEach(Cmb_StudioClones) [Loop 2 — áp offset]
-             LoopBody ▶→ Add Actor World Offset(
-                            Target = Array Element CỦA LOOP 2 (không phải Loop 1 — xem
-                            [BUG-FIX] 17/07/2026 nếu cần đối chiếu),
-                            DeltaLocation=(0,0,DeltaZ), bSweep=False)
-             Completed ▶→
-▶→ BeginComboCapture(Cmb_StudioClones, ExtraHiddenActors=[], Resolution=1024,
-                       FitRatio=0.85, bIsolateCombo=False, bUseFixedAngle=False,
-                       FixedAngle=(0,0,0)) ●→ SET Cmb_CaptureHandle
+▶→ Switch on E_ThumbAlignCategory(Category)      ← STUB Nấc 1, 4 pin gộp chung
+     Floor / Ceiling / Wall / Other  (mỗi pin) ▶→ BeginComboCapture(Cmb_StudioClones,
+        ExtraHiddenActors=[], Resolution=1024, FitRatio=0.85, bIsolateCombo=False,
+        bUseFixedAngle=True, FixedAngle=(Pitch=-15, Yaw=0, Roll=0)) ●→ SET Cmb_CaptureHandle
 ▶→ Delay(3.0)
 ▶→ FinishComboCapture(Cmb_CaptureHandle, ComboID="<...>_studio", Cmb_StudioClones) ●→ bSuccess
    ▶→ Branch(bDebugMode) True → Print "Capture " + (bSuccess?"OK":"FAIL")
@@ -137,9 +133,104 @@ Input Event "U" [Pressed]
 ▶→ SET Cmb_bThumbBusy = False
 ```
 
-**Bài học chốt:** cả 2 Branch(bDebugMode) trong chuỗi này đều PHẢI hội tụ 2 nhánh về cùng
-1 điểm tiếp theo — Print chỉ là phụ, không được gate luồng chính (bug đã xảy ra + fix trong
-session 17/07, xem lịch sử chat nếu cần chi tiết).
+**Ghi chú Nấc 2 (chưa làm):** Switch stub hiện gộp cả 4 Category vào cùng
+`BeginComboCapture`. Khi làm Nấc 2 (below-front key light + camera from-below cho pure
+Ceiling/Wall), tách pin Ceiling/Wall ra set lại `Cmb_StudioKeyLight`/camera FixedAngle riêng
+TRƯỚC khi merge vào BeginComboCapture — không đổi pin Floor/Other.
+
+## Function `ResolveThumbAlign(Clones) → DeltaZ, Category` — MỚI Gate D Nấc 1 (20/07/2026)
+
+**Container:** Function (không Custom Event — không latent, cần Local Variable + Return Node).
+
+**Input:** `Clones : Array<BP_FurnitureActor Object Reference>`
+**Output:** `DeltaZ : Float`, `Category : E_ThumbAlignCategory` (enum: Floor/Ceiling/Wall/Other)
+
+**Local Variables:**
+| Tên | Kiểu | Default |
+|---|---|---|
+| HasFloor | Boolean | false |
+| AnyCeiling | Boolean | false |
+| AnyWall | Boolean | false |
+| FloorMinZ | Float | 1000000.0 |
+| AllMinZ | Float | 1000000.0 |
+| AllMaxZ | Float | -1000000.0 |
+| WallMinZ | Float | 1000000.0 |
+| stype | Name | None |
+| AnchorZ | Float | 0.0 |
+
+```
+Q8: Function (no latent — Local var + Return OK, L8✓) | IsValid clone trước Get Actor
+    Bounds (L1) | L2: 6 nhánh categorize đều hit Return Node — đếm đủ | No latent✓ |
+    6A: pure-compute, không tạo state cần đảo✓
+
+[Khởi tạo — SET 8 local var ngay đầu Function, trước guard]
+▶→ SET HasFloor=false ▶→ SET AnyCeiling=false ▶→ SET AnyWall=false ▶→
+   SET FloorMinZ=1000000.0 ▶→ SET AllMinZ=1000000.0 ▶→ SET AllMaxZ=-1000000.0 ▶→
+   SET WallMinZ=1000000.0 ▶→
+   SET AnchorZ = (GET Cmb_StudioAnchor → Break Vector → Z) ▶→ tiếp
+
+[Guard rỗng]
+▶→ Branch(Array Length(Clones) == 0)
+     True  → SET DeltaZ(Return)=0.0 · SET Category(Return)=Floor ▶→ Return Node
+     False ▶→ tiếp
+
+[ForEach Clones — Clones đã kiểu BP_FurnitureActor, KHÔNG Cast lại (UE5 tự báo lỗi thừa)]
+LoopBody ▶→ Branch(IsValid(Array Element))
+   False → (bỏ qua, dead-end hợp lệ trong Loop Body)
+   True  ▶→ GET Array Element.PlacementSurfaceType ●→ SET stype
+           Get Actor Bounds(Target=Array Element) → Origin, BoxExtent
+              _bottom = Break Vector(Origin).Z − Break Vector(BoxExtent).Z    (Subtract)
+              _top    = Break Vector(Origin).Z + Break Vector(BoxExtent).Z    (Add)
+           SET AllMinZ = Min(AllMinZ, _bottom)
+           SET AllMaxZ = Max(AllMaxZ, _top)
+           Branch(stype == "Ceiling")                     ← Equal (Name)
+             True  → SET AnyCeiling=true → (hết, ForEach lặp tiếp)
+             False → Branch(stype == "Wall")
+                       True  → SET AnyWall=true
+                               ▶→ SET WallMinZ = Min(WallMinZ, _bottom)      ← MỞ RỘNG 20/07
+                               → (hết)
+                       False → SET HasFloor=true          ← "Floor"/None/khác đều vào đây
+                               SET FloorMinZ = Min(FloorMinZ, _bottom)
+                               → (hết)
+Completed ▶→ [tính kết quả]
+
+   — Điều kiện quyết Floor thắng — MỞ RỘNG 20/07 (Wall-priority rule):
+   ThangFloor = HasFloor AND (NOT AnyWall OR FloorMinZ < WallMinZ)
+   ("có Floor, VÀ (không có Wall, HOẶC Floor thấp hơn đáy Wall — đứng độc lập trên sàn thật,
+     không phải đồ tựa trên vật Wall như bàn thờ)")
+
+   Branch(ThangFloor)
+     True:
+        SET DeltaZ(Return)  = AnchorZ − FloorMinZ
+        SET Category(Return) = Floor
+        ▶→ Return Node
+     False:
+        — Nhóm non-Floor: margin fix — MỞ RỘNG 20/07 (không center, đáy nổi trên Anchor)
+        SET DeltaZ(Return) = (AnchorZ − AllMinZ) + 10.0
+        Branch(AnyCeiling AND NOT AnyWall)
+          True  → SET Category(Return) = Ceiling ▶→ Return Node
+          False → Branch(AnyWall AND NOT AnyCeiling)
+                    True  → SET Category(Return) = Wall  ▶→ Return Node
+                    False → SET Category(Return) = Other ▶→ Return Node
+```
+
+**Đếm Return Node:** guard rỗng + Floor + Ceiling + Wall + Other = **5 đường** tới Return
+Node — đúng L2, tránh lặp bug P1.G3 (Function trả garbage vì thiếu 1 nhánh).
+
+**2 mở rộng phát sinh từ test thật (KP2 đã duyệt trong phiên, không nằm trong task card gốc):**
+1. **Wall-priority rule** — nếu chỉ dùng `HasFloor` đơn thuần (như thiết kế Nấc 1 ban đầu), combo
+   bàn thờ (`combo_C470030D...` — 1 item Wall + 14 item Floor "đồ trên kệ") sẽ luôn thắng về
+   Floor, kéo cả cụm kể cả mount tường xuống sàn — sai vì các item Floor này là "floor tương đối
+   của cái kệ", không phải floor tuyệt đối của phòng. Fix: so `FloorMinZ` với `WallMinZ` — Floor
+   nằm cao hơn/ngang đáy Wall (đang tựa lên) → Wall thắng; Floor nằm thấp hơn hẳn (đứng độc lập,
+   vd sofa+tranh tường) → Floor vẫn thắng như cũ.
+2. **Margin fix** — công thức gốc `DeltaZ = AnchorZ − centerZ` (center bounds vào Anchor.Z) làm
+   combo extent Z lớn (bàn thờ, extent=43.8) có nửa dưới xuyên qua mặt dome (Anchor.Z chính là
+   điểm tiếp xúc vật lý đáy dome) → chìm/khuất sau mesh. Fix: đáy combo (`AllMinZ`) luôn nổi
+   TRÊN Anchor.Z + 10 unit margin, không phụ thuộc center.
+
+**Node "chờ xác nhận"** (ghi `AI_Implementation_Rules.md`, cuhoang đã confirm qua test — chuyển
+vào bảng chính): `Equal (Name)`, `Switch on E_ThumbAlignCategory` (Switch on Enum).
 
 ### GetComboThumbnail(ComboID) → Texture2D — MỚI G3
 Branch(Map Find(Cmb_ThumbnailCache, ComboID) → Value, bFound):
@@ -472,3 +563,4 @@ không giật thêm dù RT giờ 2048²).
 | 15/07/2026 | 1.6 | G2+G3+G4: class var Cmb_ThumbnailCache + Cmb_CaptureHandle. Function GetComboThumbnail (🔴 Return Node bắt buộc cả 2 nhánh — bug fix, xem DEVIATIONS) + InvalidateThumbnail. Bước 7 SaveComboFromSelection hoàn chỉnh (capture thật, nối vào bSaveOK Branch, merge về Broadcast). |
 | 17/07/2026 | 1.7 | P2 Gate A DONE: Custom Event `SpawnComboForThumbnail(ComboID, DeltaYaw=0)` mới (guard Cmb_bThumbBusy → F_LoadComboData → ForEach spawn clone sạch → Cmb_StudioClones) + chuỗi debug phím U (ground-align, BeginComboCapture/FinishComboCapture, Delay 0.5→3.0 ceiling tạm). Bug fix aliasing `Add Actor World Offset` dùng nhầm Array Element giữa 2 For Each Loop liên tiếp. Test PASS 6/7 case. |
 | 19/07/2026 | 1.8 | P2 Gate D — Noise + Aliasing Fix: class var mới `Cmb_AccumFramesLeft`/`Cmb_AccumTargetFrames` (default 24); `FinishComboCapture` tách khỏi `Delay(3.0)`, nối lại cuối Event Tick mới (mượn Tick cho temporal accumulation N frame — `AccumulateComboFrame` mỗi frame, `Set Actor Tick Enabled` bật/tắt); Event End Play mở rộng thêm `Set Actor Tick Enabled(false)` + `ResetComboAccumulation`. ⚠️ Chưa có export K2Node đối chiếu — mô tả theo hướng dẫn session, cuhoang xác nhận test PASS. Chi tiết C++: `Data/ComboSerializer_Reference.md`, `DEVIATIONS.md` 19/07/2026. |
+| 20/07/2026 | 1.9 | P2 Gate D Nấc 1 — Surface-Aware Ground-Align, Bug-CeilingGroundAlign FIXED: Function mới `ResolveThumbAlign(Clones) → DeltaZ, Category` (Enum `E_ThumbAlignCategory`) thay khối align inline đơn nhất (2 ForEach dùng `Cmb_ThumbMinZ`, đã xóa) trong chuỗi debug phím U. Phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType`, gồm 2 mở rộng phát sinh từ test thật (KP2 đã duyệt): Wall-priority rule (so `FloorMinZ` với `WallMinZ`) + margin fix (đáy nhóm non-Floor nổi trên Anchor.Z +10, không center). Switch on Category hiện là STUB (4 pin gộp chung BeginComboCapture) — tách rig riêng Ceiling/Wall là Nấc 2, backlog. Test 6/6 case PASS. Chi tiết: `DEVIATIONS.md` mục "P2 — 20/07/2026 (Nấc 1)". |

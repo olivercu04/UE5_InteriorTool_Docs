@@ -18,7 +18,7 @@
 | Bug-SaveConfirm-EmptyName | WBP_SaveComboDialog: BTN_Confirm không disable khi tên combo trống nếu user chưa gõ gì | 🟡 Trung bình-Thấp | Phát hiện REG C5.8 khối A6 (13/07) — ngoài scope C5.8, chưa fix |
 | Bug-MoveFolder-Collision | Move Folder: không check trùng tên khi đích đã có con cùng tên với folder đang move | 🟡 Trung bình | Phát hiện REG C5.8 khối A7 (13/07) — backlog, task riêng ngoài scope C5.8 |
 | Task-RegenThumbnails | Regenerate all thumbnails cho combo library cũ (sau P2.F) | 🟢 Thấp | Backlog 16/07 — combo lưu trước P2 vẫn có ảnh capture kiểu cũ (không phải Studio Look), cần công cụ batch regenerate sau khi P2 Gate F đóng |
-| Bug-DomeCurvature-FootprintRong | Dome cong (sphere) nuốt chân đồ combo footprint rộng (sofa/thảm) — ground-align tính 1 DeltaZ phẳng, không khớp mặt cầu | 🔴 Cao | Chờ Fable/Opus quyết kiến trúc (đảo ngược 1 phần Gate B) — phát hiện Gate D sweep 20/07 |
+| Bug-DomeCurvature-FootprintRong | ✅ FIXED (20/07) — dome custom (đồng nghiệp dựng) thay sphere engine, đáy phẳng bo cong bán kính ~500 unit | — | Test PASS combo Dẹt (thảm) + To (sofa 15 món, footprint lớn nhất từng có) trên dome mới. Xem DEVIATIONS mục "P2 — 20/07/2026 (Dome Custom)" |
 | Bug-CeilingGroundAlign | Combo "Cao" (surfaceType Ceiling) bị ground-align kéo xuống sàn sai, giống lỗi Tường (H1) nhưng chưa từng ghi | 🔴 Cao | Chờ Fable/Opus quyết kiến trúc, gộp cùng H1 — phát hiện Gate D sweep 20/07 |
 
 ---
@@ -335,8 +335,12 @@ Cần xác nhận thêm: Print `Radius`/`Distance` trong `BeginComboCapture` khi
 để xác nhận có cùng root cause với sofa hay là bug khác.
 
 ### Trạng thái
-- **Open.** Chờ Fable/Opus quyết kiến trúc (đảo ngược 1 phần quyết định [ARCH] Gate B đã DONE).
-  Gate D sweep tạm dừng chờ hướng đi. Xem `DEVIATIONS.md` mục "P2 — 20/07/2026".
+- **✅ FIXED 20/07/2026.** Đồng nghiệp dựng dome custom (cylinder kín, đáy bo cong, thay
+  `/Engine/BasicShapes/Sphere` cũ). Vùng đáy phẳng tuyệt đối trong bán kính ~500 unit — đủ bao
+  mọi combo Floor hiện có trong thư viện. Test PASS: combo Dẹt (thảm tròn 3200mm, fail nặng nhất
+  lần trước) + combo To (sofa 15 món, boundingBoxExtent X/Y ≈ 193/186 — trải rộng nhất từng
+  test). Cả 2 chân/đế chạm sàn phẳng, không hở/chìm ở bất kỳ góc nào. Chi tiết kiến trúc + verify
+  Cast Shadow: `DEVIATIONS.md` mục "P2 — 20/07/2026 (Dome Custom)".
 
 ---
 
