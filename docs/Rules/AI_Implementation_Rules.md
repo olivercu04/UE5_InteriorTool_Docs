@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.10 | **Cập nhật:** 19/07/2026 — thêm node chờ xác nhận `Set Actor Tick Enabled` (P2 Noise + Aliasing Fix: mượn Event Tick cho temporal accumulation)
+**Phiên bản:** 2.11 | **Cập nhật:** 20/07/2026 — thêm node chờ xác nhận `Get Texture Target` (P2 VRAM Fix: EndPlay BP_ComboManager Release Render Target 2D tường minh)
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -516,6 +516,7 @@ Sau khi 1 sprint/task lớn xong:
 | `Set Show Flag Settings` (Target=Scene Capture Component, nhận Array of `Engine Show Flags Setting`) | Tắt SkyLighting riêng cho camera capture, không đụng biến LightManager của đồng nghiệp — P2 Gate D prerequisite, 18/07/2026 | ⏳ Cần cuhoang confirm trong project |
 | `Make Engine Show Flags Setting` (Struct, pure — input Show Flag Name String case-sensitive, Enabled bool) | Build phần tử cho `Set Show Flag Settings` — P2 Gate D prerequisite, 18/07/2026 | ⏳ Cần cuhoang confirm trong project |
 | `Set Actor Tick Enabled` (Target=self, bEnabled=bool) | Bật/tắt Event Tick của `BP_ComboManager` để mượn làm vòng lặp temporal accumulation (P2 Noise Fix, 19/07/2026) — bật khi bắt đầu accumulate N frame, tắt khi đủ frame hoặc EndPlay | ⏳ Cần cuhoang confirm trong project |
+| `Get Texture Target` (Target=SceneCaptureComponent2D, từ `Get Capture Component 2D`) | Lấy RenderTarget hiện gán cho SceneCapture2D, dùng để `Release Render Target 2D` tường minh trong Event End Play — VRAM/GPU Crash Fix (P2 Gate D, 20/07/2026) | ⏳ Cần cuhoang confirm trong project |
 
 ---
 
@@ -535,3 +536,4 @@ Sau khi 1 sprint/task lớn xong:
 | 2.8 | 15/07/2026 | Thêm **L12** — Function có Return Value phải kiểm 100% exec path chạm Return Node (bài học bug `GetComboThumbnail` cross-combo thumbnail bleeding, P1.G3). Chuyển vào bảng NODE CHÍNH XÁC: `Map Remove` (bổ sung dòng Map thao tác), `Get All Actors Of Class(BaseGizmo)` (ẩn gizmo lúc capture, P1.G2), `Set Brush`/`Get Brush`/`SetBrushFromTexture` (P1.G4). |
 | 2.9 | 18/07/2026 | Thêm 5 dòng vào "Nodes chờ xác nhận" — P2 Gate D prerequisite (lighting isolation): `Set Lighting Channels` (2 bản Target khác nhau: Primitive Component / Light Component — dễ chọn nhầm vì tên giống hệt), `Get Capture Component 2D`, `Set Show Flag Settings`, `Make Engine Show Flags Setting`. Bối cảnh: xem `DEVIATIONS.md` 18/07/2026. |
 | 2.10 | 19/07/2026 | Thêm `Set Actor Tick Enabled` vào "Nodes chờ xác nhận" — P2 Noise + Aliasing Fix: mượn Event Tick của `BP_ComboManager` làm vòng lặp temporal accumulation (N=24 frame). Bối cảnh: xem `DEVIATIONS.md` mục "SPRINT 5 — 19/07/2026". |
+| 2.11 | 20/07/2026 | Thêm `Get Texture Target` vào "Nodes chờ xác nhận" — P2 Gate D VRAM/GPU Crash Fix: EndPlay `BP_ComboManager` gọi `Release Render Target 2D` tường minh trước dọn cache thumbnail. Bối cảnh: xem `DEVIATIONS.md` mục "P2 — 20/07/2026". |

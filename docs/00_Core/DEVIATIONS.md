@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 19/07/2026
+**Cập nhật:** 20/07/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -791,6 +791,100 @@ merge delta này; task gốc Gate D (Source Size Key tune + sweep 5 combo) vẫn
 
 ---
 
+## P2 — 20/07/2026 — Gate D: Rim Light + VRAM Fix + Source Size chốt + 2 bug kiến trúc mới (OPEN)
+
+### [SCOPE] Rim Light — 3-point lighting, mở rộng ngoài phạm vi Gate C
+Gate C chỉ định nghĩa 2 đèn Key/Fill. `SpawnStudioLight(AngleOffsetDeg, Intensity)` (có từ Gate
+C) gọi thêm lần thứ 3: `SpawnStudioLight(180.0, 2500000.0)` → `Cmb_StudioRimLight` (biến mới,
+RectLight Object Reference). Đã duyệt trước khi làm (KP2 — prep có chủ đích, không phải lệch
+âm thầm).
+
+Bộ số cuối cùng — chốt sau kiểm chứng ảnh thật, đổi cả `InVect` dùng chung 3 đèn so với Gate C
+gốc:
+
+| Thông số | Gate C gốc | Chốt 20/07 |
+|---|---|---|
+| InVect (offset đèn, RotateAngleAxis) | (1500, 0, 1200) | (1200, 0, 1500) |
+| Key SourceSize/Intensity/AttenRadius | 150 / 5,000,000 / 8000 | 150 / 5,000,000 / 3000 |
+| Fill SourceSize/Intensity/AttenRadius | 150 / 1,666,667 / 8000 | 150 / 1,666,667 / 3000 |
+| Rim SourceSize/Intensity/AttenRadius | (chưa có) | 150 / 2,500,000 / 3000 |
+| Post Process Exposure Compensation | 0.0 | +6.0 |
+
+Verify PASS: ảnh combo To (sofa) + Tường (bàn thờ) — bóng mềm, không hotspot, tông sáng nhất
+quán. Node flow đầy đủ: `Blueprints/Blueprint_Logic_NodeFlow.md`.
+
+Lưu ý xử lý sai lầm trong lúc tune: ban đầu nghi Fill Intensity gõ nhầm 16,666,667 (thừa 1 số
+0) — cuhoang xác nhận đây chỉ là lỗi đọc số của Sonnet lúc trình bày lại, giá trị thật luôn đúng
+1,666,667. Không phải bug thật, ghi lại để tránh nhầm lần sau khi đọc log cũ.
+
+### [BUG-FIX] ×2 — VRAM/GPU crash, EndPlay BP_ComboManager wiring sai
+Triệu chứng: GPU Crashed/D3D Device Removed sau ~10 lần PIE liên tiếp, crash cả lúc Alt+P
+Standalone. Root cause xác nhận qua đọc `ComboThumbnail.cpp` + export K2Node EndPlay (không
+phải bug C++):
+1. `Map_Clear(Cmb_ThumbnailCache)` nằm lồng trong nhánh True của
+   `Branch(IsValid(Cmb_CaptureHandle))` — chỉ chạy nếu đang capture dở dang lúc tắt PIE (hiếm).
+   90% lần tắt PIE bình thường → cache thumbnail KHÔNG BAO GIỜ được dọn, tích lũy VRAM qua
+   session.
+2. Thứ tự đọc/ghi biến sai: `SET Cmb_CaptureHandle = None` chạy TRƯỚC
+   `ResetComboAccumulation(GET Cmb_CaptureHandle)` — hàm nhận None, no-op. Buffer C++
+   (`TMap<ASceneCapture2D*, FComboAccumState>`) không được Remove, mồ côi vĩnh viễn nếu PIE tắt
+   giữa lúc accumulate.
+
+Fix: chỉ sắp xếp lại node có sẵn (Blueprint), KHÔNG đụng C++/.h — xem node flow đầy đủ trong
+`Blueprints/Blueprint_Logic_NodeFlow.md`. Verify: đọc code + đối chiếu export K2Node — CHƯA đo
+VRAM dài hạn bằng `stat rhi` (cuhoang không có thời gian chạy loop đo, theo dõi tự nhiên trong
+lúc làm việc). Node mới cần thêm vào bảng "Nodes chờ xác nhận": `Get Texture Target`.
+
+Ceiling: margin VRAM còn mỏng (đo 1 lần trong phiên — Editor rảnh 5.6GB, Alt+P Standalone →
+7.6GB, RTX 3060 8GB chỉ còn ~400MB đệm) — giới hạn kiến trúc nền (PIE chia sẻ GPU device, đã ghi
+`Bugs/Bug_GPU_VRAM_Crash.md`), fix hôm nay giảm 1 nguồn leak lớn nhưng không đổi giới hạn
+hardware. Trigger: nếu vẫn crash sau fix này → cần RenderDoc/Nsight đo sâu hơn (cùng nợ kỹ thuật
+với P1 Gate G5).
+
+### [CORRECTION] Source Size Key = 500 — chốt bằng duyệt mắt, không phải gõ nhầm
+`Cmb_KeySourceSize` = 500 (default cũ 150) — cao hơn nhiều range gợi ý ban đầu (100-300); cuhoang
+xác nhận đây là lựa chọn thẩm mỹ có chủ đích sau khi so sánh trực tiếp với ảnh IKEA tham chiếu
+(cuhoang gửi 15/07).
+
+### [ARCH — OPEN, chờ Fable/Opus] Bug #1 — Dome cong (sphere) nuốt chân đồ footprint rộng
+Root cause xác định qua đọc code + suy luận hình học: dome là sphere R=2000,
+`Location.Z = Anchor.Z + R` → mặt trong sphere càng dâng cao hơn Anchor theo bán kính ngang `r`
+(`ΔZ = R − √(R² − r²)`). Ground-align hiện tại tính 1 `DeltaZ` duy nhất cho CẢ combo (coi "sàn"
+là mặt phẳng) — nhưng mặt dome không phẳng. Combo sofa (footprint bán kính ~210) → `ΔZ ≈ 11
+unit`, đủ để dome che chân/đế ở rìa. Combo Dẹt (thảm, footprint ~204) — FAIL nặng hơn nhiều,
+nghi cùng root cause nhưng CHƯA xác nhận bằng số (chưa loại trừ khả năng item lạc đàn kéo giãn
+Bounds bất thường).
+
+Nguồn gốc kiến trúc: Gate A có sàn phẳng tạm (StaticMeshActor Plane); Gate B (17/07) bỏ hẳn
+plane này, dùng đáy dome làm sàn — hợp lý cho combo nhỏ/gọn nhưng vỡ trận với combo footprint
+rộng. Review Fable (16/07) diễn ra TRƯỚC quyết định Gate B (17/07) — root cause chưa tồn tại lúc
+review, không phải Fable bỏ sót.
+
+3 phương án đề xuất (chưa chọn — đảo ngược 1 phần quyết định [ARCH] Gate B đã DONE, cần
+Fable/Opus quyết):
+1. Thêm lại đĩa sàn phẳng nhỏ (khôi phục kiến trúc Gate A đã bỏ), bán kính đủ bao combo lớn
+   nhất thư viện, material khớp màu dome.
+2. Tăng `Cmb_StudioDomeRadius` lớn hơn nhiều (2000→5000+) — giảm độ cong tại cùng bán kính
+   footprint, không giải quyết tận gốc cho combo cực rộng tương lai.
+3. Chấp nhận known-limitation cho nhóm combo rộng — không khuyến nghị (sofa là loại phổ biến
+   nhất).
+
+Cần xác nhận thêm (chưa làm — đề xuất bước tiếp theo): Print `Radius`/`Distance` trong
+`BeginComboCapture` khi chụp lại combo Dẹt, để xác nhận có cùng root cause với sofa hay là bug
+khác. Bug ghi tại `Bugs/Open_Bugs.md`.
+
+### [ARCH — OPEN, chờ Fable/Opus] Bug #2 — Combo "Cao" (Ceiling) dính lỗi ground-align với "Tường" (H1), chưa từng ghi nhận
+Combo test "Cao" (3 item `surfaceType: "Ceiling"` — quạt trần, điều hòa âm trần): ground-align
+hiện tại kéo CẢ cụm xuống chạm "sàn" (đáy dome) — sai hoàn toàn với đồ gắn trần. Plan gốc (H1)
+chỉ ghi known-limitation cho `surfaceType: "Wall"`, chưa từng nhắc `"Ceiling"` dù chung 1 lỗi
+kiến trúc. Ảnh chụp thực tế còn cho dấu hiệu các item trong cùng combo không cùng mặt phẳng sau
+ground-align (bóng đổ tách rời) — CHƯA điều tra sâu.
+
+Đề xuất: gộp quyết định H1 (Wall) và bug này (Ceiling) cùng lúc — vd bỏ qua ground-align nếu
+TOÀN BỘ item trong combo có `surfaceType` khác `"Floor"`. Bug ghi tại `Bugs/Open_Bugs.md`.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -866,3 +960,4 @@ merge delta này; task gốc Gate D (Source Size Key tune + sweep 5 combo) vẫn
 | 17/07/2026 (cuối phiên) | Thêm section "P2 — 17/07/2026 (cuối phiên) — Gate B + Gate C DONE": Gate B [ARCH] Cast Shadow=False trên dome (quyết định quan trọng nhất, gỡ ràng buộc "đèn phải trong dome") + [SCOPE] màu dome S1 dời tối ưu cuối + [BACKLOG] faceting sphere chưa xác nhận. Gate C — 12 bug/quyết định trong `SpawnStudioLight` (Key/Fill RectLight): [BUG-FIX] InVect.X 150→1500, Mobility Stationary→Movable, Attenuation Radius 4000→8000, `bUseFixedAngle` chưa tick, `Make`→`Get/Set members in` Post Process Settings (tránh xoá Lumen override C++), thiếu IsValid(Cmb_CaptureHandle) guard; [ARCH] Cmb_StudioAnchor Default Value (0,0,0)→(500000,500000,0), HeightOffset 250→1500 (elevation 45°), đề xuất Directional Light bị Fable bác bỏ; [CORRECTION] nhầm cộng +DomeRadius vào Z đèn; [LESSON] 3-lần-sai-cùng-chỗ→STOP-hỏi-Fable bị áp dụng trễ. Verify PASS: 2 combo khác nhau → cùng góc + cùng độ sáng. |
 | 18/07/2026 | Thêm section "P2 — 18/07/2026 — Gate D prerequisite: lighting isolation": [CORRECTION] RectLight offset Z thật = 1200 (không phải 1500 như ghi trước) + tính lại khoảng cách đèn→tâm dome (~1700 < Radius 2000, đèn nằm TRONG dome, loại giả thuyết "đèn ngoài bán kính"); [BUG-FIX] Distance Field khối đặc của Sphere engine tự triệt tiêu RectLight khi Cast Shadow=True → fix bằng `SM_StudioDome` (duplicate asset riêng) + Two-Sided Distance Field Generation; [ARCH] `Set Lighting Channels` cô lập dome+đèn+furniture clone khỏi Sun/UDS (Channel 1, yêu cầu Mobility=Movable); [ARCH] `Set Show Flag Settings(SkyLighting=False)` trên Capture Component riêng — không đụng biến LightManager của đồng nghiệp; [CEILING/SUY LUẬN chưa verify] dải đen viền khung hình, dời xử lý sang đúng task Gate D. Task gốc Gate D (Source Size Key tune + sweep 5 combo) CHƯA bắt đầu. |
 | 19/07/2026 | Thêm section "SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix": [ARCH] mượn Event Tick của BP_ComboManager cho temporal accumulation (N=24 frame) thay vì subclass SceneCapture2D/FTickableGameObject — buffer `TMap<ASceneCapture2D*, FComboAccumState>` file-scope static, không lên Blueprint; [ARCH] cộng dồn temporal + downscale SSAA 2× đều ở không gian linear color, encode FColor đúng 1 lần cuối (tránh lệch sáng do gamma không cộng tuyến tính); [BUG-FIX] sửa nhầm `CreateRenderTarget2D` bản LEGACY thay vì bản thật khi áp SSAA factor (build pass nhưng ảnh sai kích thước) — bài học: 2 hàm cùng signature cần phân biệt qua field khác (`bCaptureEveryFrame`), không suy luận theo vị trí trong file. Test: noise CONFIRM, aliasing/SSAA CONFIRM DONE (cuhoang tự chạy lại checklist đầy đủ). Gán vào Gate D (tiếp nối prerequisite 18/07). |
+| 20/07/2026 | Thêm section "P2 — 20/07/2026 — Gate D: Rim Light + VRAM Fix + Source Size chốt + 2 bug kiến trúc mới (OPEN)": [SCOPE] Rim Light 3-point lighting (`Cmb_StudioRimLight` mới) + đổi InVect/SourceSize/AttenRadius cả 3 đèn + Exposure Compensation +6.0; [BUG-FIX] ×2 VRAM/GPU crash EndPlay `BP_ComboManager` (`Map_Clear` lồng sai nhánh Branch + thứ tự đọc/ghi `Cmb_CaptureHandle` khiến `ResetComboAccumulation` no-op); [CORRECTION] `Cmb_KeySourceSize`=500 chốt bằng mắt; [ARCH — OPEN] bug #1 dome cong nuốt chân đồ footprint rộng (đảo ngược 1 phần Gate B, 3 phương án chờ Fable/Opus quyết); [ARCH — OPEN] bug #2 combo Ceiling dính lỗi ground-align giống Tường (H1), chưa từng ghi trong plan — đề xuất gộp quyết định cùng H1. Gate D sweep TẠM DỪNG chờ hướng đi kiến trúc. 2 bug mới ghi `Bugs/Open_Bugs.md`. |

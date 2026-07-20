@@ -1,6 +1,6 @@
 # Open Bugs — Bugs đang mở
 **Tạo từ:** `00_Core/DEVIATIONS.md` (mục BUGS DEFERRED) + `00_Core/01_Session_State.md` (BUG CÒN MỞ) + `00_Core/02_Current_Sprint.md` (bối cảnh Gate 1)
-**Cập nhật:** 16/07/2026 — P2 backlog: Task-RegenThumbnails (mới) + K3 addendum (hạ tầng param từ P2.A)
+**Cập nhật:** 20/07/2026 — P2 Gate D sweep: 2 bug kiến trúc mới (dome curvature + Ceiling ground-align) — chờ Fable/Opus quyết
 
 ---
 
@@ -18,6 +18,8 @@
 | Bug-SaveConfirm-EmptyName | WBP_SaveComboDialog: BTN_Confirm không disable khi tên combo trống nếu user chưa gõ gì | 🟡 Trung bình-Thấp | Phát hiện REG C5.8 khối A6 (13/07) — ngoài scope C5.8, chưa fix |
 | Bug-MoveFolder-Collision | Move Folder: không check trùng tên khi đích đã có con cùng tên với folder đang move | 🟡 Trung bình | Phát hiện REG C5.8 khối A7 (13/07) — backlog, task riêng ngoài scope C5.8 |
 | Task-RegenThumbnails | Regenerate all thumbnails cho combo library cũ (sau P2.F) | 🟢 Thấp | Backlog 16/07 — combo lưu trước P2 vẫn có ảnh capture kiểu cũ (không phải Studio Look), cần công cụ batch regenerate sau khi P2 Gate F đóng |
+| Bug-DomeCurvature-FootprintRong | Dome cong (sphere) nuốt chân đồ combo footprint rộng (sofa/thảm) — ground-align tính 1 DeltaZ phẳng, không khớp mặt cầu | 🔴 Cao | Chờ Fable/Opus quyết kiến trúc (đảo ngược 1 phần Gate B) — phát hiện Gate D sweep 20/07 |
+| Bug-CeilingGroundAlign | Combo "Cao" (surfaceType Ceiling) bị ground-align kéo xuống sàn sai, giống lỗi Tường (H1) nhưng chưa từng ghi | 🔴 Cao | Chờ Fable/Opus quyết kiến trúc, gộp cùng H1 — phát hiện Gate D sweep 20/07 |
 
 ---
 
@@ -296,6 +298,72 @@ Công cụ/flow batch: với mỗi combo cũ trong `Saved/Combos/`, gọi lại
 ### Trạng thái
 - **Backlog.** Chỉ làm SAU khi P2 Gate F đóng (pipeline Studio Look ổn định). Task riêng,
   chưa có execution plan.
+
+---
+
+## Bug-DomeCurvature-FootprintRong — Dome cong nuốt chân đồ combo footprint rộng
+
+**ID:** Bug-DomeCurvature-FootprintRong
+**Phát hiện:** P2 Gate D sweep, 20/07/2026
+**Ưu tiên:** 🔴 Cao
+
+### Triệu chứng
+Combo To (sofa, footprint bán kính ~210 unit) — phần chân/đế sofa ở rìa xa tâm bị dome "nuốt"
+(che khuất bởi mặt cong dome). Combo Dẹt (thảm, footprint ~204) — lỗi nặng hơn nhiều, gần như
+mất toàn bộ hình ảnh vật thể (nghi cùng root cause, mức độ khác do tỉ lệ Radius/kích thước vật
+thể — CHƯA xác nhận bằng số).
+
+### Root cause
+Dome là sphere R=2000, `Location.Z = Anchor.Z + R` → Anchor chỉ trùng đáy dome tại ĐÚNG 1 điểm
+(tâm trục X/Y=0). Càng ra xa tâm theo bán kính ngang `r`, mặt trong sphere càng dâng cao hơn:
+`ΔZ = R − √(R² − r²)`. Ground-align hiện tại (`SpawnComboForThumbnail`) chỉ tính 1 `DeltaZ` duy
+nhất cho CẢ combo (dựa trên điểm thấp nhất), coi "sàn" là mặt phẳng — nhưng mặt dome không
+phẳng. Với combo sofa: `ΔZ ≈ 11 unit` — đủ để dome che chân/đế ở rìa.
+
+Nguồn gốc kiến trúc: Gate A có sàn phẳng tạm (StaticMeshActor Plane). Gate B (17/07) bỏ hẳn
+plane này, dùng đáy dome làm sàn — hợp lý cho combo nhỏ/gọn, vỡ trận với combo footprint rộng.
+Review Fable (16/07) diễn ra TRƯỚC quyết định Gate B (17/07) — không phải Fable bỏ sót.
+
+### Đề xuất (chưa chọn — cần Fable/Opus quyết)
+1. Thêm lại đĩa sàn phẳng nhỏ (khôi phục Gate A), bán kính đủ bao combo lớn nhất thư viện,
+   material khớp màu dome.
+2. Tăng `Cmb_StudioDomeRadius` (2000→5000+) — giảm độ cong tại cùng bán kính footprint, không
+   giải quyết tận gốc cho combo cực rộng tương lai.
+3. Chấp nhận known-limitation cho nhóm combo rộng — không khuyến nghị (sofa phổ biến nhất).
+
+Cần xác nhận thêm: Print `Radius`/`Distance` trong `BeginComboCapture` khi chụp lại combo Dẹt,
+để xác nhận có cùng root cause với sofa hay là bug khác.
+
+### Trạng thái
+- **Open.** Chờ Fable/Opus quyết kiến trúc (đảo ngược 1 phần quyết định [ARCH] Gate B đã DONE).
+  Gate D sweep tạm dừng chờ hướng đi. Xem `DEVIATIONS.md` mục "P2 — 20/07/2026".
+
+---
+
+## Bug-CeilingGroundAlign — Combo "Cao" (Ceiling) dính lỗi ground-align giống "Tường" (H1)
+
+**ID:** Bug-CeilingGroundAlign
+**Phát hiện:** P2 Gate D sweep, 20/07/2026
+**Ưu tiên:** 🔴 Cao
+
+### Triệu chứng
+Combo test "Cao" (`combo_057470B142B9C11BF66D2CBC23EFEE31` — 3 item `surfaceType: "Ceiling"`:
+quạt trần, điều hòa âm trần) — ground-align hiện tại kéo CẢ cụm xuống chạm "sàn" (đáy dome), sai
+hoàn toàn với đồ gắn trần (đáng lẽ neo phía TRÊN). Ảnh chụp thực tế còn cho dấu hiệu các item
+trong cùng combo KHÔNG cùng mặt phẳng sau ground-align (bóng đổ tách rời) — CHƯA điều tra sâu.
+
+### Root cause
+Ground-align không phân biệt `surfaceType` — áp dụng chung 1 công thức "neo xuống sàn" cho mọi
+combo. Plan gốc (H1) chỉ ghi known-limitation cho case `surfaceType: "Wall"`, case `"Ceiling"`
+chưa từng được nhắc tới dù chung 1 lỗi kiến trúc.
+
+### Đề xuất
+Gộp quyết định H1 (Wall) và bug này (Ceiling) cùng lúc — vd bỏ qua ground-align nếu TOÀN BỘ item
+trong combo có `surfaceType` khác `"Floor"`.
+
+### Trạng thái
+- **Open.** Chờ Fable/Opus quyết kiến trúc, gộp cùng lúc với H1. Gate D sweep tạm dừng chờ
+  hướng đi. Xem `DEVIATIONS.md` mục "P2 — 20/07/2026".
 
 ---
 

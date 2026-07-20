@@ -1,6 +1,6 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
-**Cập nhật:** 19/07/2026 — P2 Studio Thumbnail Gate A+B+C DONE, Gate D prerequisite (lighting isolation + noise/aliasing) fixed, task chính chưa bắt đầu | P1 Combo Thumbnail DONE về tính năng | C5.8 CHÍNH THỨC DONE (13/07)
+**Cập nhật:** 20/07/2026 — P2 Studio Thumbnail Gate D: Rim Light + VRAM fix + Source Size=500 DONE, sweep 3/5 PASS, TẠM DỪNG (2 bug kiến trúc mới OPEN, chờ Fable/Opus) | P1 Combo Thumbnail DONE về tính năng | C5.8 CHÍNH THỨC DONE (13/07)
 
 ---
 
@@ -278,7 +278,9 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
         Radius=8000) + Manual EV100 (Get/Set members in Post Process Settings) + camera H-B
         `bUseFixedAngle`. 12 bug/quyết định trong lúc làm — xem DEVIATIONS.md. Verify PASS:
         2 combo khác nhau → cùng góc + cùng độ sáng. 17/07/2026 (cuối phiên).
-  - [ ] P2.Gate D — bóng + sweep hình dáng (nhỏ/to/dẹt/cao/tường)
+  - [ ] P2.Gate D — bóng + sweep hình dáng (nhỏ/to/dẹt/cao/tường). Rim Light + VRAM EndPlay
+        fix + Source Size Key=500 DONE (20/07); sweep 3/5 PASS (Nhỏ/To/Tường) — TẠM DỪNG, 2 bug
+        kiến trúc mới OPEN (dome curvature + Ceiling ground-align), chờ Fable/Opus quyết.
   - [ ] P2.Gate E — DOF
   - [ ] P2.Gate F — nối dây thật vào SaveComboFromSelection + closure
 - [x] **C4** — WBP_ComboCard + ghost + drag-drop + CalculateComboAnchor + CTV_ComboCard. Ghost offset FIXED (Approach B). ✅ 25/06/2026
@@ -350,3 +352,4 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 17/07/2026 | **P2 Gate A DONE** — `SpawnComboForThumbnail(ComboID, DeltaYaw=0)` Custom Event mới (clone sạch: strip tag FurnitureSpawned, GroupID="", bAutoSelect/bAddToRecent=False) + chuỗi debug phím U (ground-align, BeginComboCapture/FinishComboCapture). `SpawnFurnitureCopy` +param `bAddToRecent`. Fix aliasing Add Actor World Offset (2 For Each Loop liên tiếp dùng nhầm Array Element). TEST PASS 6/7 case (case 7 dời Gate F). |
 | 17/07/2026 (cuối phiên) | **P2 Gate B + Gate C DONE.** Gate B: dome hình học (`Cmb_StudioDomeRadius`) + Cast Shadow=False (quyết định kiến trúc quan trọng nhất — gỡ ràng buộc "đèn phải đứng trong dome"); màu dome S1 + faceting sphere dời đợt tối ưu cuối. Gate C: Function mới `SpawnStudioLight(AngleOffsetDeg, Intensity)` dùng chung cho Key/Fill RectLight (Mobility=Movable bắt buộc, Attenuation Radius=8000, elevation 45°); Manual EV100 qua `Get/Set members in Post Process Settings` (không dùng `Make`, tránh ghi đè Lumen override C++); camera H-B tick `bUseFixedAngle`. 12 bug/quyết định trong lúc làm Gate C (5 vòng đoán sai vị trí đèn trước khi Fable chỉ ra root cause = Cast Shadow) — chi tiết đầy đủ: `DEVIATIONS.md`. Verify PASS: 2 combo khác nhau → cùng góc + cùng độ sáng. Tiếp theo: Gate D (bóng + sweep hình dáng). |
 | 19/07/2026 | **P2 Gate D prerequisite: Noise + Aliasing Fix DONE.** Ảnh thumbnail còn noise nặng sau lighting isolation (18/07) — `SceneCapture2D` không có temporal accumulation thực sự. Fix: `AccumulateComboFrame`/`ResetComboAccumulation` (C++ mới, `UComboThumbnail`) cộng dồn N=24 frame trong không gian linear color, mượn Event Tick `BP_ComboManager` (`Cmb_AccumFramesLeft`/`Cmb_AccumTargetFrames`); SSAA 2× supersample (RT 2048²) + box downscale, encode gamma đúng 1 lần cuối. Bug fix: sửa nhầm `CreateRenderTarget2D` bản [LEGACY]. Test: noise CONFIRM + aliasing/SSAA CONFIRM DONE. Task gốc Gate D (Source Size Key tune + sweep 5 combo) vẫn CHƯA bắt đầu. Chi tiết: `DEVIATIONS.md` mục "SPRINT 5 — 19/07/2026". |
+| 20/07/2026 | **P2 Gate D: Rim Light + VRAM Fix DONE, sweep TẠM DỪNG.** Rim Light (3-point lighting, [SCOPE] mở rộng Gate C) qua `SpawnStudioLight` gọi lần 3 + biến mới `Cmb_StudioRimLight`; đổi `InVect`/SourceSize/AttenRadius cả 3 đèn + Post Process Exposure Compensation +6.0 — verify PASS ảnh combo To+Tường. Fix VRAM/GPU crash (EndPlay `BP_ComboManager`, 2 bug wiring: `Map_Clear` lồng sai nhánh Branch + thứ tự đọc/ghi `Cmb_CaptureHandle` khiến `ResetComboAccumulation` no-op) — verify bằng đọc code + export K2Node, CHƯA đo VRAM dài hạn. `Cmb_KeySourceSize`=500 chốt bằng mắt. Sweep 5 loại combo: 3/5 PASS (Nhỏ/To/Tường), phát hiện 2 bug kiến trúc MỚI — (1) dome cong nuốt chân đồ footprint rộng (sofa PASS thẩm mỹ nhưng lộ bug, thảm FAIL nặng); (2) combo "Cao" (Ceiling) dính lỗi ground-align giống Tường (H1) nhưng chưa từng ghi trong plan. **Gate D TẠM DỪNG — chờ Fable/Opus quyết kiến trúc** (đảo ngược 1 phần quyết định Gate B) trước khi tiếp tục. Chi tiết: `DEVIATIONS.md` mục "P2 — 20/07/2026", `Bugs/Open_Bugs.md` (2 bug mới), `Blueprints/Blueprint_Logic_NodeFlow.md` v1.11. |

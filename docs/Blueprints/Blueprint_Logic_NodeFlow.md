@@ -1,6 +1,6 @@
 # Blueprint Logic — Node Flow Reference
 **HỢP NHẤT TỪ 3 file:** v1.3 base (07/06) + v1.4_patch (12/06) + v1.5_patch (15/06)
-**Phiên bản:** 1.10 | **Cập nhật:** 19/07/2026 — BP_ComboManager Gate D: Noise + Aliasing Fix (Event Tick mượn cho temporal accumulation, EndPlay mở rộng)
+**Phiên bản:** 1.11 | **Cập nhật:** 20/07/2026 — BP_ComboManager Gate D: Rim Light (3-point lighting) + VRAM/GPU Crash Fix (EndPlay wiring)
 **Mục đích:** Ghi lại thứ tự node logic để không cần chụp ảnh lại Blueprint. Full flows sống trong file BP_*.md / WBP_*.md tương ứng — file này ghi node-by-node diff và cross-BP flows.
 
 ---
@@ -1165,6 +1165,81 @@ checklist test đầy đủ).
 
 ---
 
+## BP_ComboManager — Gate D: Rim Light (3-point lighting, 20/07/2026)
+
+[SCOPE] mở rộng ngoài Gate C (chỉ định nghĩa 2 đèn Key/Fill) — đã duyệt trước khi làm. Bối cảnh
+đầy đủ: `DEVIATIONS.md` mục "P2 — 20/07/2026".
+
+Biến mới: `Cmb_StudioRimLight` (RectLight, Object Reference).
+
+### BeginPlay — thêm lần gọi SpawnStudioLight thứ 3
+```
+SpawnStudioLight(45.0, 5000000.0)   ▶→ SET Cmb_StudioKeyLight   (giữ nguyên, Gate C)
+SpawnStudioLight(-45.0, 1666667.0)  ▶→ SET Cmb_StudioFillLight  (giữ nguyên, Gate C)
+SpawnStudioLight(180.0, 2500000.0)  ▶→ SET Cmb_StudioRimLight   ← MỚI
+```
+
+### SpawnStudioLight — đổi InVect + SourceSize/AttenRadius (chốt sau kiểm chứng ảnh thật)
+```
+RotateAngleAxis(InVect=(1200.0, 0.0, 1500.0), Axis=(0,0,1))   ← ĐỔI từ (1500,0,1200) Gate C
+...(giữ nguyên: WorldLoc = Anchor + LightOffset, Mobility=Movable,
+    FindLookAtRotation về anchor)...
+Source Width/Height = 150   (giữ nguyên)
+Attenuation Radius:
+  Key  = 3000   ← ĐỔI (Gate C: 8000)
+  Fill = 3000   ← ĐỔI (Gate C: 8000)
+  Rim  = 3000   ← MỚI
+```
+Intensity truyền qua param ở BeginPlay (không đổi field function): Key=5,000,000 /
+Fill=1,666,667 / Rim=2,500,000.
+
+### Post Process — Exposure Compensation
+```
+Set members in Post Process Settings: Exposure Compensation = +6.0   ← ĐỔI (Gate C: 0.0)
+```
+
+Verify PASS: ảnh combo To (sofa) + Tường (bàn thờ) — bóng mềm, không hotspot, tông sáng nhất
+quán.
+
+---
+
+## BP_ComboManager — Gate D: VRAM/GPU Crash Fix, Event End Play (20/07/2026)
+
+Root cause: 2 bug wiring trong Event End Play có sẵn (không phải bug C++) — phân tích đầy đủ:
+`DEVIATIONS.md` mục "P2 — 20/07/2026". Fix chỉ sắp xếp lại node có sẵn.
+
+### Event End Play — sửa lại thứ tự + nhánh
+```
+Set Actor Tick Enabled(self, false)
+▶→ Cmb_CaptureHandle → Get Capture Component 2D → Get Texture Target
+▶→ Branch(IsValid(Texture Target))
+     True  ▶→ Release Render Target 2D(Texture Target) ▶→ ─┐
+     False ▶→ ─────────────────────────────────────────────┤→ Map_Clear(Cmb_ThumbnailCache)
+                                                              ▶→ Branch(IsValid(Cmb_CaptureHandle))
+                                                                   True ▶→ Reset Combo Accumulation
+                                                                        ▶→ Destroy Actor
+                                                                        ▶→ SET Cmb_CaptureHandle=None
+                                                                   False ▶→ dead-end
+```
+
+**Khác bản cũ (19/07):** trước đây `Map_Clear(Cmb_ThumbnailCache)` nằm LỒNG trong nhánh True của
+`Branch(IsValid(Cmb_CaptureHandle))` — chỉ chạy khi đang capture dở dang. Nay `Map_Clear` chạy
+VÔ ĐIỀU KIỆN (merge cả 2 nhánh Release Render Target trước khi tới Map_Clear); Branch
+IsValid(Cmb_CaptureHandle) chỉ còn gate cho `Reset Combo Accumulation`/`Destroy Actor`. Thứ tự
+đọc/ghi `Cmb_CaptureHandle` cũng sửa: `Reset Combo Accumulation` gọi TRƯỚC khi `SET
+Cmb_CaptureHandle = None` (trước đây SET chạy trước, khiến hàm nhận None → no-op).
+
+Q8: Event (không Function) | IsValid: Texture Target + Cmb_CaptureHandle đều check trước dùng |
+L2: nhánh False của cả 2 Branch dead-end HỢP LỆ (không có gì cần chạy tiếp) | No Latent | 6A:
+dọn cả RenderTarget (VRAM) lẫn buffer C++ (RAM) kể cả khi không đang capture dở dang.
+
+Node mới cần xác nhận vào `AI_Implementation_Rules.md`: `Get Texture Target`.
+
+**CHƯA verify bằng đo VRAM dài hạn** (`stat rhi` loop) — xác nhận đúng bằng đọc
+`ComboThumbnail.cpp` + đối chiếu export K2Node.
+
+---
+
 ## NODE FLOW ĐÃ CONFIRM
 
 | Node display name | Ghi chú |
@@ -1190,3 +1265,4 @@ checklist test đầy đủ).
 | 1.8 | 14/07/2026 | **BP_ComboManager — Debug capture thumbnail (phím T)**, P1 Gate G0-R: BeginPlay (Enable Input theo `bDebugTestThumb`), Keyboard Event T (guard double-trigger qua `Cmb_CaptureHandle` → `BeginComboCapture` → `Delay(3.0)` → `FinishComboCapture` → Print debug), Event End Play (R4, dọn actor nếu tắt PIE giữa Delay). Xem `DEVIATIONS.md` [ARCH] 14/07/2026 cho bối cảnh kiến trúc Begin/Finish. |
 | 1.9 | 18/07/2026 | **BP_ComboManager — Gate D prerequisite: Lighting Channels isolation.** `SpawnStudioLight`: sửa offset value (Z=1200, không phải 1500) + thêm `Set Lighting Channels` (Target=Light Component). Spawn dome: thêm `Set Mobility(Movable)` + `Set Lighting Channels` (Target=Static Mesh Component) + đổi mesh sang `SM_StudioDome` (⚠️ vị trí graph chưa export đầy đủ, cần cuhoang xác nhận). `SpawnComboForThumbnail`: thêm `Set Lighting Channels` (Target=Primitive Component) trên `FurnitureMesh` clone. `BeginComboCapture`: thêm `Get Capture Component 2D` → `Set Show Flag Settings(SkyLighting=False)` trước Delay warmup. 5 node mới đều chờ xác nhận — xem `AI_Implementation_Rules.md`. Bối cảnh đầy đủ: `DEVIATIONS.md` 18/07/2026. |
 | 1.10 | 19/07/2026 | **BP_ComboManager — Gate D: Noise + Aliasing Fix.** Class var mới `Cmb_AccumFramesLeft`/`Cmb_AccumTargetFrames` (default 24). `FinishComboCapture` tách khỏi `Delay(3.0)` — nối lại cuối Event Tick mới (mượn Tick cho temporal accumulation: `AccumulateComboFrame` mỗi frame + `Set Actor Tick Enabled` bật/tắt, node chờ xác nhận). Event End Play mở rộng: `Set Actor Tick Enabled(false)` + `ResetComboAccumulation`. ⚠️ Chưa có export K2Node đối chiếu — mô tả theo hướng dẫn session, cuhoang xác nhận test PASS (noise CONFIRM, aliasing/SSAA CONFIRM DONE). Ghi đè mô tả "Delay→chuỗi cũ" ở entry 1.9. Bối cảnh đầy đủ: `DEVIATIONS.md` 19/07/2026, `Data/ComboSerializer_Reference.md`. |
+| 1.11 | 20/07/2026 | **BP_ComboManager — Gate D: Rim Light + VRAM/GPU Crash Fix.** Rim Light [SCOPE] mở rộng Gate C: biến mới `Cmb_StudioRimLight`, `SpawnStudioLight` gọi lần 3 ở BeginPlay (`180.0, 2500000.0`); đổi `InVect` RotateAngleAxis (1500,0,1200)→(1200,0,1500), Attenuation Radius Key/Fill 8000→3000 + Rim=3000 mới, Post Process Exposure Compensation 0.0→+6.0. VRAM/GPU Crash Fix: Event End Play sắp xếp lại — `Get Texture Target` (node mới, chờ xác nhận) → `Release Render Target 2D` trước `Map_Clear(Cmb_ThumbnailCache)` (nay chạy VÔ ĐIỀU KIỆN, không còn lồng trong Branch IsValid handle) → `Reset Combo Accumulation` gọi TRƯỚC `SET Cmb_CaptureHandle=None` (trước đây SET chạy trước khiến hàm nhận None, no-op). CHƯA verify bằng đo VRAM dài hạn — xác nhận bằng đọc code + export K2Node. Bối cảnh đầy đủ: `DEVIATIONS.md` mục "P2 — 20/07/2026". |
