@@ -1,6 +1,6 @@
 # Open Bugs — Bugs đang mở
 **Tạo từ:** `00_Core/DEVIATIONS.md` (mục BUGS DEFERRED) + `00_Core/01_Session_State.md` (BUG CÒN MỞ) + `00_Core/02_Current_Sprint.md` (bối cảnh Gate 1)
-**Cập nhật:** 21/07/2026 — P2 Gate F: Feature-CanonicalStudioAngle (mới, backlog Sprint 6). Bug-DomeCurvature + Bug-CeilingGroundAlign đã FIXED 20/07 (xem mục riêng dưới)
+**Cập nhật:** 21/07/2026 — K3 (bAddToRecent) RESOLVED. P2 Gate F: Feature-CanonicalStudioAngle (mới, backlog Sprint 6). Bug-DomeCurvature + Bug-CeilingGroundAlign đã FIXED 20/07 (xem mục riêng dưới)
 
 ---
 
@@ -14,7 +14,7 @@
 | B-stale-popup | ✅ FIXED (17/06, D.T6) — Popup hiển thị thông tin đồ cũ | — | Xem mục bên dưới |
 | Bug-Pagination | ✅ FIXED (17/06, D.T9) — Furniture pagination dừng ở 7/8 thay vì 8/8 | — | Xem WBP_FurnitureInventory.md v2.6, mục Pagination |
 | Bug-Maximize | ✅ FIXED (17/06, D.T9) — BTN_Maximize không nhảy về góc trên-trái | — | Xem WBP_ResizeWindow.md v1.1 |
-| K3 | SpawnFurnitureCopy gọi AddRecentMesh unconditional → spawn combo nhồi 20 mesh lẻ vào Recent + mỗi Undo cũng nhồi | 🟡 Trung bình | Planned — Sprint 5, áp lúc đụng C2/RestoreSnapshot. Fix: param bAddToRecent |
+| K3 | ✅ RESOLVED (21/07) — pin `bAddToRecent=False` tại 2 call site còn thiếu: `RestoreSnapshot` (BP_UndoManager) + `SpawnComboByID` (BP_ComboManager) | — | Verify qua Blueprint Export Method (K2Node text) + screenshot thật. 4 case test PASS |
 | Bug-SaveConfirm-EmptyName | WBP_SaveComboDialog: BTN_Confirm không disable khi tên combo trống nếu user chưa gõ gì | 🟡 Trung bình-Thấp | Phát hiện REG C5.8 khối A6 (13/07) — ngoài scope C5.8, chưa fix |
 | Bug-MoveFolder-Collision | Move Folder: không check trùng tên khi đích đã có con cùng tên với folder đang move | 🟡 Trung bình | Phát hiện REG C5.8 khối A7 (13/07) — backlog, task riêng ngoài scope C5.8 |
 | Task-RegenThumbnails | Regenerate all thumbnails cho combo library cũ (sau P2.F) | 🟢 Thấp | Backlog 16/07 — combo lưu trước P2 vẫn có ảnh capture kiểu cũ (không phải Studio Look), cần công cụ batch regenerate sau khi P2 Gate F đóng |
@@ -235,6 +235,17 @@ Thêm `Set Position` vào cùng node `Slot as Canvas Slot(VerticalBox_0)` đang 
 ### Trạng thái
 - **Planned.** Áp lúc đụng C2/RestoreSnapshot trong Sprint 5.
 - **[16/07/2026]** Hạ tầng param `bAddToRecent` ĐÃ CÓ từ P2 Gate A Việc 1 (`docs/Plans/P2_StudioThumbnail_Execution.md`) — thêm param + Branch bọc Add Recent Mesh. Còn lại: các call site `SpawnFurnitureCopy` KHÁC (ngoài combo thumbnail) cân nhắc truyền `bAddToRecent` phù hợp (vd RestoreSnapshot → False). Chưa audit hết call site.
+- **✅ RESOLVED — 21/07/2026.** Audit đủ 2 call site còn thiếu, pin bằng Blueprint Export Method
+  (K2Node text) + screenshot thật, không đoán qua doc:
+  - `BP_UndoManager` → `RestoreSnapshot` (Step 4, trong ForEach): node `Spawn Furniture Copy` —
+    `bAddToRecent` pin `False` (trước đó mặc định `True`, chưa pin). `bAutoSelect` đã đúng `False`
+    từ G1.T2.
+  - `BP_ComboManager` → `SpawnComboByID` (Phase 3, node `Spawn Furniture Copy`) — bỏ tick
+    checkbox `Add to Recent` (trước đó có tick, chưa pin) → `False`.
+  - Paste/Duplicate: KHÔNG đụng — giữ mặc định `True` (đúng hành vi, theo plan gốc).
+  Test 4 case PASS: spawn combo 5 món → Recent không đổi; Undo/Redo → Recent không đổi; spawn 1
+  furniture từ card → Recent vẫn cập nhật (hành vi cũ); copy/paste 1 actor → Recent vẫn cập nhật
+  (hành vi cũ). Chi tiết node flow: `Blueprints/BP_UndoManager.md`, `Blueprints/BP_ComboManager.md`.
 
 ---
 

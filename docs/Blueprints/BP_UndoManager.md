@@ -1,6 +1,6 @@
 # BP_UndoManager
 **HỢP NHẤT TỪ 6 file:** v1.2 (16/05) → v1.4 (04/06) → v1.5 (07/06) → **v1.6 base** (10/06) + v1.7_patch (12/06) + v1.8_patch (15/06)
-**Phiên bản:** 1.8 | **Cập nhật:** 15/06/2026 — 20:30 ICT | Actor riêng — quản lý toàn bộ Undo/Redo
+**Phiên bản:** 1.11 | **Cập nhật:** 21/07/2026 | K3 (bAddToRecent): pin `bAddToRecent=False` tại node SpawnFurnitureCopy trong RestoreSnapshot + sửa đoạn body Step 4 stale (ghi nhầm "v1.8" nhưng vẫn mô tả spawn inline cũ, đối chiếu export K2Node thật) — Actor riêng, quản lý toàn bộ Undo/Redo
 
 > **v1.8 (Sprint 4 Bug Fix A12):** `EditModeStack` vào snapshot (Version 4 = `EditModeStackSnapshot`). Thêm `TempEditModeStack` var. Fix: Undo restore đúng edit mode state.
 > **v1.7 (Sprint 4 T8):** Thêm `ValidateEditMode()` — cắt `EditModeStack` từ group đã xoá sau Undo. Chèn vào RestoreSnapshot sau SyncGroupsToContainer.
@@ -32,6 +32,9 @@ TempGroups          : Array of S_GroupData        ← đệm cho CaptureSnapshot
 
 ← v1.8 (A12 fix):
 TempEditModeStack   : Array of String             ← đệm giống TempGroups, tránh impure-timing. KHÔNG SaveGame
+
+← v1.10 (G1.T2):
+RestoreInputMgr     : BP_FurnitureInputManager    ← cache 1 lần trước ForEach trong RestoreSnapshot Step 4, tránh Get All Actors Of Class lặp trong loop. Hard ref — ⚠️ KHÔNG thấy clear ở Event End Play (xem mục dưới), khác quy ước các hard ref khác trong file này — chưa xác nhận có phải thiếu sót hay không, ngoài phạm vi K3.
 ```
 
 ---
@@ -223,7 +226,13 @@ Entry ▶→ CLEAR LocalValid                              ← local Array of St
 
 ---
 
-## RestoreSnapshot(IndexHistory) — v1.8: VIẾT LẠI
+## RestoreSnapshot(IndexHistory) — v1.10: hợp nhất spawn path qua SpawnFurnitureCopy
+
+⚠️ **Đính chính 21/07/2026 (K3):** đoạn Step 4 dưới đây trước ghi "v1.8: VIẾT LẠI" nhưng thực ra
+là bản CŨ (spawn inline `Spawn BP_FurnitureActor → Load Asset Blocking → Set Static Mesh...`) —
+mâu thuẫn với changelog v1.10 (16/06) đã ghi đúng là gọi qua `SpawnFurnitureCopy`. Đối chiếu
+export K2Node thật (21/07/2026) xác nhận **changelog v1.10 đúng, đoạn body cũ chưa từng được
+xóa** — sửa lại cho khớp thực tế bên dưới.
 
 ```
 1. ← v1.4: DeselectAll (thay DeselectMesh):
@@ -233,18 +242,26 @@ Entry ▶→ CLEAR LocalValid                              ← local Array of St
 2. Destroy All Actors tag "FurnitureSpawned"
 
 3. CLEAR SpawnedActors
+   ← v1.10 (G1.T2): cache RestoreInputMgr (class var) = Get All Actors Of Class
+     (BP_FurnitureInputManager) → Get(0) → Cast, 1 LẦN TRƯỚC ForEach — tránh Get All Actors Of
+     Class lặp lại trong loop.
 
 4. ForEach Snapshot.Meshes (Placement):
-   Spawn BP_FurnitureActor → Load Asset Blocking → Set Static Mesh
-   SET MeshPath, SET DAPath
-   SET BP_FurnitureActor.GroupID = Placement.GroupID    ← v1.6 (restore quan hệ group)
-   GET Tags → ADD "FurnitureSpawned"   ← KHÔNG SET Tags lại
-   ADD to SpawnedActors
-   ← Restore MaterialPaths:
-   ForEach Placement.MaterialPaths (Index, Path):
-     Branch Path != "":
-       Load Asset Blocking → Cast MaterialInterface → Create DMI(FurnitureMesh, Index) → Set Material
-   SET BP_FurnitureActor.MaterialOverrides = Placement.MaterialPaths
+   SpawnFurnitureCopy(
+     self = RestoreInputMgr,
+     MeshPath = Placement.MeshPath, DAPath = Placement.DAPath,
+     SpawnLocation = Placement.Location, SpawnRotation = Placement.Rotation,
+     SpawnScale = Placement.Scale, MaterialOverrides = Placement.MaterialPaths,
+     bAutoSelect = False,     ← v1.10 (G1.T2) — bug phát hiện lúc test: từng wire nhầm True,
+                                 khiến mọi lần restore chọn hết tất cả item trong scene
+     bAddToRecent = False     ← v1.11 (K3, 21/07/2026) — Undo không nên nhồi Recent
+   ) ●→ NewActor              (output đã type BP_FurnitureActor sẵn — KHÔNG Cast thừa so plan gốc)
+   SET NewActor.GroupID = Placement.GroupID    ← v1.6 (restore quan hệ group)
+   ADD NewActor to SpawnedActors
+   ← SpawnFurnitureCopy tự lo toàn bộ: Spawn Actor, Load Mesh/Material Async, ADD tag
+     "FurnitureSpawned", áp MaterialOverrides — KHÔNG còn code inline riêng (Spawn Actor From
+     Class / Load Asset Blocking / Set Static Mesh / ForEach MaterialPaths thủ công đã XÓA, xem
+     `BP_FurnitureInputManager.md` cho thân SpawnFurnitureCopy).
 
 5. ← v1.4: Branch Snapshot.Version >= 2:
 
@@ -366,3 +383,4 @@ Event End Play →
 | 1.8 | 15/06/2026 — 20:30 ICT | **A12 fix — EditModeStack vào Undo:** S_SceneSnapshot +EditModeStackSnapshot (V4); +TempEditModeStack var. CaptureSnapshot Step 0b: SET TempEditModeStack; Make thêm EditModeStackSnapshot + Version=4. RestoreSnapshot Step 5b: SET InputManager.EditModeStack trước ValidateEditMode. End Play: CLEAR TempEditModeStack. |
 | 1.9 | 16/06/2026 — 14:10 ICT | G1.T1 — Fix B1 (Undo lần 2 không restore group state): +bIsRestoring (Boolean, KHÔNG SaveGame). RestoreSnapshot: SET True đầu hàm, SET False SAU Step 6b (merge) TRƯỚC Broadcast — vị trí bắt buộc SAU re-fire selection để chặn H1 (capture lén qua SelectActors). CaptureSnapshot: guard đầu hàm Branch(bIsRestoring) True→dead-end. Event End Play: SET False (vệ sinh session crash giữa restore). Verify: hist ổn định 16 qua 5 lần restore liên tiếp, scene/info bar đúng tại mọi điểm kể cả ranh giới Ungroup/CreateGroup. |
 | 1.10 | 16/06/2026 — 16h11p ICT | G1.T2 — Hợp nhất spawn path: RestoreSnapshot Step 4 không tự spawn inline nữa, gọi SpawnFurnitureCopy(bAutoSelect=False) qua reference cached 1 lần trước ForEach (class var RestoreInputMgr, tránh Get All Actors Of Class lặp trong loop). NewActor output đã type BP_FurnitureActor sẵn — bỏ Cast thừa so với plan gốc. Xóa toàn bộ code spawn inline cũ (Spawn Actor From Class, Load Asset Blocking, Set Static Mesh, ADD tag, restore material loop) — SpawnFurnitureCopy tự lo các bước này. Bug phát hiện trong test: bAutoSelect bị wire nhầm True → mọi lần restore chọn hết tất cả item trong scene → fix lại False. Test 5 case PASS (case crash khi tắt PIE sau Save/Load/Undo — defer Gate 2, nghi GPU/VRAM không liên quan thay đổi này). |
+| 1.11 | 21/07/2026 | **K3 (bAddToRecent) DONE.** RestoreSnapshot: pin `bAddToRecent=False` tại node SpawnFurnitureCopy (Step 4) — verify qua Blueprint Export Method (K2Node text) + screenshot thật. Test 4 case PASS (spawn combo, Undo/Redo, spawn furniture từ card, copy/paste — Recent behavior đúng cho từng case). Kèm sửa doc: đoạn body Step 4 trước ghi nhãn "v1.8: VIẾT LẠI" nhưng vẫn mô tả spawn inline cũ (mâu thuẫn với changelog v1.10 đã đúng) — đối chiếu export K2Node thật, viết lại khớp thực tế. Thêm class var `RestoreInputMgr` vào mục Variables (sót từ v1.10). Chi tiết: `DEVIATIONS.md`, `Bugs/Open_Bugs.md` mục K3. |
