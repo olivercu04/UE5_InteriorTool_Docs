@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 20/07/2026 — **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) — **P2 (Studio Thumbnail) Gate A+B+C DONE**, Gate D: Rim Light + VRAM EndPlay fix DONE, Source Size Key=500 chốt, sweep 5 combo 3/5 PASS — TẠM DỪNG (2 bug kiến trúc mới OPEN, chờ Fable/Opus quyết dome curvature + Ceiling ground-align, xem mục P2) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
+**Phiên bản:** 21/07/2026 — **P2 (Studio Thumbnail) DONE về tính năng (Gate A→F)** — Gate F nối Save flow thật + fix framing rotation-invariant. Backlog: VRAM regression (SSAA 2048² chưa đo) + Feature-CanonicalStudioAngle (Sprint 6). Debug phím U đã xóa. **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
 
 ---
 
@@ -288,37 +288,32 @@ Lưu ý phụ: trong lúc thử stat rhi, gặp crash D3D12 PageFault 1 lần (L
 7262MB) — KHỚP đúng bug đã biết Bug_GPU_VRAM_Crash.md (PIE tích lũy VRAM qua nhiều lần
 Play/Stop liên tiếp trong cùng session Editor), KHÔNG liên quan riêng combo thumbnail.
 
-### P2 (Studio Thumbnail) — plan v1.0 chốt (16/07/2026)
+### P2 (Studio Thumbnail) — DONE về tính năng (Gate A→F, 21/07/2026)
 
-Plan v1.0 tại `Plans/P2_StudioThumbnail_Execution.md` — Gate A DONE (đầu phiên 17/07, PASS 6/7,
-case 7 dời Gate F). Gate B DONE (dome hình học + Cast Shadow=False; màu dome S1 dời sang đợt
-"tối ưu cuối"). Gate C DONE (đèn Key/Fill RectLight qua `SpawnStudioLight` + Manual EV100 +
-camera H-B `bUseFixedAngle`; verify 2 combo khác nhau ra cùng góc + cùng độ sáng). Gate D
-(bóng + sweep hình dáng): prerequisite fixes DONE — lighting isolation (18/07) + noise/aliasing
-(19/07, temporal accumulation N=24 frame + SSAA 2× supersample). **20/07: Rim Light (3-point
-lighting, [SCOPE] mở rộng Gate C) DONE + VRAM/GPU crash fix (EndPlay `BP_ComboManager`, 2 bug
-wiring) DONE + Source Size Key=500 chốt. Sweep 5 loại combo: 3/5 PASS (Nhỏ/To/Tường), 2/5 FAIL —
-phát hiện 2 bug kiến trúc MỚI chưa từng ghi trong plan: (1) dome cong (sphere) nuốt chân đồ
-footprint rộng (sofa/thảm); (2) combo "Cao" (surfaceType Ceiling) dính lỗi ground-align giống
-case Tường (H1) nhưng chưa từng ghi nhận.** Nấc 1 (Bug-CeilingGroundAlign) đã DONE 20/07/2026 —
-xem đoạn ResolveThumbAlign ở trên.
-Bug-DomeCurvature đã FIXED 20/07/2026 (cùng ngày) — đồng nghiệp dựng dome custom (cylinder kín,
-đáy bo cong, vùng phẳng ~500 unit, Cast Shadow=True verify an toàn — đảo ngược Gate B cũ). Test
-PASS combo Dẹt (thảm) + To (sofa 15 món). Sweep 5 loại: 4/5 PASS chính thức (Nhỏ/To/Dẹt/Tường),
-1/5 (Cao) PASS sơ bộ bằng stack dựng tay — CHỜ combo kệ/tủ cao thật để đóng hẳn (Lựa chọn B,
-20/07). Chi tiết: `DEVIATIONS.md` mục "P2 — 20/07/2026 (Dome Custom)" và "(Sweep 5 Loại)".
-**Gate D CHƯA đóng** — còn treo case Cao, không chặn Nấc 2/Sprint kế tiếp. Chi tiết bug/quyết định kiến trúc
-Gate B/C: xem `DEVIATIONS.md` mục "P2 — 17/07/2026 (cuối phiên)"; Gate D prerequisite lighting
-isolation: xem `DEVIATIONS.md` mục "P2 — 18/07/2026"; Gate D prerequisite noise/aliasing: xem
-`DEVIATIONS.md` mục "SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix"; Gate D Rim Light + VRAM
-fix + 2 bug kiến trúc mới: xem `DEVIATIONS.md` mục "P2 — 20/07/2026" và `Bugs/Open_Bugs.md`.
+Plan v1.0 tại `Plans/P2_StudioThumbnail_Execution.md`.
 
-**Gate E (DOF) DONE 20/07/2026 (cùng ngày).** Mở rộng node Set Post Process Settings sẵn có
-(EV100) thêm Focal Distance (xấp xỉ qua Vector Distance CaptureHandle↔Anchor, do biến Distance
-C++ không xuất Blueprint) + Aperture (F-stop)=2.8 (chốt sau test đối chứng f/1.0, khớp gu ảnh
-tham chiếu IKEA). Chi tiết: DEVIATIONS mục "P2 — 20/07/2026 (Gate E)".
-**Tiếp theo: Gate F** — nối dây thật (thay chuỗi debug phím U bằng Save Combo thật, DeltaYaw
-theo hướng camera user, xóa chuỗi debug, verify end-to-end).
+- **Gate A/B/C/D:** DONE (clone pipeline, dome, lighting isolation, noise/SSAA N=24, rim light,
+  source size). Bug-DomeCurvature (dome cong nuốt chân đồ footprint rộng) + Bug-CeilingGroundAlign
+  (combo Cao chôn sàn) — cả 2 đã FIXED 20/07/2026 (dome custom + Nấc 1 `ResolveThumbAlign`). Gate
+  D sweep: 4/5 loại PASS chính thức (Nhỏ/To/Dẹt/Tường), 1/5 (Cao) PASS sơ bộ bằng stack dựng
+  tay — CHỜ combo kệ/tủ cao thật để đóng hẳn (Lựa chọn B, không chặn việc khác).
+- **Gate E (DOF):** merged trong chuỗi capture (AutoExposureBias 6.0, Fstop 1.0, FocalDistance
+  xấp xỉ qua Vector Distance).
+- **Gate F:** DONE — nối Studio pipeline vào `SaveComboFromSelection` thật (Custom Event mới
+  `BeginThumbnailCapture`); hướng xoay đúng (bearing camera→combo, `Cmb_StudioCamYaw`/
+  `Cmb_PendingUserCamYaw`); Broadcast dời sang Event Tick tail; ảnh 1024² mịn N=24 (hết bug
+  2048² thô); fix framing Radius rotation-invariant (~20%→~3-6%); debug phím U đã xóa.
+- **Backlog (defer, KHÔNG chặn):** VRAM regression stat rhi cho buffer SSAA 2048² (chưa đo lần
+  nào); double-save <4s fallback + undo/EMS/Recent sạch sau save thật (chưa test riêng);
+  Feature-CanonicalStudioAngle (góc chụp thấy mặt/lưng — Sprint 6 Polish UX, xem
+  `Bugs/Open_Bugs.md`); case Cao (Ceiling) PASS sơ bộ Lựa chọn B — KHÔNG ghi "100% full PASS".
+
+Chi tiết bug/quyết định kiến trúc từng gate: Gate A/B/C xem `DEVIATIONS.md` mục
+"P2 — 17/07/2026 (cuối phiên)"; Gate D prerequisite lighting isolation: mục "P2 — 18/07/2026";
+noise/aliasing: mục "SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix"; Rim Light/VRAM/dome
+curvature/Ceiling ground-align: mục "P2 — 20/07/2026" (+ Nấc 1 / Dome Custom / Sweep 5 Loại);
+Gate E: mục "P2 — 20/07/2026 (Gate E)"; Gate F: mục "P2 — 21/07/2026 — Gate F". `Bugs/Open_Bugs.md`
+cho trạng thái bug đóng/mở đầy đủ.
 
 Thứ tự sau P2: K1 (có thể chen trước Gate F, quyết tại F) → K3 còn lại → C9 → C6
 → C7 → C11 → C10 → Gate 2.
@@ -401,3 +396,5 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 18/07/2026 | **P2 (Studio Thumbnail) — Gate D prerequisite: lighting isolation.** Task gốc Gate D (Source Size Key tune + sweep 5 combo) chưa chạm — capture đầu tiên lỗi nặng (cháy sáng, vệt đen, bóng cứng, tông đổi theo giờ UDS), toàn phiên dành điều tra + fix 3 nguyên nhân gốc chặn: [CORRECTION] RectLight offset Z thật = 1200 (không phải 1500), đèn thật ra nằm TRONG dome (~1700 < R=2000) — loại giả thuyết "đèn ngoài bán kính"; [BUG-FIX] Distance Field khối đặc của Sphere engine tự triệt tiêu RectLight khi Cast Shadow=True → duplicate asset riêng `SM_StudioDome` + Two-Sided Distance Field Generation; [ARCH] `Set Lighting Channels` cô lập dome+đèn+furniture clone khỏi Sun/UDS (Channel 1); [ARCH] `Set Show Flag Settings(SkyLighting=False)` trên Capture Component riêng, không đụng LightManager của đồng nghiệp. Dải đen viền khung hình còn lại — [SUY LUẬN chưa verify], dời xử lý sang đúng task Gate D. Chi tiết đầy đủ: `DEVIATIONS.md` mục "P2 — 18/07/2026". Tiếp theo: tune Source Size Key + sweep 5 combo (task gốc Gate D). |
 | 19/07/2026 | **P2 (Studio Thumbnail) — Gate D prerequisite: Noise + Aliasing Fix, DONE.** Vẫn chưa chạm task gốc Gate D — ảnh thumbnail còn noise nặng (đốm blotchy nền dome + bóng mềm) sau lighting isolation 18/07, đã loại 7 giả thuyết trước khi xác định `SceneCapture2D` không có temporal accumulation thực sự (khác viewport chính). Fix: `AccumulateComboFrame`/`ResetComboAccumulation` (C++ mới, `UComboThumbnail`) cộng dồn N=24 frame trong không gian linear color, mượn Event Tick của `BP_ComboManager` (biến mới `Cmb_AccumFramesLeft`/`Cmb_AccumTargetFrames`) thay vì subclass SceneCapture2D; SSAA 2× supersample (RT 2048² khi Resolution=1024) + box downscale, encode gamma sRGB đúng 1 lần cuối. Bug fix trong lúc code: sửa nhầm `CreateRenderTarget2D` bản [LEGACY] thay vì bản thật (2 hàm cùng signature, phân biệt qua `bCaptureEveryFrame`). Test: noise CONFIRM (mịn hơn, không giật) + aliasing/SSAA CONFIRM DONE (cuhoang tự chạy lại checklist đầy đủ — kích thước ảnh đúng, không giật thêm). Chi tiết đầy đủ: `DEVIATIONS.md` mục "SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix", `Data/ComboSerializer_Reference.md`. Tiếp theo: tune Source Size Key + sweep 5 combo (task gốc Gate D, vẫn CHƯA bắt đầu). |
 | 20/07/2026 | **P2 (Studio Thumbnail) — Gate D: Rim Light + VRAM Fix DONE, Source Size=500 chốt, sweep 3/5 PASS — TẠM DỪNG.** Rim Light (3-point lighting, [SCOPE] mở rộng Gate C) qua `SpawnStudioLight` gọi lần 3 + biến mới `Cmb_StudioRimLight`; đổi `InVect`/SourceSize/AttenRadius cả 3 đèn + Post Process Exposure Compensation +6.0 — verify PASS ảnh combo To+Tường. Fix VRAM/GPU crash (EndPlay `BP_ComboManager`, 2 bug wiring: `Map_Clear` lồng sai nhánh Branch + thứ tự đọc/ghi `Cmb_CaptureHandle` khiến `ResetComboAccumulation` no-op) — verify bằng đọc code + export K2Node, CHƯA đo VRAM dài hạn. Sweep 5 loại combo: 3/5 PASS (Nhỏ/To/Tường), phát hiện 2 bug kiến trúc MỚI — (1) dome cong nuốt chân đồ footprint rộng (sofa lộ nhẹ, thảm FAIL nặng); (2) combo "Cao" (Ceiling) dính lỗi ground-align giống Tường (H1) nhưng chưa từng ghi trong plan. **Gate D TẠM DỪNG — chờ Fable/Opus quyết kiến trúc** (đảo ngược 1 phần quyết định Gate B) trước khi tiếp tục. Chi tiết: `DEVIATIONS.md` mục "P2 — 20/07/2026", `Bugs/Open_Bugs.md`, `Blueprints/Blueprint_Logic_NodeFlow.md` v1.11. |
+| 20/07/2026 (Nấc 1 + Dome Custom + Gate E) | **P2 — Bug-CeilingGroundAlign FIXED (Nấc 1, Function `ResolveThumbAlign`) + Bug-DomeCurvature FIXED (dome custom, đồng nghiệp dựng) + Gate E (DOF) DONE.** Sweep 5 loại: 4/5 PASS chính thức (Nhỏ/To/Dẹt/Tường), 1/5 (Cao) PASS sơ bộ bằng stack dựng tay — chờ combo kệ/tủ cao thật (Lựa chọn B). Gate D CHƯA đóng lúc này (còn treo case Cao) — xem entry 21/07 để biết trạng thái cuối. Chi tiết: `DEVIATIONS.md` mục "P2 — 20/07/2026 (Nấc 1)", "(Dome Custom)", "(Sweep 5 Loại)", "(Gate E)". |
+| 21/07/2026 | **P2 (Studio Thumbnail) — Gate F DONE, P2 HOÀN TẤT VỀ TÍNH NĂNG (Gate A→F).** Nối Studio pipeline vào `SaveComboFromSelection` thật (thay capture in-place P1): Custom Event mới `BeginThumbnailCapture` + `SetPendingUserCamYaw`; class var `Cmb_StudioCamYaw`(55)/`Cmb_PendingUserCamYaw`/`Cmb_PendingCaptureComboID`/`Cmb_DebugLastCaptureDistance`; Bước 7 gọi `BeginThumbnailCapture(DeltaYaw=StudioCamYaw−PendingUserCamYaw)`; Broadcast dời sang Event Tick tail (bắt buộc, pipeline async N=24). Fix framing: Radius bounding rotation-invariant (C++ `BeginComboCapture`, 235vs282→248vs263, ~20%→~3-6%). Hệ quả phụ: Save thật hết bug ảnh 2048² thô. Debug phím U + Enable Input đã xóa (`bDebugTestThumb`/`Cmb_DebugTestComboIDs`/`Cmb_DebugComboIndex` xóa theo). Backlog: VRAM regression SSAA 2048² + Feature-CanonicalStudioAngle (Sprint 6, `Bugs/Open_Bugs.md`). Chi tiết: `DEVIATIONS.md` mục "P2 — 21/07/2026 — Gate F", `BP_ComboManager.md` v1.10, `Blueprint_Logic_NodeFlow.md` v1.12. |

@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 20/07/2026
+**Cập nhật:** 21/07/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1043,6 +1043,36 @@ Combo thật chạy qua cùng pipeline.
 
 ---
 
+## P2 — 21/07/2026 — Gate F: nối Save flow thật + fix framing rotation-invariant
+
+**[ARCH] Radius bounding rotation-invariant** (`BeginComboCapture`, ComboThumbnail.cpp)
+Cũ `Bounds.GetExtent().Size()` (nửa đường chéo AABB) rotation-VARIANT → cùng combo xoay khác ra
+zoom khác (Distance 235.77 vs 282.75, ~20%). Mới `max(Dist(actor→Center)+actor.BoundsExtent.Size())`
+— bất biến xoay quanh Center. Sau: 248 vs 263 (~6% dư, Center vẫn hơi trôi).
+- **Ceiling:** đủ dùng tới khi cần góc chụp chuẩn hoá hoàn toàn (Sprint 6).
+- **Trigger nâng cấp:** làm Feature-CanonicalStudioAngle → Center có thể đổi sang
+  Cmb_StudioAnchor (tâm xoay cố định thật) → về 0% chênh.
+- **Không đụng:** chữ ký hàm, BP call sites.
+
+**[ARCH] Broadcast dời khỏi Bước 7 sang Event Tick tail**
+Bắt buộc, không phải lựa chọn: pipeline giờ async qua Tick (N=24), Bước 7 gọi
+`BeginThumbnailCapture` xong kết thúc ngay (không đợi được). Nếu Broadcast ở lại Bước 7 → chạy
+TRƯỚC khi ảnh chụp xong → card không có ảnh mới. Dời Broadcast vào Tick tail (chạy sau Finish
+thật). Nhánh False (JSON fail) vẫn Broadcast trực tiếp ở Bước 7.
+
+**[CORRECTION] FixedAngle.Yaw thật = 55, không phải 0**
+Doc cũ (BP_ComboManager §Việc 4, Blueprint_Logic_NodeFlow) ghi `FixedAngle=(Pitch=-15,Yaw=0,Roll=0)`.
+Đối chiếu export K2Node THẬT 21/07: Yaw=55. Promote thành class var `Cmb_StudioCamYaw`
+(default 55) — 1 nguồn sự thật cho cả FixedAngle lẫn công thức DeltaYaw Bước 7.
+
+**[BUG tồn tại, tự đóng nhờ Gate F] Save thật ra ảnh 2048² thô**
+Trước Gate F, Bước 7 chụp actor thật `Begin→Delay→Finish` KHÔNG qua accumulate → buffer rỗng →
+C++ fallback ReadPixels 1 frame ở RT thật 2048² (không downscale, còn noise). Không ai báo vì
+code chạy hợp lệ (không crash). Gate F chuyển Save qua pipeline Studio (Tick N=24 + SSAA
+downscale) → tự hết. Không cần task riêng.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -1122,3 +1152,4 @@ Combo thật chạy qua cùng pipeline.
 | 20/07/2026 (Nấc 1) | Thêm section "P2 — 20/07/2026 (Nấc 1) — Surface-Aware Ground-Align, Bug-CeilingGroundAlign FIXED": [ARCH] Function mới `ResolveThumbAlign(Clones) → DeltaZ, Category` thay khối align inline đơn nhất, phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType`; [SCOPE] chốt ranh giới Nấc 1 (surface-aware align) vs Nấc 2 (rig-trần below-front, backlog); [ARCH — mở rộng ngoài scope, KP2 duyệt] Wall-priority rule (so `FloorMinZ`/`WallMinZ`, phát hiện qua test combo bàn thờ thật) + margin fix (đáy non-Floor nổi trên Anchor.Z +10, không center); [DỌN] xóa `Cmb_ThumbMinZ` dead var. Test 6/6 case PASS. Bug-CeilingGroundAlign đóng — Bug-DomeCurvature vẫn Open (đồng nghiệp dựng dome custom riêng), độc lập với Nấc 1. |
 | 20/07/2026 (Dome Custom) | Thêm 2 section: "P2 — 20/07/2026 (Dome Custom) — Bug-DomeCurvature FIXED, Sweep 4/5 Loại" — [ARCH] dome custom (cylinder kín, đáy bo cong, ~500 unit vùng phẳng) thay `/Engine/BasicShapes/Sphere` (đảo ngược Gate B); [ARCH — đảo ngược Gate B] Cast Shadow=True verify an toàn trên dome mới (khác sphere cũ). Test PASS combo Dẹt (thảm) + To (sofa 15 món, worst-case footprint). "P2 — 20/07/2026 (Sweep 5 Loại)" — [SCOPE] 4/5 loại (Nhỏ/To/Dẹt/Tường) PASS chính thức; case Cao PASS sơ bộ bằng stack dựng tay (không phải combo tự nhiên) — quyết định Lựa chọn B: giữ làm bằng chứng sơ bộ, chờ combo kệ/tủ cao thật để đóng hẳn, không chặn việc khác. Bug-DomeCurvature cập nhật đồng thời `Bugs/Open_Bugs.md`. |
 | 20/07/2026 (Gate E) | Thêm section "P2 — 20/07/2026 (Gate E) — Depth of Field DONE": mở rộng node "Set members in Post Process Settings" sẵn có (Gate C) thêm Focal Distance + Aperture (F-stop), không tạo node mới; [VERIFY] plan gốc sai giả định — biến `Distance` C++ không xuất Blueprint, xấp xỉ bằng `Vector Distance(CaptureHandle, Cmb_StudioAnchor)`; Aperture=2.8 chốt sau test đối chứng f/1.0 (xác nhận pipeline chạy đúng, combo hiện có Z-spread nông nên f/2.8 blur khó thấy — đúng vật lý, không phải bug), khớp gu ảnh tham chiếu IKEA. Gate E DONE — tiếp theo Gate F (nối dây thật + closure). |
+| 21/07/2026 (Gate F) | Thêm section "P2 — 21/07/2026 — Gate F: nối Save flow thật + fix framing rotation-invariant": [ARCH] Radius bounding rotation-invariant (`max(Dist(actor→Center)+BoundsExtent.Size())` thay `Bounds.GetExtent().Size()` AABB) — zoom lệch ~20% giữa các góc xoay giảm còn ~6%; [ARCH] Broadcast dời từ Bước 7 sang Event Tick tail (bắt buộc do pipeline async N=24, không phải lựa chọn); [CORRECTION] FixedAngle.Yaw thật = 55 (không phải 0 như doc cũ), promote thành `Cmb_StudioCamYaw`; [BUG tự đóng] Save thật từng ra ảnh 2048² thô do không qua accumulate — Gate F chuyển qua đúng pipeline Studio nên tự hết. Node flow đầy đủ: `BP_ComboManager.md` v1.10, `Blueprint_Logic_NodeFlow.md`. |

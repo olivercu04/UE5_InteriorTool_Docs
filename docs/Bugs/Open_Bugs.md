@@ -1,6 +1,6 @@
 # Open Bugs — Bugs đang mở
 **Tạo từ:** `00_Core/DEVIATIONS.md` (mục BUGS DEFERRED) + `00_Core/01_Session_State.md` (BUG CÒN MỞ) + `00_Core/02_Current_Sprint.md` (bối cảnh Gate 1)
-**Cập nhật:** 20/07/2026 — P2 Gate D sweep: 2 bug kiến trúc mới (dome curvature + Ceiling ground-align) — chờ Fable/Opus quyết
+**Cập nhật:** 21/07/2026 — P2 Gate F: Feature-CanonicalStudioAngle (mới, backlog Sprint 6). Bug-DomeCurvature + Bug-CeilingGroundAlign đã FIXED 20/07 (xem mục riêng dưới)
 
 ---
 
@@ -18,8 +18,9 @@
 | Bug-SaveConfirm-EmptyName | WBP_SaveComboDialog: BTN_Confirm không disable khi tên combo trống nếu user chưa gõ gì | 🟡 Trung bình-Thấp | Phát hiện REG C5.8 khối A6 (13/07) — ngoài scope C5.8, chưa fix |
 | Bug-MoveFolder-Collision | Move Folder: không check trùng tên khi đích đã có con cùng tên với folder đang move | 🟡 Trung bình | Phát hiện REG C5.8 khối A7 (13/07) — backlog, task riêng ngoài scope C5.8 |
 | Task-RegenThumbnails | Regenerate all thumbnails cho combo library cũ (sau P2.F) | 🟢 Thấp | Backlog 16/07 — combo lưu trước P2 vẫn có ảnh capture kiểu cũ (không phải Studio Look), cần công cụ batch regenerate sau khi P2 Gate F đóng |
+| Feature-CanonicalStudioAngle | Thumbnail combo chụp theo góc user đặt+nhìn → không đồng bộ catalogue (sofa chữ U chụp trúng lưng, quạt chắn giữa). Cần "nắn về góc chuẩn" / user chọn mặt trước | 🟢 Thấp | Sprint 6 — Polish UX |
 | Bug-DomeCurvature-FootprintRong | ✅ FIXED (20/07) — dome custom (đồng nghiệp dựng) thay sphere engine, đáy phẳng bo cong bán kính ~500 unit | — | Test PASS combo Dẹt (thảm) + To (sofa 15 món, footprint lớn nhất từng có) trên dome mới. Xem DEVIATIONS mục "P2 — 20/07/2026 (Dome Custom)" |
-| Bug-CeilingGroundAlign | Combo "Cao" (surfaceType Ceiling) bị ground-align kéo xuống sàn sai, giống lỗi Tường (H1) nhưng chưa từng ghi | 🔴 Cao | Chờ Fable/Opus quyết kiến trúc, gộp cùng H1 — phát hiện Gate D sweep 20/07 |
+| Bug-CeilingGroundAlign | ✅ FIXED (20/07) — Function `ResolveThumbAlign` (Nấc 1) phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType`, thay công thức "neo xuống sàn" đơn nhất | — | Test 6/6 case PASS. Xem DEVIATIONS mục "P2 — 20/07/2026 (Nấc 1)" |
 
 ---
 
@@ -366,8 +367,48 @@ Gộp quyết định H1 (Wall) và bug này (Ceiling) cùng lúc — vd bỏ qu
 trong combo có `surfaceType` khác `"Floor"`.
 
 ### Trạng thái
-- **Open.** Chờ Fable/Opus quyết kiến trúc, gộp cùng lúc với H1. Gate D sweep tạm dừng chờ
-  hướng đi. Xem `DEVIATIONS.md` mục "P2 — 20/07/2026".
+- **✅ FIXED 20/07/2026 (Gate D Nấc 1).** Function mới `ResolveThumbAlign(Clones) → DeltaZ,
+  Category` phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType` thay vì áp 1 công
+  thức "neo xuống sàn" đơn nhất cho mọi combo — combo Ceiling giờ neo đúng phía trên thay vì bị
+  kéo chìm đáy dome. Gộp chung quyết định với case Wall (H1) như đề xuất ban đầu. Test 6/6 case
+  PASS (Floor thuần, Ceiling thuần, bàn thờ Wall+Floor lẫn, Mixed, combo cũ thiếu field,
+  Undo/Recent/EMS). Node flow: `Blueprints/BP_ComboManager.md` mục `ResolveThumbAlign`. Chi tiết
+  kiến trúc + Wall-priority rule + margin fix: `DEVIATIONS.md` mục "P2 — 20/07/2026 (Nấc 1)".
+
+---
+
+## Feature-CanonicalStudioAngle — Chuẩn hoá góc chụp thumbnail combo
+
+**ID:** Feature-CanonicalStudioAngle
+**Phát hiện:** P2 Gate F / optimize framing, 21/07/2026
+**Ưu tiên:** 🟢 Thấp — KHÔNG chặn P2/Gate F. Để dành Sprint 6 (Polish UX).
+
+### Bối cảnh
+Thumbnail combo chụp theo góc PHỤ THUỘC KÉP: (1) hướng user đặt đồ trong phòng
+(RelRotation lưu TUYỆT ĐỐI, không nắn — schema JSON v1) + (2) hướng user đứng nhìn
+lúc Save (DeltaYaw = Cmb_StudioCamYaw − Cmb_PendingUserCamYaw). Hệ quả: cùng 1 combo,
+user xoay khác nhau khi đặt → thumbnail ra góc khác → không đồng bộ catalogue (mục
+tiêu gốc P2: "cảm giác UE Content Browser").
+
+Bằng chứng trực quan (ảnh 21/07): combo phòng khách chụp ra quạt đồng chắn giữa che
+sofa; combo khác ghế + minion quay lưng ra trước. Ảnh sản phẩm thật luôn chụp "mặt trước".
+
+### Vì sao KHÔNG fix nhanh được
+Máy không có dữ liệu để tự biết "mặt trước". Schema mỗi item chỉ có
+RowName/RelLocation/RelRotation/SurfaceType — KHÔNG field nào chỉ hướng chính.
+- Đoán bằng hình học (cạnh dài nhất quay ngang): sai với sofa chữ U / combo blob.
+- Quy ước cứng theo trục combo: đồ lưu ở góc tùy ý user → trục vô nghĩa.
+- → Cách đúng DUY NHẤT: user tự chọn "mặt trước" lúc Save (UI preview xoay + chốt góc).
+  Mini-feature, cần plan riêng do Fable/Opus author — KHÔNG phải quick fix.
+
+### Trạng thái hiện tại (chấp nhận tạm)
+Sau patch Radius rotation-invariant (21/07) framing đã ổn định (Distance chênh
+235→282 giảm còn ~3-6%, mắt thường khó phân biệt). Phần "zoom" đã đủ tốt. Phần "góc
+chụp thấy mặt/lưng" (canonical angle) để Sprint 6.
+
+### Hướng làm khi vào Sprint 6 (chưa chốt)
+Cách 2 — user chọn mặt trước lúc Save: preview combo trong studio, cho xoay
+(phím/scroll), bấm "chụp từ góc này". Cần plan riêng.
 
 ---
 

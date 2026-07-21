@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.9 | **Ngày:** 20/07/2026 — 23:10 ICT | **Gate D Nấc 1 — Function `ResolveThumbAlign` (surface-aware ground-align), thay khối align inline cũ trong chuỗi debug phím U**
+**Version:** 1.10 | **Ngày:** 21/07/2026 | **Gate F — nối Studio pipeline vào Save flow thật (BeginThumbnailCapture), fix framing rotation-invariant, xóa debug phím U**
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -27,6 +27,10 @@ Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, K
 | Cmb_CaptureHandle | SceneCapture2D | Handle tạm giữa Begin/Delay/Finish (debug + Bước 7 thật) |
 | Cmb_AccumFramesLeft | Integer | Default 0. Đếm ngược frame còn lại cần accumulate — dùng ở cả Custom Event lẫn Event Tick (P2 Noise Fix, 19/07/2026) |
 | Cmb_AccumTargetFrames | Integer | Default 24. Số frame cộng dồn cho temporal accumulation — tunable ở Class Defaults, không cần build lại C++ (P2 Noise Fix, 19/07/2026) |
+| Cmb_StudioCamYaw | Float | Default 55.0. Yaw cố định camera Studio (khớp FixedAngle.Yaw thật trong BeginComboCapture — TRƯỚC đây doc ghi nhầm 0). Nguồn sự thật DUY NHẤT cho FixedAngle lẫn công thức DeltaYaw Bước 7 (P2 Gate F, 21/07/2026) |
+| Cmb_PendingUserCamYaw | Float | Default 0.0. Bearing camera→combo, chốt lúc BẤM nút Save (trước dialog mở) (P2 Gate F, 21/07/2026) |
+| Cmb_PendingCaptureComboID | String | Default "". Mang ComboID từ lúc Begin (Bước 7) sang lúc Finish (Event Tick, cách nhau N frame) (P2 Gate F, 21/07/2026) |
+| Cmb_DebugLastCaptureDistance | Float | Default 0.0. Debug-only: log khoảng cách camera→Anchor (proxy fit-radius) để verify framing. Giữ lại phục vụ Sprint 6 (P2 Gate F, 21/07/2026) |
 
 ## Functions (có local variable)
 ### GetPathToRoot_Combo(InGroupID → Path: Array String)
@@ -91,52 +95,83 @@ Custom Event (Latent — BeginComboCapture/Delay ở Việc 4 gọi từ đây).
                        → SET GroupID = "" → Array Add(Cmb_StudioClones, NewActor)
                False ▶→ dead-end (hợp lệ, Loop Body)
        F (Row not found) ▶→ dead-end (item lỗi bỏ qua, không báo — ⚠️ chưa có log skip)
-   Completed ▶→ [Việc 4 — chuỗi debug U, xem bên dưới]
+   Completed ▶→ [tiếp tục trong BeginThumbnailCapture — xem bên dưới, P2 Gate F 21/07/2026]
 ```
 
 `DeltaYaw` khai param nhưng CHƯA dùng ở Gate A (default 0) — dành cho Gate C (xoay camera H-B).
 `InputManagerRef` = class var đã cache sẵn từ BeginPlay, không Get All Actors lại.
 
-## Việc 4 — Chuỗi debug phím U (Input Event, chỉ tồn tại tới Gate F)
+## BeginThumbnailCapture(ComboID : String, DeltaYaw : Float) — MỚI P2 Gate F (21/07/2026)
 
-**Cập nhật 20/07/2026 (Gate D Nấc 1):** khối ground-align đơn nhất (2 ForEach dùng
-`Cmb_ThumbMinZ`) đã thay bằng gọi Function `ResolveThumbAlign` — xem node flow đầy đủ ở mục
-riêng bên dưới.
+**Chuỗi debug phím U (Việc 4) ĐÃ XÓA 21/07/2026** — Input Event "U" (Pressed) + Enable Input
+phục vụ phím U ở BeginPlay bị xóa toàn bộ. Khối logic spawn→align→Begin→enable-tick tách ra
+thành Custom Event `BeginThumbnailCapture` bên dưới, giờ dùng CHUNG cho Save flow thật
+(`SaveComboFromSelection` Bước 7 — xem mục Custom Events). `bDebugTestThumb` xóa (chỉ phím U
+dùng); `Cmb_DebugTestComboIDs`/`Cmb_DebugComboIndex` xóa (chỉ Tick tail debug dùng, xem mục
+Event Tick). `bDebugMode` GIỮ NGUYÊN — còn gate nhiều Print khác.
+
+Nguồn: export K2Node THẬT của Event U (cuhoang paste 21/07/2026) — đối chiếu trực tiếp trước
+khi xóa, không suy đoán. Latent (2 Delay).
 
 ```
-Input Event "U" [Pressed]
-▶→ Branch(bDebugMode)
-     True  ▶→ SpawnComboForThumbnail(ComboID="<hardcode debug>", DeltaYaw=0)
-     False ▶→ HẾT
-▶→ Delay(3.0)   ← [CEILING] xem DEVIATIONS 17/07/2026, gốc là 0.5 không đủ
-▶→ ResolveThumbAlign(Clones=Cmb_StudioClones) ●→ DeltaZ, Category      ← MỚI 20/07
-▶→ Branch(bDebugMode) True → Print "ThumbAlign Category=" + (Category→String)
-                       False → (hội tụ cùng node kế — KHÔNG chặn main flow)
-▶→ ForEach(Cmb_StudioClones)
-     LoopBody ▶→ Branch(IsValid(Array Element))
-                  True  ▶→ Add Actor World Offset(Target=Array Element,
-                             DeltaLocation=(0,0,DeltaZ), bSweep=False)
-                  False ▶→ dead-end (hợp lệ trong Loop Body)
+BeginThumbnailCapture(ComboID, DeltaYaw)
+▶→ SET Cmb_PendingCaptureComboID = ComboID          ← BẮT BUỘC đầu event (Tick tail đọc lại)
+▶→ SpawnComboForThumbnail(ComboID, DeltaYaw)
+▶→ Delay(3.0)                                       ← Delay #1 (warm-up trước align)
+▶→ ResolveThumbAlign(Clones=Cmb_StudioClones) ●→ DeltaZ, Category
+▶→ Branch(bDebugMode): True→Print "ThumbAlign Category="+Category / False→(merge)
+▶→ ForEach(Cmb_StudioClones):
+     LoopBody ▶→ Branch(IsValid(Element)):
+                  True  ▶→ Add Actor World Offset(Element, (0,0,DeltaZ), bSweep=False)
+                  False ▶→ dead-end (hợp lệ, Loop Body)
      Completed ▶→
-▶→ Switch on E_ThumbAlignCategory(Category)      ← STUB Nấc 1, 4 pin gộp chung
-     Floor / Ceiling / Wall / Other  (mỗi pin) ▶→ BeginComboCapture(Cmb_StudioClones,
-        ExtraHiddenActors=[], Resolution=1024, FitRatio=0.85, bIsolateCombo=False,
-        bUseFixedAngle=True, FixedAngle=(Pitch=-15, Yaw=0, Roll=0)) ●→ SET Cmb_CaptureHandle
-▶→ Delay(3.0)
-▶→ FinishComboCapture(Cmb_CaptureHandle, ComboID="<...>_studio", Cmb_StudioClones) ●→ bSuccess
-   ▶→ Branch(bDebugMode) True → Print "Capture " + (bSuccess?"OK":"FAIL")
-                          False → (hội tụ, không chặn)
-▶→ ForEach(Cmb_StudioClones)
-     LoopBody ▶→ Branch(IsValid) True → Destroy Actor / False → dead-end
-     Completed ▶→ Array Clear(Cmb_StudioClones)
-▶→ SET Cmb_CaptureHandle = None
-▶→ SET Cmb_bThumbBusy = False
+▶→ Switch on E_ThumbAlignCategory(Category) [4 pin Floor/Ceiling/Wall/Other — merge chung, STUB Nấc 1]
+▶→ BeginComboCapture(ComboActors=Cmb_StudioClones, ExtraHiddenActors=[](rỗng),
+     Resolution=1024, FitRatio=0.85, bIsolateCombo=false,
+     bUseFixedAngle=true, FixedAngle=Split(Pitch=-15, Yaw=Get Cmb_StudioCamYaw, Roll=0))
+     ●→ SET Cmb_CaptureHandle
+▶→ Branch(IsValid(Cmb_CaptureHandle)):
+     True  ▶→ SET ShowFlagSettings=[{"SkyLighting", Enabled=False}] (CaptureComponent2D)
+          ▶→ SET Cmb_DebugLastCaptureDistance = Vector_Distance(
+                 GetActorLocation(Cmb_CaptureHandle), Cmb_StudioAnchor)
+          ▶→ Branch(bDebugMode): True→Print "Capture Distance="+Cmb_DebugLastCaptureDistance / False→(merge)
+          ▶→ SetFieldsInStruct(PostProcessSettings):
+               AutoExposureMethod=Manual, AutoExposureBias=6.0, DepthOfFieldFstop=1.0,
+               DepthOfFieldFocalDistance = Get Cmb_DebugLastCaptureDistance   ← đọc lại từ biến (không tính Vector_Distance 2 lần)
+          ▶→ SET PostProcessSettings (CaptureComponent2D)
+          ▶→ Delay(3.0)                              ← Delay #2 (warm-up trước accumulate)
+          ▶→ ResetComboAccumulation(Cmb_CaptureHandle)
+          ▶→ SET Cmb_AccumFramesLeft = Cmb_AccumTargetFrames
+          ▶→ SetActorTickEnabled(true)               [HẾT — Tick tail lo phần còn lại]
+     False ▶→ SET Cmb_bThumbBusy = false
+          ▶→ Print "ThumbCapture: Begin None" [bDebugMode]
+          ▶→ Broadcast OnComboLibraryChanged         ← Begin fail vẫn broadcast, card fallback 🧩
 ```
+
+⚠️ Ghi chú `FixedAngle.Yaw`: node `BeginComboCapture` phải **Split Struct Pin** trên FixedAngle →
+pin Yaw con nối từ `Get Cmb_StudioCamYaw` (KHÔNG literal 55). Pitch=-15, Roll=0 giữ literal.
+
+⚠️ `Cmb_DebugLastCaptureDistance` là giá trị XẤP XỈ (Vector Distance camera→Anchor), tái dùng
+cho cả DOF FocalDistance (Gate E) lẫn debug framing — 1 nguồn, không tính 2 lần (pure
+re-evaluate).
+
+Q8: Custom Event (2 Delay latent OK, L8) | IsValid(Cmb_CaptureHandle) guard sau Begin | L2: cả 2
+nhánh IsValid kết thúc hợp lệ (True→enable tick, False→cleanup+broadcast) | Latent trong Custom
+Event | 6A: nhánh fail dọn busy+broadcast; clone destroy ở Tick tail
 
 **Ghi chú Nấc 2 (chưa làm):** Switch stub hiện gộp cả 4 Category vào cùng
 `BeginComboCapture`. Khi làm Nấc 2 (below-front key light + camera from-below cho pure
 Ceiling/Wall), tách pin Ceiling/Wall ra set lại `Cmb_StudioKeyLight`/camera FixedAngle riêng
 TRƯỚC khi merge vào BeginComboCapture — không đổi pin Floor/Other.
+
+## SetPendingUserCamYaw(Yaw : Float) — MỚI P2 Gate F (21/07/2026)
+
+1 dòng — để `WBP_FurnitureInventory` không ghi thẳng biến nội bộ ComboManager (encapsulation).
+
+```
+SetPendingUserCamYaw(Yaw)
+▶→ SET Cmb_PendingUserCamYaw = Yaw
+```
 
 ## Function `ResolveThumbAlign(Clones) → DeltaZ, Category` — MỚI Gate D Nấc 1 (20/07/2026)
 
@@ -273,12 +308,31 @@ Map Remove(Cmb_ThumbnailCache, ComboID).
 - Visibility = "Private" (default)
 - BoundingBoxExtent ← SaveCombo_BoundingExtent  ← C4
 **Bước 6:** GetCombosDir → MakeDirectory → ComboToJson → SaveStringToFile  
-**Bước 7 (G4 — hoàn chỉnh, trước là "pending C3"):** Sau SaveStringToFile → Branch(bSaveOK):
-  - True → build ExtraHiddenActors tươi (BaseGizmo + FurniturePivot) → BeginComboCapture
-    → Delay(3.0) → FinishComboCapture(ComboActors=SelectedActors) → Print debug
-  - False → (bỏ qua capture)
-  [MERGE cả 2 nhánh] → Broadcast OnComboLibraryChanged
-**Bước 8:** Broadcast OnComboLibraryChanged (gộp vào merge Bước 7 ở trên)  
+**Bước 7 (Gate F 21/07/2026 — nối Studio pipeline, ĐÈ bản G4 15/07 chụp in-place):** Sau
+SaveStringToFile → Branch(bSaveOK):
+```
+True  ▶→ BeginThumbnailCapture(
+           ComboID  = SaveCombo_ComboID,
+           DeltaYaw = Cmb_StudioCamYaw − Cmb_PendingUserCamYaw)
+        [HẾT nhánh True — KHÔNG Broadcast ở đây; Event Tick tail lo Broadcast
+         sau khi Finish capture xong]
+False ▶→ Broadcast OnComboLibraryChanged   ← JSON ghi fail vẫn broadcast (thiết kế P1)
+```
+- XÓA hẳn khối "build ExtraHiddenActors (BaseGizmo+FurniturePivot)" — camera Remote Studio ở xa
+  (500000,500000), gizmo/pivot cạnh player không lọt khung → thừa.
+- XÓA `BeginComboCapture` + `Delay(3.0)` + `FinishComboCapture(SelectedActors)` cũ ở Bước 7 — đã
+  chuyển vào `BeginThumbnailCapture` (xem mục riêng bên trên).
+- Trước Gate F, Bước 7 chụp actor THẬT tại chỗ trong phòng (P1 in-place, KHÔNG dùng Remote
+  Studio, KHÔNG qua temporal accumulation N=24) → ảnh 2048² thô 1-frame (fallback path C++ vì
+  buffer accumulate rỗng). Sau Gate F, Save thật chạy qua đúng pipeline Studio — bug tự đóng.
+
+Q8: Custom Event | không Object access mới cần guard | L2: True kết thúc hợp lệ sau 1 call (Tick
+broadcast), False broadcast rồi hết — không dead-end | Delay đã DỜI khỏi event này → không latent
+trong SaveComboFromSelection | 6A: mọi path dẫn tới đúng 1 Broadcast (True qua Tick, False trực
+tiếp)
+
+**Bước 8:** ĐÃ GỘP vào Bước 7 — nhánh False broadcast trực tiếp, nhánh True broadcast qua Event
+Tick tail (xem mục Event Tick bên dưới). Không còn bước riêng.
 
 ---
 
@@ -497,10 +551,12 @@ Branch(Cmb_SpawnedActors.Length == 0):
 ## P2 Gate D — Noise + Aliasing Fix (19/07/2026)
 
 ⚠️ Mục này mô tả theo hướng dẫn đưa trong session, cuhoang xác nhận test PASS (mịn hơn, không
-giật) — nhưng CHƯA có export K2Node để đối chiếu node-by-node. Coi graph dưới đây là mô tả dự
-kiến, không phải sự thật tuyệt đối; nếu khác graph thật, sửa lại theo graph thật. Đè lên chuỗi
-debug phím U (Việc 4, Gate A) — phần build Function/Event mới nối vào sau `Delay(3.0)` warmup,
-TRƯỚC khi gọi `FinishComboCapture` (trước đây gọi thẳng ngay sau Delay).
+giật) — nhưng CHƯA có export K2Node để đối chiếu node-by-node ở phần accumulate đầu Tick (phần
+Finish tail CUỐI đã đối chiếu export K2Node thật 21/07/2026, xem mục "SỬA 3 điểm" bên dưới). Coi
+graph accumulate là mô tả dự kiến, không phải sự thật tuyệt đối; nếu khác graph thật, sửa lại
+theo graph thật. Đè lên chuỗi build Function/Event nối vào sau `Delay(3.0)` warmup (nay là
+`Delay #2` trong `BeginThumbnailCapture`, xem mục riêng), TRƯỚC khi gọi `FinishComboCapture`
+(trước đây gọi thẳng ngay sau Delay).
 
 Bối cảnh đầy đủ (7 giả thuyết đã loại, quyết định temporal accumulation thủ công thay Viewport
 Capture, root cause SceneCapture2D không có temporal thật): xem `DEVIATIONS.md` mục
@@ -519,22 +575,42 @@ Delay(3.0) hoàn tất
 ▶→ Set Actor Tick Enabled(Target=self, bEnabled=true)
 ```
 
-### Event Tick (self) — mới
+### Event Tick (self) — mới 19/07, Finish tail SỬA 21/07/2026 (Gate F, đối chiếu export K2Node thật)
 ```
 Event Tick
 ▶→ Branch(Cmb_AccumFramesLeft <= 0)
      True  ▶→ dead-end (không accumulate → không làm gì, rẻ)
      False ▶→ AccumulateComboFrame(Cmb_CaptureHandle)
-           ▶→ SET Cmb_AccumFramesLeft = Cmb_AccumFramesLeft - 1
-           ▶→ Branch(Cmb_AccumFramesLeft <= 0)
-                True  ▶→ Set Actor Tick Enabled(self, false)
-                      ▶→ FinishComboCapture(Cmb_CaptureHandle, ComboID, ComboActors)
-                False ▶→ dead-end (chờ frame sau)
+           ▶→ SET Cmb_AccumFramesLeft = Cmb_AccumFramesLeft − 1
+           ▶→ Branch(Cmb_AccumFramesLeft <= 0):
+                True ▶→ SetActorTickEnabled(false)
+                     ▶→ FinishComboCapture(
+                           CaptureHandle = Cmb_CaptureHandle,
+                           ComboID       = Get Cmb_PendingCaptureComboID,   ← [SỬA 21/07] trước là Concat(DebugTestComboIDs[idx],"_studio")
+                           ComboActors   = Cmb_StudioClones)
+                     ▶→ Branch(bDebugMode): True→Print "Capture "+(OK/FAIL) / False→(merge)
+                     ▶→ ForEach(Cmb_StudioClones): IsValid→True→DestroyActor / False→dead-end
+                     ▶→ Array Clear(Cmb_StudioClones)
+                     ▶→ SET Cmb_CaptureHandle = None
+                     ▶→ SET Cmb_bThumbBusy = false
+                     ▶→ Broadcast OnComboLibraryChanged   ← [THÊM 21/07] cuối cùng, sau SET
+                          bThumbBusy; chạy MỌI lần Finish (kể cả capture fail — card fallback 🧩)
+                False ▶→ dead-end (chờ frame sau — hợp lệ)
 ```
+3 thay đổi so với bản 19/07 (Gate F 21/07/2026, đối chiếu export K2Node thật của Event U trước
+khi xóa):
+1. `ComboID` pin Finish: đổi từ `Concat(Cmb_DebugTestComboIDs[Cmb_DebugComboIndex], "_studio")`
+   → `Get Cmb_PendingCaptureComboID`.
+2. THÊM `Broadcast OnComboLibraryChanged` sau node cuối (`SET Cmb_bThumbBusy=false`).
+3. XÓA orphan sau khi rút dây: node Concat "_studio", GetArrayItem, Get
+   Cmb_DebugTestComboIDs, Get Cmb_DebugComboIndex. 2 biến class `Cmb_DebugTestComboIDs`/
+   `Cmb_DebugComboIndex` orphan hoàn toàn sau khi debug phím U bị xóa (1f) — đã xóa.
+
 Q8: Event Tick (self) — không phải Custom Event/Function nên dead-end tính khác | IsValid:
-`AccumulateComboFrame`/`ResetComboAccumulation` tự IsValid(CaptureHandle) trong C++ | L2:
-dead-end nhánh "chưa đủ frame" HỢP LỆ — giống Sequence.Then, Tick tự gọi lại mỗi frame |
-No Latent ✓ | 6A: EndPlay đã mở rộng (xem dưới) ✓
+`AccumulateComboFrame`/`ResetComboAccumulation` tự IsValid(CaptureHandle) trong C++, Finish tự
+IsValid nội bộ (C++) | L2: dead-end nhánh "chưa đủ frame" HỢP LỆ — giống Sequence.Then, Tick tự
+gọi lại mỗi frame | No Latent ✓ | 6A: Broadcast chạy sau MỌI Finish kể cả fail (thiết kế P1);
+EndPlay đã mở rộng (xem dưới) ✓
 
 ### Event End Play — mở rộng bắt buộc
 EndPlay hiện có (dọn `Cmb_CaptureHandle` nếu tắt PIE giữa Delay, R4 — xem Gate A Việc 5) —
@@ -564,3 +640,4 @@ không giật thêm dù RT giờ 2048²).
 | 17/07/2026 | 1.7 | P2 Gate A DONE: Custom Event `SpawnComboForThumbnail(ComboID, DeltaYaw=0)` mới (guard Cmb_bThumbBusy → F_LoadComboData → ForEach spawn clone sạch → Cmb_StudioClones) + chuỗi debug phím U (ground-align, BeginComboCapture/FinishComboCapture, Delay 0.5→3.0 ceiling tạm). Bug fix aliasing `Add Actor World Offset` dùng nhầm Array Element giữa 2 For Each Loop liên tiếp. Test PASS 6/7 case. |
 | 19/07/2026 | 1.8 | P2 Gate D — Noise + Aliasing Fix: class var mới `Cmb_AccumFramesLeft`/`Cmb_AccumTargetFrames` (default 24); `FinishComboCapture` tách khỏi `Delay(3.0)`, nối lại cuối Event Tick mới (mượn Tick cho temporal accumulation N frame — `AccumulateComboFrame` mỗi frame, `Set Actor Tick Enabled` bật/tắt); Event End Play mở rộng thêm `Set Actor Tick Enabled(false)` + `ResetComboAccumulation`. ⚠️ Chưa có export K2Node đối chiếu — mô tả theo hướng dẫn session, cuhoang xác nhận test PASS. Chi tiết C++: `Data/ComboSerializer_Reference.md`, `DEVIATIONS.md` 19/07/2026. |
 | 20/07/2026 | 1.9 | P2 Gate D Nấc 1 — Surface-Aware Ground-Align, Bug-CeilingGroundAlign FIXED: Function mới `ResolveThumbAlign(Clones) → DeltaZ, Category` (Enum `E_ThumbAlignCategory`) thay khối align inline đơn nhất (2 ForEach dùng `Cmb_ThumbMinZ`, đã xóa) trong chuỗi debug phím U. Phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType`, gồm 2 mở rộng phát sinh từ test thật (KP2 đã duyệt): Wall-priority rule (so `FloorMinZ` với `WallMinZ`) + margin fix (đáy nhóm non-Floor nổi trên Anchor.Z +10, không center). Switch on Category hiện là STUB (4 pin gộp chung BeginComboCapture) — tách rig riêng Ceiling/Wall là Nấc 2, backlog. Test 6/6 case PASS. Chi tiết: `DEVIATIONS.md` mục "P2 — 20/07/2026 (Nấc 1)". |
+| 21/07/2026 | 1.10 | P2 Gate F — nối Studio pipeline vào Save flow thật (DONE). Class var mới: `Cmb_StudioCamYaw`(55.0), `Cmb_PendingUserCamYaw`, `Cmb_PendingCaptureComboID`, `Cmb_DebugLastCaptureDistance`. Custom Event mới `BeginThumbnailCapture(ComboID, DeltaYaw)` (tách khối spawn→align→Begin→enable-tick từ debug U cũ, dùng chung Save flow) + `SetPendingUserCamYaw(Yaw)`. Bước 7 SaveComboFromSelection: THAY capture in-place P1 (chụp actor thật) bằng `BeginThumbnailCapture(SaveCombo_ComboID, DeltaYaw=Cmb_StudioCamYaw−Cmb_PendingUserCamYaw)`; Broadcast nhánh True dời xuống Event Tick tail. Event Tick tail: `ComboID` Finish đổi `Cmb_DebugTestComboIDs[idx]+"_studio"` → `Cmb_PendingCaptureComboID`; THÊM Broadcast cuối. FixedAngle.Yaw split-pin đọc `Cmb_StudioCamYaw` (giá trị thật=55, doc cũ ghi nhầm 0). XÓA debug phím U + Enable Input + `bDebugTestThumb`/`Cmb_DebugTestComboIDs`/`Cmb_DebugComboIndex`. Hệ quả phụ: Save thật hết bug 2048² thô 1-frame (giờ qua đúng N=24+SSAA). Bug framing rotation-variant Radius phát hiện+fix (C++, xem `Data/ComboSerializer_Reference.md` + `DEVIATIONS.md`). Feature-CanonicalStudioAngle ghi backlog Sprint 6 (`Bugs/Open_Bugs.md`). |

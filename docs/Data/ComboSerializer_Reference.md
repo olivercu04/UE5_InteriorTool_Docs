@@ -2,6 +2,7 @@
 **Nguồn:** `ComboSerializer.h`/`.cpp` + `ComboThumbnail.h` (cuhoang paste 14/07/2026 — source thật, không copy `.cpp` ComboThumbnail vì chưa có) + `ComboThumbnail.cpp` đoạn noise/SSAA (delta 19/07/2026, chưa phải full file paste)
 **Tạo:** 14/07/2026 — bổ sung docs/Data (3+ tuần chưa cập nhật theo Sprint 5 Combo + P1 Thumbnail)
 **Cập nhật:** 19/07/2026 — P2 Noise + Aliasing Fix: `AccumulateComboFrame`/`ResetComboAccumulation` mới, `BeginComboCapture`/`FinishComboCapture` đổi hành vi (SSAA 2× + temporal accumulation N=24)
+21/07/2026 — P2 Gate F: Radius rotation-invariant (BeginComboCapture)
 
 > File này là TÀI LIỆU THAM KHẢO — liệt kê function signature + hành vi thật từ source. Struct `FComboData`/`FComboGroupData`/`FComboItemData` xem `Data_Structures.md`.
 
@@ -130,6 +131,17 @@ dưới). ⚠️ Gotcha: file có 2 chỗ gọi `CreateRenderTarget2D` gần gi�
 (`CaptureComboThumbnail` [LEGACY] vs `BeginComboCapture` thật) — phân biệt bằng
 `bCaptureEveryFrame` (LEGACY=false, thật=true), sửa nhầm bản LEGACY vẫn build pass nhưng RT
 thật không đổi kích thước.
+
+**[UPDATED 21/07/2026, P2 Gate F — Radius rotation-invariant]** Công thức tính bán kính cầu bao
+(`Radius`) đổi để bất biến với phép xoay combo:
+- CŨ: `Radius = Bounds.GetExtent().Size()` — nửa đường chéo AABB world-space. Rotation-VARIANT:
+  combo bất đối xứng xoay chéo → AABB phình → Radius to giả → camera lùi xa → cùng combo ra 2
+  kích thước ảnh khác nhau tùy góc (đo Distance 235.77 vs 282.75, ~20%).
+- MỚI: `Radius = max( Dist(actor→Center) + actor.BoundsExtent.Size() )` over ComboActors.
+  Euclidean distance tới Center bất biến khi xoay quanh Center → Radius ổn định. Sau fix: 248 vs
+  263 (~6% dư, do Center vẫn = Bounds.GetCenter() hơi trôi — chấp nhận, xem
+  Feature-CanonicalStudioAngle Sprint 6).
+- KHÔNG đụng chữ ký hàm, KHÔNG đụng Blueprint call sites — thuần đổi công thức nội bộ.
 
 ### AccumulateComboFrame(CaptureHandle) — MỚI 19/07/2026, P2 Noise Fix
 ```cpp
