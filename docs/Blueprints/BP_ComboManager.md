@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.11 | **Ngày:** 21/07/2026 | **K3 (bAddToRecent) DONE — pin `bAddToRecent=False` tại SpawnComboByID Phase 3**
+**Version:** 1.12 | **Ngày:** 22/07/2026 | **Dimension Fix — `CalculateComboBoundingExtent` đổi `Get Actor Bounds` → `Get Local Bounds`×Scale+Location**
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -43,6 +43,13 @@ PathA = GetPathToRoot(A). Walk up từ B: nếu Contains(PathA, CurrentB) → re
 Guard Length==0 → return []. SET CurrentLCA = LeafIDs[0]. ForEach từ index 1: FindLCA_TwoGroups(CurrentLCA, leaf) → nếu "" (khác cây) ADD CurrentLCA + SET CurrentLCA=leaf; nếu != "" SET CurrentLCA=lca. Completed: ADD CurrentLCA cuối → return Result.
 
 ### CalculateComboBoundingExtent(InActors: Array\<BP_FurnitureActor\> → ReturnVec: Vector)
+
+**[SỬA 22/07/2026 — Dimension Fix]** Đổi công thức bounds. **Vấn đề cũ:** dùng `Get Actor Bounds`
+(World AABB) — hộp bao phồng to khi actor tự XOAY tại chỗ (hộp bao world-space nở ra theo góc
+xoay của mesh, dù kích thước vật lý không đổi). **Sửa:** đổi sang `Get Local Bounds` (bounds
+trong không gian local mesh, KHÔNG bị Actor Rotation ảnh hưởng) × Scale + Actor Location, thay
+cho `Get Actor Bounds`.
+
 Branch(InActors.Length == 0):
 - True → Make Vector(0,0,0) → Return
 
@@ -53,20 +60,50 @@ Branch(InActors.Length == 0):
 
   ForEach ActorsCopy → Loop Body:
     Branch(IsValid(actor)):
-      False → dead-end
+      False → dead-end (skip actor này, ForEach tự sang phần tử tiếp — HỢP LỆ, đây là Loop Body
+               của ForEachLoop macro, không phải Event chain nên KHÔNG phải fatal dead-end)
       True  →
-        Get Actor Bounds(bOnlyCollidingComponents=False) → Origin, BoxExtent
-        Break Vector(Origin) → OX, OY, OZ
-        Break Vector(BoxExtent) → EX, EY, EZ
-        MinX = Min(float)(MinX, OX-EX)
-        MinY = Min(float)(MinY, OY-EY)
-        MinZ = Min(float)(MinZ, OZ-EZ)
-        MaxX = Max(float)(MaxX, OX+EX)
-        MaxY = Max(float)(MaxY, OY+EY)
-        MaxZ = Max(float)(MaxZ, OZ+EZ)
+        GET FurnitureMesh(actor) → StaticMeshComponent
+        StaticMeshComponent.Get Local Bounds ●→ LocalMin, LocalMax
+        GET actor.GetActorScale3D() ●→ Scale
+        ScaledMin = LocalMin × Scale   (Multiply_VectorVector, element-wise)
+        ScaledMax = LocalMax × Scale
+        GET actor.GetActorLocation() ●→ Loc
+        WorldMin = Loc + ScaledMin
+        WorldMax = Loc + ScaledMax
+        MinX = FMin(MinX, WorldMin.X)  |  MaxX = FMax(MaxX, WorldMax.X)
+        MinY = FMin(MinY, WorldMin.Y)  |  MaxY = FMax(MaxY, WorldMax.Y)
+        MinZ = FMin(MinZ, WorldMin.Z)  |  MaxZ = FMax(MaxZ, WorldMax.Z)
 
   Completed →
     Make Vector(X=(MaxX-MinX)/2, Y=(MaxY-MinY)/2, Z=(MaxZ-MinZ)/2) → Return
+
+**Node mới cần confirm vào bảng chính (`AI_Implementation_Rules.md`):** `Get Local Bounds`
+(StaticMeshComponent → Min, Max Vector) — bounds trong không gian LOCAL của mesh (chưa nhân
+Scale/Rotation), dùng khi cần đo kích thước vật lý thật của mesh, không bị Actor Rotation làm
+phồng to (khác `Get Actor Bounds`, vốn là World AABB nên actor xoay 45° sẽ tự nở hộp bao).
+
+**Giới hạn đã biết (KHÔNG fix trong task này):** công thức trên fix đúng trường hợp 1 MÓN tự
+xoay tại chỗ, nhưng KHÔNG fix trường hợp CẢ ĐỘI HÌNH combo xoay lệch so với trục thế giới — AABB
+world-axis vẫn phồng ra theo hướng đặt combo trong phòng (bản chất toán học của AABB, không phải
+bug). Đo thực tế 2 combo giống hệt nhau chỉ khác hướng đặt:
+```
+Combo gốc:  BoundingBoxExtent = (147.25, 101.43, 52.32) → Card: 2.9×2.0×1.0m — 6.0m²
+Combo xoay: BoundingBoxExtent = (140.75, 145.81, 52.32) → Card: 2.8×2.9×1.0m — 8.2m²
+```
+Chấp nhận tạm — xem `Bugs/Open_Bugs.md` mục Feature-CanonicalStudioAngle để biết hướng fix triệt
+để (Sprint 6, cần field `ReferenceYaw` chưa có trong schema).
+
+**Ảnh hưởng phạm vi:** hàm này dùng ở CẢ 2 chỗ — field `BoundingBoxExtent` lưu vào combo JSON
+lúc Save (Bước 5e, `SaveComboFromSelection`) VÀ gián tiếp Card đọc field đó (`WBP_ComboCard.md`
+mục Field Kích thước). Combo lưu **từ giờ trở đi** dùng công thức mới; combo **đã lưu trước
+22/07/2026** giữ nguyên số cũ (sai) cho tới khi user Save lại — KHÔNG có migrate hàng loạt tự
+động (quyết định cuhoang, ghi backlog nếu cần sau).
+
+**Test PASS (22/07/2026):**
+1. Combo có đồ xoay lệch trục (ghế 45°, sofa 90°) → số Card khớp kích thước thật, không phồng.
+2. Combo cũ Save trước khi sửa → vẫn hiện số cũ (đúng hành vi đã thống nhất, không phải bug).
+3. Combo toàn đồ không xoay → số gần giống bản `Get Actor Bounds` cũ (không lệch bất thường).
 
 ## SpawnComboForThumbnail(ComboID : String, DeltaYaw : Float = 0) — MỚI P2 Gate A (17/07/2026)
 
@@ -642,3 +679,4 @@ không giật thêm dù RT giờ 2048²).
 | 20/07/2026 | 1.9 | P2 Gate D Nấc 1 — Surface-Aware Ground-Align, Bug-CeilingGroundAlign FIXED: Function mới `ResolveThumbAlign(Clones) → DeltaZ, Category` (Enum `E_ThumbAlignCategory`) thay khối align inline đơn nhất (2 ForEach dùng `Cmb_ThumbMinZ`, đã xóa) trong chuỗi debug phím U. Phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType`, gồm 2 mở rộng phát sinh từ test thật (KP2 đã duyệt): Wall-priority rule (so `FloorMinZ` với `WallMinZ`) + margin fix (đáy nhóm non-Floor nổi trên Anchor.Z +10, không center). Switch on Category hiện là STUB (4 pin gộp chung BeginComboCapture) — tách rig riêng Ceiling/Wall là Nấc 2, backlog. Test 6/6 case PASS. Chi tiết: `DEVIATIONS.md` mục "P2 — 20/07/2026 (Nấc 1)". |
 | 21/07/2026 | 1.10 | P2 Gate F — nối Studio pipeline vào Save flow thật (DONE). Class var mới: `Cmb_StudioCamYaw`(55.0), `Cmb_PendingUserCamYaw`, `Cmb_PendingCaptureComboID`, `Cmb_DebugLastCaptureDistance`. Custom Event mới `BeginThumbnailCapture(ComboID, DeltaYaw)` (tách khối spawn→align→Begin→enable-tick từ debug U cũ, dùng chung Save flow) + `SetPendingUserCamYaw(Yaw)`. Bước 7 SaveComboFromSelection: THAY capture in-place P1 (chụp actor thật) bằng `BeginThumbnailCapture(SaveCombo_ComboID, DeltaYaw=Cmb_StudioCamYaw−Cmb_PendingUserCamYaw)`; Broadcast nhánh True dời xuống Event Tick tail. Event Tick tail: `ComboID` Finish đổi `Cmb_DebugTestComboIDs[idx]+"_studio"` → `Cmb_PendingCaptureComboID`; THÊM Broadcast cuối. FixedAngle.Yaw split-pin đọc `Cmb_StudioCamYaw` (giá trị thật=55, doc cũ ghi nhầm 0). XÓA debug phím U + Enable Input + `bDebugTestThumb`/`Cmb_DebugTestComboIDs`/`Cmb_DebugComboIndex`. Hệ quả phụ: Save thật hết bug 2048² thô 1-frame (giờ qua đúng N=24+SSAA). Bug framing rotation-variant Radius phát hiện+fix (C++, xem `Data/ComboSerializer_Reference.md` + `DEVIATIONS.md`). Feature-CanonicalStudioAngle ghi backlog Sprint 6 (`Bugs/Open_Bugs.md`). |
 | 21/07/2026 | 1.11 | K3 (bAddToRecent) DONE — `SpawnComboByID` Phase 3 (Sub-step C): pin `bAddToRecent=False` tại node `SpawnFurnitureCopy` (trước đó checkbox "Add to Recent" có tick, chưa pin — cùng loại thiếu sót đã fix ở `RestoreSnapshot`/BP_UndoManager). Verify qua Blueprint Export Method (K2Node text) + screenshot thật, không đoán qua doc. Test 4 case PASS (spawn combo, Undo/Redo, spawn furniture từ card, copy/paste). Chi tiết: `Bugs/Open_Bugs.md` mục K3, `Blueprints/BP_UndoManager.md` v1.11. |
+| 22/07/2026 | 1.12 | Dimension Fix — `CalculateComboBoundingExtent` đổi `Get Actor Bounds` (World AABB, phồng khi actor tự xoay tại chỗ) → `Get Local Bounds`×Scale+Location (bounds local mesh, không bị Actor Rotation ảnh hưởng). Node mới `Get Local Bounds` chờ xác nhận (`AI_Implementation_Rules.md`). Giới hạn còn lại: cả đội hình combo xoay lệch trục vẫn phồng theo World AABB — merge backlog `Feature-CanonicalStudioAngle` (Sprint 6, cần field `ReferenceYaw`). Combo lưu trước 22/07/2026 giữ số cũ, không migrate hàng loạt. Test 3 case PASS. Ảnh hưởng: `WBP_ComboCard.md` mục Field Kích thước đọc field này. |

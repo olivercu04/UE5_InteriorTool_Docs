@@ -422,6 +422,28 @@ chụp thấy mặt/lưng" (canonical angle) để Sprint 6.
 Cách 2 — user chọn mặt trước lúc Save: preview combo trong studio, cho xoay
 (phím/scroll), bấm "chụp từ góc này". Cần plan riêng.
 
+> **[MỞ RỘNG PHẠM VI 22/07/2026]** Cùng gốc vấn đề với giới hạn OBB của
+> `CalculateComboBoundingExtent` (xem `Blueprints/BP_ComboManager.md` mục Dimension Fix,
+> 22/07/2026): Card Dimension hiện tính AABB theo trục THẾ GIỚI nên kích thước dao động theo
+> hướng đặt combo trong phòng (đo thực tế: 6.0m² vs 8.2m² cùng 1 combo, chỉ khác hướng xoay).
+>
+> Cả 2 vấn đề (thumbnail chụp sai góc + Card dimension dao động) đều thiếu ĐÚNG 1 miếng dữ liệu:
+> **`ReferenceYaw`** — góc tham chiếu "hướng chuẩn" của combo, chưa từng lưu trong schema.
+>
+> Khi làm feature này ở Sprint 6 (UI cho user chọn "mặt trước" lúc Save, xoay preview + chốt góc
+> — xem "Hướng làm khi vào Sprint 6" ở trên), field `ReferenceYaw` sinh ra lúc đó PHẢI dùng lại
+> cho CẢ 2 mục đích:
+> 1. Thumbnail: góc camera chuẩn (thay `DeltaYaw` tính từ hướng user đứng nhìn ngẫu nhiên hiện
+>    tại).
+> 2. Card Dimension: xoay ngược toàn bộ điểm actor quanh `ReferenceYaw` trước khi tính Min/Max
+>    (Oriented Bounding Box theo trục combo, thay AABB theo trục thế giới) — L/W/H bất biến theo
+>    hướng đặt combo trong phòng.
+>
+> KHÔNG làm OBB tạm bợ riêng cho Card (vd dùng Yaw món neo) trước khi feature này chốt — tránh
+> làm 2 lần, có thể ra 2 hướng tham chiếu khác nhau gây rối.
+
+Mức ưu tiên giữ nguyên 🟢 Thấp / Sprint 6 — không đổi mức ưu tiên, chỉ mở rộng mô tả.
+
 ---
 
 ## Note-DuplicateComboID — Copy tay file JSON → duplicate comboId

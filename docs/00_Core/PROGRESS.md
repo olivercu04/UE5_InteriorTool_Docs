@@ -330,6 +330,7 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
       "Note-DuplicateComboID". File mới: `Blueprints/BP_FurnitureUserPrefsManager.md`. Xem
       `01_Session_State.md` mục C6.
 - [ ] **C7** — WBP_ComboDetailPopup (thumbnail thật)
+- [x] **Field Kích thước Card** — DONE (22/07/2026)
 ──── **Giai đoạn 2: đặt/thay combo mượt** ────
 - [ ] **WBP_Toast (K1)** — TIÊN QUYẾT trước C8: text + tự ẩn 2-3s, FText
 - [x] **C8** — Drag-drop + surface-snap ✅ **MERGED vào C4** (24/06/2026)

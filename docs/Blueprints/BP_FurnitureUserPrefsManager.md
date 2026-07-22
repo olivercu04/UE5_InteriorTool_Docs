@@ -1,5 +1,5 @@
 # BP_FurnitureUserPrefsManager — Blueprint Logic
-**Version:** 1.0 | **Ngày:** 22/07/2026 | **Tạo mới — bug fix `AddRecentCombo` dead-end (C6)**
+**Version:** 1.1 | **Ngày:** 22/07/2026 (tiếp) | **+`RemoveRecentCombo` (Delete Combo)**
 
 ⚠️ File này TẠO MỚI 22/07/2026, chỉ ghi phần đã xác nhận qua export K2Node thật (đoạn bug fix
 `AddRecentCombo` bên dưới). KHÔNG phải tài liệu đầy đủ của cả class — các function/variable khác
@@ -53,8 +53,21 @@ sai lệch tài liệu, không phải bug.
 
 ---
 
+## `RemoveRecentCombo(ComboID : String)` — MỚI, Delete Combo (22/07/2026)
+
+Cùng pattern `AddRecentCombo` (thao tác lên `RecentComboIDs` trong `BP_UserPreferencesSave` nội
+bộ), bỏ đoạn Insert/dedup/cap-trim, thay bằng:
+```
+Array_Remove(RecentComboIDs, ComboID) → SET lại vào SaveGame object → Call SaveUserPrefs
+```
+Gọi từ `WBP_FurnitureInventory.HandleDeleteComboConfirmed` khi xóa combo — dọn Recent để combo
+đã xóa không còn xuất hiện ở tab Recent.
+
+---
+
 ## Lịch sử cập nhật
 
 | Ngày | Version | Nội dung |
 |------|---------|----------|
 | 22/07/2026 | 1.0 | Tạo mới. Bug fix `AddRecentCombo` dead-end: `Call SaveUserPrefs` rút khỏi nhánh `True` của `Branch(RecentComboIDs.Length > 48)`, merge cả 2 nhánh cùng trỏ vào — trước đó chỉ save khi Recent vượt cap 48, mọi test thực tế (< 48 combo) không bao giờ ghi xuống đĩa. Ghi chú phụ: cap thật = 48, không phải 20 như `UX_Phase2_Plan.md`. Test PASS: spawn combo → tắt PIE → mở lại → Recent giữ đúng. Bối cảnh đầy đủ: `01_Session_State.md` mục C6 (22/07/2026), `Bugs/Open_Bugs.md`. |
+| 22/07/2026 (tiếp) | 1.1 | Function mới `RemoveRecentCombo(ComboID)` — cùng pattern `AddRecentCombo`, bỏ đoạn Insert/dedup/cap-trim, thay bằng `Array_Remove` + `SaveUserPrefs`. Gọi từ `WBP_FurnitureInventory.HandleDeleteComboConfirmed` (Delete Combo feature, 5/5 test PASS). |

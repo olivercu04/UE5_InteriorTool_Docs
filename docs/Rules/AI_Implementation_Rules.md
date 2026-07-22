@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.11 | **Cập nhật:** 20/07/2026 — thêm node chờ xác nhận `Get Texture Target` (P2 VRAM Fix: EndPlay BP_ComboManager Release Render Target 2D tường minh)
+**Phiên bản:** 2.13 | **Cập nhật:** 22/07/2026 — thêm node đã confirm `To Text (Float)` (Field Kích thước Combo Card) + node chờ xác nhận `Get Local Bounds` (Dimension Fix)
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -261,6 +261,7 @@ Dùng đúng tên này, KHÔNG bịa tên khác:
 | `Switch on ETextCommit` | Branch theo enum ETextCommit. **Selection pin PHẢI nối CommitMethod** — không nối → mọi commit vào Default → event không fire. ✅ C5.2 27/06 | Default pin (nếu Selection không nối) |
 | `ForEachLoopWithBreak` | ForEach có thêm Break output pin để thoát sớm. Dùng để tìm node theo FolderPath. ✅ C5.2 27/06 | ForEach (thiếu Break) |
 | `Remove Item(Array, Item)` | Xóa 1 element khỏi array theo value. Dùng để loại self ra khỏi SiblingNames. ✅ C5.2 27/06 | |
+| `To Text (Float)` | Ép số thập phân về đúng N chữ số trước khi ghép vào `Format Text` (Format Text tự convert float→text mặc định nếu không ép trước, có thể ra quá nhiều chữ số lẻ). Params: Rounding Mode (default Half to Even), Always Sign, Use Grouping, Minimum/Maximum Integral/Fractional Digits. ✅ xác nhận qua screenshot editor thật 22/07/2026 — Field Kích thước Combo Card | |
 
 ⚠️ Khi gặp node mới chưa có trong bảng → cuhoang xác nhận, rồi thêm vào bảng này.
 
@@ -517,6 +518,7 @@ Sau khi 1 sprint/task lớn xong:
 | `Make Engine Show Flags Setting` (Struct, pure — input Show Flag Name String case-sensitive, Enabled bool) | Build phần tử cho `Set Show Flag Settings` — P2 Gate D prerequisite, 18/07/2026 | ⏳ Cần cuhoang confirm trong project |
 | `Set Actor Tick Enabled` (Target=self, bEnabled=bool) | Bật/tắt Event Tick của `BP_ComboManager` để mượn làm vòng lặp temporal accumulation (P2 Noise Fix, 19/07/2026) — bật khi bắt đầu accumulate N frame, tắt khi đủ frame hoặc EndPlay | ⏳ Cần cuhoang confirm trong project |
 | `Get Texture Target` (Target=SceneCaptureComponent2D, từ `Get Capture Component 2D`) | Lấy RenderTarget hiện gán cho SceneCapture2D, dùng để `Release Render Target 2D` tường minh trong Event End Play — VRAM/GPU Crash Fix (P2 Gate D, 20/07/2026) | ⏳ Cần cuhoang confirm trong project |
+| `Get Local Bounds` (StaticMeshComponent → Min, Max Vector) | Bounds trong không gian LOCAL của mesh (chưa nhân Scale/Rotation) — dùng trong `CalculateComboBoundingExtent` để đo kích thước vật lý thật, không bị Actor Rotation làm phồng to (khác `Get Actor Bounds` là World AABB) — Dimension Fix, 22/07/2026 | ⏳ Cần cuhoang confirm trong project |
 
 ---
 
@@ -537,3 +539,5 @@ Sau khi 1 sprint/task lớn xong:
 | 2.9 | 18/07/2026 | Thêm 5 dòng vào "Nodes chờ xác nhận" — P2 Gate D prerequisite (lighting isolation): `Set Lighting Channels` (2 bản Target khác nhau: Primitive Component / Light Component — dễ chọn nhầm vì tên giống hệt), `Get Capture Component 2D`, `Set Show Flag Settings`, `Make Engine Show Flags Setting`. Bối cảnh: xem `DEVIATIONS.md` 18/07/2026. |
 | 2.10 | 19/07/2026 | Thêm `Set Actor Tick Enabled` vào "Nodes chờ xác nhận" — P2 Noise + Aliasing Fix: mượn Event Tick của `BP_ComboManager` làm vòng lặp temporal accumulation (N=24 frame). Bối cảnh: xem `DEVIATIONS.md` mục "SPRINT 5 — 19/07/2026". |
 | 2.11 | 20/07/2026 | Thêm `Get Texture Target` vào "Nodes chờ xác nhận" — P2 Gate D VRAM/GPU Crash Fix: EndPlay `BP_ComboManager` gọi `Release Render Target 2D` tường minh trước dọn cache thumbnail. Bối cảnh: xem `DEVIATIONS.md` mục "P2 — 20/07/2026". |
+| 2.12 | 22/07/2026 | Thêm `To Text (Float)` vào bảng NODE CHÍNH XÁC ĐÃ XÁC NHẬN — đã confirm qua screenshot editor thật (Field Kích thước Combo Card, `WBP_ComboCard.md` v1.3). |
+| 2.13 | 22/07/2026 (tiếp) | Thêm `Get Local Bounds` (StaticMeshComponent) vào "Nodes chờ xác nhận" — Dimension Fix `CalculateComboBoundingExtent` (`BP_ComboManager.md`), thay `Get Actor Bounds` (World AABB) để tránh phồng khi actor tự xoay tại chỗ. |

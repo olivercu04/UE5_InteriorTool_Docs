@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.12 | **Cập nhật:** 15/07/2026 — P1.G4: `ComboManagerRef` mới (set Construct/clear Destruct) + `LoadComboLibrary` mở rộng gọi `GetComboThumbnail` → SET `view.Thumbnail` (bug dead-end nhánh False ĐÃ FIX cùng ngày, xem DEVIATIONS 15/07/2026)
+**Phiên bản:** 3.13 | **Cập nhật:** 22/07/2026 — Delete Combo DONE: `PendingDeleteComboID` mới + Custom Event `RequestDeleteCombo`/`HandleDeleteComboConfirmed` (mirror `OnRequestDeleteFolder`/`HandleDeleteFolderConfirmed`, Luật 6B). Đính chính K1 (`WBP_Toast`) CHƯA DONE — `Print String` tạm thay `ShowToastMsg`.
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -112,6 +112,8 @@ Python 1: populate BoundingSize | Python 2: update MeshFolderPath | (Sprint D: P
 | `SaveDlg_NewFolderPath` | String | Path folder rỗng mới tạo qua `BTN_AddFolder` — SET trong `HandleSaveDialogCreateFolder`, dùng để ExpandToPath + BeginRenameOnPath |
 | **— G4 Combo Thumbnail —** | | |
 | `ComboManagerRef` | BP_ComboManager | Set 1 lần ở Event Construct, clear ở Event Destruct (R4). Dùng làm Target cho `GetComboThumbnail` trong `LoadComboLibrary` (KHÔNG dùng self — self là Widget, không phải BP_ComboManager). |
+| **— Delete Combo (MỚI, 22/07/2026) —** | | |
+| `PendingDeleteComboID` | String | ComboID chờ xác nhận xóa — SET khi mở WBP_ConfirmDialog, đọc trong HandleDeleteComboConfirmed, clear cuối hàm. Cùng pattern `PendingDeleteFolderPath` (plain name). |
 
 ⚠️ **VRAM leak:** TargetFurnitureActor + PendingRestoredActor + SaveComboDialogRef + RenameTargetNode + LibraryMenuRef + MoveComboDialogRef + ComboManagerRef là hard ref → SET None ở Event Destruct.
 
@@ -1046,6 +1048,54 @@ GET LibraryMenuRef → IsValid →
 > ⚠️ **BUG FIX (thứ tự exec, 06/07):** Lúc đầu code SET `LibraryMenuRef = None` TRƯỚC khi đọc `TargetFolderPath` → Accessed None runtime error. Đã sửa: đọc property trước, SET None sau cùng.
 > ✅ **Đã dọn (06/07):** `CB_RenameFolder` trước đây là ca lẻ loi thiếu `SET LibraryMenuRef = None` sau `Hide` — xem BUG FIX ở §CB_RenameFolder. Nay khớp pattern với 4/4 CB_ còn lại.
 
+### RequestDeleteCombo(ComboID, ComboName : String) — Custom Event (MỚI, Delete Combo, 22/07/2026)
+Mirror y hệt `OnRequestDeleteFolder` (Luật 6B structural symmetry). Gọi từ `WBP_ComboCard.BTN_DeleteCombo.OnClicked`.
+```
+SET PendingDeleteComboID = ComboID
+Create Widget(WBP_ConfirmDialog) → Dialog
+  Message = "Xóa combo '" + ComboName + "'? Không thể hoàn tác."
+  ConfirmLabel = "Xóa"
+Bind Dialog.OnConfirmed → HandleDeleteComboConfirmed
+Add to Viewport
+Get Player Controller → Set Input Mode UI Only
+```
+
+### HandleDeleteComboConfirmed() — Custom Event (MỚI, Delete Combo, 22/07/2026)
+Bound từ `WBP_ConfirmDialog.OnConfirmed` trong `RequestDeleteCombo`.
+```
+Get Player Controller → Set Input Mode Game and UI
+▶→ GetCombosDir() ●→ + "/" + PendingDeleteComboID + ".json" ●→ SET Local FilePath
+▶→ DeleteFileAtPath(FilePath) ●→ SET Local bDeleted
+▶→ Branch(bDeleted)
+     True  ▶→ DeleteThumbnail(PendingDeleteComboID)
+            ▶→ Branch(IsValid(ComboManagerRef))
+                 True  ▶→ ComboManagerRef.InvalidateThumbnail(PendingDeleteComboID)
+                 False ▶→ (merge)
+            ▶→ Get All Actors Of Class(BP_FurnitureUserPrefsManager) → Get(0) ●→ SET Local PrefsRef
+            ▶→ Branch(IsValid(PrefsRef))
+                 True  ▶→ PrefsRef.IsFavoriteCombo(PendingDeleteComboID) ●→ SET Local bIsFav
+                        ▶→ Branch(bIsFav)
+                             True  ▶→ PrefsRef.ToggleFavoriteCombo(PendingDeleteComboID)
+                             False ▶→ (merge)
+                        ▶→ PrefsRef.RemoveRecentCombo(PendingDeleteComboID)
+                 False ▶→ (merge)
+            ▶→ Broadcast OnComboLibraryChanged
+            ▶→ Print String("Đã xóa combo")            [TẠM — thay ShowToastMsg khi K1 xong]
+     False ▶→ Print String("Xóa combo thất bại")        [TẠM — thay ShowToastMsg khi K1 xong]
+▶→ SET PendingDeleteComboID = ""
+```
+> ⚠️ **[TẠM 22/07/2026]** `Print String` thay `ShowToastMsg` — **K1 (`WBP_Toast`) CHƯA DONE**
+> (đính chính giả định sai trước đó: suy luận nhầm từ việc C8 từng ghi "tiên quyết trước K1" và
+> C8 đã merge vào C4 — không có bằng chứng K1 từng được build). Thay lại `ShowToastMsg` ngay khi
+> K1 làm xong — việc nhỏ đầu K1, không phải sprint riêng.
+
+Test 5/5 case PASS (22/07/2026):
+1. Xóa combo thường → card biến mất, file `.json`+`.png` biến mất khỏi `Saved/Combos/`.
+2. Xóa combo đang Favorite → biến mất khỏi cả tab Favorite.
+3. Xóa combo có trong Recent → biến mất khỏi tab Recent.
+4. Bấm Xóa → Hủy → combo còn nguyên.
+5. Xóa xong → tắt/mở PIE → không sống lại, Favorite/Recent sạch.
+
 ### OnRenameFolderCommitted(OldPath : String, NewName : String) — Custom Event
 Bound từ `WBP_TreeNode.OnNodeRenameCommitted` trong `PopulateComboTreeColumn` (mỗi node cấp 1+2).
 ```
@@ -1563,3 +1613,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.10 | 08/07/2026 (bổ sung) | Thay node flow "ghi theo suy luận" (v3.9) của `GetFilteredChildren`/`BuildFolderTreeRecursive`/`BuildComboFolderTreeNodes` bằng node flow THẬT (export K2Node) — kèm Local var đầy đủ + Q8 self-check mỗi hàm. Khác biệt nhỏ so với bản suy luận: `GetFilteredChildren` gọi 1 lần/child trong `BuildFolderTreeRecursive` (dùng chung cho `ChildCount`+`HasChildren`, không gọi 2 lần); node "(Gốc)" trong `BuildComboFolderTreeNodes` có `bIsLast=False` (không phải True như suy đoán trước). Test PASS thêm case `ExcludePath="Livingroom/Sofa"`, khớp 100%. Không đổi hành vi/kết luận đã ghi ở v3.9. |
 | 3.11 | 13/07/2026 — C5.8 Wire Move + Wire Save | `OnRequestMoveFolder`: `Dialog.InitPicker(Entries, ParentOf(FolderPath), True)` thay `PopulateRows`. `CB_MoveCombo`: `Dialog.InitPicker(Entries, MovingComboCurrentFolder, True)` thay `PopulateRows`. [BUG-FIX] cả 2 call site thực tế vẫn gọi `BuildMoveFolderTargetList` cũ (claim "Blueprint tự propagate" ở v3.9 SAI) — đã fix về `BuildComboFolderTreeNodes`, `BuildMoveFolderTargetList` xoá hẳn khỏi Blueprint. `OpenSaveComboDialog`: xoá `GetExistingFolders`/pin `ExistingFolders`; thêm Branch wire `Picker.SetFolders`/`bShowCurrentTag`/bind `OnRequestCreateFolder`→`HandleSaveDialogCreateFolder`+`Picker.OnRequestCommitRename`→`HandleSavePickerRenameCommitted`. 2 Custom Event mới: `HandleSaveDialogCreateFolder` (tạo folder rỗng qua `CreateEmptyFolder` → expand + `BeginRenameOnPath`), `HandleSavePickerRenameCommitted` (rename qua `RenameFolderPrefix`, KHÔNG gate theo Return Value — xem ghi chú C++). Var mới `SaveDlg_NewFolderPath`. Test PASS: S6a, S6c, M1-M6, Phần 2 test 1-2. |
 | 3.12 | 15/07/2026 — P1.G4 wire thumbnail hiển thị | Class var mới `ComboManagerRef` (BP_ComboManager) — set Event Construct (Then 6, Get All Actors Of Class→Get(0)), clear Event Destruct (R4). `LoadComboLibrary` mở rộng: trong ForEach sau build BP_ComboItemView, Branch IsValid(ComboManagerRef) → GetComboThumbnail(Target=ComboManagerRef) → SET view.Thumbnail; nhánh False vẫn Array_Add nhưng bỏ qua SET Thumbnail. ✅ Bug dead-end nhánh False FIXED 15/07/2026 (xem DEVIATIONS 15/07/2026 + Session_State mục P1). |
+| 3.13 | 22/07/2026 — Delete Combo | Class var mới `PendingDeleteComboID`. Custom Event mới `RequestDeleteCombo(ComboID, ComboName)` + `HandleDeleteComboConfirmed()` — mirror y hệt `OnRequestDeleteFolder`/`HandleDeleteFolderConfirmed` (Luật 6B). Xóa file `.json`+PNG, `InvalidateThumbnail`, gỡ khỏi Favorite nếu đang favorite, `RemoveRecentCombo` (function mới `BP_FurnitureUserPrefsManager`), Broadcast `OnComboLibraryChanged`. Test 5/5 case PASS. Đính chính: K1 (`WBP_Toast`) CHƯA DONE — `Print String` tạm thay `ShowToastMsg`, thay lại khi K1 xong. |
