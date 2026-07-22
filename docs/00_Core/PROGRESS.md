@@ -1,6 +1,6 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
-**Cập nhật:** 21/07/2026 — P2 Studio Thumbnail Gate F DONE, P2 HOÀN TẤT VỀ TÍNH NĂNG (Gate A→F) | P1 Combo Thumbnail DONE về tính năng | C5.8 CHÍNH THỨC DONE (13/07)
+**Cập nhật:** 22/07/2026 — C6 (Favorite + Recent combo) CHÍNH THỨC DONE HOÀN TOÀN | P2 Studio Thumbnail Gate F DONE, P2 HOÀN TẤT VỀ TÍNH NĂNG (Gate A→F) | P1 Combo Thumbnail DONE về tính năng | C5.8 CHÍNH THỨC DONE (13/07)
 
 ---
 
@@ -320,7 +320,15 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
     - [x] Task Card #2 (UI component `WBP_FolderTreePicker`+`WBP_FolderPickerRow`, 2a→2d rename host) + Wire Move + Wire Save — build + test node-level ✅ DONE (13/07) — trả nợ test toàn bộ (M1-M6, S6a-c, 0.3, Phần 2 test 1-2).
     - [x] REG (Khối A/B/C/D, `C5.8_REG_TaskCard_11jul2026.md`) ✅ PASS (13/07) — chốt sổ C5.8.
 - [ ] **C5** — Folder tree tab 🧩 Combo trong WBP_FurnitureInventory
-- [ ] **C6** — Favorite + Recent combo
+- [x] **C6** — Favorite + Recent combo ✅ CHÍNH THỨC DONE HOÀN TOÀN (22/07/2026) — C6.1-C6.4
+      (API/nút tim/hook Recent/tab hiển thị) test PASS bao gồm persist qua tắt/mở PIE (thực hiện
+      trực tiếp trong UE5 Editor, không có node flow chi tiết trong doc). 2 bug fix: `AddRecentCombo`
+      dead-end (`SaveUserPrefs` chỉ chạy khi Recent vượt cap 48, nhánh <48 dead-end — fix merge cả
+      2 nhánh; cap thật=48 không phải 20 như `UX_Phase2_Plan.md`) + Recent hiển thị chỉ 1 card
+      (`FilterByCategory` đổi `AddItem` loop → `Set List Items` batch). Ghi nhận backlog (không
+      phải bug): duplicate `comboId` khi copy tay file JSON — xem `Bugs/Open_Bugs.md` mục
+      "Note-DuplicateComboID". File mới: `Blueprints/BP_FurnitureUserPrefsManager.md`. Xem
+      `01_Session_State.md` mục C6.
 - [ ] **C7** — WBP_ComboDetailPopup (thumbnail thật)
 ──── **Giai đoạn 2: đặt/thay combo mượt** ────
 - [ ] **WBP_Toast (K1)** — TIÊN QUYẾT trước C8: text + tự ẩn 2-3s, FText
@@ -374,3 +382,4 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 19/07/2026 | **P2 Gate D prerequisite: Noise + Aliasing Fix DONE.** Ảnh thumbnail còn noise nặng sau lighting isolation (18/07) — `SceneCapture2D` không có temporal accumulation thực sự. Fix: `AccumulateComboFrame`/`ResetComboAccumulation` (C++ mới, `UComboThumbnail`) cộng dồn N=24 frame trong không gian linear color, mượn Event Tick `BP_ComboManager` (`Cmb_AccumFramesLeft`/`Cmb_AccumTargetFrames`); SSAA 2× supersample (RT 2048²) + box downscale, encode gamma đúng 1 lần cuối. Bug fix: sửa nhầm `CreateRenderTarget2D` bản [LEGACY]. Test: noise CONFIRM + aliasing/SSAA CONFIRM DONE. Task gốc Gate D (Source Size Key tune + sweep 5 combo) vẫn CHƯA bắt đầu. Chi tiết: `DEVIATIONS.md` mục "SPRINT 5 — 19/07/2026". |
 | 20/07/2026 | **P2 Gate D: Rim Light + VRAM Fix DONE, sweep TẠM DỪNG.** Rim Light (3-point lighting, [SCOPE] mở rộng Gate C) qua `SpawnStudioLight` gọi lần 3 + biến mới `Cmb_StudioRimLight`; đổi `InVect`/SourceSize/AttenRadius cả 3 đèn + Post Process Exposure Compensation +6.0 — verify PASS ảnh combo To+Tường. Fix VRAM/GPU crash (EndPlay `BP_ComboManager`, 2 bug wiring: `Map_Clear` lồng sai nhánh Branch + thứ tự đọc/ghi `Cmb_CaptureHandle` khiến `ResetComboAccumulation` no-op) — verify bằng đọc code + export K2Node, CHƯA đo VRAM dài hạn. `Cmb_KeySourceSize`=500 chốt bằng mắt. Sweep 5 loại combo: 3/5 PASS (Nhỏ/To/Tường), phát hiện 2 bug kiến trúc MỚI — (1) dome cong nuốt chân đồ footprint rộng (sofa PASS thẩm mỹ nhưng lộ bug, thảm FAIL nặng); (2) combo "Cao" (Ceiling) dính lỗi ground-align giống Tường (H1) nhưng chưa từng ghi trong plan. **Gate D TẠM DỪNG — chờ Fable/Opus quyết kiến trúc** (đảo ngược 1 phần quyết định Gate B) trước khi tiếp tục. Chi tiết: `DEVIATIONS.md` mục "P2 — 20/07/2026", `Bugs/Open_Bugs.md` (2 bug mới), `Blueprints/Blueprint_Logic_NodeFlow.md` v1.11. |
 | 21/07/2026 | P2 (Studio Thumbnail) — Gate F DONE, P2 hoàn tất về tính năng. Nối Studio pipeline vào SaveComboFromSelection thật (thay capture in-place P1): Custom Event mới BeginThumbnailCapture + SetPendingUserCamYaw; class var Cmb_StudioCamYaw(55)/Cmb_PendingUserCamYaw/Cmb_PendingCaptureComboID/Cmb_DebugLastCaptureDistance; Bước 7 gọi BeginThumbnailCapture(DeltaYaw=StudioCamYaw−PendingUserCamYaw); Broadcast dời sang Event Tick tail; bearing camera→combo (FindLookAtRotation) thay Camera Rotation thẳng. Fix framing: Radius bounding rotation-invariant (C++ BeginComboCapture, 235vs282→248vs263). Hệ quả phụ: Save thật hết bug ảnh 2048² thô. Debug phím U + Enable Input đã xóa. Backlog: VRAM regression SSAA 2048² + Feature-CanonicalStudioAngle (Sprint 6). Chi tiết: Delta_P2_GateF_21jul2026, BP_ComboManager v1.10, DEVIATIONS 21/07. |
+| 22/07/2026 | **C6 (Favorite + Recent combo) — CHÍNH THỨC DONE HOÀN TOÀN.** C6.1-C6.4 (API/nút tim/hook Recent/tab hiển thị) test PASS bao gồm persist qua tắt/mở PIE (thực hiện trực tiếp trong UE5 Editor, ngoài phiên Claude Code — không có node flow chi tiết trong doc). 2 bug fix: (1) `AddRecentCombo` dead-end — `SaveUserPrefs` chỉ chạy khi Recent vượt cap 48 phần tử (nhánh `False` <48 không nối gì) → fix merge cả 2 nhánh; cap thật = 48, không phải 20 như `UX_Phase2_Plan.md` ghi (sai lệch tài liệu). (2) Recent hiển thị chỉ 1 card — `FilterByCategory` đổi `AddItem` loop → `Set List Items` batch (giống Favorite/All), bài học ghi vào skill `ue5-blueprint-rules` L12. Ghi nhận backlog (không phải bug): duplicate `comboId` khi copy tay file JSON — xử lý khi làm Save As/Save đè. File mới: `Blueprints/BP_FurnitureUserPrefsManager.md`. Chi tiết: `Bugs/Open_Bugs.md` mục "Note-DuplicateComboID", `01_Session_State.md` mục C6. Tiếp theo: **C7 — WBP_ComboDetailPopup**. |

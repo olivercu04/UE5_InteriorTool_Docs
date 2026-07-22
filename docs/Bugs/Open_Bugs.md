@@ -1,6 +1,6 @@
 # Open Bugs — Bugs đang mở
 **Tạo từ:** `00_Core/DEVIATIONS.md` (mục BUGS DEFERRED) + `00_Core/01_Session_State.md` (BUG CÒN MỞ) + `00_Core/02_Current_Sprint.md` (bối cảnh Gate 1)
-**Cập nhật:** 21/07/2026 — K3 (bAddToRecent) RESOLVED. P2 Gate F: Feature-CanonicalStudioAngle (mới, backlog Sprint 6). Bug-DomeCurvature + Bug-CeilingGroundAlign đã FIXED 20/07 (xem mục riêng dưới)
+**Cập nhật:** 22/07/2026 — C6 DONE: 2 bug fix (AddRecentCombo dead-end, Recent hiển thị) + Note-DuplicateComboID (mới, backlog Save As/Save đè). K3 (bAddToRecent) RESOLVED (21/07). P2 Gate F: Feature-CanonicalStudioAngle (backlog Sprint 6). Bug-DomeCurvature + Bug-CeilingGroundAlign đã FIXED 20/07
 
 ---
 
@@ -21,6 +21,7 @@
 | Feature-CanonicalStudioAngle | Thumbnail combo chụp theo góc user đặt+nhìn → không đồng bộ catalogue (sofa chữ U chụp trúng lưng, quạt chắn giữa). Cần "nắn về góc chuẩn" / user chọn mặt trước | 🟢 Thấp | Sprint 6 — Polish UX |
 | Bug-DomeCurvature-FootprintRong | ✅ FIXED (20/07) — dome custom (đồng nghiệp dựng) thay sphere engine, đáy phẳng bo cong bán kính ~500 unit | — | Test PASS combo Dẹt (thảm) + To (sofa 15 món, footprint lớn nhất từng có) trên dome mới. Xem DEVIATIONS mục "P2 — 20/07/2026 (Dome Custom)" |
 | Bug-CeilingGroundAlign | ✅ FIXED (20/07) — Function `ResolveThumbAlign` (Nấc 1) phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType`, thay công thức "neo xuống sàn" đơn nhất | — | Test 6/6 case PASS. Xem DEVIATIONS mục "P2 — 20/07/2026 (Nấc 1)" |
+| Note-DuplicateComboID | Copy tay file `.json` trong Explorer rồi đổi tên → field `comboId` bên trong KHÔNG tự đổi theo tên file → 2 file khác tên nhưng cùng ID logic (Favorite/Recent coi là 1 combo) | 🟢 Thấp | KHÔNG phải bug, không sửa bây giờ — backlog cho tính năng Save As/Save đè combo (chưa có plan) |
 
 ---
 
@@ -420,6 +421,30 @@ chụp thấy mặt/lưng" (canonical angle) để Sprint 6.
 ### Hướng làm khi vào Sprint 6 (chưa chốt)
 Cách 2 — user chọn mặt trước lúc Save: preview combo trong studio, cho xoay
 (phím/scroll), bấm "chụp từ góc này". Cần plan riêng.
+
+---
+
+## Note-DuplicateComboID — Copy tay file JSON → duplicate comboId
+
+**ID:** Note-DuplicateComboID
+**Phát hiện:** C6 testing, 22/07/2026
+**Ưu tiên:** 🟢 Thấp — KHÔNG phải bug, ghi nhận làm backlog.
+
+### Bối cảnh
+Test bằng cách copy tay file `.json` combo trong Windows Explorer rồi đổi tên file → nội dung
+field `comboId` bên trong KHÔNG tự đổi theo tên file → 2 file khác tên nhưng cùng ID logic →
+Favorite/Recent (và mọi thứ định danh theo ComboID) coi 2 combo là 1.
+
+### Vì sao KHÔNG sửa bây giờ
+Đây là hệ quả tự nhiên của thao tác copy tay ngoài luồng app (không đi qua bất kỳ code path nào
+của tool) — không có bug logic cần fix ngay. Cần xử lý đúng lúc làm tính năng **Save As / Save
+đè (overwrite)** cho combo — bất kể tính năng đó rơi vào C-item nào (C9 Replace hay 1 mục mới):
+- Save As phải luôn sinh `comboId` MỚI (GUID mới).
+- Save đè giữ nguyên `comboId` cũ.
+
+### Trạng thái
+- **Backlog.** Chưa có plan riêng — ghi lại làm note kèm theo khi task Save As/Save đè được lên
+  kế hoạch.
 
 ---
 

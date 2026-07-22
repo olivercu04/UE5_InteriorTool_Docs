@@ -218,8 +218,22 @@ ReplaceCombo(RootGID, NewComboID) — Custom Event [BP_ComboManager]:
 ---
 
 # ═══════════════════════════════════════════════
-# C6 — FAVORITE + RECENT COMBO (clone pattern Material)
+# C6 — FAVORITE + RECENT COMBO (clone pattern Material) — ✅ DONE (22/07/2026)
 # ═══════════════════════════════════════════════
+
+**✅ CHÍNH THỨC DONE HOÀN TOÀN — 22/07/2026.** C6.1-C6.4 dưới đây test PASS bao gồm persist qua
+tắt/mở PIE, thực hiện trực tiếp trong UE5 Editor (ngoài phiên Claude Code — không đối chiếu
+node-by-node với spec dưới đây). 2 điểm as-built lệch khỏi spec gốc, phát hiện qua bug fix cùng
+ngày:
+- **Cap Recent thật = 48**, không phải 10 như C6.1 ghi (khớp cap furniture) — sai lệch tài liệu,
+  không phải bug.
+- **C6.4 đổ CTV_ComboCard dùng `Set List Items` batch**, không phải `Clear List Items + ForEach
+  AddItem` như spec — `AddItem` lặp nhiều lần trong TileView không refresh đúng, chỉ hiện 1
+  card (bug fix 21-22/07, xem `ue5-blueprint-rules` L12).
+
+Chi tiết đầy đủ + bug fix `AddRecentCombo` dead-end (`SaveUserPrefs` không chạy khi Recent < cap):
+`Blueprints/BP_FurnitureUserPrefsManager.md`, `00_Core/DEVIATIONS.md` mục "C6 — 22/07/2026",
+`Bugs/Open_Bugs.md` mục "Note-DuplicateComboID" (ghi nhận phụ, không phải bug).
 
 **Nền có sẵn (C1 DONE):** `FavoriteComboIDs` + `RecentComboIDs` trong BP_UserPreferencesSave. Pattern mẫu: WBP_MaterialCard (Button_Favorite heart + UpdateFavTint + Toggle Favorite Material).
 

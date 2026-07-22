@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 21/07/2026
+**Cập nhật:** 22/07/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1073,6 +1073,36 @@ downscale) → tự hết. Không cần task riêng.
 
 ---
 
+## C6 — 22/07/2026 — Favorite + Recent combo DONE + 2 bug fix
+
+C6.1-C6.4 (API/nút tim/hook Recent/tab hiển thị) thực hiện trực tiếp trong UE5 Editor, ngoài
+phiên Claude Code — không có deviation ghi ở đây cho phần đó (không đối chiếu được node flow).
+2 bug fix dưới đây phát hiện trong lúc test C6, verify qua export K2Node thật.
+
+**[BUG-FIX] `AddRecentCombo` — `SaveUserPrefs` dead-end khi Recent < 48 phần tử**
+`Call SaveUserPrefs` nằm trong nhánh `True` của `Branch(Array Length(RecentComboIDs) > 48)`
+(bước trim cap) — nhánh `False` (< 48 combo, MỌI test thực tế) không nối gì, dead-end. RAM luôn
+đúng (Print tối 21/07 ra count tăng dần đúng) nhưng chỉ ghi xuống đĩa khi Recent vượt cap 48 →
+spawn combo mới, tắt PIE, mở lại → Recent mất combo vừa spawn. Fix: rút `SaveUserPrefs` ra khỏi
+nhánh `True`, merge cả 2 nhánh cùng trỏ vào. Ghi chú phụ: cap thật = 48, không phải 20 như
+`UX_Phase2_Plan.md` ghi trước đây — sai lệch tài liệu, không phải bug. Node flow:
+`Blueprints/BP_FurnitureUserPrefsManager.md`.
+
+**[BUG-FIX] Recent hiển thị chỉ 1 card (fix tối 21/07, xác nhận lại sáng 22/07)**
+`FilterByCategory` nhánh Combo/Recent dùng `ClearListItems + ForEach + AddItem` (loop) — gọi
+`AddItem` nhiều lần liên tiếp trong TileView không refresh đúng từng lần, chỉ hiện 1 card cuối.
+Fix: đổi sang `Set List Items(CTV_ComboCard, OrderedViews)` (batch 1 lần, giống Favorite/All).
+Bài học tổng quát (không riêng Combo — áp dụng mọi TileView/ListView) đã ghi vào skill
+`ue5-blueprint-rules` mục **L12** (21/07).
+
+**[OBSERVATION, không phải bug] Duplicate `comboId` khi copy tay file JSON**
+Copy tay file `.json` trong Explorer rồi đổi tên → field `comboId` bên trong KHÔNG tự đổi theo
+tên file → 2 file khác tên nhưng cùng ID logic → Favorite/Recent coi là 1 combo. Không sửa bây
+giờ — xử lý khi làm tính năng Save As/Save đè (Save As phải sinh `comboId` MỚI). Ghi
+`Bugs/Open_Bugs.md` mục "Note-DuplicateComboID".
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -1153,3 +1183,4 @@ downscale) → tự hết. Không cần task riêng.
 | 20/07/2026 (Dome Custom) | Thêm 2 section: "P2 — 20/07/2026 (Dome Custom) — Bug-DomeCurvature FIXED, Sweep 4/5 Loại" — [ARCH] dome custom (cylinder kín, đáy bo cong, ~500 unit vùng phẳng) thay `/Engine/BasicShapes/Sphere` (đảo ngược Gate B); [ARCH — đảo ngược Gate B] Cast Shadow=True verify an toàn trên dome mới (khác sphere cũ). Test PASS combo Dẹt (thảm) + To (sofa 15 món, worst-case footprint). "P2 — 20/07/2026 (Sweep 5 Loại)" — [SCOPE] 4/5 loại (Nhỏ/To/Dẹt/Tường) PASS chính thức; case Cao PASS sơ bộ bằng stack dựng tay (không phải combo tự nhiên) — quyết định Lựa chọn B: giữ làm bằng chứng sơ bộ, chờ combo kệ/tủ cao thật để đóng hẳn, không chặn việc khác. Bug-DomeCurvature cập nhật đồng thời `Bugs/Open_Bugs.md`. |
 | 20/07/2026 (Gate E) | Thêm section "P2 — 20/07/2026 (Gate E) — Depth of Field DONE": mở rộng node "Set members in Post Process Settings" sẵn có (Gate C) thêm Focal Distance + Aperture (F-stop), không tạo node mới; [VERIFY] plan gốc sai giả định — biến `Distance` C++ không xuất Blueprint, xấp xỉ bằng `Vector Distance(CaptureHandle, Cmb_StudioAnchor)`; Aperture=2.8 chốt sau test đối chứng f/1.0 (xác nhận pipeline chạy đúng, combo hiện có Z-spread nông nên f/2.8 blur khó thấy — đúng vật lý, không phải bug), khớp gu ảnh tham chiếu IKEA. Gate E DONE — tiếp theo Gate F (nối dây thật + closure). |
 | 21/07/2026 (Gate F) | Thêm section "P2 — 21/07/2026 — Gate F: nối Save flow thật + fix framing rotation-invariant": [ARCH] Radius bounding rotation-invariant (`max(Dist(actor→Center)+BoundsExtent.Size())` thay `Bounds.GetExtent().Size()` AABB) — zoom lệch ~20% giữa các góc xoay giảm còn ~6%; [ARCH] Broadcast dời từ Bước 7 sang Event Tick tail (bắt buộc do pipeline async N=24, không phải lựa chọn); [CORRECTION] FixedAngle.Yaw thật = 55 (không phải 0 như doc cũ), promote thành `Cmb_StudioCamYaw`; [BUG tự đóng] Save thật từng ra ảnh 2048² thô do không qua accumulate — Gate F chuyển qua đúng pipeline Studio nên tự hết. Node flow đầy đủ: `BP_ComboManager.md` v1.10, `Blueprint_Logic_NodeFlow.md`. |
+| 22/07/2026 (C6) | Thêm section "C6 — 22/07/2026 — Favorite + Recent combo DONE + 2 bug fix": [BUG-FIX] `AddRecentCombo` — `SaveUserPrefs` dead-end trong nhánh `False` của `Branch(RecentComboIDs.Length > 48)` (chỉ save khi vượt cap, mọi test thực tế <48 không bao giờ ghi đĩa) — merge cả 2 nhánh; cap thật=48 không phải 20 (`UX_Phase2_Plan.md` sai); [BUG-FIX] Recent hiển thị chỉ 1 card — `FilterByCategory` đổi `AddItem` loop → `Set List Items` batch, bài học ghi skill `ue5-blueprint-rules` L12; [OBSERVATION] duplicate `comboId` khi copy tay JSON — không phải bug, backlog cho Save As/Save đè. File mới: `Blueprints/BP_FurnitureUserPrefsManager.md`. |
