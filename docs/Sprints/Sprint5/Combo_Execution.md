@@ -928,6 +928,39 @@ NewRot = CombineRotators(OldRot, R)
 
 ---
 
+### C9.5 — Save As / Save đè combo (MỚI, thêm 22/07/2026 — ⚠️ UX CHƯA CHỐT)
+
+**Chưa có mã C-number chính thức** — tạm gọi "C9.5" (chèn sau C9 trong thứ tự thực thi), để
+Fable đặt tên khi lên task card chi tiết. Ghi lại từ delta bàn kế hoạch 22/07/2026 — THUẦN KẾ
+HOẠCH, chưa có Blueprint/code nào thay đổi.
+
+**Định nghĩa (chốt với cuhoang 22/07):** User mở lại 1 combo cũ trong scene (spawn từ thư viện),
+chỉnh sửa vị trí/thêm bớt món, rồi bấm Save → muốn **ghi đè lên đúng combo gốc** (giữ nguyên
+`ComboID`) thay vì luôn tạo `ComboID` mới như hành vi `C3b` hiện tại.
+
+**Tái dùng từ C9:** hàm `ResolveSelectedComboRoot()` (sẽ viết trong C9 — leo lên group cha, đọc
+`SourceComboID`, tương ứng logic "Leo group cha" đã mô tả ở mục C9 phía trên) trả lời đúng câu
+hỏi "selection hiện tại có phải là 1 combo có sẵn không, ID gốc là gì" — Save đè dùng lại y hệt
+hàm này, không viết lại.
+
+**Khung sơ bộ (CHƯA CHỐT UX — xem 2 phương án bên dưới):**
+```
+Bấm Save Combo (selection hiện tại)
+▶→ ResolveSelectedComboRoot() → bFound, SourceComboID
+▶→ Branch(bFound)
+     True  ▶→ selection từng là 1 combo có sẵn → hỏi Lưu mới / Ghi đè
+     False ▶→ selection mới toanh → chỉ Save As (hành vi hiện tại, không đổi)
+```
+
+**⚠️ UX CHƯA CHỐT — bàn chi tiết TRƯỚC khi bắt đầu C9.** 2 phương án đã nêu sơ bộ, để tham khảo
+lúc bàn lại — KHÔNG coi là đã chốt:
+- **Phương án A:** Dialog Save mở như cũ, thêm 2 nút: "Lưu thành combo mới" (hành vi hiện tại)
+  và "Ghi đè combo gốc" (giữ ComboID, chỉ cập nhật items+kích thước, không sửa tên/folder).
+- **Phương án B:** Hỏi nhanh 1 câu 2 nút TRƯỚC khi mở dialog (Lưu mới / Ghi đè). Chọn Ghi đè →
+  bỏ qua dialog, lưu thẳng bằng tên/folder/tags cũ, chỉ thay items/kích thước/thời gian.
+
+---
+
 ### C11 — Export / Import combo (chia sẻ thủ công) — CẢ 2 hướng
 **Mục tiêu:** Share nhóm KHÔNG cần server — export file JSON gửi đi (Zalo/USB/Drive), import vào thư viện máy khác.
 **⚠️ Thứ tự thực thi:** C9 → **C11** → C10. C11 là feature mới nên phải chạy TRƯỚC C10 để regression test bao luôn.

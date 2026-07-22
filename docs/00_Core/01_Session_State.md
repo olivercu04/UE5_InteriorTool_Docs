@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 22/07/2026 — **C6 (Favorite + Recent combo) CHÍNH THỨC DONE HOÀN TOÀN** (C6.1-C6.4 + K3 + 2 bug fix, persist qua tắt/mở PIE) — tiếp theo **C7 (WBP_ComboDetailPopup)**. **P2 (Studio Thumbnail) DONE về tính năng (Gate A→F)** — Gate F nối Save flow thật + fix framing rotation-invariant. Backlog: VRAM regression (SSAA 2048² chưa đo) + Feature-CanonicalStudioAngle (Sprint 6). Debug phím U đã xóa. **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
+**Phiên bản:** 22/07/2026 — **C6 (Favorite + Recent combo) CHÍNH THỨC DONE HOÀN TOÀN** (C6.1-C6.4 + K3 + 2 bug fix, persist qua tắt/mở PIE). **Bàn lại ưu tiên (cùng ngày):** C7 dời hẳn Sprint 6 (thay bằng field kích thước trên Combo Card) — tiếp theo **Field Kích thước Card → Delete Combo → C9 → Save As/Save đè (mới) → C11 → C10**. **P2 (Studio Thumbnail) DONE về tính năng (Gate A→F)** — Gate F nối Save flow thật + fix framing rotation-invariant. Backlog: VRAM regression (SSAA 2048² chưa đo) + Feature-CanonicalStudioAngle (Sprint 6). Debug phím U đã xóa. **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
 
 ---
 
@@ -315,8 +315,25 @@ curvature/Ceiling ground-align: mục "P2 — 20/07/2026" (+ Nấc 1 / Dome Cust
 Gate E: mục "P2 — 20/07/2026 (Gate E)"; Gate F: mục "P2 — 21/07/2026 — Gate F". `Bugs/Open_Bugs.md`
 cho trạng thái bug đóng/mở đầy đủ.
 
-Thứ tự sau P2 (K3 DONE 21/07/2026, C6 DONE 22/07/2026, bỏ khỏi chuỗi): C7 → K1 (Toast, dời
-trước C9) → C9 → C11 → C10 → Gate 2.
+**Thứ tự ưu tiên (bàn lại 22/07/2026 — thay thứ tự cũ, K3+C6 DONE bỏ khỏi chuỗi):**
+```
+K1 (Toast) → Field Kích thước trên Combo Card → Delete Combo → C9 (Replace Combo)
+  → Save As / Save đè (feature mới) → C11 (Export/Import) → C10 (Regression) → Gate 2
+```
+Lý do đổi: C7 (`WBP_ComboDetailPopup`) dời hẳn Sprint 6 — thay bằng field kích thước nhẹ trên
+card (đủ thông tin, không cần widget popup mới). Delete Combo ưu tiên sớm hơn C11 — nút
+`BTN_DeleteCombo` đã có sẵn layout từ C4 (24/06), chưa bind handler, việc nhỏ. Save As/Save đè
+chèn ngay sau C9 vì tái dùng hàm `ResolveSelectedComboRoot()` mà C9 sẽ viết. K1 vẫn đứng đầu —
+Delete/Replace/Save đè đều cần Toast báo lỗi.
+
+**Field Kích thước Combo Card (việc đầu tiên phiên tới, CHƯA làm):** nguồn `BoundingBoxExtent`
+(có sẵn từ C4). `L=Extent.X×2/100, W=Extent.Y×2/100, H=Extent.Z×2/100` (mét), `S=L×W` (diện tích
+sàn). Format `"{L}×{W}×{H} m — {S} m²"` (1 chữ số thập phân). `WBP_ComboCard`: thêm
+`TextBlock_Dimensions` trong `VB_Info` dưới `TextBlock_Badge`; `OnListItemObjectSet` SET text
+theo công thức trên, nối cuối nhánh SET `TextBlock_ComboName`/`TextBlock_Badge` hiện có.
+
+Chi tiết đầy đủ Save As/Save đè (khung sơ bộ, UX CHƯA CHỐT): `Sprints/Sprint5/Combo_Execution.md`
+mục "C9.5 — Save As / Save đè combo".
 
 ### C6 (Favorite + Recent combo) — CHÍNH THỨC DONE HOÀN TOÀN (22/07/2026)
 
@@ -428,3 +445,4 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 21/07/2026 | **P2 (Studio Thumbnail) — Gate F DONE, P2 HOÀN TẤT VỀ TÍNH NĂNG (Gate A→F).** Nối Studio pipeline vào `SaveComboFromSelection` thật (thay capture in-place P1): Custom Event mới `BeginThumbnailCapture` + `SetPendingUserCamYaw`; class var `Cmb_StudioCamYaw`(55)/`Cmb_PendingUserCamYaw`/`Cmb_PendingCaptureComboID`/`Cmb_DebugLastCaptureDistance`; Bước 7 gọi `BeginThumbnailCapture(DeltaYaw=StudioCamYaw−PendingUserCamYaw)`; Broadcast dời sang Event Tick tail (bắt buộc, pipeline async N=24). Fix framing: Radius bounding rotation-invariant (C++ `BeginComboCapture`, 235vs282→248vs263, ~20%→~3-6%). Hệ quả phụ: Save thật hết bug ảnh 2048² thô. Debug phím U + Enable Input đã xóa (`bDebugTestThumb`/`Cmb_DebugTestComboIDs`/`Cmb_DebugComboIndex` xóa theo). Backlog: VRAM regression SSAA 2048² + Feature-CanonicalStudioAngle (Sprint 6, `Bugs/Open_Bugs.md`). Chi tiết: `DEVIATIONS.md` mục "P2 — 21/07/2026 — Gate F", `BP_ComboManager.md` v1.10, `Blueprint_Logic_NodeFlow.md` v1.12. |
 | 21/07/2026 (K3) | **K3 (bAddToRecent) DONE** — 2 call site đã pin `bAddToRecent=False`: `RestoreSnapshot` (BP_UndoManager, Step 4) + `SpawnComboByID` (BP_ComboManager, Phase 3). Verify qua Blueprint Export Method (K2Node text) + screenshot thật, 4 case PASS (spawn combo, Undo/Redo, spawn furniture từ card, copy/paste). Kèm sửa doc: `BP_UndoManager.md` đoạn body `RestoreSnapshot` Step 4 ghi nhầm nhãn "v1.8" nhưng vẫn mô tả spawn inline cũ (mâu thuẫn changelog v1.10 đã đúng) — viết lại khớp export K2Node thật. Chi tiết: `Bugs/Open_Bugs.md` mục K3, `BP_UndoManager.md` v1.11, `BP_ComboManager.md` v1.11. |
 | 22/07/2026 | **C6 (Favorite + Recent combo) — CHÍNH THỨC DONE HOÀN TOÀN.** C6.1-C6.4 (API/nút tim/hook Recent/tab hiển thị) test PASS bao gồm persist qua tắt/mở PIE (thực hiện trực tiếp trong UE5 Editor, ngoài phiên Claude Code — không có node flow chi tiết trong doc). 2 bug fix: (1) `AddRecentCombo` dead-end — `SaveUserPrefs` chỉ chạy khi Recent vượt cap 48 phần tử (nhánh `False` < 48 không nối gì) → fix merge cả 2 nhánh; cap thật = 48, không phải 20 như `UX_Phase2_Plan.md` ghi (sai lệch tài liệu). (2) Recent hiển thị chỉ 1 card — `FilterByCategory` đổi `AddItem` loop → `Set List Items` batch (giống Favorite/All), bài học ghi vào skill `ue5-blueprint-rules` L12. Ghi nhận backlog (không phải bug): duplicate `comboId` khi copy tay file JSON — xử lý khi làm Save As/Save đè. File mới: `Blueprints/BP_FurnitureUserPrefsManager.md`. Chi tiết: `Bugs/Open_Bugs.md` mục "Note-DuplicateComboID". Tiếp theo: **C7 — WBP_ComboDetailPopup**. |
+| 22/07/2026 (bàn kế hoạch) | **Bàn lại ưu tiên: C7 dời Sprint 6, thêm field Kích thước Card, feature mới Save As/Save đè (chèn sau C9, UX chưa chốt).** THUẦN KẾ HOẠCH — chưa có Blueprint/code nào thay đổi trong phiên này. Thứ tự mới: K1 (Toast) → Field Kích thước Combo Card → Delete Combo → C9 (Replace) → Save As/Save đè (mới, tái dùng `ResolveSelectedComboRoot()` của C9) → C11 → C10 → Gate 2. Task card Save As/Save đè thêm vào `Sprints/Sprint5/Combo_Execution.md` mục "C9.5" (chưa có mã C-number chính thức), đánh dấu [UX CHƯA CHỐT] — 2 phương án dialog sơ bộ, bàn chi tiết ở phiên làm C9. Việc đầu tiên phiên tới: Field Kích thước Card. |
