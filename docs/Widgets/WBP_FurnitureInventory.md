@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.13 | **Cập nhật:** 22/07/2026 — Delete Combo DONE: `PendingDeleteComboID` mới + Custom Event `RequestDeleteCombo`/`HandleDeleteComboConfirmed` (mirror `OnRequestDeleteFolder`/`HandleDeleteFolderConfirmed`, Luật 6B). Đính chính K1 (`WBP_Toast`) CHƯA DONE — `Print String` tạm thay `ShowToastMsg`.
+**Phiên bản:** 3.14 | **Cập nhật:** 23/07/2026 — K1 (`WBP_Toast`) DONE: Function mới `ShowToastMsg` + 5 call site Print→Toast + đính chính as-built `OnRequestNewFolder`→`CreateNewFolderFlow` (Function riêng, không phải logic thẳng trong Custom Event) + sửa 2 annotation `[gate bDebugMode]` sai.
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -116,6 +116,27 @@ Python 1: populate BoundingSize | Python 2: update MeshFolderPath | (Sprint D: P
 | `PendingDeleteComboID` | String | ComboID chờ xác nhận xóa — SET khi mở WBP_ConfirmDialog, đọc trong HandleDeleteComboConfirmed, clear cuối hàm. Cùng pattern `PendingDeleteFolderPath` (plain name). |
 
 ⚠️ **VRAM leak:** TargetFurnitureActor + PendingRestoredActor + SaveComboDialogRef + RenameTargetNode + LibraryMenuRef + MoveComboDialogRef + ComboManagerRef là hard ref → SET None ở Event Destruct.
+
+---
+
+## ShowToastMsg(Message : Text) — Function (MỚI, K1, 23/07/2026)
+
+Helper dùng chung cho mọi chỗ trong widget này cần báo lỗi/kết quả cho user — thay dần các
+`Print String` tạm trước đây. Toast thật render qua `WBP_Toast` (xem `Widgets/WBP_Toast.md`),
+truy cập qua `Foff_GameInstance.ToastRef` (global, set 1 lần ở `WBP_FOFF_ToolDemo` Event
+Construct).
+```
+Function ShowToastMsg(Message : Text)
+▶→ Get Game Instance → Cast to Foff_GameInstance ●→ SET Local GI
+▶→ IsValid(GI.ToastRef)
+     True  ▶→ GI.ToastRef → ShowToast(Message, Duration=2.5)
+     False ▶→ Print String(Message)   ← fallback (ToastRef chưa set, vd widget nào đó tạo sớm bất thường)
+```
+5 call site đổi từ `Print String` sang `ShowToastMsg` trong phiên K1 (23/07/2026):
+`CreateNewFolderFlow`, `HandleDeleteFolderConfirmed`, `HandleMoveComboConfirmed`,
+`HandleDeleteComboConfirmed` (×2 nhánh). Test 5/5 case PASS — xem `Blueprints/BP_ComboManager.md`
+mục K1 cho chỗ thứ 6 (gọi thẳng `GameInstance.ToastRef.ShowToast`, không qua `ShowToastMsg`, vì
+`BP_ComboManager` là Actor không có đường gọi Function riêng của Widget này).
 
 ---
 
@@ -1033,9 +1054,13 @@ Branch( CurrentComboFolderPath == PendingDeleteFolderPath
      False → (merge, không đổi)
 → UComboSerializer::ClearFolderPrefix(PendingDeleteFolderPath) → ChangedCount
 → RefreshComboFolderUI()
-→ Print String("Đã xóa folder, " + ChangedCount + " combo về Chưa phân loại")   [gate bDebugMode]
+→ ShowToastMsg("Đã xóa folder, " + ChangedCount + " combo về Chưa phân loại")   ← [SỬA K1, 23/07] trước là Print String
 → SET PendingDeleteFolderPath = ""
 ```
+> ⚠️ **[ĐÍNH CHÍNH annotation, K1 delta 23/07/2026]** Annotation `[gate bDebugMode]` ở dòng Print
+> cũ SAI/lỗi thời — Print đó thực tế chạy KHÔNG điều kiện (không có Branch(bDebugMode) nào bọc
+> ngoài). Xác nhận qua Blueprint Export Method lúc làm K1.3. Nay đã đổi hẳn sang `ShowToastMsg`.
+>
 > **[DEVIATION D-C5.6-1]** Spec gốc (`Combo_C5_FolderManagement_Plan.md`, test case 5) quy định "nhảy về `__ALL__`" khi xóa folder đang xem/cha của đang xem. Đổi thành **"nhảy về folder CHA trực tiếp"** (dùng `ParentOf` có sẵn từ C5.2) — nếu cha là gốc (`""`) thì mới về `__ALL__`. Lý do: UX mượt hơn khi xóa folder lồng sâu — giữ ngữ cảnh thay vì bật về Tất cả mỗi lần xóa. Xem DEVIATIONS.md 06/07.
 
 ### CB_DeleteFolderClick — Custom Event (bound từ Item3.OnItemClicked trong OnComboTreeNodeRightClicked) [C5.6]
@@ -1080,14 +1105,12 @@ Get Player Controller → Set Input Mode Game and UI
                         ▶→ PrefsRef.RemoveRecentCombo(PendingDeleteComboID)
                  False ▶→ (merge)
             ▶→ Broadcast OnComboLibraryChanged
-            ▶→ Print String("Đã xóa combo")            [TẠM — thay ShowToastMsg khi K1 xong]
-     False ▶→ Print String("Xóa combo thất bại")        [TẠM — thay ShowToastMsg khi K1 xong]
+            ▶→ ShowToastMsg("Đã xóa combo")            ← [SỬA K1, 23/07] trước là Print String [TẠM]
+     False ▶→ ShowToastMsg("Xóa combo thất bại")        ← [SỬA K1, 23/07] trước là Print String [TẠM]
 ▶→ SET PendingDeleteComboID = ""
 ```
-> ⚠️ **[TẠM 22/07/2026]** `Print String` thay `ShowToastMsg` — **K1 (`WBP_Toast`) CHƯA DONE**
-> (đính chính giả định sai trước đó: suy luận nhầm từ việc C8 từng ghi "tiên quyết trước K1" và
-> C8 đã merge vào C4 — không có bằng chứng K1 từng được build). Thay lại `ShowToastMsg` ngay khi
-> K1 làm xong — việc nhỏ đầu K1, không phải sprint riêng.
+> ✅ **[K1 DONE, 23/07/2026]** `Print String [TẠM]` (ghi 22/07, chờ K1) nay đã thay bằng
+> `ShowToastMsg` thật — xem Function `ShowToastMsg` mới + `Widgets/WBP_Toast.md`.
 
 Test 5/5 case PASS (22/07/2026):
 1. Xóa combo thường → card biến mất, file `.json`+`.png` biến mất khỏi `Saved/Combos/`.
@@ -1225,7 +1248,7 @@ Branch(MovingComboCurrentFolder == TargetParentPath) → True: dead-end
 UComboSerializer::UpdateComboFolder(MovingComboID, TargetParentPath) → bOK
 Branch(bOK):
   True  → RefreshComboFolderUI()
-  False → Print String("UpdateComboFolder failed — ComboID: " + MovingComboID)
+  False → ShowToastMsg("UpdateComboFolder failed — ComboID: " + MovingComboID)   ← [SỬA K1, 23/07] trước là Print String
 ```
 
 ---
@@ -1267,6 +1290,17 @@ Branch(CurrentComboFolderPath == "" OR CurrentComboFolderPath StartsWith "__"):
 ```
 
 ### OnRequestNewFolder(ParentPath : String) — Custom Event
+> ⚠️ **[ĐÍNH CHÍNH as-built, K1 delta 23/07/2026]** Doc trước đây mô tả toàn bộ logic
+> (GetUniqueNewFolderName → Branch → CreateEmptyFolder → Branch → Refresh/Rename hoặc Print) nằm
+> THẲNG trong `OnRequestNewFolder` — SAI. Thực tế `OnRequestNewFolder` chỉ gọi 1 lệnh sang
+> Function riêng `CreateNewFolderFlow` (Target=self); toàn bộ logic thật nằm trong function đó.
+> Xác nhận qua Blueprint Export Method (K2Node text) lúc làm K1.3.
+```
+OnRequestNewFolder(ParentPath)
+▶→ CreateNewFolderFlow(ParentPath)   ← Target=self, xem Function riêng bên dưới
+```
+
+### CreateNewFolderFlow(ParentPath : String) — Function (MỚI đưa vào doc, K1 delta 23/07/2026)
 ```
 GetUniqueNewFolderName(ParentPath) → SET NewName
 Branch(ParentPath == ""):
@@ -1276,8 +1310,14 @@ Branch(ParentPath == ""):
 Branch(bOK):
   True  → RefreshComboFolderUI()
            → OnRequestRenameFolder(FullPath)    ← tái dùng "Request" phase C5.2 → vào rename mode
-  False → Print String("Không tạo được: " + FullPath)   [gate bDebugMode]
+  False → ShowToastMsg("Không tạo được folder: " + FullPath)   ← [SỬA K1, 23/07] trước là Print String, tái dùng nguyên node Concat có sẵn
 ```
+> **[ĐÍNH CHÍNH annotation, K1 delta 23/07/2026]** Print gốc ở nhánh `bOK=False` KHÔNG gate bằng
+> `Branch(bDebugMode)` như annotation cũ ghi — annotation đó SAI/lỗi thời. Thực tế gate bằng
+> thuộc tính node **`EnabledState = Development Only`** (tự strip khỏi Shipping build, không qua
+> Branch thủ công). Nay đổi hẳn sang `ShowToastMsg` nên điểm này không còn áp dụng, ghi lại để
+> tránh nhầm khi đọc log cũ.
+>
 > KHÔNG CaptureSnapshot (folder ops ngoài Undo, D16). KHÔNG đổi CurrentComboFolderPath (NF-C3 no-navigate).
 
 ### CB_CreateNewFolder — Custom Event (bound từ Item0.OnItemClicked, AddMenuItem("Create New Folder") đặt ĐẦU chuỗi trong OnComboTreeNodeRightClicked)
@@ -1614,3 +1654,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.11 | 13/07/2026 — C5.8 Wire Move + Wire Save | `OnRequestMoveFolder`: `Dialog.InitPicker(Entries, ParentOf(FolderPath), True)` thay `PopulateRows`. `CB_MoveCombo`: `Dialog.InitPicker(Entries, MovingComboCurrentFolder, True)` thay `PopulateRows`. [BUG-FIX] cả 2 call site thực tế vẫn gọi `BuildMoveFolderTargetList` cũ (claim "Blueprint tự propagate" ở v3.9 SAI) — đã fix về `BuildComboFolderTreeNodes`, `BuildMoveFolderTargetList` xoá hẳn khỏi Blueprint. `OpenSaveComboDialog`: xoá `GetExistingFolders`/pin `ExistingFolders`; thêm Branch wire `Picker.SetFolders`/`bShowCurrentTag`/bind `OnRequestCreateFolder`→`HandleSaveDialogCreateFolder`+`Picker.OnRequestCommitRename`→`HandleSavePickerRenameCommitted`. 2 Custom Event mới: `HandleSaveDialogCreateFolder` (tạo folder rỗng qua `CreateEmptyFolder` → expand + `BeginRenameOnPath`), `HandleSavePickerRenameCommitted` (rename qua `RenameFolderPrefix`, KHÔNG gate theo Return Value — xem ghi chú C++). Var mới `SaveDlg_NewFolderPath`. Test PASS: S6a, S6c, M1-M6, Phần 2 test 1-2. |
 | 3.12 | 15/07/2026 — P1.G4 wire thumbnail hiển thị | Class var mới `ComboManagerRef` (BP_ComboManager) — set Event Construct (Then 6, Get All Actors Of Class→Get(0)), clear Event Destruct (R4). `LoadComboLibrary` mở rộng: trong ForEach sau build BP_ComboItemView, Branch IsValid(ComboManagerRef) → GetComboThumbnail(Target=ComboManagerRef) → SET view.Thumbnail; nhánh False vẫn Array_Add nhưng bỏ qua SET Thumbnail. ✅ Bug dead-end nhánh False FIXED 15/07/2026 (xem DEVIATIONS 15/07/2026 + Session_State mục P1). |
 | 3.13 | 22/07/2026 — Delete Combo | Class var mới `PendingDeleteComboID`. Custom Event mới `RequestDeleteCombo(ComboID, ComboName)` + `HandleDeleteComboConfirmed()` — mirror y hệt `OnRequestDeleteFolder`/`HandleDeleteFolderConfirmed` (Luật 6B). Xóa file `.json`+PNG, `InvalidateThumbnail`, gỡ khỏi Favorite nếu đang favorite, `RemoveRecentCombo` (function mới `BP_FurnitureUserPrefsManager`), Broadcast `OnComboLibraryChanged`. Test 5/5 case PASS. Đính chính: K1 (`WBP_Toast`) CHƯA DONE — `Print String` tạm thay `ShowToastMsg`, thay lại khi K1 xong. |
+| 3.14 | 23/07/2026 — K1 (WBP_Toast) DONE | Function mới `ShowToastMsg(Message)` (Get Game Instance → Cast Foff_GameInstance → IsValid(ToastRef) → ShowToast / fallback Print String). 5 call site đổi Print→Toast: `CreateNewFolderFlow` (bOK=False), `HandleDeleteFolderConfirmed`, `HandleMoveComboConfirmed` (bOK=False), `HandleDeleteComboConfirmed` (×2 nhánh — gỡ 2 dòng `[TẠM 22/07]`). **Đính chính as-built quan trọng:** `OnRequestNewFolder` KHÔNG chứa logic trực tiếp như doc cũ mô tả — thực tế chỉ gọi Function riêng `CreateNewFolderFlow` (Target=self), nơi chứa toàn bộ logic thật. Viết lại đúng kiến trúc, tách `OnRequestNewFolder` (wrapper mỏng) và `CreateNewFolderFlow` (Function mới đưa vào doc) thành 2 mục riêng. Sửa 2 annotation `[gate bDebugMode]` sai/lỗi thời (`CreateNewFolderFlow`, `HandleDeleteFolderConfirmed`) — Print gốc thực chạy không điều kiện (gate thật là `EnabledState=Development Only`, không phải Branch). Test K1 5/5 case PASS. Chi tiết: `Widgets/WBP_Toast.md` (mới), `Blueprints/BP_ComboManager.md` (chỗ #6). |

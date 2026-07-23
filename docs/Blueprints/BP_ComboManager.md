@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.12 | **Ngày:** 22/07/2026 | **Dimension Fix — `CalculateComboBoundingExtent` đổi `Get Actor Bounds` → `Get Local Bounds`×Scale+Location**
+**Version:** 1.13 | **Ngày:** 23/07/2026 | **K1 (WBP_Toast) DONE — SpawnComboByID Sub-step C: toast "Bỏ qua món" khi RowName không tồn tại**
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -546,7 +546,13 @@ Loop Body:
 - Break FComboItemData(Array Element) → RowName(String), RelLocation, RelRotation, Scale, SurfaceType(String), MaterialOverrides(Array String), GroupToken(String)
 - Get Data Table Row(DT_FurnitureCatalog, String to Name(RowName)) → bFound
 - Branch(bFound):
-  - False → dead-end (skip item)
+  - False → **[MỚI, K1, 23/07/2026]** Get Game Instance → Cast Foff_GameInstance →
+    IsValid(ToastRef) → True: `ToastRef.ShowToast("Bỏ qua món: RowName '" + RowName + "' không
+    tồn tại", 2.5)` / False: dead-end → sau đó dead-end (skip item, ForEach lặp tiếp) —
+    ⚠️ doc cũ ghi nhầm "Print skip" ở đây, thực tế TRƯỚC 23/07 không có gì (dead-end trần trụi,
+    item lỗi bỏ qua âm thầm). Gọi thẳng `GameInstance.ToastRef.ShowToast` (không qua
+    `ShowToastMsg` của `WBP_FurnitureInventory`) vì `BP_ComboManager` là Actor, không có đường
+    gọi Function riêng của Widget đó.
   - True  → Break S_FurnitureData → MeshFolderPath
   - Construct MeshPath: Append(MeshFolderPath, "/", RowName, ".", RowName) → MeshPath
   - InputManagerRef → SpawnFurnitureCopy(MeshPath=MeshPath, DAPath="", SpawnLocation=Vector Add(SpawnLocation input, RelLocation), SpawnRotation=RelRotation, SpawnScale=Scale, MaterialOverrides=Make Array(rỗng), SurfaceType=String to Name(SurfaceType), bAutoSelect=False, bAddToRecent=False ← K3, 21/07/2026, checkbox "Add to Recent" trước đó có tick/chưa pin) → NewActor
@@ -679,4 +685,5 @@ không giật thêm dù RT giờ 2048²).
 | 20/07/2026 | 1.9 | P2 Gate D Nấc 1 — Surface-Aware Ground-Align, Bug-CeilingGroundAlign FIXED: Function mới `ResolveThumbAlign(Clones) → DeltaZ, Category` (Enum `E_ThumbAlignCategory`) thay khối align inline đơn nhất (2 ForEach dùng `Cmb_ThumbMinZ`, đã xóa) trong chuỗi debug phím U. Phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType`, gồm 2 mở rộng phát sinh từ test thật (KP2 đã duyệt): Wall-priority rule (so `FloorMinZ` với `WallMinZ`) + margin fix (đáy nhóm non-Floor nổi trên Anchor.Z +10, không center). Switch on Category hiện là STUB (4 pin gộp chung BeginComboCapture) — tách rig riêng Ceiling/Wall là Nấc 2, backlog. Test 6/6 case PASS. Chi tiết: `DEVIATIONS.md` mục "P2 — 20/07/2026 (Nấc 1)". |
 | 21/07/2026 | 1.10 | P2 Gate F — nối Studio pipeline vào Save flow thật (DONE). Class var mới: `Cmb_StudioCamYaw`(55.0), `Cmb_PendingUserCamYaw`, `Cmb_PendingCaptureComboID`, `Cmb_DebugLastCaptureDistance`. Custom Event mới `BeginThumbnailCapture(ComboID, DeltaYaw)` (tách khối spawn→align→Begin→enable-tick từ debug U cũ, dùng chung Save flow) + `SetPendingUserCamYaw(Yaw)`. Bước 7 SaveComboFromSelection: THAY capture in-place P1 (chụp actor thật) bằng `BeginThumbnailCapture(SaveCombo_ComboID, DeltaYaw=Cmb_StudioCamYaw−Cmb_PendingUserCamYaw)`; Broadcast nhánh True dời xuống Event Tick tail. Event Tick tail: `ComboID` Finish đổi `Cmb_DebugTestComboIDs[idx]+"_studio"` → `Cmb_PendingCaptureComboID`; THÊM Broadcast cuối. FixedAngle.Yaw split-pin đọc `Cmb_StudioCamYaw` (giá trị thật=55, doc cũ ghi nhầm 0). XÓA debug phím U + Enable Input + `bDebugTestThumb`/`Cmb_DebugTestComboIDs`/`Cmb_DebugComboIndex`. Hệ quả phụ: Save thật hết bug 2048² thô 1-frame (giờ qua đúng N=24+SSAA). Bug framing rotation-variant Radius phát hiện+fix (C++, xem `Data/ComboSerializer_Reference.md` + `DEVIATIONS.md`). Feature-CanonicalStudioAngle ghi backlog Sprint 6 (`Bugs/Open_Bugs.md`). |
 | 21/07/2026 | 1.11 | K3 (bAddToRecent) DONE — `SpawnComboByID` Phase 3 (Sub-step C): pin `bAddToRecent=False` tại node `SpawnFurnitureCopy` (trước đó checkbox "Add to Recent" có tick, chưa pin — cùng loại thiếu sót đã fix ở `RestoreSnapshot`/BP_UndoManager). Verify qua Blueprint Export Method (K2Node text) + screenshot thật, không đoán qua doc. Test 4 case PASS (spawn combo, Undo/Redo, spawn furniture từ card, copy/paste). Chi tiết: `Bugs/Open_Bugs.md` mục K3, `Blueprints/BP_UndoManager.md` v1.11. |
+| 23/07/2026 | 1.13 | K1 (WBP_Toast) DONE — `SpawnComboByID` Sub-step C, nhánh `Get Data Table Row` → `Row Not Found`: THÊM toast "Bỏ qua món: RowName '...' không tồn tại" (gọi thẳng `GameInstance.ToastRef.ShowToast`, không qua `ShowToastMsg` — Actor không có đường Function Widget). Trước đây dead-end trần trụi (doc cũ ghi nhầm "Print skip", thực tế chưa từng có). Test K1 5/5 case PASS (case 5 = chỗ này). Chi tiết: `Widgets/WBP_Toast.md` (mới), `Widgets/WBP_FurnitureInventory.md` v3.14. |
 | 22/07/2026 | 1.12 | Dimension Fix — `CalculateComboBoundingExtent` đổi `Get Actor Bounds` (World AABB, phồng khi actor tự xoay tại chỗ) → `Get Local Bounds`×Scale+Location (bounds local mesh, không bị Actor Rotation ảnh hưởng). Node mới `Get Local Bounds` chờ xác nhận (`AI_Implementation_Rules.md`). Giới hạn còn lại: cả đội hình combo xoay lệch trục vẫn phồng theo World AABB — merge backlog `Feature-CanonicalStudioAngle` (Sprint 6, cần field `ReferenceYaw`). Combo lưu trước 22/07/2026 giữ số cũ, không migrate hàng loạt. Test 3 case PASS. Ảnh hưởng: `WBP_ComboCard.md` mục Field Kích thước đọc field này. |

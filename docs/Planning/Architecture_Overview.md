@@ -1,5 +1,5 @@
 # Architecture — Nguyên tắc kiến trúc code
-**Phiên bản:** 1.1 | **Dự án:** Lighting_Mnger | **Cập nhật:** 20/05/2026 — 16:00 ICT
+**Phiên bản:** 1.2 | **Dự án:** Lighting_Mnger | **Cập nhật:** 23/07/2026 — thêm `ToastRef` vào Shared Code Foff_GameInstance (K1, WBP_Toast)
 
 ---
 
@@ -26,7 +26,7 @@
 ## Shared Code — Chỉ thêm, không sửa cấu trúc
 
 - `BP_FoffPlayerController` — **KHÔNG thêm variables furniture nữa**, đã chuyển sang BP_FurnitureInputManager
-- `Foff_GameInstance` — chỉ thêm `FurnitureInventoryRef`, không thay đổi gì khác
+- `Foff_GameInstance` — chỉ thêm `FurnitureInventoryRef`, `ToastRef` (WBP_Toast, K1 23/07/2026 — global toast access), không thay đổi gì khác
 - **Báo đồng nghiệp** khi thêm variable vào shared code
 
 ---

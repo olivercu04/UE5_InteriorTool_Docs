@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 22/07/2026 — **C6 (Favorite + Recent combo) CHÍNH THỨC DONE HOÀN TOÀN** (C6.1-C6.4 + K3 + 2 bug fix, persist qua tắt/mở PIE). C7 dời hẳn Sprint 6 (thay bằng field kích thước trên Combo Card, DONE). **Field Kích thước Card DONE + Delete Combo DONE (5/5 test) + Dimension Fix DONE** — tiếp theo **K1 (Toast) → C9 (Replace Combo) → Save As/Save đè (mới) → C11 → C10**. **P2 (Studio Thumbnail) DONE về tính năng (Gate A→F)** — Gate F nối Save flow thật + fix framing rotation-invariant. Backlog: VRAM regression (SSAA 2048² chưa đo) + Feature-CanonicalStudioAngle (Sprint 6). Debug phím U đã xóa. **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
+**Phiên bản:** 23/07/2026 — **K1 (WBP_Toast) DONE** (5/5 test PASS) — tiếp theo **C9 (Replace Combo) → Save As/Save đè (mới) → C11 → C10**. C6 (Favorite + Recent combo) CHÍNH THỨC DONE HOÀN TOÀN (C6.1-C6.4 + K3 + 2 bug fix). C7 dời hẳn Sprint 6 (thay bằng field kích thước trên Combo Card, DONE). Field Kích thước Card + Delete Combo (5/5 test) + Dimension Fix đều DONE. **P2 (Studio Thumbnail) DONE về tính năng (Gate A→F)** — Gate F nối Save flow thật + fix framing rotation-invariant. Backlog: VRAM regression (SSAA 2048² chưa đo) + Feature-CanonicalStudioAngle (Sprint 6). Debug phím U đã xóa. **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
 
 ---
 
@@ -315,17 +315,25 @@ curvature/Ceiling ground-align: mục "P2 — 20/07/2026" (+ Nấc 1 / Dome Cust
 Gate E: mục "P2 — 20/07/2026 (Gate E)"; Gate F: mục "P2 — 21/07/2026 — Gate F". `Bugs/Open_Bugs.md`
 cho trạng thái bug đóng/mở đầy đủ.
 
-**Thứ tự ưu tiên (đính chính 22/07/2026 — K1 chưa DONE, thay thứ tự bàn buổi sáng):**
+**Thứ tự ưu tiên (23/07/2026 — K1 DONE, bỏ khỏi chuỗi):**
 ```
-Delete Combo (DONE) → K1 (Toast) → C9 (Replace Combo)
-  → Save As / Save đè (feature mới) → C11 (Export/Import) → C10 (Regression) → Gate 2
+C9 (Replace Combo) → Save As / Save đè (feature mới) → C11 (Export/Import) → C10 (Regression) → Gate 2
 ```
-Lý do đổi: C7 (`WBP_ComboDetailPopup`) dời hẳn Sprint 6 — thay bằng field kích thước nhẹ trên
-card (đủ thông tin, không cần widget popup mới, DONE — xem dưới). Delete Combo làm xong trong
-phiên (không còn nằm trong hàng đợi). **Đính chính:** bàn sáng 22/07 lỡ giả định K1 (`WBP_Toast`)
-đã DONE (suy luận sai từ việc C8 từng ghi "tiên quyết trước K1" và C8 đã merge vào C4) — thực tế
-KHÔNG có bằng chứng K1 từng được build. Đưa K1 về đúng vị trí đầu hàng đợi thực thi tiếp theo.
-Save As/Save đè chèn ngay sau C9 vì tái dùng hàm `ResolveSelectedComboRoot()` mà C9 sẽ viết.
+Delete Combo + K1 (Toast) đều đã DONE trong phiên (không còn nằm trong hàng đợi). Save As/Save
+đè chèn ngay sau C9 vì tái dùng hàm `ResolveSelectedComboRoot()` mà C9 sẽ viết.
+
+**K1 (WBP_Toast) — DONE (23/07/2026), 5/5 test PASS.** Widget mới `WBP_Toast` (`ShowToast`/
+`HideToast`, timer tự ẩn ~2.5s) + `Foff_GameInstance.ToastRef` (global access, set ở
+`WBP_FOFF_ToolDemo` Event Construct) + `WBP_FurnitureInventory.ShowToastMsg` (helper, fallback
+Print nếu ToastRef chưa set). 6 chỗ Print→Toast: `CreateNewFolderFlow`, `HandleDeleteFolderConfirmed`,
+`HandleMoveComboConfirmed`, `HandleDeleteComboConfirmed` (×2 nhánh, gỡ 2 dòng `[TẠM 22/07]`),
+`SpawnComboByID` Sub-step C (Row Not Found — MỚI, trước đây dead-end trần trụi, không phải "Print
+skip" như doc cũ ghi). **Đính chính as-built quan trọng:** `OnRequestNewFolder` KHÔNG chứa logic
+trực tiếp — thực tế chỉ gọi Function riêng `CreateNewFolderFlow` (doc cũ mô tả sai, đã viết lại
+đúng kiến trúc). 2 annotation `[gate bDebugMode]` sai/lỗi thời cũng đã sửa (gate thật là
+`EnabledState=Development Only`). Chi tiết: `Widgets/WBP_Toast.md` (mới),
+`Widgets/WBP_FurnitureInventory.md` v3.14, `Blueprints/BP_ComboManager.md` v1.13,
+`Planning/Architecture_Overview.md` v1.2 (`ToastRef` shared code).
 
 **Field Kích thước Combo Card — DONE (22/07/2026).** Nguồn `BoundingBoxExtent` (có sẵn từ C4,
 công thức tính vừa sửa — xem "Dimension Fix" dưới). `L=Extent.X×2/100, W=Extent.Y×2/100,
@@ -340,8 +348,8 @@ thập phân). `WBP_ComboCard` v1.3: `TextBlock_Dimensions` trong `VB_Info` dư�
 `WBP_FurnitureInventory.RequestDeleteCombo`/`HandleDeleteComboConfirmed` (mirror
 `OnRequestDeleteFolder`/`HandleDeleteFolderConfirmed`, Luật 6B) — xóa file `.json`+PNG, gỡ khỏi
 Favorite, `RemoveRecentCombo` (function mới `BP_FurnitureUserPrefsManager`), Broadcast
-`OnComboLibraryChanged`. `ShowToastMsg` TẠM thay bằng `Print String` (K1 chưa DONE — thay lại
-khi K1 xong).
+`OnComboLibraryChanged`. `Print String` tạm ban đầu nay đã thay bằng `ShowToastMsg` thật
+(K1 DONE 23/07/2026 — xem mục K1 ở trên).
 
 **Dimension Fix — `CalculateComboBoundingExtent` (`BP_ComboManager`) — DONE (22/07/2026).** Đổi
 `Get Actor Bounds` (World AABB, phồng khi actor tự xoay tại chỗ) → `Get Local Bounds`×Scale+
@@ -403,7 +411,7 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
   ✅ C6 — Favorite + Recent combo — DONE (22/07/2026), xem mục C6 bên dưới
   ⏳ C7 — WBP_ComboDetailPopup (thumbnail thật)
 ──── Giai đoạn 2 ────
-  ⏳ WBP_Toast (K1) — TIÊN QUYẾT trước C8
+  ✅ WBP_Toast (K1) — DONE (23/07/2026), xem mục K1 bên dưới
   ✅ C8 — Drag-drop + surface-snap kiểu khối (P2) — DONE, MERGED vào C4 (24/06/2026)
   ⏳ Xoay combo (P3) — verify gizmo group + tùy chọn xoay-lúc-kéo
   ⏳ C9 — Replace (+ verify K2 + CalculateCenter chung + auto-rollback)
@@ -466,3 +474,4 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 22/07/2026 (bàn kế hoạch) | **Bàn lại ưu tiên: C7 dời Sprint 6, thêm field Kích thước Card, feature mới Save As/Save đè (chèn sau C9, UX chưa chốt).** THUẦN KẾ HOẠCH — chưa có Blueprint/code nào thay đổi trong phiên này. Thứ tự mới: K1 (Toast) → Field Kích thước Combo Card → Delete Combo → C9 (Replace) → Save As/Save đè (mới, tái dùng `ResolveSelectedComboRoot()` của C9) → C11 → C10 → Gate 2. Task card Save As/Save đè thêm vào `Sprints/Sprint5/Combo_Execution.md` mục "C9.5" (chưa có mã C-number chính thức), đánh dấu [UX CHƯA CHỐT] — 2 phương án dialog sơ bộ, bàn chi tiết ở phiên làm C9. Việc đầu tiên phiên tới: Field Kích thước Card. |
 | 22/07/2026 (Field Kích thước Card) | **DONE.** WBP_ComboCard v1.3 — TextBlock_Dimensions hiện "L×W×H m — S m²" từ ComboItem.BoundingBoxExtent, format qua To Text (Float) MinFrac=MaxFrac=1 (node mới confirm, đã vào bảng AI_Implementation_Rules.md). Test PASS. Combo BoundingBoxExtent=(0,0,0) (data cũ/lỗi) hiện "0,0×0,0×0,0 m — 0,0 m²" — không phải bug, chấp nhận được. Tiếp theo: Delete Combo. |
 | 22/07/2026 (Delete Combo + Dimension Fix) | **Delete Combo DONE** (5/5 test PASS) — ShowToastMsg TẠM thay Print String (K1 chưa DONE, đính chính giả định sai trước đó). **CalculateComboBoundingExtent sửa** Get Actor Bounds → Get Local Bounds×Scale+Location (fix phồng khi 1 món tự xoay tại chỗ; giới hạn còn lại — cả đội hình xoay lệch trục — merge vào backlog Feature-CanonicalStudioAngle Sprint 6, xem Open_Bugs.md). Thứ tự ưu tiên mới: **K1 (Toast) → C9 (Replace Combo) → Save As/Save đè → C11 → C10 → Gate 2.** Chi tiết: `Widgets/WBP_ComboCard.md` v1.4, `Widgets/WBP_FurnitureInventory.md` v3.13, `Blueprints/BP_FurnitureUserPrefsManager.md` v1.1, `Blueprints/BP_ComboManager.md` v1.12. |
+| 23/07/2026 (K1) | **K1 (WBP_Toast) DONE — 5/5 test PASS.** Widget mới `WBP_Toast` (`ShowToast`/`HideToast`, timer tự ẩn) + `Foff_GameInstance.ToastRef` (global) + `WBP_FurnitureInventory.ShowToastMsg` (helper). 6 chỗ Print→Toast: `CreateNewFolderFlow`, `HandleDeleteFolderConfirmed`, `HandleMoveComboConfirmed`, `HandleDeleteComboConfirmed` (×2, gỡ `[TẠM 22/07]`), `SpawnComboByID` Sub-step C (Row Not Found — MỚI, trước dead-end trần trụi). **Đính chính as-built:** `OnRequestNewFolder` chỉ gọi Function riêng `CreateNewFolderFlow` (doc cũ mô tả logic thẳng trong Custom Event — SAI); 2 annotation `[gate bDebugMode]` sai/lỗi thời sửa lại (gate thật `EnabledState=Development Only`). Thứ tự ưu tiên mới: **C9 (Replace Combo) → Save As/Save đè → C11 → C10 → Gate 2.** Chi tiết: `Widgets/WBP_Toast.md` (mới), `Widgets/WBP_FurnitureInventory.md` v3.14, `Blueprints/BP_ComboManager.md` v1.13, `Planning/Architecture_Overview.md` v1.2. |
