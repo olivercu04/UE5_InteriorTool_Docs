@@ -1,5 +1,5 @@
 # WBP_DetailPopup
-**Phiên bản:** 1.2 | **Cập nhật:** 17/06/2026 — Sprint D.T6 | Popup thông tin sản phẩm + Scale editor
+**Phiên bản:** 1.3 | **Cập nhật:** 24/07/2026 — C9.0c: BTN_ChangeMesh refactor gọi thẳng StartReplaceMode, fix bug SET nhầm biến MeshToReplace (dead) thay MeshesToReplace | Popup thông tin sản phẩm + Scale editor
 
 > **v1.2 (Sprint D.T6):** Bỏ `FurnitureDA : DA_FurnitureItem` — thay bằng `RowData : S_FurnitureData`. `InitPopup` nhận `RowName : Name` thay `DA`. Toàn bộ `FurnitureDA.*` → `RowData.*`. BTN_ChangeMesh đọc `RowData.MeshFolderPath`.
 
@@ -155,35 +155,35 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast
 
 ---
 
-## BTN_ChangeMesh OnClicked — v1.1
+## BTN_ChangeMesh OnClicked — v1.3, REFACTOR kiến trúc (C9.0c, 24/07/2026)
+
+⚠️ **Thay toàn bộ nội dung v1.1** — không chỉ đổi tên biến. Verify qua K2Node export thật
+24/07/2026.
 ```
-Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast → FurnitureInputRef
-SET bIsReplaceMode = True (FurnitureInputRef)
-SET MeshToReplace = GET SelectedFurnitureActor (FurnitureInputRef)
-
-GET RowData.MeshFolderPath
-
-Get Game Instance → Cast Foff_GameInstance → GET FurnitureInventoryRef
-Branch IsValid(FurnitureInventoryRef)?
-  True:
-    Branch IsValid(FurnitureInventoryRef)?  ← double check
-      True → Cast WBP_FurnitureInventory
-             → SET bIsReplaceMode = True   ← SET trực tiếp (không gọi EnterReplaceMode)
-             → FilterByFolderPathWithUI(MeshFolderPath)
-             → Call RefreshCardReplaceMode  ← v1.1: Regenerate SAU khi cards đã populate
-  False:
-    Create WBP_FurnitureInventory → Add to Viewport
-    Cast Foff_GameInstance → SET FurnitureInventoryRef
-    Cast WBP_FurnitureInventory
-    → SET bIsReplaceMode = True
-    → FilterByFolderPathWithUI(MeshFolderPath)
-    → Call RefreshCardReplaceMode   ← v1.1
-
-← Cả 2 nhánh:
-Remove from Parent (DetailPopup)
+BTN_ChangeMesh.OnClicked
+▶→ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0)
+▶→ SET FurnitureInputRef
+▶→ StartReplaceMode(self=FurnitureInputRef, Actors=Make Array(GET SelectedFurnitureActor))
+▶→ Remove from Parent (self, DetailPopup)
 ```
 
-⚠️ **Lý do dùng SET trực tiếp thay EnterReplaceMode:** `EnterReplaceMode` gọi `Regenerate All Entries` ngay lập tức, nhưng `FilterByFolderPathWithUI` sau đó xóa và tạo lại toàn bộ cards → Regenerate bị vô hiệu. Phải gọi `RefreshCardReplaceMode` SAU `FilterByFolderPathWithUI`.
+**Thay đổi kiến trúc, không chỉ fix biến:** bản v1.1 cũ tự SET `bIsReplaceMode`/`MeshToReplace`
+tay + tự mở/filter inventory (trùng lặp logic với `StartReplaceMode`). Bản mới xóa toàn bộ khối
+đó, gọi thẳng `StartReplaceMode(Make Array(SelectedFurnitureActor))` — đúng theo plan gốc
+`Sprints/Sprint2/ContextMenu_Prep.md` §5.2, dọn được code trùng lặp. `GET SelectedFurnitureActor`
+đọc trên `FurnitureInputRef` (biến thuộc `BP_FurnitureInputManager`, không phải biến của
+`WBP_DetailPopup`).
+
+**Bug đã fix, root cause:** bản cũ SET nhầm biến `MeshToReplace` (số ít, dead code — vẫn tồn
+tại trên `BP_FurnitureInputManager`, không bị xóa dù changelog cũ từng ghi đã xóa) thay vì
+`MeshesToReplace` (mảng — biến `F_ExecuteReplace` thực sự đọc). Guard đầu `F_ExecuteReplace`
+(`MeshesToReplace.Length > 0 → False: Return`) luôn true→Return vì mảng rỗng → bấm nút Replace
+trên card không đổi mesh. Test regression case 5 xác nhận PASS sau fix.
+
+> Ghi chú lịch sử (v1.1, không còn áp dụng): "Lý do dùng SET trực tiếp thay EnterReplaceMode" —
+> vấn đề `Regenerate All Entries` bị vô hiệu bởi `FilterByFolderPathWithUI` chạy sau đó nay
+> không còn liên quan, vì toàn bộ orchestration (bao gồm thứ tự gọi đúng) đã chuyển vào
+> `StartReplaceMode` (xem `Blueprints/BP_FurnitureInputManager.md` v2.5).
 
 ---
 
@@ -227,3 +227,4 @@ Event Tick: Branch bIsDragging → Set Position = MousePos - DragOffset / Viewpo
 | 1.0 | 22/04/2026 | Logic gốc |
 | 1.1 | 25/05/2026 — 17:29 ICT | BTN_ChangeMesh: thêm RefreshCardReplaceMode sau FilterByFolderPathWithUI. Fix: Regenerate phải chạy SAU populate cards |
 | 1.2 | 17/06/2026 — Sprint D.T6 | Bỏ FurnitureDA → RowData : S_FurnitureData. InitPopup(RowName, bFromScene): DT lookup thay DA load. Toàn bộ DA.* → RowData.*. BTN_BuyLink: RowData.Link. BTN_ChangeMesh: RowData.MeshFolderPath. |
+| 1.3 | 24/07/2026 — C9.0c | **BTN_ChangeMesh — REFACTOR kiến trúc**, không chỉ đổi biến. Xóa toàn bộ khối SET tay `bIsReplaceMode`/`MeshToReplace` + tự mở/filter inventory (trùng lặp `StartReplaceMode`) — gọi thẳng `StartReplaceMode(Make Array(SelectedFurnitureActor))`. **Bug fix root cause:** bản cũ SET nhầm biến `MeshToReplace` (số ít, dead code) thay vì `MeshesToReplace` (mảng, biến `F_ExecuteReplace` thực đọc) → Replace từ card không đổi mesh (guard Length>0 luôn fail). Verify qua K2Node export thật, test regression case 5 PASS. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.5. |

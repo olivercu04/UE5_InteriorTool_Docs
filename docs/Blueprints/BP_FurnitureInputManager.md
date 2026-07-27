@@ -1,5 +1,5 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 2.4 | **Cập nhật:** 24/07/2026 — `StartReplaceMode` viết lại đúng theo K2Node export thật (migrate `bIsReplaceMode`→`ReplaceTarget` E_ReplaceTarget, C9.0c) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 2.5 | **Cập nhật:** 24/07/2026 (tiếp) — C9.0c HOÀN TẤT: `IsReplaceModeActive()` Pure Function mới, `CB_Replace` thêm vào doc, Event Tick Box Select branch bổ sung 2 đoạn thiếu (guard OR + chuỗi thoát Replace Mode) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 > **HỢP NHẤT TỪ:** base v1.6 + patch v1.7 + patch v1.8 + patch v1.9 (15/06/2026). Đây là bản đầy đủ, thay thế toàn bộ file gốc + patch trong import_raw.
 > **File canonical.** `BP_FurnitureInputManager_MERGED_v1.9.md` là bản duplicate — sẽ bị xóa (cuhoang 17/06/2026). Chỉ đọc file này.
@@ -180,8 +180,13 @@ Step 7 : DEFER cho MỌI click trúng furniture (v1.6 — bỏ nhánh Ctrl):
 
 ---
 
-## Event Tick — Box Select branch (v1.5)
+## Event Tick — Box Select branch (v1.5, verified qua K2Node export 24/07/2026 — C9.0c)
 > Đặt SAU nhánh nudge free-mode, dùng **Sequence** để không phá logic cũ.
+
+⚠️ **Verified qua K2Node export thật 24/07/2026** (Ctrl+A → Ctrl+C → paste, không suy đoán qua
+ảnh chụp). Không sửa logic (đã đúng sẵn từ trước migrate) — chỉ bổ sung 2 chỗ doc trước đây ghi
+thiếu: (1) guard OR trước `HideBox` ở nhánh cleanup, (2) chuỗi thoát Replace Mode sau
+`DeselectAll` trong Branch A (đã tồn tại thật trong Blueprint, chỉ chưa từng được ghi vào doc).
 
 **⚠️ Bug đã trả giá — phải GUARD inventory:** Event Tick chạy MỌI frame, KHÔNG bị gate bởi Input Mapping Context (`LM_FurnitureInput`) như các Enhanced Input action khác. Nếu không guard, box select kích hoạt cả khi inventory đóng → sai context. Guard thủ công:
 ```
@@ -192,7 +197,11 @@ GetGameInstance → Cast Foff_GameInstance → GET FurnitureInventoryRef
      (mọi nhánh khác → SET bInventoryOpen = False)
 
 Branch bInventoryOpen:
-  False → cleanup: Call HideBox + SET bIsPendingBoxSelect=False + SET bIsBoxSelecting=False → STOP
+  False → Branch(bIsPendingBoxSelect OR bIsBoxSelecting):     ← THÊM vào doc 24/07 (logic đã có sẵn, chỉ ghi thiếu)
+            True  → Branch(IsValid BoxSelectOverlayRef):
+                      True  → Call HideBox → SET bIsBoxSelecting=False → SET bIsPendingBoxSelect=False
+                      False → dead-end
+            False → dead-end
   True  → chạy 2 branch box dưới đây
 ```
 
@@ -214,6 +223,11 @@ Branch bLMBHeld:
        False → Branch IsInputKeyDown(Left Ctrl):
                  True  → (dead-end, giữ selection)
                  False → DeselectAll → CaptureSnapshot("Deselect")
+                         → Branch(IsReplaceModeActive):        ← THÊM vào doc 24/07 (logic đã có sẵn)
+                              True  → SET ReplaceTarget = E_ReplaceTarget::None
+                                      → Clear Array(MeshesToReplace)
+                                      → Cast Foff_GameInstance → ExitReplaceMode
+                              False → dead-end
 ```
 
 **Branch B — đang KÉO BOX (bIsBoxSelecting == True):**
@@ -939,6 +953,53 @@ vậy khối B lặp 3 lần trong export là sự thật quan sát trực tiế
 
 ---
 
+## IsReplaceModeActive() → Boolean — Pure Function (MỚI, C9.0c, 24/07/2026)
+
+```
+Return (ReplaceTarget != E_ReplaceTarget::None)
+```
+Cùng tên + cùng logic tồn tại SONG SONG trên cả `BP_FurnitureInputManager` (đây) và
+`WBP_FurnitureInventory` (2 bản riêng, không phải 1 hàm dùng chung — xem
+`Widgets/WBP_FurnitureInventory.md`). Quy ước dùng: nơi chỉ cần biết "có đang replace hay không"
+(bất kể Mesh/Combo) → gọi `IsReplaceModeActive()`. Nơi cần biết đúng loại "đang replace Mesh" (để
+hiện/ẩn nút riêng cho furniture card) → so sánh trực tiếp `ReplaceTarget == E_ReplaceTarget::Mesh`
+(xem `Widgets/WBP_FurnitureCard.md`).
+
+---
+
+## CB_Replace — Custom Event (EventGraph, verified qua K2Node export 24/07/2026 — C9.0c)
+
+```
+CB_Replace.then
+▶→ Branch(IsValid ContextMenuRef)
+     True ▶→ Remove from Parent(ContextMenuRef)
+          ▶→ SET ContextMenuRef = None
+          ▶→ Branch(IsReplaceModeActive)
+               True (đang active — tắt) ▶→
+                    SET ReplaceTarget = E_ReplaceTarget::None
+                    ▶→ Clear Array(MeshesToReplace)
+                    ▶→ Get Game Instance → Cast Foff_GameInstance
+                         ▶→ Branch(IsValid FurnitureInventoryRef)
+                              True ▶→ Branch(IsInViewport)
+                                   True ▶→ ExitReplaceMode
+                                   False ▶→ [dead-end]
+                              False ▶→ [dead-end]
+               False (chưa active — bật) ▶→
+                    Branch(IsValid PrimarySelectedActor)
+                         True ▶→ Branch(SelectedActors.Length > 0)
+                              True ▶→ StartReplaceMode(Actors = SelectedActors)
+                              False ▶→ [dead-end]
+                         False ▶→ [dead-end]
+     False ▶→ [dead-end]
+```
+**Bug đã fix trong phiên 24/07/2026:** trước đây có 1 `Branch` dư ngay sau
+`SET ContextMenuRef=None`, Condition không nối gì (literal mặc định = `true`) → nhánh dẫn tới
+`StartReplaceMode` không bao giờ chạy được. Đã xóa Branch dư, nối thẳng vào
+`Branch(IsReplaceModeActive)`. Verify: mọi pin `then`/`execute` khớp `LinkedTo` 2 chiều, không
+còn node dư. Bản mirror ở `Sprints/Sprint2/ContextMenu_Prep.md` §4.2 (doc prep gốc, giữ đồng bộ).
+
+---
+
 ## Lịch sử cập nhật
 
 | Phiên bản | Ngày | Nội dung |
@@ -958,3 +1019,4 @@ vậy khối B lặp 3 lần trong export là sự thật quan sát trực tiế
 | 2.2 | 24/06/2026 | C3b: CB_SaveCombo đổi luồng — KHÔNG gọi SaveComboFromSelection trực tiếp nữa. Guard ≥2 đồ → CalculateCenter → Get All Widgets WBP_FurnitureInventory → OpenSaveComboDialog (delegate sang inventory). |
 | 2.3 | 24/06/2026 | C4: Thêm `CalculateComboAnchor` — center XY + anchorZ (MinZ sàn / MaxZ trần). CB_SaveCombo_Handler: đổi `CalculateCenter` → `CalculateComboAnchor`. |
 | 2.4 | 24/07/2026 | **C9.0c — StartReplaceMode viết lại theo K2Node export thật.** Var `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`) — migration xảy ra ngoài phiên Claude Code, doc trước đây không biết. `StartReplaceMode` doc v1.10 cũ (mô tả `bIsReplaceMode`, guard `LENGTH==0`, navigate theo `Actors[0]`) đã lỗi thời — thay bằng flow đối chiếu K2Node export: Primary actor RowName→DT lookup (fallback SelectedFurnitureActor.DAPath), merge điểm A → mở/dùng inventory (khối B lặp 3 lần trong graph). Fix 1 chỗ: `SET ReplaceTarget = E_ReplaceTarget::Mesh` trước đó dangling (không SET). Quan sát 1 (RowNotFound dead-end, chưa fix) + Quan sát 2 (guard LENGTH==0 không còn tồn tại trong export, khác doc cũ) — ghi nhận, KHÔNG tự fix. Chi tiết: `Sprints/Sprint2/ContextMenu_Prep.md` §4.2 (CB_Replace), `Blueprints/Blueprint_Logic_NodeFlow.md` §Event Tick. |
+| 2.5 | 24/07/2026 (tiếp) | **C9.0c HOÀN TẤT — 5/5 test regression PASS, 6/6 file compile sạch.** Pure Function mới `IsReplaceModeActive() → Boolean` (= `ReplaceTarget != None`), tồn tại song song trên cả `BP_FurnitureInputManager` và `WBP_FurnitureInventory` (2 bản riêng). `CB_Replace` (Custom Event) đưa vào doc canonical lần đầu — bug fix Branch dư literal=true chặn đường tới `StartReplaceMode`. `Event Tick — Box Select branch` (v1.5 canonical, KHÔNG phải bản tóm tắt ở `Blueprint_Logic_NodeFlow.md`) bổ sung 2 đoạn doc trước đây ghi thiếu (logic Blueprint đã có sẵn, chỉ chưa từng viết vào doc): guard `Branch(bIsPendingBoxSelect OR bIsBoxSelecting)` trước `HideBox`, và chuỗi thoát Replace Mode (`SET ReplaceTarget=None` + `Clear MeshesToReplace` + `ExitReplaceMode`) sau `DeselectAll` trong Branch A. Không sửa logic — verify K2Node export xác nhận đúng. Chi tiết đầy đủ 6 file liên quan: `Widgets/WBP_FurnitureInventory.md`, `Widgets/WBP_MeshControls.md`, `Widgets/WBP_DetailPopup.md`, `Widgets/WBP_FurnitureCard.md`, `Widgets/WBP_ComboCard.md`. |

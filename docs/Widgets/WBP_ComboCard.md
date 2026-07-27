@@ -1,5 +1,5 @@
 # WBP_ComboCard
-**Phiên bản:** 1.4 | **Tạo:** 24/06/2026 (C4) | Card hiển thị 1 combo trong tab 🧩 Combo (WBP_FurnitureInventory) — 22/07/2026: Field Kích thước + Delete Combo bind handler
+**Phiên bản:** 1.5 | **Tạo:** 24/06/2026 (C4) | Card hiển thị 1 combo trong tab 🧩 Combo (WBP_FurnitureInventory) — 24/07/2026: xóa dead code `Get_Button_ChangeMesh_Visibility` (C9.0c)
 
 > **File này TẠO MỚI 15/07/2026** — widget đã tồn tại và có version history từ 24/06/2026
 > (ghi rải rác trong `01_Session_State.md` mục KIẾN TRÚC HIỆN TẠI + `PROGRESS.md`), nhưng
@@ -141,6 +141,17 @@ Return Operation
 
 ---
 
+## Dead code đã xóa — `Get_Button_ChangeMesh_Visibility` (C9.0c, 24/07/2026)
+
+Widget này từng có 1 function `Get_Button_ChangeMesh_Visibility` **trùng tên** với hàm cùng tên
+trên `Widgets/WBP_FurnitureCard.md` — do cuhoang từng duplicate từ `WBP_FurnitureCard` sang lúc
+tạo file này. `WBP_ComboCard` **không có** widget `Button_ChangeMesh` (layout thật chỉ có
+`BTN_DeleteCombo`/`BTN_InforCombo`/`BTN_ChangeCombo`/`BTN_FavoriteCombo`) → hàm là dead code hoàn
+toàn, không binding nào tham chiếu. **Đã xóa** trong phiên migrate C9.0c 24/07/2026. Compile
+sạch sau khi xóa.
+
+---
+
 ## Lịch sử cập nhật
 
 | Phiên bản | Ngày | Nội dung |
@@ -150,3 +161,4 @@ Return Operation
 | 1.2 | 15/07/2026 (P1.G4) | File `.md` riêng TẠO MỚI (trước đó chỉ ghi rải rác). +DefaultThumbBrush (Slate Brush, chụp ở Event Construct). OnListItemObjectSet mở rộng: Branch IsValid(ComboItem.Thumbnail) → SetBrushFromTexture / else reset về DefaultThumbBrush (bắt buộc vì TileView tái sử dụng widget instance). |
 | 1.3 | 22/07/2026 | +TextBlock_Dimensions trong VB_Info (dưới TextBlock_Badge). OnListItemObjectSet mở rộng: tính L/W/H/S từ `ComboItem.BoundingBoxExtent` (×0.02 = half-extent→full extent cm→m), format qua `To Text (Float)` MinFrac=MaxFrac=1 + `Format Text` → `"{L}×{W}×{H} m — {S} m²"`. Node `To Text (Float)` mới confirm — xem `AI_Implementation_Rules.md`. Test PASS: card hiện đúng kích thước hợp lý so với combo thật. |
 | 1.4 | 22/07/2026 (tiếp) | **Delete Combo DONE, 5/5 test PASS.** `BTN_DeleteCombo.OnClicked` bind ở Event Construct → `Branch(IsValid(InventoryRef))` → `InventoryRef.RequestDeleteCombo(ComboItem.ComboID, ComboItem.ComboName)`. Logic xóa thật nằm ở `WBP_FurnitureInventory`. Layout note BTN_DeleteCombo cập nhật (trước ghi "chưa bind handler"). |
+| 1.5 | 24/07/2026 — C9.0c | Xóa dead code `Get_Button_ChangeMesh_Visibility` — function trùng tên duplicate từ `WBP_FurnitureCard` lúc tạo file, widget này không có `Button_ChangeMesh` nên hàm không được binding nào tham chiếu. Compile sạch sau khi xóa. Phát hiện trong lúc migrate `bIsReplaceMode`→`ReplaceTarget` toàn hệ thống (C9.0c). |

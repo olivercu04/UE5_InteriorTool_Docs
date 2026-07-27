@@ -1,7 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 23/07/2026 — **K1 (WBP_Toast) DONE** (5/5 test PASS) — tiếp theo **C9 (Replace Combo) → Save As/Save đè (mới) → C11 → C10**. C6 (Favorite + Recent combo) CHÍNH THỨC DONE HOÀN TOÀN (C6.1-C6.4 + K3 + 2 bug fix). C7 dời hẳn Sprint 6 (thay bằng field kích thước trên Combo Card, DONE). Field Kích thước Card + Delete Combo (5/5 test) + Dimension Fix đều DONE. **P2 (Studio Thumbnail) DONE về tính năng (Gate A→F)** — Gate F nối Save flow thật + fix framing rotation-invariant. Backlog: VRAM regression (SSAA 2048² chưa đo) + Feature-CanonicalStudioAngle (Sprint 6). Debug phím U đã xóa. **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
+**Phiên bản:** 24/07/2026 — **C9.0c (Migrate E_ReplaceTarget) HOÀN TẤT** (5/5 test regression PASS, 6/6 file compile sạch) — tiếp theo **C9 (Replace Combo, tính năng thật) → Save As/Save đè (mới) → C11 → C10**. K1 (WBP_Toast) DONE (5/5 test PASS). C6 (Favorite + Recent combo) CHÍNH THỨC DONE HOÀN TOÀN (C6.1-C6.4 + K3 + 2 bug fix). C7 dời hẳn Sprint 6 (thay bằng field kích thước trên Combo Card, DONE). Field Kích thước Card + Delete Combo (5/5 test) + Dimension Fix đều DONE. **P2 (Studio Thumbnail) DONE về tính năng (Gate A→F)** — Gate F nối Save flow thật + fix framing rotation-invariant. Backlog: VRAM regression (SSAA 2048² chưa đo) + Feature-CanonicalStudioAngle (Sprint 6). Debug phím U đã xóa. **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
 
 ---
 
@@ -315,12 +315,31 @@ curvature/Ceiling ground-align: mục "P2 — 20/07/2026" (+ Nấc 1 / Dome Cust
 Gate E: mục "P2 — 20/07/2026 (Gate E)"; Gate F: mục "P2 — 21/07/2026 — Gate F". `Bugs/Open_Bugs.md`
 cho trạng thái bug đóng/mở đầy đủ.
 
-**Thứ tự ưu tiên (23/07/2026 — K1 DONE, bỏ khỏi chuỗi):**
+**Thứ tự ưu tiên (24/07/2026 — C9.0c DONE, bỏ khỏi chuỗi):**
 ```
-C9 (Replace Combo) → Save As / Save đè (feature mới) → C11 (Export/Import) → C10 (Regression) → Gate 2
+C9 (Replace Combo — tính năng thật) → Save As / Save đè (feature mới) → C11 (Export/Import) → C10 (Regression) → Gate 2
 ```
-Delete Combo + K1 (Toast) đều đã DONE trong phiên (không còn nằm trong hàng đợi). Save As/Save
-đè chèn ngay sau C9 vì tái dùng hàm `ResolveSelectedComboRoot()` mà C9 sẽ viết.
+Delete Combo + K1 (Toast) + C9.0c (migrate hạ tầng `E_ReplaceTarget`) đều đã DONE (không còn
+nằm trong hàng đợi). Save As/Save đè chèn ngay sau C9 vì tái dùng hàm
+`ResolveSelectedComboRoot()` mà C9 sẽ viết.
+
+**C9.0c (Migrate `E_ReplaceTarget`) — HOÀN TẤT (24/07/2026), 5/5 test regression PASS, 6/6 file
+compile sạch.** Migrate `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`:
+None/Mesh/Combo) trên cả `BP_FurnitureInputManager` và `WBP_FurnitureInventory` — xảy ra ngoài
+phiên Claude Code, các delta ngày 24/07 chỉ ghi nhận lại qua đối chiếu K2Node export thật (Ctrl+A
+→ Ctrl+C → paste, không suy đoán qua ảnh chụp). Pure Function mới `IsReplaceModeActive()` (2 bản
+riêng, cùng logic). 3 bug fix: `CB_Replace` (Branch dư literal=true chặn đường tới
+`StartReplaceMode`), `WBP_DetailPopup.BTN_ChangeMesh` (SET nhầm biến `MeshToReplace` số ít/dead
+thay vì `MeshesToReplace` mảng — refactor luôn, gọi thẳng `StartReplaceMode` thay vì tự
+SET/mở/filter inventory trùng lặp logic), `WBP_FurnitureCard.Get_Button_ChangeMesh_Visibility`
+(Property Binding getter riêng biệt, chưa từng document, đọc biến `bIsReplaceMode` đã xóa → luôn
+Hidden vĩnh viễn). Dọn dead code: xóa hàm `Get_Button_ChangeMesh_Visibility` duplicate trên
+`WBP_ComboCard` (widget này không có `Button_ChangeMesh`). 2 Quan sát ghi nhận trong
+`StartReplaceMode` (RowNotFound dead-end + guard Length==0 không còn tồn tại trong export) —
+chưa quyết định fix, ngoài scope C9.0c. Chi tiết đầy đủ: `Blueprints/BP_FurnitureInputManager.md`
+v2.5, `Widgets/WBP_FurnitureInventory.md` v3.15, `Widgets/WBP_MeshControls.md` v1.8,
+`Widgets/WBP_DetailPopup.md` v1.3, `Widgets/WBP_FurnitureCard.md` v1.1, `Widgets/WBP_ComboCard.md`
+v1.5, `Sprints/Sprint2/ContextMenu_Prep.md` v1.2, `Blueprints/Blueprint_Logic_NodeFlow.md` v1.13.
 
 **K1 (WBP_Toast) — DONE (23/07/2026), 5/5 test PASS.** Widget mới `WBP_Toast` (`ShowToast`/
 `HideToast`, timer tự ẩn ~2.5s) + `Foff_GameInstance.ToastRef` (global access, set ở
@@ -475,3 +494,4 @@ Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
 | 22/07/2026 (Field Kích thước Card) | **DONE.** WBP_ComboCard v1.3 — TextBlock_Dimensions hiện "L×W×H m — S m²" từ ComboItem.BoundingBoxExtent, format qua To Text (Float) MinFrac=MaxFrac=1 (node mới confirm, đã vào bảng AI_Implementation_Rules.md). Test PASS. Combo BoundingBoxExtent=(0,0,0) (data cũ/lỗi) hiện "0,0×0,0×0,0 m — 0,0 m²" — không phải bug, chấp nhận được. Tiếp theo: Delete Combo. |
 | 22/07/2026 (Delete Combo + Dimension Fix) | **Delete Combo DONE** (5/5 test PASS) — ShowToastMsg TẠM thay Print String (K1 chưa DONE, đính chính giả định sai trước đó). **CalculateComboBoundingExtent sửa** Get Actor Bounds → Get Local Bounds×Scale+Location (fix phồng khi 1 món tự xoay tại chỗ; giới hạn còn lại — cả đội hình xoay lệch trục — merge vào backlog Feature-CanonicalStudioAngle Sprint 6, xem Open_Bugs.md). Thứ tự ưu tiên mới: **K1 (Toast) → C9 (Replace Combo) → Save As/Save đè → C11 → C10 → Gate 2.** Chi tiết: `Widgets/WBP_ComboCard.md` v1.4, `Widgets/WBP_FurnitureInventory.md` v3.13, `Blueprints/BP_FurnitureUserPrefsManager.md` v1.1, `Blueprints/BP_ComboManager.md` v1.12. |
 | 23/07/2026 (K1) | **K1 (WBP_Toast) DONE — 5/5 test PASS.** Widget mới `WBP_Toast` (`ShowToast`/`HideToast`, timer tự ẩn) + `Foff_GameInstance.ToastRef` (global) + `WBP_FurnitureInventory.ShowToastMsg` (helper). 6 chỗ Print→Toast: `CreateNewFolderFlow`, `HandleDeleteFolderConfirmed`, `HandleMoveComboConfirmed`, `HandleDeleteComboConfirmed` (×2, gỡ `[TẠM 22/07]`), `SpawnComboByID` Sub-step C (Row Not Found — MỚI, trước dead-end trần trụi). **Đính chính as-built:** `OnRequestNewFolder` chỉ gọi Function riêng `CreateNewFolderFlow` (doc cũ mô tả logic thẳng trong Custom Event — SAI); 2 annotation `[gate bDebugMode]` sai/lỗi thời sửa lại (gate thật `EnabledState=Development Only`). Thứ tự ưu tiên mới: **C9 (Replace Combo) → Save As/Save đè → C11 → C10 → Gate 2.** Chi tiết: `Widgets/WBP_Toast.md` (mới), `Widgets/WBP_FurnitureInventory.md` v3.14, `Blueprints/BP_ComboManager.md` v1.13, `Planning/Architecture_Overview.md` v1.2. |
+| 24/07/2026 (C9.0c) | **C9.0c (Migrate E_ReplaceTarget) — HOÀN TẤT, 5/5 test regression PASS, 6/6 file compile sạch.** Migrate `bIsReplaceMode`→`ReplaceTarget` (Enum, None/Mesh/Combo) trên `BP_FurnitureInputManager` + `WBP_FurnitureInventory`, xảy ra ngoài phiên Claude Code — ghi nhận lại qua K2Node export thật. Pure Function mới `IsReplaceModeActive()` (2 bản riêng). 3 bug fix: `CB_Replace` (Branch dư literal=true), `WBP_DetailPopup.BTN_ChangeMesh` (SET nhầm `MeshToReplace` dead thay `MeshesToReplace`, refactor gọi thẳng `StartReplaceMode`), `WBP_FurnitureCard.Get_Button_ChangeMesh_Visibility` (Property Binding getter chưa từng document, đọc biến đã xóa → luôn Hidden). Xóa dead code trùng tên trên `WBP_ComboCard`. 2 Quan sát ghi nhận trong `StartReplaceMode` (RowNotFound dead-end, guard Length==0 mất tích) — chưa quyết định fix. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.5, `Widgets/WBP_FurnitureInventory.md` v3.15, `Widgets/WBP_MeshControls.md` v1.8, `Widgets/WBP_DetailPopup.md` v1.3, `Widgets/WBP_FurnitureCard.md` v1.1, `Widgets/WBP_ComboCard.md` v1.5, `Sprints/Sprint2/ContextMenu_Prep.md` v1.2, `Blueprints/Blueprint_Logic_NodeFlow.md` v1.13. Tiếp theo: **C9 (Replace Combo, tính năng thật)**. |

@@ -1,5 +1,5 @@
 # WBP_FurnitureCard
-**Phiên bản:** 1.0 | **Tạo:** 17/06/2026 — Sprint D.T6 | Card hiển thị 1 mặt hàng nội thất trong inventory
+**Phiên bản:** 1.1 | **Cập nhật:** 24/07/2026 — C9.0c: migrate `bIsReplaceMode`→`ReplaceTarget`, thêm `Get_Button_ChangeMesh_Visibility` (bug fix, chưa từng document) | Card hiển thị 1 mặt hàng nội thất trong inventory
 
 > **Sprint D.T6:** File này document WBP_FurnitureCard SAU khi bỏ DA_FurnitureItem. Trước D.T6, WBP_FurnitureCard được document trong `WBP_DragOverlay_FurnitureCard.md` (vẫn còn đó cho WBP_DragOverlay). Từ D.T6 WBP_FurnitureCard có file riêng.
 >
@@ -27,7 +27,8 @@ Canvas Panel
 ├── LazyImage_Thumb
 ├── Button_InforItem (+ Common Lazy Image)
 ├── Button_ChangeMesh (+ Common Lazy Image, Visibility = Hidden mặc định)
-│   ← chỉ hiện khi bIsReplaceMode = True (check trong OnListItemObjectSet)
+│   ← chỉ hiện khi ReplaceTarget == E_ReplaceTarget::Mesh (check trong OnListItemObjectSet;
+│     migrate C9.0c 24/07/2026, trước là bIsReplaceMode = True)
 └── Button_FavoriteFurniture (+ Common Lazy Image — heart icon, anchor top-right, 32×32)
 ```
 
@@ -48,7 +49,7 @@ Branch IsValid(InventoryRef)?
 
 Branch IsValid(InventoryRef)?
   True:
-    Branch InventoryRef.bIsReplaceMode == True?
+    Branch InventoryRef.ReplaceTarget == E_ReplaceTarget::Mesh?   ← [MIGRATE, C9.0c 24/07/2026] trước là bIsReplaceMode == True
       True  → Set Visibility(Button_ChangeMesh, Visible)
       False → Set Visibility(Button_ChangeMesh, Hidden)
   False:
@@ -56,8 +57,37 @@ Branch IsValid(InventoryRef)?
 
 → Call UpdateFavTint
 ```
+> So sánh trực tiếp `== E_ReplaceTarget::Mesh` (không dùng `IsReplaceModeActive()`) — card
+> furniture chỉ nên hiện nút khi đang replace đúng loại Mesh, không phải Combo.
 
 > ⚠ `BP_FurnitureItemView` là object wrapper truyền qua ListView (không phải DA). Struct chứa RowName. Sprint D tạo 1 BP_FurnitureItemView per filtered row khi populate grid.
+
+---
+
+## Get_Button_ChangeMesh_Visibility — Function (property binding getter, MỚI đưa vào doc, C9.0c 24/07/2026)
+
+⚠️ Hàm này **chưa từng được document trước đây** — không nằm trong EventGraph chính nên bị bỏ
+sót lúc viết doc ban đầu. Phát hiện + fix trong phiên migrate C9.0c, verify qua K2Node export
+thật.
+
+```
+FunctionEntry.then
+▶→ PrintString(DevelopmentOnly) ●← Conv_BoolToString(InventoryRef.ReplaceTarget == E_ReplaceTarget::Mesh)
+▶→ Branch(InventoryRef.ReplaceTarget == E_ReplaceTarget::Mesh)
+     True  ▶→ Return "Visible"
+     False ▶→ Return "Hidden"
+```
+Đây là hàm getter tự sinh cho **Property Binding** trên Designer panel (nút "fx" cạnh
+Visibility) — KHÁC với Branch trong `OnListItemObjectSet` ở trên (2 cơ chế riêng biệt cùng kiểm
+tra 1 điều kiện).
+
+**Bug fix, root cause:** trước migrate, node `EqualEqual_BoolBool` so sánh `bIsReplaceMode ==
+True` — sau khi biến `bIsReplaceMode` bị xóa (migrate sang `ReplaceTarget`), pin `Condition.A`
+rớt về default `false` → luôn `false == true` → Button_ChangeMesh luôn `Hidden` vĩnh viễn (dù
+`OnListItemObjectSet` đã set đúng qua nhánh khác — 2 cơ chế conflict, binding thắng vì chạy sau
+mỗi tick). Bài học: hàm getter dạng Property Binding dễ bị bỏ sót khi audit vì không nằm trong
+EventGraph chính — chỉ Compile All Blueprints mới bắt được lỗi (báo "not found" vì tham chiếu
+cross-class tới `InventoryRef.bIsReplaceMode` đã xóa).
 
 ---
 
@@ -131,3 +161,4 @@ IsValid(PreviewActor) → Destroy Actor → SET None
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 17/06/2026 — Sprint D.T6 | Tạo mới — tách từ WBP_DragOverlay_FurnitureCard.md. Implement D.T6: bỏ FurnitureDA, dùng CardRowName + BP_FurnitureItemView + DT_FurnitureCatalog. |
+| 1.1 | 24/07/2026 — C9.0c | Migrate `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`) trong `OnListItemObjectSet` (so sánh trực tiếp `== Mesh`, không dùng `IsReplaceModeActive()` — card cần phân biệt loại). Thêm `Get_Button_ChangeMesh_Visibility` (Function getter cho Property Binding, chưa từng document trước đây) — bug fix: node `EqualEqual` đọc biến `bIsReplaceMode` đã xóa → luôn Hidden vĩnh viễn, chỉ Compile All Blueprints mới bắt được. Verify qua K2Node export thật, test regression 5/5 PASS. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.5. |

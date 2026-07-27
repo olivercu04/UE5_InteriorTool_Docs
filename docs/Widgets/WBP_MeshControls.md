@@ -1,6 +1,6 @@
 # WBP_MeshControls
 **HỢP NHẤT TỪ 5 file:** v1.4 base (10/06) + v1.5_patch (11/06) → WBP_MeshControls.md merged (11/06) + v1.5_update (12/06) + v1.6_patch (15/06)
-**Phiên bản:** 1.7 | **Cập nhật:** 17/06/2026 — Sprint D.T6 | Persistent Toolbar — luôn hiển thị trên màn hình
+**Phiên bản:** 1.8 | **Cập nhật:** 24/07/2026 — C9.0c: BTN_Replace migrate `bIsReplaceMode`→`ReplaceTarget`/`IsReplaceModeActive()` | Persistent Toolbar — luôn hiển thị trên màn hình
 
 > **v1.7 (Sprint D.T6):** BTN_Info đọc `RowName` thay `DAPath→Load`. `UpdateDetailPopup` rewrite: bound vào `OnSelectionChanged`, nhận Primary → GET RowName → InitPopup(RowName). Event Construct: thêm bind `UpdateDetailPopup → OnSelectionChanged`. Fix stale popup bug (cũ: Mouse Left Pressed Step 11 đọc SelectedFurnitureActor trước khi selection resolve).
 > **v1.6 (Sprint 4 Bug Fix F1):** Info bar OnSelectionChangedInfoBar Then 1 → dùng `GetSelectionUnitLabel` thay inline logic. Widget name mapping: plan dùng HB_SelectionInfo/TXT_SelectionInfo → thực tế UE5 là `Border_ET_SelectionCount`/`ET_SelectionCount`.
@@ -168,16 +168,20 @@ GET SelectedFurnitureActor → Branch IsValid:
 
 ---
 
-## BTN_Replace OnClicked (v1.4 — StartReplaceMode multi)
+## BTN_Replace OnClicked (v1.4 — StartReplaceMode multi; migrate C9.0c 24/07/2026)
 
 ```
 Get All Actors Of Class(InputManager) → Get(0) → Cast → FurnitureInputRef
-Branch bIsReplaceMode == True:
-  True  → thoát Replace: SET bIsReplaceMode=False, CLEAR MeshesToReplace,
-          GameInstance → FurnitureInventoryRef → IsValid → ExitReplaceMode → Return
+Branch FurnitureInputRef.IsReplaceModeActive() == True:   ← [MIGRATE, C9.0c] trước là bIsReplaceMode == True
+  True  → SET FurnitureInputRef.ReplaceTarget = E_ReplaceTarget::None   ← trước là SET bIsReplaceMode=False
+          → Clear Array(MeshesToReplace)
+          → GameInstance → FurnitureInventoryRef → IsValid → ExitReplaceMode → Return
   False → Call StartReplaceMode(SelectedActors)  (InputManager — multi)
 ```
-> v1.4 XÓA mọi tham chiếu `MeshToReplace` (single). Flow chi tiết StartReplaceMode: xem BP_FurnitureInputManager / Blueprint_Logic (Sprint 2 T9).
+> v1.4 XÓA mọi tham chiếu `MeshToReplace` (single). Migrate C9.0c (24/07/2026, verify qua K2Node
+> export thật): `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`), điều kiện
+> đọc qua Pure Function `IsReplaceModeActive()` (`BP_FurnitureInputManager`). Flow chi tiết
+> StartReplaceMode: xem `BP_FurnitureInputManager.md` v2.5.
 
 ---
 
@@ -290,3 +294,4 @@ BTN_ExitFull.OnClicked     : Get All Actors Of Class(InputManager)[0] → ExitEd
 | 1.5 update | 12/06/2026 — 15:04 ICT | Thêm BTN_ExitOneLevel ("↑ Lên 1 cấp") vào HB_EditModeBar + OnClicked → ExitEditModeOneLevel. Cập nhật Layout. Thêm bảng hành vi Exit buttons. |
 | 1.6 | 15/06/2026 — 20:30 ICT | **F1: Info bar dùng GetSelectionUnitLabel.** OnSelectionChangedInfoBar Then 1: thay inline label logic bằng call InputManager.GetSelectionUnitLabel(Primary, Count). Widget name fix: HB_SelectionInfo → Border_ET_SelectionCount, TXT_SelectionInfo → ET_SelectionCount (tên thực tế trong UE5 Blueprint). |
 | 1.7 | 17/06/2026 — Sprint D.T6 | BTN_Info: đọc RowName thay DAPath→Load. UpdateDetailPopup rewrite: bound OnSelectionChanged, nhận Primary → RowName → InitPopup(RowName). Event Construct: thêm bind UpdateDetailPopup. Fix stale popup bug (cũ: Step 11 Mouse Left Pressed đọc actor trước selection resolve). |
+| 1.8 | 24/07/2026 — C9.0c | `BTN_Replace` migrate `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`) + Pure Function `IsReplaceModeActive()`. Migration xảy ra ngoài phiên Claude Code — verify qua K2Node export thật 24/07/2026, không suy đoán. Test regression 5/5 PASS. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.5. |
