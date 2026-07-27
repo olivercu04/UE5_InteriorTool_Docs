@@ -1,5 +1,5 @@
 # Sprint 2 — Context Menu: CB_ChangeMaterial + CB_Replace (Prep để thực thi cùng Sonnet 4.6)
-**Phiên bản:** 1.1 | **Cập nhật:** 07/06/2026 — 23:30 ICT | Lighting_Mnger UE5.5.4
+**Phiên bản:** 1.2 | **Cập nhật:** 24/07/2026 | §4.2 CB_Replace viết lại theo K2Node export thật (C9.0c, migrate `ReplaceTarget`) | Lighting_Mnger UE5.5.4
 
 > **v1.1 — chốt 3 câu hỏi:**
 > 1. **Replace = MULTI:** select similar (hoặc nhóm) → Replace → chọn mesh thay → **TẤT CẢ đồ đang chọn** đổi mesh. (Material vẫn single-primary cho v1.)
@@ -110,12 +110,42 @@ Cast InvRef → WBP_FurnitureInventory:
 ```
 
 ### 4.2 CB_Replace (callback trong BP_FurnitureInputManager)
+
+⚠️ **Cập nhật 24/07/2026 (C9.0c) — verified qua K2Node export thật** (Ctrl+A → Ctrl+C → paste,
+không phải ảnh chụp). Bản dưới đây thay bản prep gốc (dùng `bIsReplaceMode` boolean đơn giản) —
+as-built thật dùng `ReplaceTarget` (Enum `E_ReplaceTarget`, migrate C9.0c, xem
+`Blueprints/BP_FurnitureInputManager.md` v2.4).
+
 ```
-IsValid(ContextMenuRef) → Remove from Parent → SET None
-Branch IsValid(PrimarySelectedActor): False → Return
-Branch SelectedActors.Length > 0: False → Return
-Call StartReplaceMode(SelectedActors)                    ← function chung (mục 5.2)
+CB_Replace.then
+▶→ Branch(IsValid ContextMenuRef)
+     True ▶→ Remove from Parent(ContextMenuRef)
+          ▶→ SET ContextMenuRef = None
+          ▶→ Branch(IsReplaceModeActive)                ← FIX 24/07 (trước đó có Branch dư literal=true chặn đường)
+               True (đang active — tắt) ▶→
+                    SET ReplaceTarget = E_ReplaceTarget::None
+                    ▶→ Clear Array(MeshesToReplace)
+                    ▶→ Get Game Instance → Cast Foff_GameInstance
+                         ▶→ Branch(IsValid FurnitureInventoryRef)
+                              True ▶→ Branch(IsInViewport)
+                                   True ▶→ ExitReplaceMode
+                                   False ▶→ [dead-end]
+                              False ▶→ [dead-end]
+               False (chưa active — bật) ▶→
+                    Branch(IsValid PrimarySelectedActor)
+                         True ▶→ Branch(SelectedActors.Length > 0)
+                              True ▶→ StartReplaceMode(Actors = SelectedActors)
+                              False ▶→ [dead-end]
+                         False ▶→ [dead-end]
+     False ▶→ [dead-end]
 ```
+Đã verify: mọi pin `then`/`execute` khớp `LinkedTo` 2 chiều, không còn node dư từ bug trước
+(Branch dư literal=true chặn đường — đã fix cùng phiên).
+
+> ⚠️ **Ghi chú KP3 (ngoài phạm vi cập nhật 24/07):** §5.2 bên dưới (`StartReplaceMode` trong
+> planning gốc) vẫn còn mô tả `bIsReplaceMode` cũ — đây là bản PLAN gốc (đã bị as-built thật
+> vượt qua từ lâu, xem `Blueprints/BP_FurnitureInputManager.md` mục StartReplaceMode cho bản
+> đúng hiện tại). Không sửa §5.2 vì nằm ngoài phạm vi delta 24/07 (chỉ chỉ định §4.2).
 
 ### 4.3 Card BTN_ChangeMesh — NÂNG CẤP MULTI (WBP_DragOverlay_FurnitureCard)
 ```

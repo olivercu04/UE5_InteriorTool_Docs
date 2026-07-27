@@ -1,5 +1,5 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 2.3 | **Cập nhật:** 24/06/2026 — CalculateComboAnchor (C4) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 2.4 | **Cập nhật:** 24/07/2026 — `StartReplaceMode` viết lại đúng theo K2Node export thật (migrate `bIsReplaceMode`→`ReplaceTarget` E_ReplaceTarget, C9.0c) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 > **HỢP NHẤT TỪ:** base v1.6 + patch v1.7 + patch v1.8 + patch v1.9 (15/06/2026). Đây là bản đầy đủ, thay thế toàn bộ file gốc + patch trong import_raw.
 > **File canonical.** `BP_FurnitureInputManager_MERGED_v1.9.md` là bản duplicate — sẽ bị xóa (cuhoang 17/06/2026). Chỉ đọc file này.
@@ -34,7 +34,15 @@ TransformerPawnRef     : BP_TransformerPawn
 ActiveMode             : E_ActiveMode
 LocalWasGizmoActive    : Boolean
 DetailPopupRef         : WBP_DetailPopup
-bIsReplaceMode         : Boolean
+ReplaceTarget          : E_ReplaceTarget   ← [MIGRATE, C9.0c, xác nhận qua K2Node export 24/07/2026]
+                                              thay `bIsReplaceMode` (Boolean) cũ — enum hỗ trợ
+                                              nhiều loại replace target (None/Mesh/Combo — delta
+                                              24/07 dẫn "DEVIATIONS.md §11", nhưng KHÔNG tìm thấy
+                                              mục này trong file canonical hiện tại, có thể nằm ở
+                                              doc khác chưa phân phối vào đây — cần cuhoang xác
+                                              nhận nguồn thật). Migration xảy ra NGOÀI phiên Claude
+                                              Code — doc trước đây không hề biết, chỉ ghi nhận lại
+                                              qua export thật.
 MeshesToReplace        : Array of BP_FurnitureActor   ← v1.6: thay MeshToReplace (single). CLEAR ở End Play
                                                         (đã XÓA MeshToReplace single — single source of truth)
 ```
@@ -865,28 +873,69 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast
 
 ---
 
-## StartReplaceMode(Actors : Array<BP_FurnitureActor>) — v1.4 + v1.10 update
-> Document lần đầu v1.10 (đã có trong Blueprint từ v1.4). Gọi từ BTN_Replace (WBP_MeshControls) khi bIsReplaceMode == False.
+## StartReplaceMode(Actors : Array<BP_FurnitureActor>) — v2.4, verified qua K2Node export (24/07/2026)
+
+⚠️ **Thay toàn bộ nội dung v1.10 cũ** (mô tả dùng `bIsReplaceMode`, một guard `LENGTH==0`, và
+navigate folder theo `Actors[0]` khi `LENGTH==1`) — đã lỗi thời từ khi migrate sang
+`E_ReplaceTarget` (C9.0c, migrate ngoài phiên Claude Code). Nội dung dưới đây đối chiếu trực
+tiếp K2Node text export (Ctrl+A → Ctrl+C → paste), KHÔNG suy đoán qua ảnh chụp.
+
+Gọi từ `BTN_Replace` (WBP_MeshControls) khi `ReplaceTarget == E_ReplaceTarget::None`.
 
 ```
-Branch LENGTH(Actors) == 0: True → Return
+FunctionEntry.then
+▶→ SET MeshesToReplace = Actors
+▶→ SET ReplaceTarget = E_ReplaceTarget::Mesh          ← FIX 24/07 (trước đó dangling, không SET)
+▶→ Branch(IsValid PrimarySelectedActor)
+     True ▶→ Branch(RowName != "")                     ← RowName đọc từ PrimarySelectedActor
+          True ▶→ GetDataTableRow(DT_FurnitureCatalog, RowName)
+               Row Found ▶→ SET LocalFolderPath ●← BreakStruct.MeshFolderPath
+                    ▶→ [merge điểm A]
+               RowNotFound ▶→ [dead-end — xem Quan sát 1]
+          False ▶→ SET LocalDAPath ●← SelectedFurnitureActor.DAPath   ← đọc từ SelectedFurnitureActor,
+                                                                          KHÔNG phải PrimarySelectedActor
+               ▶→ MakeSoftObjectPath → Conv to SoftObjRef → LoadAsset_Blocking
+               ▶→ Cast DA_FurnitureItem
+                    then ▶→ SET LocalFolderPath ●← DA.MeshFolderPath
+                         ▶→ [merge điểm A]
+                    CastFailed ▶→ [dead-end]
+     False ▶→ [dead-end — không navigate, không mở inventory nếu Primary invalid]
 
-SET MeshesToReplace = Actors
-SET bIsReplaceMode = True
+[điểm A — merge cả 2 nhánh trên]
+▶→ Get Game Instance → Cast Foff_GameInstance
+     then ▶→ SET LocalInvRef ●← GameInstance.FurnitureInventoryRef
+          ▶→ Branch(IsValid LocalInvRef)
+               True ▶→ Branch(IsInViewport LocalInvRef)
+                    True  ▶→ EnterReplaceMode(LocalInvRef) ▶→ FilterByFolderPathWithUI(LocalFolderPath)
+                    False ▶→ [khối B — CreateWidget lặp lại]
+               False ▶→ [khối B — CreateWidget lặp lại, bản sao thứ 2]
+     CastFailed ▶→ [dead-end]
 
-Get Game Instance → GET FurnitureInventoryRef → IsValid:
-  True  → EnsureExpanded → EnterReplaceMode
-  False → Create WBP_FurnitureInventory → Add to Viewport → SET FurnitureInventoryRef
-
-← v1.10: navigate folder cho Primary actor dùng RowName (fallback DAPath cho save cũ)
-Branch LENGTH(Actors) == 1:
-  True:
-    Cast Actors[0] → GET RowName
-    Branch(RowName != ""):
-      True  → GetDataTableRow(DT_FurnitureCatalog, RowName) → MeshFolderPath → FilterByFolderPathWithUI
-      False → GET DAPath → Load Blocking → Cast DA → MeshFolderPath → FilterByFolderPathWithUI
-  False: (multi → không navigate)
+[khối B — pattern lặp 3 lần trong graph, cùng nội dung]
+Create WBP_FurnitureInventory ▶→ SET LocalInvRef
+▶→ AddToViewport
+▶→ Get Player Controller → SET bShowMouseCursor=True
+▶→ Cast Game Instance → SET GameInstance.FurnitureInventoryRef = LocalInvRef
+▶→ Cast LocalInvRef → WBP_FurnitureInventory
+▶→ EnterReplaceMode ▶→ FilterByFolderPathWithUI(LocalFolderPath)
 ```
+
+**Quan sát 1 (chưa sửa, ghi nhận — cuhoang chưa quyết định có cần fix không):**
+`GetDataTableRow.RowNotFound` là dead-end — nếu `RowName` tồn tại trên actor nhưng không tìm
+thấy row trong `DT_FurnitureCatalog` (dữ liệu stale), toàn bộ phần còn lại của function
+(navigate folder + mở inventory + `EnterReplaceMode`) **không chạy**. `MeshesToReplace`/
+`ReplaceTarget` vẫn được SET đúng, nhưng UI không phản hồi gì. Ngoài scope C9 hiện tại.
+
+**Quan sát 2 (không xác nhận được, khác doc cũ — chưa quyết định thêm lại hay bỏ qua):** Guard
+`Branch LENGTH(Actors)==0 → Return` mà doc trước đây mô tả **không xuất hiện** trong export hiện
+tại. Không rõ đã từng có rồi mất, hay doc mô tả sai từ đầu.
+
+**Khớp với deviation đã ghi nhận (⚠️ chưa xác minh được nguồn):** delta 24/07 nói khối B lặp 3
+lần khớp với ghi chú "StartReplaceComboMode mirror 3 nhánh trùng lặp của StartReplaceMode |
+ceiling: 2 replace target" tại `DEVIATIONS.md` §11 — nhưng grep file canonical hiện tại KHÔNG
+tìm thấy đoạn này. Có thể nằm trong 1 doc khác chưa phân phối vào repo, hoặc tham chiếu sai. Dù
+vậy khối B lặp 3 lần trong export là sự thật quan sát trực tiếp (không phụ thuộc việc xác minh
+được deviation cũ hay không) — không coi là bug mới, chỉ chưa xác nhận được lịch sử ghi chép.
 
 ---
 
@@ -908,3 +957,4 @@ Branch LENGTH(Actors) == 1:
 | 2.1 | 19/06/2026 — 19h ICT | Load mesh+material async qua BP_FurnitureActor.LoadMeshAsync/LoadMaterialsAsync; NewActorCopy đổi class var → local var; Add Recent Mesh parse MeshPath thay DAPath |
 | 2.2 | 24/06/2026 | C3b: CB_SaveCombo đổi luồng — KHÔNG gọi SaveComboFromSelection trực tiếp nữa. Guard ≥2 đồ → CalculateCenter → Get All Widgets WBP_FurnitureInventory → OpenSaveComboDialog (delegate sang inventory). |
 | 2.3 | 24/06/2026 | C4: Thêm `CalculateComboAnchor` — center XY + anchorZ (MinZ sàn / MaxZ trần). CB_SaveCombo_Handler: đổi `CalculateCenter` → `CalculateComboAnchor`. |
+| 2.4 | 24/07/2026 | **C9.0c — StartReplaceMode viết lại theo K2Node export thật.** Var `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`) — migration xảy ra ngoài phiên Claude Code, doc trước đây không biết. `StartReplaceMode` doc v1.10 cũ (mô tả `bIsReplaceMode`, guard `LENGTH==0`, navigate theo `Actors[0]`) đã lỗi thời — thay bằng flow đối chiếu K2Node export: Primary actor RowName→DT lookup (fallback SelectedFurnitureActor.DAPath), merge điểm A → mở/dùng inventory (khối B lặp 3 lần trong graph). Fix 1 chỗ: `SET ReplaceTarget = E_ReplaceTarget::Mesh` trước đó dangling (không SET). Quan sát 1 (RowNotFound dead-end, chưa fix) + Quan sát 2 (guard LENGTH==0 không còn tồn tại trong export, khác doc cũ) — ghi nhận, KHÔNG tự fix. Chi tiết: `Sprints/Sprint2/ContextMenu_Prep.md` §4.2 (CB_Replace), `Blueprints/Blueprint_Logic_NodeFlow.md` §Event Tick. |

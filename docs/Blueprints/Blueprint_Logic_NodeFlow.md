@@ -1,6 +1,6 @@
 # Blueprint Logic — Node Flow Reference
 **HỢP NHẤT TỪ 3 file:** v1.3 base (07/06) + v1.4_patch (12/06) + v1.5_patch (15/06)
-**Phiên bản:** 1.12 | **Cập nhật:** 21/07/2026 — BP_ComboManager Gate F: nối Studio pipeline vào Save flow thật (BeginThumbnailCapture), xóa debug phím U
+**Phiên bản:** 1.13 | **Cập nhật:** 24/07/2026 — BP_FurnitureInputManager Event Tick box branch verified qua K2Node export thật (C9.0c), thêm guard OR khác doc cũ
 **Mục đích:** Ghi lại thứ tự node logic để không cần chụp ảnh lại Blueprint. Full flows sống trong file BP_*.md / WBP_*.md tương ứng — file này ghi node-by-node diff và cross-BP flows.
 
 ---
@@ -440,10 +440,20 @@ Branch IsInputKeyDown(LeftCtrl):
 ```
 
 ### Event Tick — box branch (sau nudge, trong Sequence)
+
+⚠️ **Verified qua K2Node export thật 24/07/2026** (Ctrl+A → Ctrl+C → paste, không phải ảnh
+chụp) — đóng mục "CHƯA kiểm" trong note WIP C9.0c. Không sửa gì trong graph, chỉ 1 chỗ khác doc
+cũ (không phải bug): nhánh `bInventoryOpen==False` có thêm guard
+`Branch(bIsPendingBoxSelect OR bIsBoxSelecting)` TRƯỚC `HideBox` — doc trước đây mô tả đơn giản
+hơn (gọi `HideBox` + reset cờ vô điều kiện), thiếu guard này.
 ```
 [Guard inventory]: GetGameInstance→Cast→GET FurnitureInventoryRef→IsValid+IsInViewport→SET bInventoryOpen
 Branch bInventoryOpen:
-  F → HideBox + reset cờ → STOP
+  F → Branch(bIsPendingBoxSelect OR bIsBoxSelecting):        ← THÊM guard, khác doc cũ (24/07)
+        T → Branch IsValid(BoxSelectOverlayRef):
+              T → HideBox → SET bIsBoxSelecting=False → SET bIsPendingBoxSelect=False
+              F → dead-end
+        F → dead-end
   T:
    Branch bIsPendingBoxSelect:
      Branch bLMBHeld:
@@ -451,12 +461,21 @@ Branch bInventoryOpen:
              T → SET bIsBoxSelecting=True, bIsPendingBoxSelect=False, ShowBox, UpdateBox
        F → SET bIsPendingBoxSelect=False → Branch IsValid(PendingClickActor):
              T → SelectSingleActor + CaptureSnapshot("Select") + SET None
-             F → Branch Ctrl: F → DeselectAll + CaptureSnapshot("Deselect")
+             F → Branch Ctrl: T → dead-end (giữ selection, Ctrl+click nền không deselect)
+                              F → DeselectAll + CaptureSnapshot("Deselect")
+                                   → Branch(IsReplaceModeActive) — đã đúng từ trước, KHÔNG sửa
+                                        T → SET ReplaceTarget=None, Clear MeshesToReplace,
+                                            Cast GameInstance → ExitReplaceMode
+                                        F → dead-end
    Branch bIsBoxSelecting:
      Branch bLMBHeld:
        T → UpdateBox(BoxStartPos, MousePos)
        F → FinishBoxSelect(MousePos) → HideBox → SET bIsBoxSelecting=False → SET PendingClickActor=None
 ```
+> ⚠️ **Ghi chú KP3 (ngoài phạm vi 24/07):** `OnLMBReleased` Then 2 (mục dưới) vẫn còn ghi
+> `bIsReplaceMode` (tên cũ) — delta 24/07 chỉ verify block Event Tick này, không đụng
+> `OnLMBReleased`. Tên biến thật hiện tại là `ReplaceTarget` (`E_ReplaceTarget`), xem
+> `Blueprints/BP_FurnitureInputManager.md` v2.4.
 
 ### OnLMBReleased (đường chính chốt selection)
 ```
@@ -1361,3 +1380,4 @@ tiếp)
 | 1.10 | 19/07/2026 | **BP_ComboManager — Gate D: Noise + Aliasing Fix.** Class var mới `Cmb_AccumFramesLeft`/`Cmb_AccumTargetFrames` (default 24). `FinishComboCapture` tách khỏi `Delay(3.0)` — nối lại cuối Event Tick mới (mượn Tick cho temporal accumulation: `AccumulateComboFrame` mỗi frame + `Set Actor Tick Enabled` bật/tắt, node chờ xác nhận). Event End Play mở rộng: `Set Actor Tick Enabled(false)` + `ResetComboAccumulation`. ⚠️ Chưa có export K2Node đối chiếu — mô tả theo hướng dẫn session, cuhoang xác nhận test PASS (noise CONFIRM, aliasing/SSAA CONFIRM DONE). Ghi đè mô tả "Delay→chuỗi cũ" ở entry 1.9. Bối cảnh đầy đủ: `DEVIATIONS.md` 19/07/2026, `Data/ComboSerializer_Reference.md`. |
 | 1.11 | 20/07/2026 | **BP_ComboManager — Gate D: Rim Light + VRAM/GPU Crash Fix.** Rim Light [SCOPE] mở rộng Gate C: biến mới `Cmb_StudioRimLight`, `SpawnStudioLight` gọi lần 3 ở BeginPlay (`180.0, 2500000.0`); đổi `InVect` RotateAngleAxis (1500,0,1200)→(1200,0,1500), Attenuation Radius Key/Fill 8000→3000 + Rim=3000 mới, Post Process Exposure Compensation 0.0→+6.0. VRAM/GPU Crash Fix: Event End Play sắp xếp lại — `Get Texture Target` (node mới, chờ xác nhận) → `Release Render Target 2D` trước `Map_Clear(Cmb_ThumbnailCache)` (nay chạy VÔ ĐIỀU KIỆN, không còn lồng trong Branch IsValid handle) → `Reset Combo Accumulation` gọi TRƯỚC `SET Cmb_CaptureHandle=None` (trước đây SET chạy trước khiến hàm nhận None, no-op). CHƯA verify bằng đo VRAM dài hạn — xác nhận bằng đọc code + export K2Node. Bối cảnh đầy đủ: `DEVIATIONS.md` mục "P2 — 20/07/2026". |
 | 1.12 | 21/07/2026 | **BP_ComboManager — Gate F: nối Studio pipeline vào Save flow thật.** Nguồn: export K2Node THẬT của Event U (đối chiếu trực tiếp trước khi xóa). Custom Event mới `BeginThumbnailCapture(ComboID, DeltaYaw)` (tách khối spawn→align→Begin→enable-tick từ debug U cũ) dùng chung cho `SaveComboFromSelection` Bước 7 (thay capture in-place P1 cũ). Event Tick tail sửa 3 điểm: `ComboID` Finish đọc `Cmb_PendingCaptureComboID` (thay Concat debug array + suffix `_studio`), thêm `Broadcast OnComboLibraryChanged` cuối cùng (chạy mọi lần Finish kể cả fail). Bước 7: Broadcast nhánh True dời hẳn sang Tick tail (bắt buộc do pipeline async N=24). Đính chính giá trị thật: `FixedAngle.Yaw`=55 (không phải 0 như doc cũ) — promote `Cmb_StudioCamYaw`. Debug phím U + Enable Input đã XÓA. Bối cảnh đầy đủ: `DEVIATIONS.md` mục "P2 — 21/07/2026 — Gate F", `BP_ComboManager.md` v1.10. |
+| 1.13 | 24/07/2026 | **BP_FurnitureInputManager — Event Tick box branch verified (C9.0c).** Nguồn: K2Node text export thật (Ctrl+A→Ctrl+C→paste). Không sửa logic — chỉ xác nhận đúng + phát hiện 1 khác biệt so với doc cũ: nhánh `bInventoryOpen==False` có thêm guard `Branch(bIsPendingBoxSelect OR bIsBoxSelecting)` trước `HideBox` (doc cũ mô tả gọi thẳng không điều kiện). Đóng mục "CHƯA kiểm" trong note WIP C9.0c. Ghi chú: `OnLMBReleased` Then 2 (mục kế tiếp trong file) chưa được delta này đụng tới, vẫn ghi tên biến cũ `bIsReplaceMode` — tên thật hiện tại là `ReplaceTarget` (xem `BP_FurnitureInputManager.md` v2.4). Bối cảnh đầy đủ: `Blueprints/BP_FurnitureInputManager.md` v2.4, `Sprints/Sprint2/ContextMenu_Prep.md` v1.2. |
