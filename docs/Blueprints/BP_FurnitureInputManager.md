@@ -1,5 +1,5 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 2.5 | **Cập nhật:** 24/07/2026 (tiếp) — C9.0c HOÀN TẤT: `IsReplaceModeActive()` Pure Function mới, `CB_Replace` thêm vào doc, Event Tick Box Select branch bổ sung 2 đoạn thiếu (guard OR + chuỗi thoát Replace Mode) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 2.6 | **Cập nhật:** 30/07/2026 — C9.b/C9.d/C9.f DONE: `DestroyComboCluster`, `StartReplaceComboMode`, `ExecuteComboReplace` (3 function mới) + biến `ComboRootGroupIDToReplace`; `StartReplaceMode` bổ sung ghi chú behavior (MeshFolderPath full path, không strip) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 > **HỢP NHẤT TỪ:** base v1.6 + patch v1.7 + patch v1.8 + patch v1.9 (15/06/2026). Đây là bản đầy đủ, thay thế toàn bộ file gốc + patch trong import_raw.
 > **File canonical.** `BP_FurnitureInputManager_MERGED_v1.9.md` là bản duplicate — sẽ bị xóa (cuhoang 17/06/2026). Chỉ đọc file này.
@@ -934,6 +934,14 @@ Create WBP_FurnitureInventory ▶→ SET LocalInvRef
 ▶→ EnterReplaceMode ▶→ FilterByFolderPathWithUI(LocalFolderPath)
 ```
 
+**Behavior chốt (30/07/2026 — xác nhận qua delta "C9 Replace: Folder Highlight + Chip Fix &
+C9.b–C9.f"):** `DT_FurnitureCatalog.MeshFolderPath` lưu **FULL path** (vd
+`/Game/DatabaseProjectMaster/Model/Object_Model/Furniture/Table/Side_Table`). `LocalFolderPath`
+giữ NGUYÊN full path này khi truyền sang `FilterByFolderPathWithUI` — **KHÔNG strip ở đây**. Việc
+chuyển full→relative (cắt tại `"Object_Model/"`) làm BÊN TRONG `FilterByFolderPathWithUI` (xem
+`Widgets/WBP_FurnitureInventory.md` mục `Split.RightS`) — strip sớm ở `StartReplaceMode` sẽ làm
+`Split` bên trong hỏng.
+
 **Quan sát 1 (chưa sửa, ghi nhận — cuhoang chưa quyết định có cần fix không):**
 `GetDataTableRow.RowNotFound` là dead-end — nếu `RowName` tồn tại trên actor nhưng không tìm
 thấy row trong `DT_FurnitureCatalog` (dữ liệu stale), toàn bộ phần còn lại của function
@@ -1000,6 +1008,89 @@ còn node dư. Bản mirror ở `Sprints/Sprint2/ContextMenu_Prep.md` §4.2 (doc
 
 ---
 
+## ComboRootGroupIDToReplace : String (default "") — biến MỚI (C9.d, 30/07/2026)
+
+---
+
+## DestroyComboCluster(RootGroupID : String) — Function (MỚI, C9.b, 30/07/2026)
+
+**Local:** DestroyCombo_Actors (Array\<BP_FurnitureActor\>)
+```
+Entry
+▶→ Branch(RootGroupID == "") True ▶→ Return
+▶→ GetAllDescendantActors(RootGroupID) ●→ SET DestroyCombo_Actors   ← copy local (array pass-by-ref)
+▶→ ForEach DestroyCombo_Actors (a):
+     Loop Body ▶→ Branch(IsValid(a)) True ▶→ Destroy Actor(Target = a)
+     Completed ▶→ DeselectAll()            ← 🔴 bắt buộc, xem ghi chú
+               ▶→ PruneEmptyGroups()
+▶→ Return
+```
+🔴 `DeselectAll` KHÔNG được bỏ. Cụm bị thay đang được SELECT (đó là cách `ResolveSelectedComboRoot`
+tìm ra nó) — Destroy xong mà không deselect thì `SelectedActors`/`PrimarySelectedActor` vẫn giữ
+con trỏ tới actor vừa chết, khiến `SpawnComboByID` Sub-step D (gọi ngay sau từ `ReplaceCombo`)
+`DeselectAll`+`SelectActors` trên đống rác đó. Thứ tự `DeselectAll` TRƯỚC `PruneEmptyGroups`:
+deselect còn đụng gizmo/pivot, dọn xong mới prune group. `Destroy Actor` PHẢI nối Target = Array
+Element (để trống = self = destroy chính InputManager). CỐ Ý KHÔNG `CaptureSnapshot` ở đây —
+`ReplaceCombo` (`BP_ComboManager`) kiểm soát để đảm bảo đúng 1 snapshot cho cả thao tác replace.
+KHÔNG tái dùng `DeleteSelected` (chạy trên `SelectedActors` + tự capture "Delete" → dư 1 snapshot
+rác). Test orphan group: replace 3 lần liên tiếp → `Groups.Length` ổn định, không tăng dần.
+
+---
+
+## StartReplaceComboMode(RootGroupID : String, ComboID : String) — Function (MỚI, C9.d, 30/07/2026)
+
+Mirror cấu trúc 3 nhánh của `StartReplaceMode` (IsValid InvRef × IsInViewport) — cố ý KHÔNG gộp
+helper dùng chung (KP3). Khối cuối (thứ tự bắt buộc, không đảo):
+```
+SET ComboRootGroupIDToReplace = RootGroupID
+CLEAR MeshesToReplace                    ← mode này xóa payload của mode kia
+SET ReplaceTarget = E_ReplaceTarget::Combo
+
+← đọc FolderPath combo GỐC (F_LoadComboData trên BP_ComboManager) để navigate đúng thư mục;
+  load fail → FolderPath = "__ALL__" (vẫn mở inventory, không chết giữa chừng)
+← khối 3 nhánh mở/dùng inventory — cùng cấu trúc StartReplaceMode (IsValid InvRef × IsInViewport)
+
+[KHỐI CUỐI]
+  InvRef.SwitchInventoryMode(Combo)
+  → SET InvRef.ReplaceTarget = Combo
+  → InvRef.FilterComboByFolder(FolderPath)
+  → InvRef.PopulateComboTreeColumn()          ← as-built THÊM so với plan gốc
+  → InvRef.UpdateComboFolderHighlights()      ← as-built THÊM so với plan gốc
+  → InvRef.RefreshComboCardReplaceMode()
+```
+⚠️ `SwitchInventoryMode(Combo)` bên trong đã tự gọi `FilterComboByFolder("__ALL__")` → gọi lại
+lần 2 với FolderPath thật = build 2 lần trong 1 frame. Chấp nhận (kết quả cuối đúng, không thấy
+nháy UI) — xem `DEVIATIONS.md` mục "C9 Replace — 30/07/2026". `FolderPath == ""` là giá trị HỢP
+LỆ ("Chưa phân loại") — chỉ dùng `"__ALL__"` khi load combo gốc THẤT BẠI.
+
+---
+
+## ExecuteComboReplace(NewComboID : String) — Function (MỚI, C9.f, 30/07/2026)
+
+**Local:** ECR_RootGID2, ECR_ComboID2 (String), ECR_bFound2 (Boolean)
+```
+▶→ Branch(ReplaceTarget != E_ReplaceTarget::Combo) True ▶→ Return
+▶→ Branch(ComboRootGroupIDToReplace == "") True ▶→ Return
+▶→ Branch(NewComboID == "") True ▶→ Return
+▶→ Get All Actors Of Class(BP_ComboManager) → Get(0) → IsValid
+     False ▶→ Return
+     True  ▶→ ComboManager.ReplaceCombo(ComboRootGroupIDToReplace, NewComboID)   ← Custom Event,
+                                                                                    xem `Blueprints/BP_ComboManager.md`
+
+← cập nhật target để replace TIẾP được (đối xứng mesh — Luật 6B)
+▶→ ResolveSelectedComboRoot() ●→ ECR_RootGID2, ECR_ComboID2, ECR_bFound2
+▶→ Branch(ECR_bFound2)
+     True  ▶→ SET ComboRootGroupIDToReplace = ECR_RootGID2
+     False ▶→ SET ComboRootGroupIDToReplace = ""
+▶→ Return
+```
+Đoạn re-resolve chạy đúng cho CẢ 2 kết cục: success → cụm mới đang được select (`SpawnComboByID`
+tự `SelectActors`) → lấy `RootGID` mới; fail → `RestoreCurrentSnapshot` (xem
+`Blueprints/BP_UndoManager.md`) đã khôi phục cụm cũ với đúng `GroupID` cũ → lấy lại chính nó. Gọi
+từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
+
+---
+
 ## Lịch sử cập nhật
 
 | Phiên bản | Ngày | Nội dung |
@@ -1020,3 +1111,4 @@ còn node dư. Bản mirror ở `Sprints/Sprint2/ContextMenu_Prep.md` §4.2 (doc
 | 2.3 | 24/06/2026 | C4: Thêm `CalculateComboAnchor` — center XY + anchorZ (MinZ sàn / MaxZ trần). CB_SaveCombo_Handler: đổi `CalculateCenter` → `CalculateComboAnchor`. |
 | 2.4 | 24/07/2026 | **C9.0c — StartReplaceMode viết lại theo K2Node export thật.** Var `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`) — migration xảy ra ngoài phiên Claude Code, doc trước đây không biết. `StartReplaceMode` doc v1.10 cũ (mô tả `bIsReplaceMode`, guard `LENGTH==0`, navigate theo `Actors[0]`) đã lỗi thời — thay bằng flow đối chiếu K2Node export: Primary actor RowName→DT lookup (fallback SelectedFurnitureActor.DAPath), merge điểm A → mở/dùng inventory (khối B lặp 3 lần trong graph). Fix 1 chỗ: `SET ReplaceTarget = E_ReplaceTarget::Mesh` trước đó dangling (không SET). Quan sát 1 (RowNotFound dead-end, chưa fix) + Quan sát 2 (guard LENGTH==0 không còn tồn tại trong export, khác doc cũ) — ghi nhận, KHÔNG tự fix. Chi tiết: `Sprints/Sprint2/ContextMenu_Prep.md` §4.2 (CB_Replace), `Blueprints/Blueprint_Logic_NodeFlow.md` §Event Tick. |
 | 2.5 | 24/07/2026 (tiếp) | **C9.0c HOÀN TẤT — 5/5 test regression PASS, 6/6 file compile sạch.** Pure Function mới `IsReplaceModeActive() → Boolean` (= `ReplaceTarget != None`), tồn tại song song trên cả `BP_FurnitureInputManager` và `WBP_FurnitureInventory` (2 bản riêng). `CB_Replace` (Custom Event) đưa vào doc canonical lần đầu — bug fix Branch dư literal=true chặn đường tới `StartReplaceMode`. `Event Tick — Box Select branch` (v1.5 canonical, KHÔNG phải bản tóm tắt ở `Blueprint_Logic_NodeFlow.md`) bổ sung 2 đoạn doc trước đây ghi thiếu (logic Blueprint đã có sẵn, chỉ chưa từng viết vào doc): guard `Branch(bIsPendingBoxSelect OR bIsBoxSelecting)` trước `HideBox`, và chuỗi thoát Replace Mode (`SET ReplaceTarget=None` + `Clear MeshesToReplace` + `ExitReplaceMode`) sau `DeselectAll` trong Branch A. Không sửa logic — verify K2Node export xác nhận đúng. Chi tiết đầy đủ 6 file liên quan: `Widgets/WBP_FurnitureInventory.md`, `Widgets/WBP_MeshControls.md`, `Widgets/WBP_DetailPopup.md`, `Widgets/WBP_FurnitureCard.md`, `Widgets/WBP_ComboCard.md`. |
+| 2.6 | 30/07/2026 | **C9.b/C9.d/C9.f DONE (delta "C9 Replace: Folder Highlight + Chip Fix & C9.b–C9.f").** 3 function mới: `DestroyComboCluster(RootGroupID)` (hủy cụm combo cũ, 🔴 `DeselectAll` bắt buộc trước `PruneEmptyGroups`); `StartReplaceComboMode(RootGroupID, ComboID)` (mirror `StartReplaceMode`, khối cuối as-built THÊM `PopulateComboTreeColumn`+`UpdateComboFolderHighlights` so với plan gốc); `ExecuteComboReplace(NewComboID)` (gọi `BP_ComboManager.ReplaceCombo`, re-resolve `ComboRootGroupIDToReplace` sau replace — Luật 6B). Biến mới `ComboRootGroupIDToReplace`. `StartReplaceMode` bổ sung ghi chú behavior: `MeshFolderPath` là full path, không strip (strip xảy ra trong `FilterByFolderPathWithUI`). Chi tiết đầy đủ: `Blueprints/BP_ComboManager.md` (`ReplaceCombo`, `SpawnComboByID` sửa), `Blueprints/BP_UndoManager.md` (`RestoreCurrentSnapshot`), `Widgets/WBP_FurnitureInventory.md` (`OnMeshSelected` guard Bug A2, `EnterReplaceMode`, `RefreshComboCardReplaceMode`, fix `FilterByFolderPathWithUI`), `Widgets/WBP_ComboCard.md` (`BTN_ChangeCombo` wired). |

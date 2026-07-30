@@ -1,5 +1,5 @@
 # WBP_ComboCard
-**Phiên bản:** 1.5 | **Tạo:** 24/06/2026 (C4) | Card hiển thị 1 combo trong tab 🧩 Combo (WBP_FurnitureInventory) — 24/07/2026: xóa dead code `Get_Button_ChangeMesh_Visibility` (C9.0c)
+**Phiên bản:** 1.6 | **Tạo:** 24/06/2026 (C4) | Card hiển thị 1 combo trong tab 🧩 Combo (WBP_FurnitureInventory) — 30/07/2026: `BTN_ChangeCombo` wired (C9.f)
 
 > **File này TẠO MỚI 15/07/2026** — widget đã tồn tại và có version history từ 24/06/2026
 > (ghi rải rác trong `01_Session_State.md` mục KIẾN TRÚC HIỆN TẠI + `PROGRESS.md`), nhưng
@@ -83,7 +83,17 @@ Branch IsValid(InventoryRef)?
 → Branch(IsValid(ComboItem.Thumbnail)):     ← MỚI v1.2 (G4)
     True  → SetBrushFromTexture(LazyImage_ThumbCombo, ComboItem.Thumbnail)
     False → SET LazyImage_ThumbCombo.Brush = Get DefaultThumbBrush
+
+→ MỚI v1.6 (C9.f, 30/07/2026) — nối tiếp vào CUỐI chuỗi hiện có:
+Branch(IsValid(InventoryRef))
+  True  → Branch(InventoryRef.ReplaceTarget == E_ReplaceTarget::Combo)
+             True  → SetVisibility(BTN_ChangeCombo, Visible)
+             False → SetVisibility(BTN_ChangeCombo, Hidden)
+  False → SetVisibility(BTN_ChangeCombo, Hidden)
 ```
+Dùng `Hidden` (không phải `Collapsed`) làm trạng thái tắt — 3 nút còn lại trong `HB_Buttons`
+không xê dịch khi bật/tắt (giữ đúng layout gốc). `InventoryRef` đã có lazy-init sẵn phía trên
+(từ v1.1) — không thêm mới.
 
 **Ghi chú Field Kích thước (v1.3, 22/07/2026):**
 - Combo cũ hoặc lỗi data có `BoundingBoxExtent = (0,0,0)` → hiện `"0,0×0,0×0,0 m — 0,0 m²"`.
@@ -119,6 +129,23 @@ BTN_DeleteCombo.OnClicked ▶→ Branch(IsValid(InventoryRef))
 Logic xóa thật (confirm dialog, xóa file, dọn Favorite/Recent/thumbnail cache) nằm trong
 `WBP_FurnitureInventory.RequestDeleteCombo`/`HandleDeleteComboConfirmed` — xem
 `Widgets/WBP_FurnitureInventory.md`. Test 5/5 case PASS.
+
+---
+
+## BTN_ChangeCombo — Change Combo (WIRED, C9.f, 30/07/2026)
+
+Nút `BTN_ChangeCombo` layout có sẵn từ C4 (Visibility mặc định = Hidden — xem gate Visibility ở
+`OnListItemObjectSet` phía trên), CHƯA từng bind handler trước 30/07/2026:
+```
+BTN_ChangeCombo.OnClicked ▶→ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → IsValid
+     True ▶→ InputManagerRef.ExecuteComboReplace(NewComboID = ComboItem.ComboID)
+```
+Card gọi đúng 1 node (QĐ2, `docs/Plans/24-07-2026_C9_Execution_Plan.md` §1) — KHÔNG copy pattern
+inline destroy/spawn của `WBP_DragOverlay_FurnitureCard.BTN_ChangeMesh`. Logic thật (destroy
+cụm cũ, spawn cụm mới, rollback nếu fail) nằm trong `ExecuteComboReplace`/`ReplaceCombo` — xem
+`Blueprints/BP_FurnitureInputManager.md`, `Blueprints/BP_ComboManager.md`. Pattern
+`Get All Actors Of Class(InputManager)` đã được chính card này dùng ở `On Drag Detected` — không
+phải plumbing mới.
 
 ---
 
@@ -162,3 +189,4 @@ sạch sau khi xóa.
 | 1.3 | 22/07/2026 | +TextBlock_Dimensions trong VB_Info (dưới TextBlock_Badge). OnListItemObjectSet mở rộng: tính L/W/H/S từ `ComboItem.BoundingBoxExtent` (×0.02 = half-extent→full extent cm→m), format qua `To Text (Float)` MinFrac=MaxFrac=1 + `Format Text` → `"{L}×{W}×{H} m — {S} m²"`. Node `To Text (Float)` mới confirm — xem `AI_Implementation_Rules.md`. Test PASS: card hiện đúng kích thước hợp lý so với combo thật. |
 | 1.4 | 22/07/2026 (tiếp) | **Delete Combo DONE, 5/5 test PASS.** `BTN_DeleteCombo.OnClicked` bind ở Event Construct → `Branch(IsValid(InventoryRef))` → `InventoryRef.RequestDeleteCombo(ComboItem.ComboID, ComboItem.ComboName)`. Logic xóa thật nằm ở `WBP_FurnitureInventory`. Layout note BTN_DeleteCombo cập nhật (trước ghi "chưa bind handler"). |
 | 1.5 | 24/07/2026 — C9.0c | Xóa dead code `Get_Button_ChangeMesh_Visibility` — function trùng tên duplicate từ `WBP_FurnitureCard` lúc tạo file, widget này không có `Button_ChangeMesh` nên hàm không được binding nào tham chiếu. Compile sạch sau khi xóa. Phát hiện trong lúc migrate `bIsReplaceMode`→`ReplaceTarget` toàn hệ thống (C9.0c). |
+| 1.6 | 30/07/2026 — C9.f (delta "C9 Replace: Folder Highlight + Chip Fix & C9.b–C9.f") | `BTN_ChangeCombo` WIRED lần đầu: `OnListItemObjectSet` +gate Visibility (`Branch(InventoryRef.ReplaceTarget==Combo)` → Visible/Hidden, nối cuối chuỗi hiện có); `OnClicked` → `Get All Actors Of Class(BP_FurnitureInputManager) → ExecuteComboReplace(NewComboID=ComboItem.ComboID)`. Layout nút có sẵn từ C4, trước đó luôn Hidden vì chưa có logic C9. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.6. |

@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.15 | **Cập nhật:** 24/07/2026 — C9.0c HOÀN TẤT: migrate `bIsReplaceMode`→`ReplaceTarget` (Enum `E_ReplaceTarget`), Pure Function mới `IsReplaceModeActive()`, `ExitReplaceMode` +regenerate CTV_ComboCard, `BTN_Close` đưa vào doc lần đầu.
+**Phiên bản:** 3.16 | **Cập nhật:** 30/07/2026 — Folder Highlight Fix (`FilterByFolderPathWithUI` dùng relative path thay full path), Bug A2 (`OnMeshSelected` guard `ReplaceTarget==Mesh`), `EnterReplaceMode` bổ sung state tab/card, `RefreshComboCardReplaceMode` mới.
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -351,30 +351,38 @@ ForLoop → Create WBP_SlotSwatch → Bind OnSwatchClicked → AddChild
 ### OnMeshSelected(SelectedActor) — handler nội bộ — v2.4: VIẾT LẠI
 > ⚠️ Custom event nội bộ của inventory — KHÁC dispatcher `OnMeshSelected` đã XÓA ở InputManager. Nay được trigger qua `OnSelectionChangedMaterial`.
 
-**Nhánh REPLACE (v1.3 + v2.4 fix + v2.5 Sprint D.T6 RowName + C9.0c 24/07/2026):**
+**Nhánh REPLACE (v1.3 + v2.4 fix + v2.5 Sprint D.T6 RowName + C9.0c 24/07/2026 + Bug A2 30/07/2026):**
 ```
 Branch
   Condition ●← IsReplaceModeActive()   ← [FIX C9.0c, 24/07/2026] trước là literal
                                            EqualEqual(bIsReplaceMode == True) SAI (đọc biến đã xóa)
   T →
-    Get All Actors Of Class(BP_FurnitureInputManager)[0] → IsValid →
-      SET MeshesToReplace = InputManager.SelectedActors     ← v2.4: array
-    Branch IsValid(SelectedActor):                          ← guard folder nav (deselect → skip)
-      T →
-        ← v2.5 Sprint D.T6: Branch RowName thay DAPath→Load
-        Cast SelectedActor → GET RowName
-        Branch(RowName != ""):
-          True:
-            Get Data Table Row(DT_FurnitureCatalog, RowName) → Row Found → GET MeshFolderPath
-            → Branch MeshFolderPath != "" → FilterByFolderPathWithUI(MeshFolderPath)
-          False (save cũ RowName rỗng — fallback DAPath):
-            Cast → GET DAPath → Load Asset Blocking → Cast DA_FurnitureItem → GET MeshFolderPath
-            → Branch MeshFolderPath != "" → FilterByFolderPathWithUI(MeshFolderPath)
+    Branch( ReplaceTarget == E_ReplaceTarget::Mesh )   ← ★ MỚI 30/07/2026, Bug A2
+      [K2Node_IfThenElse + K2Node_EnumEquality]
+      True →
+        Get All Actors Of Class(BP_FurnitureInputManager)[0] → IsValid →
+          SET MeshesToReplace = InputManager.SelectedActors     ← v2.4: array
+        Branch IsValid(SelectedActor):                          ← guard folder nav (deselect → skip)
+          T →
+            ← v2.5 Sprint D.T6: Branch RowName thay DAPath→Load
+            Cast SelectedActor → GET RowName
+            Branch(RowName != ""):
+              True:
+                Get Data Table Row(DT_FurnitureCatalog, RowName) → Row Found → GET MeshFolderPath
+                → Branch MeshFolderPath != "" → FilterByFolderPathWithUI(MeshFolderPath)
+              False (save cũ RowName rỗng — fallback DAPath):
+                Cast → GET DAPath → Load Asset Blocking → Cast DA_FurnitureItem → GET MeshFolderPath
+                → Branch MeshFolderPath != "" → FilterByFolderPathWithUI(MeshFolderPath)
+      False → (bỏ qua — không nhảy tree về Furniture)
   F → (tiếp tục nhánh material)
 ```
-> ⚠️ Xác nhận qua K2Node export thật 24/07/2026: dùng `IsReplaceModeActive()` bất kể
-> `ReplaceTarget` là Mesh hay Combo — đúng vì `OnMeshSelected` chỉ quan tâm "có đang replace hay
-> không", không cần phân biệt loại (phân biệt Mesh/Combo là việc của `WBP_FurnitureCard`).
+> ⚠️ **Bug A2 (fix 30/07/2026):** `OnMeshSelected` trước đây fire vô điều kiện trên
+> `SelectActors` khi `IsReplaceModeActive()==True` bất kể `ReplaceTarget` là Mesh hay Combo — khi
+> combo replace mode chọn 1 actor thuộc cụm (qua `ResolveSelectedComboRoot`), nhánh mesh phía
+> trên tự chạy và nhảy tree về tab Furniture giữa lúc đang ở Combo replace flow. Fix: thêm guard
+> `Branch(ReplaceTarget == Mesh)` — chỉ chạy logic mesh-select khi thật sự đang replace Mesh.
+> Đính chính ghi chú cũ (24/07/2026): "phân biệt Mesh/Combo là việc của WBP_FurnitureCard" không
+> còn đúng hoàn toàn — `OnMeshSelected` nay CŨNG cần phân biệt để tránh tree-jump này.
 
 **Nhánh MATERIAL (v1.1 + v2.4 guard):**
 ```
@@ -417,17 +425,24 @@ Branch bIsMinimized:
 ```
 > ⚠️ Phải match BTN_MinimizedIcon OnClicked node-for-node. Thiếu 1 widget → expand không hoạt động. Bài học: restore-state function phải khớp source event.
 
-### EnterReplaceMode — v1.3 + v2.4 + C9.0c (24/07/2026)
+### EnterReplaceMode — v1.3 + v2.4 + C9.0c (24/07/2026) + bổ sung state 30/07/2026
 ```
 Call EnsureExpanded (Target=self)   ← v2.4: bung inventory nếu đang minimize (fix replace lúc minimize không bung)
 SET ReplaceTarget = E_ReplaceTarget::Mesh   ← [MIGRATE, C9.0c] trước là SET bIsReplaceMode = True
 Regenerate All Entries(CTV_FurnitureCard)
 ← Dùng khi bật Replace VÀ không cần navigate folder (BTN_Replace toggle ON)
 ← KHÔNG dùng từ DetailPopup (vì FilterByFolderPathWithUI sẽ clear cards sau đó)
+← THÊM 30/07/2026 (FUNCTION-LEVEL, chưa re-export node trong phiên này):
+SET CurrentInventoryMode = Furniture
+SetVisibility(CTV_ComboCard, Collapsed)
+SetVisibility(CTV_FurnitureCard, Visible)
+UpdateTabHighlight
 ```
-> Set cứng `Mesh` — hàm này CHỈ dùng cho đường Mesh. Combo mode (`StartReplaceComboMode`, ngoài
-> scope C9.0c) set `ReplaceTarget=Combo` trực tiếp trên inventory ref, không đi qua
-> `EnterReplaceMode`.
+> Set cứng `Mesh` — hàm này CHỈ dùng cho đường Mesh. Combo mode (`StartReplaceComboMode`, xem
+> `Blueprints/BP_FurnitureInputManager.md`) set `ReplaceTarget=Combo` trực tiếp trên inventory
+> ref, không đi qua `EnterReplaceMode`. 4 dòng thêm 30/07 đảm bảo tab/card đúng trạng thái
+> Furniture khi vào Replace Mesh (trước đó dựa vào state có sẵn từ lúc mở inventory, có thể sai
+> nếu user đang đứng ở tab Combo/Material lúc bấm Replace).
 
 ### ExitReplaceMode — v1.3 + C9.0c (24/07/2026)
 ```
@@ -442,6 +457,14 @@ Regenerate All Entries(CTV_FurnitureCard)
 ← Gọi từ bên ngoài (DetailPopup) sau FilterByFolderPathWithUI populate xong
 ← Đảm bảo cards mới thấy ReplaceTarget đúng (Mesh) → hiện BTN_ChangeMesh
 ```
+
+### RefreshComboCardReplaceMode() — Function (MỚI, C9.d, 30/07/2026)
+```
+▶→ Regenerate All Entries(CTV_ComboCard)
+```
+Bản mirror của `RefreshCardReplaceMode` cho phía Combo. Gọi từ `StartReplaceComboMode`
+(`BP_FurnitureInputManager`) sau `FilterComboByFolder` — đảm bảo card combo mới thấy
+`ReplaceTarget==Combo` → hiện `BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 
 ### BTN_Close — OnClicked (EventGraph, MỚI đưa vào doc — C9.0c, 24/07/2026)
 ```
@@ -1517,7 +1540,7 @@ InputAction OpenFurnitureInventory → FlipFlop
 
 ## Replace Mode — Navigate
 
-### FilterByFolderPathWithUI(FolderPath) — Custom Event
+### FilterByFolderPathWithUI(FolderPath) — Custom Event — SỬA 30/07/2026 (Folder Highlight Fix)
 ```
 1. Map Find(FolderTree, "") → Parse(",") → Level1Array → ForEach Break:
    FolderPath Contains Element → True: SET ActiveLevel1Path → Break
@@ -1525,10 +1548,23 @@ InputAction OpenFurnitureInventory → FlipFlop
 3. Split(FolderPath, "Object_Model/") → Right S = ShortPath
 4. Clear Children(VB_ChipTagArea) → Visible
 5. CreateChipTagsForPath(ShortPath)
-6. FilterByFolderPath(FolderPath)
-7. SetText(TB_Breadcrumb, ShortPath)
+6. FilterByFolderPath(ShortPath)         ← ★ SỬA 30/07 — trước đó truyền FolderPath (FULL path)
+7. UpdateFolderHighlights()              ← ★ MỚI 30/07 — chèn TRƯỚC bước 8
+8. SetText(TB_Breadcrumb, ShortPath)
 ```
 Gọi từ: BTN_Replace (MeshControls), BTN_ChangeMesh (DetailPopup), selection handler Replace branch.
+
+**Root cause đã fix (30/07/2026):** bước 6 trước đây ăn `FolderPath` FULL path (vd
+`/Game/.../Object_Model/Furniture/Table/Side_Table`) → `CurrentFolderPath` (class var, xem
+`FilterByFolderPath` bên dưới) bị SET thành full path → `IsPathActive` (so `StartsWith`) chỉ
+match được node gốc rỗng ("All") → chỉ "All" sáng trên tree/chip, không node nào khác từng sáng
+khi vào Replace bằng code (khác đường click tay, đi qua `OnTreeNodeClicked`/`OnChipTagClicked`
+riêng — vốn đã tự truyền relative path, không dính bug này). Fix: đổi input pin của
+`FilterByFolderPath` sang `ShortPath` (= `Split.RightS`, cùng nguồn relative dùng chung cho
+`CreateChipTagsForPath`/breadcrumb) — 1 nguồn duy nhất cho cả 3 chỗ dùng. Đồng thời chèn
+`UpdateFolderHighlights()` ngay sau `FilterByFolderPath` — cần vì luồng vào bằng code (replace)
+KHÔNG đi qua `OnTreeNodeClicked`/`OnChipTagClicked` (nơi vốn tự gọi highlight refresh) nên phải
+tự refresh ở đây.
 
 ### CreateChipTagsForPath(ShortPath)
 ```
@@ -1677,4 +1713,5 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.12 | 15/07/2026 — P1.G4 wire thumbnail hiển thị | Class var mới `ComboManagerRef` (BP_ComboManager) — set Event Construct (Then 6, Get All Actors Of Class→Get(0)), clear Event Destruct (R4). `LoadComboLibrary` mở rộng: trong ForEach sau build BP_ComboItemView, Branch IsValid(ComboManagerRef) → GetComboThumbnail(Target=ComboManagerRef) → SET view.Thumbnail; nhánh False vẫn Array_Add nhưng bỏ qua SET Thumbnail. ✅ Bug dead-end nhánh False FIXED 15/07/2026 (xem DEVIATIONS 15/07/2026 + Session_State mục P1). |
 | 3.13 | 22/07/2026 — Delete Combo | Class var mới `PendingDeleteComboID`. Custom Event mới `RequestDeleteCombo(ComboID, ComboName)` + `HandleDeleteComboConfirmed()` — mirror y hệt `OnRequestDeleteFolder`/`HandleDeleteFolderConfirmed` (Luật 6B). Xóa file `.json`+PNG, `InvalidateThumbnail`, gỡ khỏi Favorite nếu đang favorite, `RemoveRecentCombo` (function mới `BP_FurnitureUserPrefsManager`), Broadcast `OnComboLibraryChanged`. Test 5/5 case PASS. Đính chính: K1 (`WBP_Toast`) CHƯA DONE — `Print String` tạm thay `ShowToastMsg`, thay lại khi K1 xong. |
 | 3.14 | 23/07/2026 — K1 (WBP_Toast) DONE | Function mới `ShowToastMsg(Message)` (Get Game Instance → Cast Foff_GameInstance → IsValid(ToastRef) → ShowToast / fallback Print String). 5 call site đổi Print→Toast: `CreateNewFolderFlow` (bOK=False), `HandleDeleteFolderConfirmed`, `HandleMoveComboConfirmed` (bOK=False), `HandleDeleteComboConfirmed` (×2 nhánh — gỡ 2 dòng `[TẠM 22/07]`). **Đính chính as-built quan trọng:** `OnRequestNewFolder` KHÔNG chứa logic trực tiếp như doc cũ mô tả — thực tế chỉ gọi Function riêng `CreateNewFolderFlow` (Target=self), nơi chứa toàn bộ logic thật. Viết lại đúng kiến trúc, tách `OnRequestNewFolder` (wrapper mỏng) và `CreateNewFolderFlow` (Function mới đưa vào doc) thành 2 mục riêng. Sửa 2 annotation `[gate bDebugMode]` sai/lỗi thời (`CreateNewFolderFlow`, `HandleDeleteFolderConfirmed`) — Print gốc thực chạy không điều kiện (gate thật là `EnabledState=Development Only`, không phải Branch). Test K1 5/5 case PASS. Chi tiết: `Widgets/WBP_Toast.md` (mới), `Blueprints/BP_ComboManager.md` (chỗ #6). |
+| 3.16 | 30/07/2026 — Folder Highlight Fix + Bug A2 + C9.d (delta "C9 Replace: Folder Highlight + Chip Fix & C9.b–C9.f") | **NODE-VERIFIED:** `FilterByFolderPathWithUI` bước 6 đổi input `FilterByFolderPath` từ `FolderPath` (FULL path) → `ShortPath` (relative, = `Split.RightS`, cùng nguồn dùng chung với chip/breadcrumb) — root cause bug "chỉ node All sáng khi vào Replace bằng code". Chèn `UpdateFolderHighlights()` sau `FilterByFolderPath`, trước `SetText(Breadcrumb)` (luồng code không qua `OnTreeNodeClicked`/`OnChipTagClicked` nên phải tự refresh). **Bug A2:** `OnMeshSelected` nhánh Replace thêm guard `Branch(ReplaceTarget==Mesh)` bên trong `IsReplaceModeActive()==True` — fix tree nhảy về tab Furniture khi đang combo replace (chọn actor thuộc cụm qua `ResolveSelectedComboRoot` trước đó vô tình trigger nhánh mesh). **FUNCTION-LEVEL (chưa re-export node):** `EnterReplaceMode` +4 dòng (`SET CurrentInventoryMode=Furniture`, Collapse `CTV_ComboCard`, Visible `CTV_FurnitureCard`, `UpdateTabHighlight`); Function mới `RefreshComboCardReplaceMode()` (Regenerate `CTV_ComboCard`, mirror `RefreshCardReplaceMode`), gọi từ `StartReplaceComboMode` (`BP_FurnitureInputManager`). Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.6, `DEVIATIONS.md`. |
 | 3.15 | 24/07/2026 — C9.0c HOÀN TẤT | Migrate `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`, None/Mesh/Combo) — migration xảy ra ngoài phiên Claude Code, doc trước đây không biết. Pure Function mới `IsReplaceModeActive() → Boolean` (bản riêng, song song với `BP_FurnitureInputManager`). `OnMeshSelected` nhánh Replace: Condition đổi sang `IsReplaceModeActive()` — bug fix (trước là literal EqualEqual đọc biến đã xóa, luôn sai). `EnterReplaceMode`: `SET ReplaceTarget=Mesh` (set cứng Mesh, Combo mode đi đường khác không qua hàm này). `ExitReplaceMode`: `SET ReplaceTarget=None` + THÊM `Regenerate All Entries(CTV_ComboCard)` (đường thoát duy nhất cho cả 2 mode). `BTN_Close` đưa vào doc lần đầu (chưa từng được ghi trước đây). Verify qua K2Node export thật, không suy đoán. Test regression 5/5 PASS. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.5, `Widgets/WBP_MeshControls.md`, `Widgets/WBP_DetailPopup.md`, `Widgets/WBP_FurnitureCard.md`, `Widgets/WBP_ComboCard.md`. |

@@ -1,6 +1,6 @@
 # BP_UndoManager
 **HỢP NHẤT TỪ 6 file:** v1.2 (16/05) → v1.4 (04/06) → v1.5 (07/06) → **v1.6 base** (10/06) + v1.7_patch (12/06) + v1.8_patch (15/06)
-**Phiên bản:** 1.11 | **Cập nhật:** 21/07/2026 | K3 (bAddToRecent): pin `bAddToRecent=False` tại node SpawnFurnitureCopy trong RestoreSnapshot + sửa đoạn body Step 4 stale (ghi nhầm "v1.8" nhưng vẫn mô tả spawn inline cũ, đối chiếu export K2Node thật) — Actor riêng, quản lý toàn bộ Undo/Redo
+**Phiên bản:** 1.12 | **Cập nhật:** 30/07/2026 | C9.c: Custom Event mới `RestoreCurrentSnapshot()` (khôi phục snapshot hiện hành, không dịch con trỏ history) cho rollback của `ReplaceCombo` — Actor riêng, quản lý toàn bộ Undo/Redo
 
 > **v1.8 (Sprint 4 Bug Fix A12):** `EditModeStack` vào snapshot (Version 4 = `EditModeStackSnapshot`). Thêm `TempEditModeStack` var. Fix: Undo restore đúng edit mode state.
 > **v1.7 (Sprint 4 T8):** Thêm `ValidateEditMode()` — cắt `EditModeStack` từ group đã xoá sau Undo. Chèn vào RestoreSnapshot sau SyncGroupsToContainer.
@@ -323,6 +323,28 @@ xóa** — sửa lại cho khớp thực tế bên dưới.
 
 ---
 
+## RestoreCurrentSnapshot() — Custom Event (MỚI, C9.c, 30/07/2026)
+
+Khôi phục snapshot HIỆN HÀNH (theo `CurrentIndex`) — dùng cho rollback của
+`BP_ComboManager.ReplaceCombo` khi `SpawnComboByID` fail. KHÔNG dời con trỏ history (khác
+`Undo`/`Redo` vốn dịch `CurrentIndex` TRƯỚC khi gọi — V3 ghi ở `24-07-2026_C9_Execution_Plan.md`
+§0).
+
+```
+Custom Event RestoreCurrentSnapshot()
+▶→ Is Valid Index(SnapshotHistory, CurrentIndex) ●→ Branch
+     True  ▶→ RestoreSnapshot(IndexHistory = CurrentIndex)
+     False ▶→ dead-end (không có gì để khôi phục)
+```
+
+Guard `Is Valid Index` bắt buộc: `CurrentIndex` sai (history rỗng, hoặc bị trừ quá tay ở nhánh
+`Length >= MaxSteps` trong `CaptureSnapshot`) → truy cập mảng ngoài phạm vi. Tách hàm 1 node
+thay vì mở public `CurrentIndex` ra ngoài: ngữ nghĩa rõ ("khôi phục trạng thái hiện tại, KHÔNG
+dịch con trỏ") — khác `Undo`/`Redo`. Dùng lại được cho mọi rollback sau này (không chỉ Replace
+Combo).
+
+---
+
 ## Event End Play — VRAM Leak Prevention — v1.8: CẬP NHẬT
 
 ```
@@ -384,3 +406,4 @@ Event End Play →
 | 1.9 | 16/06/2026 — 14:10 ICT | G1.T1 — Fix B1 (Undo lần 2 không restore group state): +bIsRestoring (Boolean, KHÔNG SaveGame). RestoreSnapshot: SET True đầu hàm, SET False SAU Step 6b (merge) TRƯỚC Broadcast — vị trí bắt buộc SAU re-fire selection để chặn H1 (capture lén qua SelectActors). CaptureSnapshot: guard đầu hàm Branch(bIsRestoring) True→dead-end. Event End Play: SET False (vệ sinh session crash giữa restore). Verify: hist ổn định 16 qua 5 lần restore liên tiếp, scene/info bar đúng tại mọi điểm kể cả ranh giới Ungroup/CreateGroup. |
 | 1.10 | 16/06/2026 — 16h11p ICT | G1.T2 — Hợp nhất spawn path: RestoreSnapshot Step 4 không tự spawn inline nữa, gọi SpawnFurnitureCopy(bAutoSelect=False) qua reference cached 1 lần trước ForEach (class var RestoreInputMgr, tránh Get All Actors Of Class lặp trong loop). NewActor output đã type BP_FurnitureActor sẵn — bỏ Cast thừa so với plan gốc. Xóa toàn bộ code spawn inline cũ (Spawn Actor From Class, Load Asset Blocking, Set Static Mesh, ADD tag, restore material loop) — SpawnFurnitureCopy tự lo các bước này. Bug phát hiện trong test: bAutoSelect bị wire nhầm True → mọi lần restore chọn hết tất cả item trong scene → fix lại False. Test 5 case PASS (case crash khi tắt PIE sau Save/Load/Undo — defer Gate 2, nghi GPU/VRAM không liên quan thay đổi này). |
 | 1.11 | 21/07/2026 | **K3 (bAddToRecent) DONE.** RestoreSnapshot: pin `bAddToRecent=False` tại node SpawnFurnitureCopy (Step 4) — verify qua Blueprint Export Method (K2Node text) + screenshot thật. Test 4 case PASS (spawn combo, Undo/Redo, spawn furniture từ card, copy/paste — Recent behavior đúng cho từng case). Kèm sửa doc: đoạn body Step 4 trước ghi nhãn "v1.8: VIẾT LẠI" nhưng vẫn mô tả spawn inline cũ (mâu thuẫn với changelog v1.10 đã đúng) — đối chiếu export K2Node thật, viết lại khớp thực tế. Thêm class var `RestoreInputMgr` vào mục Variables (sót từ v1.10). Chi tiết: `DEVIATIONS.md`, `Bugs/Open_Bugs.md` mục K3. |
+| 1.12 | 30/07/2026 | **C9.c DONE (delta "C9 Replace: Folder Highlight + Chip Fix & C9.b–C9.f").** Custom Event mới `RestoreCurrentSnapshot()` — guard `Is Valid Index(SnapshotHistory, CurrentIndex)` → `RestoreSnapshot(CurrentIndex)`, KHÔNG dịch con trỏ history (khác Undo/Redo). Dùng cho rollback của `BP_ComboManager.ReplaceCombo` khi spawn combo thay thế fail. Chi tiết: `Blueprints/BP_ComboManager.md` v1.14. |

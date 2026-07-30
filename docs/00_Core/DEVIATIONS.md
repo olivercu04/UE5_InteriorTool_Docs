@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 22/07/2026
+**Cập nhật:** 30/07/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1103,6 +1103,52 @@ giờ — xử lý khi làm tính năng Save As/Save đè (Save As phải sinh `
 
 ---
 
+## C9 Replace — 30/07/2026 — Folder Highlight Fix + C9.b–C9.f
+
+**[BUG-FIX] Folder Highlight — `FilterByFolderPathWithUI` ăn nhầm full path**
+Bước gọi `FilterByFolderPath` bên trong `FilterByFolderPathWithUI` (`WBP_FurnitureInventory`)
+truyền `FolderPath` FULL path thay vì relative → `CurrentFolderPath` bị SET sai format →
+`IsPathActive` chỉ match được node gốc rỗng ("All") → vào Replace bằng code (không qua
+`OnTreeNodeClicked`/`OnChipTagClicked`) chỉ "All" sáng, tree/chip không sáng đúng node. Fix: đổi
+input pin sang `Split.RightS` (relative, cùng nguồn dùng chung chip/breadcrumb) + chèn
+`UpdateFolderHighlights()` sau `FilterByFolderPath`. Xem `Widgets/WBP_FurnitureInventory.md` v3.16.
+
+**[BUG-FIX] Bug A2 — `OnMeshSelected` nhảy tree về Furniture giữa combo replace**
+`OnMeshSelected` (`WBP_FurnitureInventory`) trước đây chạy nhánh mesh vô điều kiện khi
+`IsReplaceModeActive()==True`, không phân biệt `ReplaceTarget` Mesh/Combo — chọn actor thuộc cụm
+combo (qua `ResolveSelectedComboRoot`) vô tình trigger navigate-folder mesh, nhảy tree về tab
+Furniture giữa lúc đang Combo replace. Fix: thêm guard `Branch(ReplaceTarget==Mesh)` bên trong.
+
+**[OPEN, chưa verify] StartReplaceMode nhánh DA legacy (RowName=="None")**
+Chưa verify format `DA_FurnitureItem.MeshFolderPath` (đường DA legacy, save cũ) có chứa
+`"Object_Model/"` hay không giống `DT_FurnitureCatalog`. Nếu DA lưu path khác format, `Split`
+trong `FilterByFolderPathWithUI` có thể cắt sai → tree/chip sai khi mở save cũ + Replace. Cần
+test riêng với 1 save cũ thật. Ceiling: prefix `"Object_Model/"` hardcode trong `Split`.
+
+**[CLEANUP] Chốt phương án normalize path — Split.RightS làm nguồn duy nhất**
+Phương án chọn: normalize full→relative tại `Split.RightS` trong `FilterByFolderPathWithUI`, dùng
+chung cho tree + chip + breadcrumb + `FilterByFolderPath`. KHÔNG strip prefix ở nguồn
+`StartReplaceMode` (`BP_FurnitureInputManager`) — giữ full path ở đó, xem
+`Blueprints/BP_FurnitureInputManager.md` mục `StartReplaceMode`.
+
+**[CEILING] `Split` In-Str = `"Object_Model/"` hardcode**
+Trigger nâng cấp: nếu mesh root đổi chỗ trong cấu trúc thư mục, HOẶC làm chuẩn hóa = DataTable
+lưu sẵn relative path / 1 hàm normalize path dùng chung cho cả tree-builder lẫn replace path.
+
+**[SCOPE] `SwitchInventoryMode(Combo)` gọi `FilterComboByFolder` 2 lần trong 1 frame**
+`StartReplaceComboMode` (`BP_FurnitureInputManager`) gọi `SwitchInventoryMode(Combo)` (đã tự
+`FilterComboByFolder("__ALL__")` bên trong) rồi gọi lại `FilterComboByFolder(FolderPath thật)` —
+build 2 lần/frame. Chấp nhận (kết quả cuối đúng, không thấy nháy UI khi test). Ceiling: không
+thấy nháy UI. Trigger: thấy nháy/giật → thêm param `bSkipInitialFilter` cho `SwitchInventoryMode`.
+
+**[PLAN-SAI, deviation so với Execution Plan] `Cmb_ReplaceCenter`→`Cmb_ReplaceAnchor`**
+`docs/Plans/24-07-2026_C9_Execution_Plan.md` §5.1/§6 đặt tên `Cmb_ReplaceCenter` (tính bằng
+`CalculateCenter`, centroid thuần). As-built đổi thành `Cmb_ReplaceAnchor` (tính bằng
+`CalculateComboAnchor` — center XY + anchorZ theo Floor/Ceiling) để fix bug anchor-vs-center
+mismatch khi spawn cụm thay thế. Xem `Blueprints/BP_ComboManager.md` v1.14.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -1183,4 +1229,5 @@ giờ — xử lý khi làm tính năng Save As/Save đè (Save As phải sinh `
 | 20/07/2026 (Dome Custom) | Thêm 2 section: "P2 — 20/07/2026 (Dome Custom) — Bug-DomeCurvature FIXED, Sweep 4/5 Loại" — [ARCH] dome custom (cylinder kín, đáy bo cong, ~500 unit vùng phẳng) thay `/Engine/BasicShapes/Sphere` (đảo ngược Gate B); [ARCH — đảo ngược Gate B] Cast Shadow=True verify an toàn trên dome mới (khác sphere cũ). Test PASS combo Dẹt (thảm) + To (sofa 15 món, worst-case footprint). "P2 — 20/07/2026 (Sweep 5 Loại)" — [SCOPE] 4/5 loại (Nhỏ/To/Dẹt/Tường) PASS chính thức; case Cao PASS sơ bộ bằng stack dựng tay (không phải combo tự nhiên) — quyết định Lựa chọn B: giữ làm bằng chứng sơ bộ, chờ combo kệ/tủ cao thật để đóng hẳn, không chặn việc khác. Bug-DomeCurvature cập nhật đồng thời `Bugs/Open_Bugs.md`. |
 | 20/07/2026 (Gate E) | Thêm section "P2 — 20/07/2026 (Gate E) — Depth of Field DONE": mở rộng node "Set members in Post Process Settings" sẵn có (Gate C) thêm Focal Distance + Aperture (F-stop), không tạo node mới; [VERIFY] plan gốc sai giả định — biến `Distance` C++ không xuất Blueprint, xấp xỉ bằng `Vector Distance(CaptureHandle, Cmb_StudioAnchor)`; Aperture=2.8 chốt sau test đối chứng f/1.0 (xác nhận pipeline chạy đúng, combo hiện có Z-spread nông nên f/2.8 blur khó thấy — đúng vật lý, không phải bug), khớp gu ảnh tham chiếu IKEA. Gate E DONE — tiếp theo Gate F (nối dây thật + closure). |
 | 21/07/2026 (Gate F) | Thêm section "P2 — 21/07/2026 — Gate F: nối Save flow thật + fix framing rotation-invariant": [ARCH] Radius bounding rotation-invariant (`max(Dist(actor→Center)+BoundsExtent.Size())` thay `Bounds.GetExtent().Size()` AABB) — zoom lệch ~20% giữa các góc xoay giảm còn ~6%; [ARCH] Broadcast dời từ Bước 7 sang Event Tick tail (bắt buộc do pipeline async N=24, không phải lựa chọn); [CORRECTION] FixedAngle.Yaw thật = 55 (không phải 0 như doc cũ), promote thành `Cmb_StudioCamYaw`; [BUG tự đóng] Save thật từng ra ảnh 2048² thô do không qua accumulate — Gate F chuyển qua đúng pipeline Studio nên tự hết. Node flow đầy đủ: `BP_ComboManager.md` v1.10, `Blueprint_Logic_NodeFlow.md`. |
+| 30/07/2026 | Thêm section "C9 Replace — 30/07/2026 — Folder Highlight Fix + C9.b–C9.f": 2 [BUG-FIX] (Folder Highlight ăn nhầm full path; Bug A2 OnMeshSelected nhảy tree Furniture giữa combo replace); 1 [OPEN] chưa verify (StartReplaceMode nhánh DA legacy, format MeshFolderPath); 1 [CLEANUP] chốt normalize path tại Split.RightS; 1 [CEILING] Split hardcode "Object_Model/"; 1 [SCOPE] FilterComboByFolder build 2 lần/frame trong StartReplaceComboMode; 1 [PLAN-SAI] Cmb_ReplaceCenter→Cmb_ReplaceAnchor (CalculateCenter→CalculateComboAnchor, fix anchor-vs-center mismatch). |
 | 22/07/2026 (C6) | Thêm section "C6 — 22/07/2026 — Favorite + Recent combo DONE + 2 bug fix": [BUG-FIX] `AddRecentCombo` — `SaveUserPrefs` dead-end trong nhánh `False` của `Branch(RecentComboIDs.Length > 48)` (chỉ save khi vượt cap, mọi test thực tế <48 không bao giờ ghi đĩa) — merge cả 2 nhánh; cap thật=48 không phải 20 (`UX_Phase2_Plan.md` sai); [BUG-FIX] Recent hiển thị chỉ 1 card — `FilterByCategory` đổi `AddItem` loop → `Set List Items` batch, bài học ghi skill `ue5-blueprint-rules` L12; [OBSERVATION] duplicate `comboId` khi copy tay JSON — không phải bug, backlog cho Save As/Save đè. File mới: `Blueprints/BP_FurnitureUserPrefsManager.md`. |

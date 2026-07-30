@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.13 | **Ngày:** 23/07/2026 | **K1 (WBP_Toast) DONE — SpawnComboByID Sub-step C: toast "Bỏ qua món" khi RowName không tồn tại**
+**Version:** 1.14 | **Ngày:** 30/07/2026 | **C9.b/C9.c DONE — SpawnComboByID +SnapshotLabel param, Custom Event ReplaceCombo mới**
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -403,6 +403,11 @@ SET Cmb_bSpawnInFlight = False
 
 CLEAR Cmb_SpawnedActors
 
+← C9.b/C9.c (30/07/2026):
+SET Cmb_LastSpawnSucceeded = False
+
+CLEAR Cmb_ReplaceActors   ← R4, hard ref actor
+
 ---
 
 ### F_LoadComboData(ComboID: String → OutData: FComboData, bSuccess: bool)
@@ -505,9 +510,24 @@ TargetActor → LoadMaterialsAsync(Overrides=ConvertedPaths, Index=0)
 
 ---
 
-### Custom Event SpawnComboByID(ComboID: String, SpawnLocation: Vector)
+### Custom Event SpawnComboByID(ComboID: String, SpawnLocation: Vector, SnapshotLabel: String) — v1.14: +SnapshotLabel (C9.b, 30/07/2026)
+
+⚠️ **GOTCHA — Custom Event input KHÔNG có Default Value** (khác Function). Caller cũ sau khi
+thêm pin sẽ truyền `""` → `CaptureSnapshot("")` → history có mục trống. Xử lý ở Sub-step D bằng
+node `Select` (pure, không cần Local Variable — Custom Event không có Local Variable theo L9):
+`(SnapshotLabel == "") ●→ Select.Index`, `Select.True = "SpawnCombo"`, `Select.False =
+SnapshotLabel`, `Select.Return ●→ CaptureSnapshot.ActionName`.
 
 #### Sub-step A — Guard + Load
+Dòng ĐẦU TIÊN, TRƯỚC cả Branch(Cmb_bSpawnInFlight):
+```
+▶→ SET Cmb_LastSpawnSucceeded = False   ← v1.14 (C9.b) — BẮT BUỘC ở đây
+```
+Vì sao bắt buộc: Sub-step A có 2 đường thoát sớm (guard `Cmb_bSpawnInFlight`, và
+`F_LoadComboData` fail) — cả 2 KHÔNG chạy tới Sub-step D. Không reset đầu hàm →
+`Cmb_LastSpawnSucceeded` giữ giá trị `True` cũ từ lần gọi trước → `ReplaceCombo` tưởng lần này
+thành công → không rollback → cụm cũ đã destroy, cụm mới không spawn → LỖ TRỐNG trong scene.
+
 Branch(Cmb_bSpawnInFlight):
 
 - True  → dead-end
@@ -572,13 +592,18 @@ Completed → (Sub-step D)
 #### Sub-step D — Post-spawn
 Branch(Cmb_SpawnedActors.Length == 0):
 
-- True  → SET Cmb_bSpawnInFlight=False → dead-end
+- True  → SET Cmb_LastSpawnSucceeded=False ← v1.14 (C9.b) → SET Cmb_bSpawnInFlight=False → dead-end
 - False →
+  - SET Cmb_LastSpawnSucceeded = True ← v1.14 (C9.b)
   - InputManagerRef → DeselectAll
   - InputManagerRef → SelectActors(Cmb_SpawnedActors)
-  - UndoManagerRef  → CaptureSnapshot("SpawnCombo")
+  - UndoManagerRef  → CaptureSnapshot( (SnapshotLabel=="") ? "SpawnCombo" : SnapshotLabel )  ← v1.14: qua node Select, xem ghi chú GOTCHA trên
   - SET Cmb_bSpawnInFlight = False
   - CLEAR Cmb_SpawnedActors
+
+Định nghĩa fail đã chốt: 0 item spawn được = fail toàn phần → `Cmb_LastSpawnSucceeded=False` →
+caller (`ReplaceCombo`) rollback. Skip lẻ tẻ vài `RowName` (K1 toast) vẫn tính success, KHÔNG
+rollback.
 
 **Test C2 (7/7 PASS — 22/06/2026):**
 1. Spawn nested 2 cấp → group cha tồn tại, SourceComboID đúng ✅
@@ -588,6 +613,69 @@ Branch(Cmb_SpawnedActors.Length == 0):
 5. RowName bậy → skip item, không crash ✅
 6. Save EMS → Load → combo + group + SourceComboID nguyên vẹn ✅
 7. Spawn 20 món → không khựng quá 0.5s ✅
+
+---
+
+## C9.b/C9.c — Replace Combo (30/07/2026)
+
+### Class Variables mới (C9.b/C9.c)
+
+| Tên | Kiểu | Vai trò |
+|-----|------|---------|
+| Cmb_LastSpawnSucceeded | bool (default False) | Đọc bởi `ReplaceCombo` sau `SpawnComboByID` để quyết định rollback. KHÔNG clear ở cuối event (caller cần đọc) — chỉ SET False ở End Play cho nhất quán |
+| Cmb_ReplaceAnchor | Vector | Anchor cụm hiện tại trước khi destroy, dùng làm `SpawnLocation` cho cụm mới. Dùng cho C9.c |
+| Cmb_ReplaceActors | Array BP_FurnitureActor | Actor của cụm sắp bị thay, CLEAR đầu event + cuối event + End Play (R4 — hard ref actor) |
+
+⚠️ **Deviation so với `docs/Plans/24-07-2026_C9_Execution_Plan.md` §6:** plan gốc đặt tên
+`Cmb_ReplaceCenter` (tính bằng `CalculateCenter`, centroid thuần) — as-built đổi thành
+`Cmb_ReplaceAnchor` (tính bằng `CalculateComboAnchor`, xem `Blueprints/BP_FurnitureInputManager.md`
+— center XY + anchorZ theo Floor/Ceiling). Lý do: sửa bug positioning anchor-vs-center mismatch
+(combo mới spawn lệch cao độ so với cụm cũ nếu dùng centroid thuần). Xem `DEVIATIONS.md` mục
+"C9 Replace — 30/07/2026".
+
+### Custom Event ReplaceCombo(RootGroupID: String, NewComboID: String)
+
+```
+0 ▶→ CLEAR Cmb_ReplaceActors          ← CLEAR class var persistent ở ĐẦU function. Không clear →
+                                          giữ hard ref actor của lần replace TRƯỚC (vi phạm R4).
+
+1 ▶→ Branch(Cmb_bSpawnInFlight)
+       True  ▶→ ToastRef.ShowToast("Đang xử lý, thử lại sau", 2.5) → dead-end
+       False ▶→ (tiếp)
+       ⚠️ CHỈ ĐỌC — TUYỆT ĐỐI KHÔNG SET cờ này (Sub-step A của SpawnComboByID cũng check đúng
+          biến đó; SET True ở đây sẽ tự chặn chính lệnh spawn phía sau).
+
+2 ▶→ Branch(RootGroupID == "" OR NewComboID == "") True ▶→ dead-end
+
+3 ▶→ InputManagerRef.GetAllDescendantActors(RootGroupID) ●→ SET Cmb_ReplaceActors
+
+4 ▶→ Branch(Cmb_ReplaceActors.Length == 0)
+       True  ▶→ ToastRef.ShowToast("Cụm rỗng — không thay được", 2.5) → dead-end
+       False ▶→ InputManagerRef.CalculateComboAnchor(Cmb_ReplaceActors) ●→ SET Cmb_ReplaceAnchor
+       ⚠️ Guard bắt buộc — `CalculateComboAnchor`/`CalculateCenter` đều chia cho Length actor;
+          Length==0 → spawn combo mới ở gốc tọa độ thế giới. Không crash nên rất dễ lọt.
+
+5 ▶→ InputManagerRef.DestroyComboCluster(RootGroupID)
+
+6 ▶→ SpawnComboByID(ComboID=NewComboID, SpawnLocation=Cmb_ReplaceAnchor, SnapshotLabel="ReplaceCombo")
+
+7 ▶→ Branch(Cmb_LastSpawnSucceeded)
+       True  ▶→ (không làm gì — snapshot đã capture bên trong SpawnComboByID)
+       False ▶→ UndoManagerRef.RestoreCurrentSnapshot()   ← xem Blueprints/BP_UndoManager.md
+             ▶→ ToastRef.ShowToast("Thay thế thất bại — đã khôi phục cụm cũ", 2.5)
+   [2 nhánh MERGE] ▶→ CLEAR Cmb_ReplaceActors
+```
+Toast gọi thẳng `Get Game Instance → Cast Foff_GameInstance → IsValid(ToastRef) →
+ToastRef.ShowToast(...)`. KHÔNG dùng `ShowToastMsg` (Function của `WBP_FurnitureInventory` —
+Actor không gọi được), giống pattern K1 ở `SpawnComboByID` Sub-step C.
+
+**Test (nguồn: Execution Plan §6 + delta 30/07):**
+1. Spawn combo A → chọn cụm → replace bằng B → cụm A biến, B đứng đúng chỗ cũ → Ctrl+Z → A quay
+   lại nguyên vẹn (group + SourceComboID)
+2. Replace bằng combo JSON hỏng/ID không tồn tại → `RestoreCurrentSnapshot` tự chạy → A còn
+   nguyên, scene KHÔNG lỗ trống, toast hiện
+3. Replace 2 lần liên tiếp thật nhanh → lần 2 bị guard `Cmb_bSpawnInFlight` chặn
+4. Replace 3 lần liên tiếp → `InputManagerRef.Groups.Length` ổn định, KHÔNG tăng dần (orphan group)
 
 ---
 
@@ -687,3 +775,4 @@ không giật thêm dù RT giờ 2048²).
 | 21/07/2026 | 1.11 | K3 (bAddToRecent) DONE — `SpawnComboByID` Phase 3 (Sub-step C): pin `bAddToRecent=False` tại node `SpawnFurnitureCopy` (trước đó checkbox "Add to Recent" có tick, chưa pin — cùng loại thiếu sót đã fix ở `RestoreSnapshot`/BP_UndoManager). Verify qua Blueprint Export Method (K2Node text) + screenshot thật, không đoán qua doc. Test 4 case PASS (spawn combo, Undo/Redo, spawn furniture từ card, copy/paste). Chi tiết: `Bugs/Open_Bugs.md` mục K3, `Blueprints/BP_UndoManager.md` v1.11. |
 | 23/07/2026 | 1.13 | K1 (WBP_Toast) DONE — `SpawnComboByID` Sub-step C, nhánh `Get Data Table Row` → `Row Not Found`: THÊM toast "Bỏ qua món: RowName '...' không tồn tại" (gọi thẳng `GameInstance.ToastRef.ShowToast`, không qua `ShowToastMsg` — Actor không có đường Function Widget). Trước đây dead-end trần trụi (doc cũ ghi nhầm "Print skip", thực tế chưa từng có). Test K1 5/5 case PASS (case 5 = chỗ này). Chi tiết: `Widgets/WBP_Toast.md` (mới), `Widgets/WBP_FurnitureInventory.md` v3.14. |
 | 22/07/2026 | 1.12 | Dimension Fix — `CalculateComboBoundingExtent` đổi `Get Actor Bounds` (World AABB, phồng khi actor tự xoay tại chỗ) → `Get Local Bounds`×Scale+Location (bounds local mesh, không bị Actor Rotation ảnh hưởng). Node mới `Get Local Bounds` chờ xác nhận (`AI_Implementation_Rules.md`). Giới hạn còn lại: cả đội hình combo xoay lệch trục vẫn phồng theo World AABB — merge backlog `Feature-CanonicalStudioAngle` (Sprint 6, cần field `ReferenceYaw`). Combo lưu trước 22/07/2026 giữ số cũ, không migrate hàng loạt. Test 3 case PASS. Ảnh hưởng: `WBP_ComboCard.md` mục Field Kích thước đọc field này. |
+| 30/07/2026 | 1.14 | **C9.b/C9.c DONE (delta "C9 Replace: Folder Highlight + Chip Fix & C9.b–C9.f").** `SpawnComboByID` +param `SnapshotLabel` (qua node `Select`, Custom Event input không có Default Value); Sub-step A reset `Cmb_LastSpawnSucceeded=False` đầu tiên (bắt buộc — 2 đường thoát sớm không chạy tới Sub-step D); Sub-step D SET cờ ở cả 2 nhánh. Custom Event mới `ReplaceCombo(RootGroupID, NewComboID)` — destroy cụm cũ (`DestroyComboCluster`) → spawn cụm mới tại `Cmb_ReplaceAnchor` → rollback qua `UndoManagerRef.RestoreCurrentSnapshot()` nếu fail. 3 class var mới: `Cmb_LastSpawnSucceeded`, `Cmb_ReplaceAnchor`, `Cmb_ReplaceActors` (CLEAR đầu event + End Play, R4). **Deviation:** đổi tên `Cmb_ReplaceCenter`→`Cmb_ReplaceAnchor` + `CalculateCenter`→`CalculateComboAnchor` so với `docs/Plans/24-07-2026_C9_Execution_Plan.md` §6 — fix bug anchor-vs-center mismatch. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` (`DestroyComboCluster`), `Blueprints/BP_UndoManager.md` (`RestoreCurrentSnapshot`), `DEVIATIONS.md`. |
