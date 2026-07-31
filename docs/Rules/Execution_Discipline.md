@@ -263,7 +263,7 @@ ai bắt (1 sự thật bị chép tay ở nhiều chỗ độc lập → sớm 
   Task dời sprint → bỏ khỏi mẫu số sprint cũ, thêm vào sprint đích.
 
 ### R-DOC-OWNER — Ai sở hữu phần số
-- **Chỉ bên có `view` file thật (Claude Code) mới cập nhật số đếm** (`X/Y`, `TỔNG xx/96`).
+- **Chỉ bên có `view` file thật (Claude Code) mới cập nhật số đếm** (`X/Y`, `TỔNG xx/xxx`).
 - Bên chỉ có `project_knowledge_search` (Sonnet/Opus khi soạn delta) = search LOSSY — **không tự
   sửa số**; chỉ nêu sự kiện + đánh dấu `[CẦN CLAUDE CODE VIEW]` chỗ không đọc được. Cấm im lặng bỏ
   qua, cấm đoán số.

@@ -1,6 +1,6 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
-**Cập nhật:** 24/07/2026 — C9.0c (Migrate E_ReplaceTarget) HOÀN TẤT, tiền đề cho C9 | K1 (WBP_Toast) DONE | C6 (Favorite + Recent combo) CHÍNH THỨC DONE HOÀN TOÀN | P2 Studio Thumbnail Gate F DONE, P2 HOÀN TẤT VỀ TÍNH NĂNG (Gate A→F) | P1 Combo Thumbnail DONE về tính năng | C5.8 CHÍNH THỨC DONE (13/07) | C9 (Replace Combo) DONE (30/07) — chuyển sang Save As/Save đè
+**Cập nhật:** 31/07/2026 — C9.0c (Migrate E_ReplaceTarget) HOÀN TẤT, tiền đề cho C9 | K1 (WBP_Toast) DONE | C6 (Favorite + Recent combo) CHÍNH THỨC DONE HOÀN TOÀN | P2 Studio Thumbnail Gate F DONE, P2 HOÀN TẤT VỀ TÍNH NĂNG (Gate A→F) | P1 Combo Thumbnail DONE về tính năng | C5.8 CHÍNH THỨC DONE (13/07) | C9 (Replace Combo) DONE (30/07) — chuyển sang Save As/Save đè
 
 ---
 
