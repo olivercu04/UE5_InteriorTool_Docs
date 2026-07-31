@@ -1,6 +1,6 @@
 # 10 — Kỷ Luật Thực Thi (Không bỏ cuộc, không đi lạc)
 **Nguồn:** `import_raw/28-05-2026_10_Execution_Discipline.md` (base v1.0) + `import_raw/10_Execution_Discipline_patch_v2.md` (v2.0, 14/06/2026)
-**Phiên bản:** 2.0 | **Cập nhật:** 14/06/2026
+**Phiên bản:** 3.0 | **Cập nhật:** 31/07/2026
 **Mục đích:** Cơ chế đảm bảo bám kế hoạch nhưng vẫn thích nghi được khi plan sai, không trôi dạt, không bỏ cuộc giữa chừng.
 
 ⚠️ Đọc file này cùng với `Rules/AI_Implementation_Rules.md`. File 09 = cách code đúng. File 10 = cách KHÔNG đi lạc trong quá trình code.
@@ -249,9 +249,38 @@ Phát hiện plan sai ở task X:
 
 ---
 
+## R-DOC — Kỷ luật đồng bộ Doc trạng thái
+**Thêm:** 31/07/2026. Bối cảnh: bar đếm PROGRESS.md trôi lệch checklist từ 01/07→30/07 mà không
+ai bắt (1 sự thật bị chép tay ở nhiều chỗ độc lập → sớm muộn lệch).
+
+### R-DOC-COUNT — Số đếm là DẪN XUẤT, không nuôi tay
+- Số `X/Y` của mỗi Sprint = **đếm số ô đã tick trong checklist** của Sprint đó. Không có con số
+  thứ hai sống tách rời checklist.
+- Task DONE → tick ô → tự khắc vào count. KHÔNG dùng nhãn tay "(chưa tính vào task count)".
+- Markdown không tự đếm — khi tick 1 ô, sửa luôn số trên bar TRONG CÙNG lần edit đó (1 người, 1
+  thao tác, 1 nguồn — không tách 2 nơi ra để rồi quên 1).
+- Đơn vị đếm = bullet cấp cao nhất; sub-task (C5.x, P-gate) không đếm riêng.
+  Task dời sprint → bỏ khỏi mẫu số sprint cũ, thêm vào sprint đích.
+
+### R-DOC-OWNER — Ai sở hữu phần số
+- **Chỉ bên có `view` file thật (Claude Code) mới cập nhật số đếm** (`X/Y`, `TỔNG xx/96`).
+- Bên chỉ có `project_knowledge_search` (Sonnet/Opus khi soạn delta) = search LOSSY — **không tự
+  sửa số**; chỉ nêu sự kiện + đánh dấu `[CẦN CLAUDE CODE VIEW]` chỗ không đọc được. Cấm im lặng bỏ
+  qua, cấm đoán số.
+
+### R-DOC-PASS — Rà đồng bộ cuối Sprint (không chạy sau mỗi task nhỏ)
+- Cuối mỗi Sprint, 1 lượt đối chiếu: `Session_State` ↔ `PROGRESS` (bar + lịch sử + checklist) ↔
+  `Current_Sprint` ↔ `Open_Bugs` có khớp nhau + khớp version mới nhất của widget/BP doc liên quan
+  không. Bắt lệch trước khi nó tích qua nhiều Sprint.
+- **Lần chạy ĐẦU TIÊN** (kèm delta 31/07): soi ngược từ đầu Sprint 5 → dọn nốt lệch cũ còn ẩn.
+  Sau đó chỉ chạy cuối mỗi Sprint, KHÔNG thành nghi thức định kỳ.
+
+---
+
 ## Lịch sử cập nhật
 
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 28/05/2026 | 5 cơ chế chống đi lạc + chống bỏ cuộc |
 | 2.0 | 14/06/2026 | Cơ chế 6 — Đối xứng thao tác: Luật 6A (forward+backward), Luật 6B (đối xứng cấu trúc). Definition of Done +2 điều kiện. Nguồn: bug CreateGroup bottom-up không nest (14/06). |
+| 3.0 | 31/07/2026 | Thêm mục R-DOC (R-DOC-COUNT/R-DOC-OWNER/R-DOC-PASS) — kỷ luật đồng bộ số đếm task giữa PROGRESS.md/checklist, chống trôi lệch như bar Sprint 5 đứng im 15/19 từ 01/07→30/07 không ai bắt. Nguồn: `Delta_DocSync_31jul2026.md` (Opus), quyết định rút gọn của cuhoang (bỏ R-DOC-1 manifest + R-DOC-3 luật A/B). |
