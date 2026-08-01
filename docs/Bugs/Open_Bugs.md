@@ -1,6 +1,7 @@
 # Open Bugs — Bugs đang mở
 **Tạo từ:** `00_Core/DEVIATIONS.md` (mục BUGS DEFERRED) + `00_Core/01_Session_State.md` (BUG CÒN MỞ) + `00_Core/02_Current_Sprint.md` (bối cảnh Gate 1)
-**Cập nhật:** 30/07/2026 — C9 Replace DONE: 3 bug fix (Bug B, Bug A2, folder-highlight/chip).
+**Cập nhật:** 01/08/2026 — Replace UX Fix P1.2+P3.2: 2 bug fix (#3a minimize, #3b chiptag/highlight
+combo-replace). C9 Replace DONE (30/07): 3 bug fix (Bug B, Bug A2, folder-highlight/chip).
 Bug mới ghi nhận: DA-legacy-path [OPEN, 🟢 Thấp].
 
 ---
@@ -24,6 +25,8 @@ Bug mới ghi nhận: DA-legacy-path [OPEN, 🟢 Thấp].
 | Bug-CeilingGroundAlign | ✅ FIXED (20/07) — Function `ResolveThumbAlign` (Nấc 1) phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType`, thay công thức "neo xuống sàn" đơn nhất | — | Test 6/6 case PASS. Xem DEVIATIONS mục "P2 — 20/07/2026 (Nấc 1)" |
 | Note-DuplicateComboID | Copy tay file `.json` trong Explorer rồi đổi tên → field `comboId` bên trong KHÔNG tự đổi theo tên file → 2 file khác tên nhưng cùng ID logic (Favorite/Recent coi là 1 combo) | 🟢 Thấp | KHÔNG phải bug, không sửa bây giờ — backlog cho tính năng Save As/Save đè combo (chưa có plan) |
 | DA-legacy-path | [OPEN] StartReplaceMode nhánh DA legacy (RowName=="None") — chưa verify `DA_FurnitureItem.MeshFolderPath` có chứa `"Object_Model/"` giống `DT_FurnitureCatalog` không. Nếu khác format, `Split` trong `FilterByFolderPathWithUI` cắt sai → tree/chip sai khi Replace trên save cũ dùng DA path | 🟢 Thấp | Verify khi có save cũ thật, hoặc dồn vào C10 (Regression) |
+| #3a (ComboReplace-Minimize) | ✅ FIXED (01/08) — combo-replace từ minimize: cửa sổ inventory không tự mở lại. `StartReplaceComboMode` thiếu bước un-minimize (nhánh mesh có qua `EnterReplaceMode→EnsureExpanded`, nhánh combo bỏ qua toàn bộ đường đó) | — | Fix: gọi `InventoryRef.EnsureExpanded()` trong `StartReplaceComboMode`. Test T3.3 PASS PIE. Xem `Blueprints/BP_FurnitureInputManager.md` v2.7 |
+| #3b (ComboReplace-ChiptagSync) | ✅ FIXED (01/08) — combo-replace: chiptag không rebuild + không highlight đúng (tree/card đúng combo nhưng chiptag vẫn Furniture) | — | Fix: gọi `RefreshChipBreadcrumb()` (hàm có sẵn) NGAY TRƯỚC `UpdateComboFolderHighlights()` trong `StartReplaceComboMode`. Test T1.1 PASS PIE. Xem `Blueprints/BP_FurnitureInputManager.md` v2.7, `DEVIATIONS.md` mục "Replace UX Fix — P1.2" |
 
 ---
 

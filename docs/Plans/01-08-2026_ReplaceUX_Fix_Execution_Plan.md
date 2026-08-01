@@ -107,6 +107,16 @@ guard `__NEWFOLDER__` + side-effect).
   Ceiling = logic chip combo ổn định. Trigger dedupe = chip combo đổi lần nữa → lúc đó refactor 2
   event cũ gọi hàm mới.
 
+> **[SUPERSEDED 01/08 — Sonnet export thật]** Quyết định (a) ở trên (viết hàm mới
+> `CreateComboChipTagsForPath`) **KHÔNG CẦN THỰC HIỆN**. Export K2Node thật của
+> `OnComboTreeNodeClicked` cho thấy nó gọi hàm có sẵn `RebuildChipRowForPath(Path,
+> OwnIndentLevel)` — đã đọc đúng `ComboFolderTree`/`CurrentComboFolderPath`, không hardcode
+> theo Furniture. Xa hơn: đã có sẵn `RefreshChipBreadcrumb()` (từ 06/07/2026, xem
+> `WBP_FurnitureInventory.md` §Bug fix Chip area) — hàm này CHÍNH XÁC là thứ P1.1 định viết
+> mới (đi từng cấp `CurrentComboFolderPath`, gọi lặp `RebuildChipRowForPath`). P1.1 rút gọn
+> còn: gọi `RefreshChipBreadcrumb()` đúng chỗ + đúng thứ tự (xem P1.2 dưới) — không code mới,
+> không phát sinh DEVIATIONS "code tồn 2 chỗ" như dự tính ban đầu.
+
 ---
 
 ## 3. QUYẾT ĐỊNH OPUS #2 — P3.2 minimize — **ĐIỀU TRA TRƯỚC, cấm code mù**
@@ -122,6 +132,13 @@ INV-2: nếu INV-1 không ra → PIE + Print String tại mọi SetVisibility li
         WBP_FurnitureInventory → bấm minimize → xem node nào fire (tìm cơ chế minimize thật)
 ```
 Có cơ chế rồi mới thiết kế fix #3a (thêm bước un-minimize vào đường combo). **Không đoán.**
+
+> **[DONE 01/08 — INV-1 ra kết quả, không cần INV-2/PIE]** Trace tĩnh K2Node
+> `EnsureExpanded()` (hàm có sẵn, gọi từ đầu `EnterReplaceMode` bên nhánh mesh) xác nhận
+> đây chính là cơ chế un-minimize toàn cửa sổ (SetVisibility `HB_MainContent`/
+> `VerticalBox_0`/`HB_TitleBar`/8 nút resize + SET `bIsMinimized=False` +
+> `SetPositionInViewport`). Combo bỏ qua vì không đi qua `EnterReplaceMode` (đã xác nhận
+> V0.2). Fix: gọi `EnsureExpanded()` trong `StartReplaceComboMode`. Test T3.3 PASS.
 
 ---
 

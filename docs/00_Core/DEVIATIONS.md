@@ -1155,6 +1155,33 @@ mismatch khi spawn cụm thay thế. Xem `Blueprints/BP_ComboManager.md` v1.14.
 
 ---
 
+## Replace UX Fix — P1.2 (01/08/2026) — Lỗi thứ tự tiềm ẩn trong RefreshComboFolderUI
+
+**Phát hiện:** Khi implement P1.2, ban đầu đặt `RefreshChipBreadcrumb()` SAU
+`UpdateComboFolderHighlights()` trong `StartReplaceComboMode` (theo đúng thứ tự ghi trong
+doc cho `RefreshComboFolderUI`: *"RefreshChipBreadcrumb() gọi từ RefreshComboFolderUI SAU
+UpdateComboFolderHighlights"*) → chip mới dựng ra không được highlight (vì
+`UpdateComboFolderHighlights` chạy khi `VB_ChipTagArea` còn rỗng). Sửa bằng cách ĐẢO
+NGƯỢC thứ tự trong `StartReplaceComboMode` — khớp đúng pattern đã chạy pass trong
+`OnComboTreeNodeClicked` (dựng chip trước, highlight sau).
+
+**Suy ra:** `RefreshComboFolderUI` (hàm khác, KHÔNG sửa trong đợt P1 này) có khả năng
+mang CÙNG lỗi thứ tự — nhưng chưa lộ ra vì hàm này thường được gọi khi
+`CurrentComboFolderPath` là `"__ALL__"`/`""` (`RefreshChipBreadcrumb` return sớm ở 2
+trường hợp đó, không có chip để highlight sai). Nếu sau này có đường gọi
+`RefreshComboFolderUI` với path sâu sẵn có (tương tự cách `StartReplaceComboMode` dùng),
+bug tương tự sẽ lộ.
+
+**Ceiling:** không sửa `RefreshComboFolderUI` trong đợt Replace UX Fix (ngoài scope, KP3).
+**Trigger fix:** nếu phát hiện chip không highlight đúng ở đường gọi `RefreshComboFolderUI`
+khác (VD sau Move/Rename combo với path sâu) → đảo thứ tự y hệt cách đã fix ở
+`StartReplaceComboMode`.
+
+Chi tiết đầy đủ P1.2 + P3.2: `Blueprints/BP_FurnitureInputManager.md` v2.7 mục
+`StartReplaceComboMode`, `Plans/01-08-2026_ReplaceUX_Fix_Execution_Plan.md`.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -1237,3 +1264,4 @@ mismatch khi spawn cụm thay thế. Xem `Blueprints/BP_ComboManager.md` v1.14.
 | 21/07/2026 (Gate F) | Thêm section "P2 — 21/07/2026 — Gate F: nối Save flow thật + fix framing rotation-invariant": [ARCH] Radius bounding rotation-invariant (`max(Dist(actor→Center)+BoundsExtent.Size())` thay `Bounds.GetExtent().Size()` AABB) — zoom lệch ~20% giữa các góc xoay giảm còn ~6%; [ARCH] Broadcast dời từ Bước 7 sang Event Tick tail (bắt buộc do pipeline async N=24, không phải lựa chọn); [CORRECTION] FixedAngle.Yaw thật = 55 (không phải 0 như doc cũ), promote thành `Cmb_StudioCamYaw`; [BUG tự đóng] Save thật từng ra ảnh 2048² thô do không qua accumulate — Gate F chuyển qua đúng pipeline Studio nên tự hết. Node flow đầy đủ: `BP_ComboManager.md` v1.10, `Blueprint_Logic_NodeFlow.md`. |
 | 30/07/2026 | Thêm section "C9 Replace — 30/07/2026 — Folder Highlight Fix + C9.b–C9.f": 3 [BUG-FIX] (Folder Highlight ăn nhầm full path; Bug A2 OnMeshSelected nhảy tree Furniture giữa combo replace; Bug B EnterReplaceMode thiếu SET CurrentInventoryMode + visibility CTV + UpdateTabHighlight — bổ sung 31/07, sót lần merge trước); 1 [OPEN] chưa verify (StartReplaceMode nhánh DA legacy, format MeshFolderPath); 1 [CLEANUP] chốt normalize path tại Split.RightS; 1 [CEILING] Split hardcode "Object_Model/"; 1 [SCOPE] FilterComboByFolder build 2 lần/frame trong StartReplaceComboMode; 1 [PLAN-SAI] Cmb_ReplaceCenter→Cmb_ReplaceAnchor (CalculateCenter→CalculateComboAnchor, fix anchor-vs-center mismatch). |
 | 22/07/2026 (C6) | Thêm section "C6 — 22/07/2026 — Favorite + Recent combo DONE + 2 bug fix": [BUG-FIX] `AddRecentCombo` — `SaveUserPrefs` dead-end trong nhánh `False` của `Branch(RecentComboIDs.Length > 48)` (chỉ save khi vượt cap, mọi test thực tế <48 không bao giờ ghi đĩa) — merge cả 2 nhánh; cap thật=48 không phải 20 (`UX_Phase2_Plan.md` sai); [BUG-FIX] Recent hiển thị chỉ 1 card — `FilterByCategory` đổi `AddItem` loop → `Set List Items` batch, bài học ghi skill `ue5-blueprint-rules` L12; [OBSERVATION] duplicate `comboId` khi copy tay JSON — không phải bug, backlog cho Save As/Save đè. File mới: `Blueprints/BP_FurnitureUserPrefsManager.md`. |
+| 01/08/2026 (Replace UX Fix P1.2) | Thêm section "Replace UX Fix — P1.2 (01/08/2026) — Lỗi thứ tự tiềm ẩn trong RefreshComboFolderUI": phát hiện lúc implement fix #3b — đặt `RefreshChipBreadcrumb()` SAU `UpdateComboFolderHighlights()` (đúng thứ tự tài liệu ghi cho `RefreshComboFolderUI`) khiến chip mới dựng không được highlight; sửa bằng ĐẢO NGƯỢC thứ tự trong `StartReplaceComboMode`. Suy ra `RefreshComboFolderUI` (không sửa trong đợt này) có khả năng mang cùng lỗi thứ tự nhưng chưa lộ — ghi ceiling/trigger, không tự sửa (KP3). |

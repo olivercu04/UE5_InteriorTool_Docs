@@ -1,5 +1,5 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 2.6 | **Cập nhật:** 30/07/2026 — C9.b/C9.d/C9.f DONE: `DestroyComboCluster`, `StartReplaceComboMode`, `ExecuteComboReplace` (3 function mới) + biến `ComboRootGroupIDToReplace`; `StartReplaceMode` bổ sung ghi chú behavior (MeshFolderPath full path, không strip) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 2.7 | **Cập nhật:** 01/08/2026 — Replace UX Fix P1.2+P3.2: `StartReplaceComboMode` sửa 2 chỗ (fix #3a `EnsureExpanded()`, fix #3b thêm `RefreshChipBreadcrumb()` đúng thứ tự trước `UpdateComboFolderHighlights()`) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 > **HỢP NHẤT TỪ:** base v1.6 + patch v1.7 + patch v1.8 + patch v1.9 (15/06/2026). Đây là bản đầy đủ, thay thế toàn bộ file gốc + patch trong import_raw.
 > **File canonical.** `BP_FurnitureInputManager_MERGED_v1.9.md` là bản duplicate — sẽ bị xóa (cuhoang 17/06/2026). Chỉ đọc file này.
@@ -1037,31 +1037,53 @@ rác). Test orphan group: replace 3 lần liên tiếp → `Groups.Length` ổn 
 
 ---
 
-## StartReplaceComboMode(RootGroupID : String, ComboID : String) — Function (MỚI, C9.d, 30/07/2026)
+## StartReplaceComboMode(RootGroupID : String, ComboID : String) — Function (MỚI, C9.d, 30/07/2026) — SỬA (Replace UX Fix P1.2+P3.2, 01/08/2026)
 
 Mirror cấu trúc 3 nhánh của `StartReplaceMode` (IsValid InvRef × IsInViewport) — cố ý KHÔNG gộp
-helper dùng chung (KP3). Khối cuối (thứ tự bắt buộc, không đảo):
+helper dùng chung (KP3). Node flow đầy đủ sau 2 fix 01/08 (fix #3a + fix #3b):
 ```
-SET ComboRootGroupIDToReplace = RootGroupID
-CLEAR MeshesToReplace                    ← mode này xóa payload của mode kia
-SET ReplaceTarget = E_ReplaceTarget::Combo
+Cast Foff_GameInstance → SET SRC Inv Ref (Furniture Inventory Ref)
+▶→ Branch(IsValid(SRC Inv Ref))
+     True  ▶→ Branch(IsInViewport)
+     False ▶→ Create WBP Furniture Inventory Widget → SET SRC Inv Ref ─┐
+                Branch(IsInViewport) [trên widget mới]                │
+                                                                        ▼
+     (merge cả các nhánh IsInViewport — cùng cấu trúc 3 nhánh StartReplaceMode)
+▶→ InventoryRef.EnsureExpanded()                          ← MỚI 01/08 (fix #3a)
+▶→ SET ComboRootGroupIDToReplace = RootGroupID
+▶→ CLEAR MeshesToReplace                    ← mode này xóa payload của mode kia
+▶→ SET ReplaceTarget = E_ReplaceTarget::Combo
 
 ← đọc FolderPath combo GỐC (F_LoadComboData trên BP_ComboManager) để navigate đúng thư mục;
   load fail → FolderPath = "__ALL__" (vẫn mở inventory, không chết giữa chừng)
-← khối 3 nhánh mở/dùng inventory — cùng cấu trúc StartReplaceMode (IsValid InvRef × IsInViewport)
 
 [KHỐI CUỐI]
   InvRef.SwitchInventoryMode(Combo)
   → SET InvRef.ReplaceTarget = Combo
   → InvRef.FilterComboByFolder(FolderPath)
-  → InvRef.PopulateComboTreeColumn()          ← as-built THÊM so với plan gốc
-  → InvRef.UpdateComboFolderHighlights()      ← as-built THÊM so với plan gốc
+  → InvRef.PopulateComboTreeColumn()
+  → InvRef.RefreshChipBreadcrumb()            ← MỚI 01/08 (fix #3b) — hàm CÓ SẴN (06/07), không
+                                                  phải code mới. ĐẶT TRƯỚC UpdateComboFolderHighlights
+                                                  (đảo ngược thứ tự mô tả trong WBP_FurnitureInventory.md
+                                                  cho RefreshComboFolderUI — xem DEVIATIONS 01/08)
+  → InvRef.UpdateComboFolderHighlights()
   → InvRef.RefreshComboCardReplaceMode()
 ```
 ⚠️ `SwitchInventoryMode(Combo)` bên trong đã tự gọi `FilterComboByFolder("__ALL__")` → gọi lại
 lần 2 với FolderPath thật = build 2 lần trong 1 frame. Chấp nhận (kết quả cuối đúng, không thấy
 nháy UI) — xem `DEVIATIONS.md` mục "C9 Replace — 30/07/2026". `FolderPath == ""` là giá trị HỢP
 LỆ ("Chưa phân loại") — chỉ dùng `"__ALL__"` khi load combo gốc THẤT BẠI.
+
+**Fix #3a (01/08):** cửa sổ không tự mở khi combo-replace từ minimize — `EnsureExpanded()` gọi
+tại điểm hợp lưu 3 nhánh `Branch(IsInViewport)`, TRƯỚC `SwitchInventoryMode(Combo)`. Mirror đúng
+vị trí `EnterReplaceMode` gọi nó bên nhánh mesh (xem `Widgets/WBP_FurnitureInventory.md` mục
+`EnterReplaceMode`/`EnsureExpanded`). Test T3.3 PASS PIE.
+
+**Fix #3b (01/08):** chiptag không rebuild + không highlight đúng khi combo-replace — thêm gọi
+`RefreshChipBreadcrumb()` (hàm có sẵn từ 06/07, xem `WBP_FurnitureInventory.md` §Bug fix Chip
+area) NGAY TRƯỚC `UpdateComboFolderHighlights()`. Không cần viết hàm mới
+`CreateComboChipTagsForPath` như dự kiến ban đầu ở `Plans/01-08-2026_ReplaceUX_Fix_Execution_Plan.md`
+§2 (Quyết định Opus #1) — xem SUPERSEDED note tại đó. Test T1.1 PASS PIE.
 
 ---
 
@@ -1112,3 +1134,4 @@ từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 | 2.4 | 24/07/2026 | **C9.0c — StartReplaceMode viết lại theo K2Node export thật.** Var `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`) — migration xảy ra ngoài phiên Claude Code, doc trước đây không biết. `StartReplaceMode` doc v1.10 cũ (mô tả `bIsReplaceMode`, guard `LENGTH==0`, navigate theo `Actors[0]`) đã lỗi thời — thay bằng flow đối chiếu K2Node export: Primary actor RowName→DT lookup (fallback SelectedFurnitureActor.DAPath), merge điểm A → mở/dùng inventory (khối B lặp 3 lần trong graph). Fix 1 chỗ: `SET ReplaceTarget = E_ReplaceTarget::Mesh` trước đó dangling (không SET). Quan sát 1 (RowNotFound dead-end, chưa fix) + Quan sát 2 (guard LENGTH==0 không còn tồn tại trong export, khác doc cũ) — ghi nhận, KHÔNG tự fix. Chi tiết: `Sprints/Sprint2/ContextMenu_Prep.md` §4.2 (CB_Replace), `Blueprints/Blueprint_Logic_NodeFlow.md` §Event Tick. |
 | 2.5 | 24/07/2026 (tiếp) | **C9.0c HOÀN TẤT — 5/5 test regression PASS, 6/6 file compile sạch.** Pure Function mới `IsReplaceModeActive() → Boolean` (= `ReplaceTarget != None`), tồn tại song song trên cả `BP_FurnitureInputManager` và `WBP_FurnitureInventory` (2 bản riêng). `CB_Replace` (Custom Event) đưa vào doc canonical lần đầu — bug fix Branch dư literal=true chặn đường tới `StartReplaceMode`. `Event Tick — Box Select branch` (v1.5 canonical, KHÔNG phải bản tóm tắt ở `Blueprint_Logic_NodeFlow.md`) bổ sung 2 đoạn doc trước đây ghi thiếu (logic Blueprint đã có sẵn, chỉ chưa từng viết vào doc): guard `Branch(bIsPendingBoxSelect OR bIsBoxSelecting)` trước `HideBox`, và chuỗi thoát Replace Mode (`SET ReplaceTarget=None` + `Clear MeshesToReplace` + `ExitReplaceMode`) sau `DeselectAll` trong Branch A. Không sửa logic — verify K2Node export xác nhận đúng. Chi tiết đầy đủ 6 file liên quan: `Widgets/WBP_FurnitureInventory.md`, `Widgets/WBP_MeshControls.md`, `Widgets/WBP_DetailPopup.md`, `Widgets/WBP_FurnitureCard.md`, `Widgets/WBP_ComboCard.md`. |
 | 2.6 | 30/07/2026 | **C9.b/C9.d/C9.f DONE (delta "C9 Replace: Folder Highlight + Chip Fix & C9.b–C9.f").** 3 function mới: `DestroyComboCluster(RootGroupID)` (hủy cụm combo cũ, 🔴 `DeselectAll` bắt buộc trước `PruneEmptyGroups`); `StartReplaceComboMode(RootGroupID, ComboID)` (mirror `StartReplaceMode`, khối cuối as-built THÊM `PopulateComboTreeColumn`+`UpdateComboFolderHighlights` so với plan gốc); `ExecuteComboReplace(NewComboID)` (gọi `BP_ComboManager.ReplaceCombo`, re-resolve `ComboRootGroupIDToReplace` sau replace — Luật 6B). Biến mới `ComboRootGroupIDToReplace`. `StartReplaceMode` bổ sung ghi chú behavior: `MeshFolderPath` là full path, không strip (strip xảy ra trong `FilterByFolderPathWithUI`). Chi tiết đầy đủ: `Blueprints/BP_ComboManager.md` (`ReplaceCombo`, `SpawnComboByID` sửa), `Blueprints/BP_UndoManager.md` (`RestoreCurrentSnapshot`), `Widgets/WBP_FurnitureInventory.md` (`OnMeshSelected` guard Bug A2, `EnterReplaceMode`, `RefreshComboCardReplaceMode`, fix `FilterByFolderPathWithUI`), `Widgets/WBP_ComboCard.md` (`BTN_ChangeCombo` wired). |
+| 2.7 | 01/08/2026 | **StartReplaceComboMode — 2 fix sau Phase 0 verify (Replace UX Fix P1.2+P3.2).** (1) Fix #3a: thêm `InventoryRef.EnsureExpanded()` tại điểm hợp lưu `Branch(IsInViewport)`, TRƯỚC `SwitchInventoryMode(Combo)` — mirror vị trí gọi bên nhánh mesh (`EnterReplaceMode`). (2) Fix #3b: khối cuối đổi thứ tự — thêm gọi `RefreshChipBreadcrumb()` (hàm có sẵn từ 06/07, KHÔNG viết mới) NGAY TRƯỚC `UpdateComboFolderHighlights()` (đảo ngược thứ tự cũ — xem `DEVIATIONS.md` mục "Replace UX Fix — 01/08/2026"). Huỷ quyết định Opus #1 (viết hàm `CreateComboChipTagsForPath` mới) — không cần, `RefreshChipBreadcrumb` có sẵn làm đúng việc. Test PASS PIE: T1.1 (chiptag đúng combo, highlight đúng), T3.3 (minimize → tự mở lại). Chi tiết: `Plans/01-08-2026_ReplaceUX_Fix_Execution_Plan.md`, `Plans/01-08-2026_Phase0_Verify_Report_ReplaceUXFix.md`. |
