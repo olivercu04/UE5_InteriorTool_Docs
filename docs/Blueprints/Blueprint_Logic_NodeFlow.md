@@ -1,6 +1,6 @@
 # Blueprint Logic — Node Flow Reference
 **HỢP NHẤT TỪ 3 file:** v1.3 base (07/06) + v1.4_patch (12/06) + v1.5_patch (15/06)
-**Phiên bản:** 1.13 | **Cập nhật:** 24/07/2026 — BP_FurnitureInputManager Event Tick box branch verified qua K2Node export thật (C9.0c), thêm guard OR khác doc cũ
+**Phiên bản:** 1.14 | **Cập nhật:** 01/08/2026 — `PopulateComboTreeColumn()` viết lại toàn bộ theo K2Node export thật (Phase 0 Replace UX Fix) — doc cũ thiếu/sai 6 điểm, xem mục C5.0
 **Mục đích:** Ghi lại thứ tự node logic để không cần chụp ảnh lại Blueprint. Full flows sống trong file BP_*.md / WBP_*.md tương ứng — file này ghi node-by-node diff và cross-BP flows.
 
 ---
@@ -226,24 +226,58 @@ Then 3: GetAllActors(BP_UndoManager)[0] → SET UndoManagerRef → Bind OnRestor
 
 > Full doc: **WBP_FurnitureInventory.md §C5.0**. Đây là tóm tắt node-flow để tra cứu nhanh.
 
-#### PopulateComboTreeColumn() — Function
+#### PopulateComboTreeColumn() — Function — SỬA (K2Node export 01/08/2026, Phase 0 Replace UX Fix)
+
+Doc cũ (v1.13) THIẾU/SAI 6 điểm — xem DEVIATIONS §"Replace UX Fix — Phase 0" để biết
+lý do. Node flow đúng:
+
 ```
 Clear Children(VerticalBox_44)
-// "Tat ca" (IndentLevel=0) | "Chua phan loai" (IndentLevel=0, if bHasUncategorized)
-// Cấp 1 từ Map[""] → IndentLevel=0
-Map Find(ComboFolderTree, "") → Lvl1CSV, bFound
-Branch bFound:
-  True → ForEach ParseIntoArray(Lvl1CSV, ",") (lvl1):
-           Create WBP_TreeNode Node1 (FolderPath=lvl1, FolderName=lvl1, IndentLevel=0)
-           Add Child | Bind OnNodeSelected → OnComboTreeNodeClicked
-           // Cấp 2 từ Map[lvl1] → IndentLevel=1 (lồng ngay sau Node1)
-           Map Find(ComboFolderTree, lvl1) → Lvl2CSV, bFound2
-           Branch bFound2:
-             True → ForEach ParseIntoArray(Lvl2CSV, ",") (lvl2):
-                      FullPath2 = lvl1 + "/" + lvl2
-                      Create WBP_TreeNode Node2 (FolderPath=FullPath2, FolderName=lvl2, IndentLevel=1)
-                      Add Child | Bind → OnComboTreeNodeClicked
+▶→ Sequence (4 nhánh độc lập, chạy theo thứ tự cố định)
+  then_0 → Create WBP_TreeNode "PlusNode" (FolderPath="__NEWFOLDER__", FolderName="+ New",
+           IndentLevel=0) → RefreshDisplay(false) → AddChild(VerticalBox_44)
+           → Bind OnNodeSelected → OnComboTreeNodeClicked
+           [MỚI trong doc — trước đây không được ghi]
+  then_1 → Create WBP_TreeNode "AllNode" (FolderPath="__ALL__", FolderName="All", Indent=0)
+           → RefreshDisplay(false) → AddChild
+           → Bind OnNodeSelected → OnComboTreeNodeClicked
+           → Bind OnNodeRightClicked → OnComboTreeNodeRightClicked [MỚI trong doc]
+  then_2 → Branch(bHasUncategorized)
+           True → Create WBP_TreeNode "UncatNode" (FolderPath="", FolderName="Chua phan loai",
+                  Indent=0) → RefreshDisplay(false) → AddChild
+                  → Bind OnNodeSelected + OnNodeRightClicked [right-click MỚI trong doc]
+  then_3 → Branch(Map_Find(ComboFolderTree,"") bFound)
+           True → ForEach lvl1 (ParseIntoArray(Value,",")):
+                    Create WBP_TreeNode "FolderNode" (FolderPath=lvl1, FolderName=lvl1, Indent=0)
+                    → RefreshDisplay(bIsActive = CurrentComboFolderPath == lvl1) [MỚI trong doc]
+                    → AddChild
+                    → Bind OnNodeSelected + OnNodeRightClicked + OnNodeRenameCommitted
+                      [2 bind sau MỚI trong doc]
+                    → Branch( (lvl1 == CurrentComboFolderPath)
+                               OR StartsWith(CurrentComboFolderPath, lvl1 + "/") )
+                      [⚠️ GATE MỚI — doc cũ KHÔNG có, đây là lý do cây combo là
+                      accordion/expand-on-active-path, KHÔNG phải xoè phẳng toàn bộ 2 cấp]
+                      True → Branch(Map_Find(ComboFolderTree, lvl1) bFound2)
+                               True → ForEach lvl2 (ParseIntoArray(Value,",")):
+                                        FullPath2 = lvl1 + "/" + lvl2
+                                        Create WBP_TreeNode "SubFolderNode"
+                                        (FolderPath=FullPath2, FolderName=lvl2, Indent=1)
+                                        → RefreshDisplay(bIsActive =
+                                          CurrentComboFolderPath == FullPath2) [MỚI]
+                                        → AddChild
+                                        → Bind OnNodeSelected + OnNodeRightClicked
+                                          + OnNodeRenameCommitted [2 bind sau MỚI]
+                               False → dead-end (leaf lvl1, không có con)
+                      False → dead-end (lvl1 không nằm trên đường active → không xoè lvl2)
 ```
+
+⚠️ **[BUG-DOC nghiêm trọng]** Bản v1.13 mô tả lvl2 luôn dựng cho mọi lvl1 (chỉ gate
+`bFound2`). Thực tế có gate active-path TRƯỚC `bFound2` → cây combo chỉ xoè lvl2 cho
+đúng 1 nhánh lvl1 đang chọn, không xoè tất cả cùng lúc. Ảnh hưởng thiết kế đồng bộ
+chiptag/tree (Replace UX Fix P1).
+
+UncatNode.FolderPath = "" (không SET giá trị nào — mặc định string rỗng của K2), khớp
+quy ước đã biết "FolderPath=='' = Chưa phân loại" (xem C9 Plan §StartReplaceComboMode).
 
 #### OnComboTreeNodeClicked(SelectedPath, IndentLevel) — Custom Event
 ```
@@ -1381,3 +1415,4 @@ tiếp)
 | 1.11 | 20/07/2026 | **BP_ComboManager — Gate D: Rim Light + VRAM/GPU Crash Fix.** Rim Light [SCOPE] mở rộng Gate C: biến mới `Cmb_StudioRimLight`, `SpawnStudioLight` gọi lần 3 ở BeginPlay (`180.0, 2500000.0`); đổi `InVect` RotateAngleAxis (1500,0,1200)→(1200,0,1500), Attenuation Radius Key/Fill 8000→3000 + Rim=3000 mới, Post Process Exposure Compensation 0.0→+6.0. VRAM/GPU Crash Fix: Event End Play sắp xếp lại — `Get Texture Target` (node mới, chờ xác nhận) → `Release Render Target 2D` trước `Map_Clear(Cmb_ThumbnailCache)` (nay chạy VÔ ĐIỀU KIỆN, không còn lồng trong Branch IsValid handle) → `Reset Combo Accumulation` gọi TRƯỚC `SET Cmb_CaptureHandle=None` (trước đây SET chạy trước khiến hàm nhận None, no-op). CHƯA verify bằng đo VRAM dài hạn — xác nhận bằng đọc code + export K2Node. Bối cảnh đầy đủ: `DEVIATIONS.md` mục "P2 — 20/07/2026". |
 | 1.12 | 21/07/2026 | **BP_ComboManager — Gate F: nối Studio pipeline vào Save flow thật.** Nguồn: export K2Node THẬT của Event U (đối chiếu trực tiếp trước khi xóa). Custom Event mới `BeginThumbnailCapture(ComboID, DeltaYaw)` (tách khối spawn→align→Begin→enable-tick từ debug U cũ) dùng chung cho `SaveComboFromSelection` Bước 7 (thay capture in-place P1 cũ). Event Tick tail sửa 3 điểm: `ComboID` Finish đọc `Cmb_PendingCaptureComboID` (thay Concat debug array + suffix `_studio`), thêm `Broadcast OnComboLibraryChanged` cuối cùng (chạy mọi lần Finish kể cả fail). Bước 7: Broadcast nhánh True dời hẳn sang Tick tail (bắt buộc do pipeline async N=24). Đính chính giá trị thật: `FixedAngle.Yaw`=55 (không phải 0 như doc cũ) — promote `Cmb_StudioCamYaw`. Debug phím U + Enable Input đã XÓA. Bối cảnh đầy đủ: `DEVIATIONS.md` mục "P2 — 21/07/2026 — Gate F", `BP_ComboManager.md` v1.10. |
 | 1.13 | 24/07/2026 | **BP_FurnitureInputManager — Event Tick box branch verified (C9.0c).** Nguồn: K2Node text export thật (Ctrl+A→Ctrl+C→paste). Không sửa logic — chỉ xác nhận đúng + phát hiện 1 khác biệt so với doc cũ: nhánh `bInventoryOpen==False` có thêm guard `Branch(bIsPendingBoxSelect OR bIsBoxSelecting)` trước `HideBox` (doc cũ mô tả gọi thẳng không điều kiện). Đóng mục "CHƯA kiểm" trong note WIP C9.0c. Ghi chú: `OnLMBReleased` Then 2 (mục kế tiếp trong file) chưa được delta này đụng tới, vẫn ghi tên biến cũ `bIsReplaceMode` — tên thật hiện tại là `ReplaceTarget` (xem `BP_FurnitureInputManager.md` v2.4). Bối cảnh đầy đủ: `Blueprints/BP_FurnitureInputManager.md` v2.4, `Sprints/Sprint2/ContextMenu_Prep.md` v1.2. |
+| 1.14 | 01/08/2026 | **`PopulateComboTreeColumn()` viết lại toàn bộ theo K2Node export thật (Phase 0 Replace UX Fix).** Doc v1.13 thiếu/sai 6 điểm: (1) thiếu hẳn node "+ New" (`then_0`, `FolderPath="__NEWFOLDER__"`); (2) thiếu bind `OnNodeRightClicked` trên cả 4 loại node; (3) thiếu bind `OnNodeRenameCommitted` trên FolderNode/SubFolderNode; (4) **[SAI quan trọng nhất]** doc cũ mô tả cấp 2 (lvl2) luôn dựng cho MỌI lvl1 chỉ gate bằng `bFound2` — thực tế có thêm gate active-path (`lvl1==CurrentComboFolderPath OR StartsWith(...)`) TRƯỚC `bFound2`, nghĩa là cây combo là accordion/expand-on-active-path chứ không xoè phẳng toàn bộ 2 cấp; (5) thiếu `RefreshDisplay(bIsActive=...)` trên cả lvl1 lẫn lvl2 (cơ chế highlight node active); (6) `UncatNode.FolderPath=""` chưa ghi rõ quy ước. Nguồn: node flow do cuhoang cung cấp (K2Node export 01/08/2026, điều tra Phase 0 Replace UX Fix). Xem `DEVIATIONS.md` §"Replace UX Fix — Phase 0" (**[CẦN TẠO/XÁC NHẬN]** — mục này chưa tìm thấy trong `DEVIATIONS.md` hiện tại lúc patch, xem ghi chú cuối file). |

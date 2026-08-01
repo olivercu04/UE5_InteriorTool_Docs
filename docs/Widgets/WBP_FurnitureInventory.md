@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.16 | **Cập nhật:** 30/07/2026 — Folder Highlight Fix (`FilterByFolderPathWithUI` dùng relative path thay full path), Bug A2 (`OnMeshSelected` guard `ReplaceTarget==Mesh`), `EnterReplaceMode` bổ sung state tab/card, `RefreshComboCardReplaceMode` mới.
+**Phiên bản:** 3.18 | **Cập nhật:** 01/08/2026 10:35 — `FilterByFolderPathWithUI` node-verified qua K2Node export: thêm bước 1 còn thiếu (class var `Folder Path`) + sửa bước 2 ghi sai `ForEachLoopWithBreak` (thực tế `ForEachLoop` thường). `CreateChipTagsForPath`: bỏ `→ Visible` thừa sau `Clear Children(VB_ChipTagArea)` — câu chữ dính nhầm từ đoạn `FilterByFolderPathWithUI`.
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -63,6 +63,7 @@ Python 1: populate BoundingSize | Python 2: update MeshFolderPath | (Sprint D: P
 | `CurrentCategory` | Name | Category đang lọc |
 | `CurrentSearchText` | String | Text search |
 | `CurrentFolderPath` | String | Folder đang chọn |
+| `Folder Path` | String | [MỚI xác nhận 01/08/2026, K2Node export] Copy param `FolderPath` của `FilterByFolderPathWithUI` (full path gốc, TRƯỚC khi Split ra relative) — khác `CurrentFolderPath` (đã là relative, SET trong `FilterByFolderPath`) |
 | `SearchTimerHandle` | Timer Handle | Debounce search |
 | `CurrentPopup` | WBP_DetailPopup | Popup đang mở |
 | `AllFurnitureItems` | Array of DA_FurnitureItem | Pre-load ở Construct ⚠ Sprint D XÓA |
@@ -1540,19 +1541,31 @@ InputAction OpenFurnitureInventory → FlipFlop
 
 ## Replace Mode — Navigate
 
-### FilterByFolderPathWithUI(FolderPath) — Custom Event — SỬA 30/07/2026 (Folder Highlight Fix)
+### FilterByFolderPathWithUI(FolderPath) — Custom Event — SỬA 30/07/2026 (Folder Highlight Fix) + SỬA 01/08/2026 (node-verified qua K2Node export)
 ```
-1. Map Find(FolderTree, "") → Parse(",") → Level1Array → ForEach Break:
-   FolderPath Contains Element → True: SET ActiveLevel1Path → Break
-2. PopulateTreeColumn
-3. Split(FolderPath, "Object_Model/") → Right S = ShortPath
-4. Clear Children(VB_ChipTagArea) → Visible
-5. CreateChipTagsForPath(ShortPath)
-6. FilterByFolderPath(ShortPath)         ← ★ SỬA 30/07 — trước đó truyền FolderPath (FULL path)
-7. UpdateFolderHighlights()              ← ★ MỚI 30/07 — chèn TRƯỚC bước 8
-8. SetText(TB_Breadcrumb, ShortPath)
+1. SET "Folder Path" (class var) = FolderPath (param)   ← ★ MỚI xác nhận 01/08 — chưa từng ghi
+2. Map Find(FolderTree, "") → Parse(",") → Level1Array → ForEach:
+   FolderPath Contains Element → True: SET ActiveLevel1Path
+   False → (dead-end trong Loop Body — hợp lệ, L2)      ← ★ SỬA 01/08 — KHÔNG phải ForEachLoopWithBreak
+3. PopulateTreeColumn
+4. Split(GET "Folder Path", "Object_Model/") → Right S = ShortPath   ← ★ SỬA 01/08 — đọc qua GET
+   class var (bước 1), KHÔNG phải trực tiếp trên param
+5. Clear Children(VB_ChipTagArea) → Visible
+6. CreateChipTagsForPath(ShortPath)
+7. FilterByFolderPath(ShortPath)         ← ★ SỬA 30/07 — trước đó truyền FolderPath (FULL path)
+8. UpdateFolderHighlights()              ← ★ MỚI 30/07 — chèn TRƯỚC bước 9
+9. SetText(TB_Breadcrumb, ShortPath)
 ```
 Gọi từ: BTN_Replace (MeshControls), BTN_ChangeMesh (DetailPopup), selection handler Replace branch.
+
+**Đính chính 01/08/2026:** doc trước đây (v3.16) không ghi bước 1 (class var `Folder Path`) và ghi
+sai loop ở bước 2 là `ForEachLoopWithBreak` — export K2Node thật xác nhận đây là `ForEachLoop`
+thường, nhánh `False` dead-end trong Loop Body (hợp lệ theo L2, không cần nối gì). Hàm dựng
+chiptag ở bước 6 (`CreateChipTagsForPath`) đã đúng tên từ trước — có báo cáo nghi ngờ doc ghi nhầm
+thành `RebuildChipRowForPath` nhưng rà lại toàn bộ docs KHÔNG tìm thấy vị trí ghi sai này (file
+này đã đúng `CreateChipTagsForPath` từ v3.16); `RebuildChipRowForPath` là hàm THẬT khác, dựng 1
+chip ROW đơn lẻ khi click tree/chip (xem mục `RebuildChipRowForPath` dưới) — không liên quan
+`FilterByFolderPathWithUI`.
 
 **Root cause đã fix (30/07/2026):** bước 6 trước đây ăn `FolderPath` FULL path (vd
 `/Game/.../Object_Model/Furniture/Table/Side_Table`) → `CurrentFolderPath` (class var, xem
@@ -1569,7 +1582,7 @@ tự refresh ở đây.
 ### CreateChipTagsForPath(ShortPath)
 ```
 Local: CurrentPath="" | CurrentIndentLevel=2
-Clear Children(VB_ChipTagArea) → Visible
+Clear Children(VB_ChipTagArea)
 Parse(ShortPath, "/") → ForEach Break:
   CurrentPath = (rỗng? Element : CurrentPath + "/" + Element)
   CurrentPath == ActiveLevel1Path → skip (cấp 1)
@@ -1714,4 +1727,6 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.13 | 22/07/2026 — Delete Combo | Class var mới `PendingDeleteComboID`. Custom Event mới `RequestDeleteCombo(ComboID, ComboName)` + `HandleDeleteComboConfirmed()` — mirror y hệt `OnRequestDeleteFolder`/`HandleDeleteFolderConfirmed` (Luật 6B). Xóa file `.json`+PNG, `InvalidateThumbnail`, gỡ khỏi Favorite nếu đang favorite, `RemoveRecentCombo` (function mới `BP_FurnitureUserPrefsManager`), Broadcast `OnComboLibraryChanged`. Test 5/5 case PASS. Đính chính: K1 (`WBP_Toast`) CHƯA DONE — `Print String` tạm thay `ShowToastMsg`, thay lại khi K1 xong. |
 | 3.14 | 23/07/2026 — K1 (WBP_Toast) DONE | Function mới `ShowToastMsg(Message)` (Get Game Instance → Cast Foff_GameInstance → IsValid(ToastRef) → ShowToast / fallback Print String). 5 call site đổi Print→Toast: `CreateNewFolderFlow` (bOK=False), `HandleDeleteFolderConfirmed`, `HandleMoveComboConfirmed` (bOK=False), `HandleDeleteComboConfirmed` (×2 nhánh — gỡ 2 dòng `[TẠM 22/07]`). **Đính chính as-built quan trọng:** `OnRequestNewFolder` KHÔNG chứa logic trực tiếp như doc cũ mô tả — thực tế chỉ gọi Function riêng `CreateNewFolderFlow` (Target=self), nơi chứa toàn bộ logic thật. Viết lại đúng kiến trúc, tách `OnRequestNewFolder` (wrapper mỏng) và `CreateNewFolderFlow` (Function mới đưa vào doc) thành 2 mục riêng. Sửa 2 annotation `[gate bDebugMode]` sai/lỗi thời (`CreateNewFolderFlow`, `HandleDeleteFolderConfirmed`) — Print gốc thực chạy không điều kiện (gate thật là `EnabledState=Development Only`, không phải Branch). Test K1 5/5 case PASS. Chi tiết: `Widgets/WBP_Toast.md` (mới), `Blueprints/BP_ComboManager.md` (chỗ #6). |
 | 3.16 | 30/07/2026 — Folder Highlight Fix + Bug A2 + C9.d (delta "C9 Replace: Folder Highlight + Chip Fix & C9.b–C9.f") | **NODE-VERIFIED:** `FilterByFolderPathWithUI` bước 6 đổi input `FilterByFolderPath` từ `FolderPath` (FULL path) → `ShortPath` (relative, = `Split.RightS`, cùng nguồn dùng chung với chip/breadcrumb) — root cause bug "chỉ node All sáng khi vào Replace bằng code". Chèn `UpdateFolderHighlights()` sau `FilterByFolderPath`, trước `SetText(Breadcrumb)` (luồng code không qua `OnTreeNodeClicked`/`OnChipTagClicked` nên phải tự refresh). **Bug A2:** `OnMeshSelected` nhánh Replace thêm guard `Branch(ReplaceTarget==Mesh)` bên trong `IsReplaceModeActive()==True` — fix tree nhảy về tab Furniture khi đang combo replace (chọn actor thuộc cụm qua `ResolveSelectedComboRoot` trước đó vô tình trigger nhánh mesh). **FUNCTION-LEVEL (chưa re-export node):** `EnterReplaceMode` +4 dòng (`SET CurrentInventoryMode=Furniture`, Collapse `CTV_ComboCard`, Visible `CTV_FurnitureCard`, `UpdateTabHighlight`); Function mới `RefreshComboCardReplaceMode()` (Regenerate `CTV_ComboCard`, mirror `RefreshCardReplaceMode`), gọi từ `StartReplaceComboMode` (`BP_FurnitureInputManager`). Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.6, `DEVIATIONS.md`. |
+| 3.17 | 01/08/2026 — `FilterByFolderPathWithUI` node-verified | Export K2Node thật xác nhận doc v3.16 thiếu 1 bước + ghi sai loại loop. Thêm bước 1 `SET "Folder Path" (class var) = FolderPath (param)` — chưa từng ghi trước đây. Sửa bước ForEach (nay bước 2): thực tế là `ForEachLoop` thường (nhánh `False` dead-end hợp lệ trong Loop Body, L2), KHÔNG phải `ForEachLoopWithBreak` như doc cũ ghi. Sửa bước Split (nay bước 4): đọc qua `GET "Folder Path"` (class var bước 1), không phải trực tiếp trên param. Verify lại nghi vấn "hàm dựng chiptag ghi nhầm `RebuildChipRowForPath`" — rà toàn bộ docs, KHÔNG tìm thấy vị trí ghi sai, file này đã đúng `CreateChipTagsForPath` từ v3.16. Thêm class var `Folder Path` vào bảng Variables. |
+| 3.18 | 01/08/2026 — `CreateChipTagsForPath` sửa nhỏ | Bỏ `→ Visible` thừa sau `Clear Children(VB_ChipTagArea)` (dòng đầu hàm) — câu chữ bị dính nhầm từ đoạn `FilterByFolderPathWithUI` (nơi thật sự có `Clear Children(VB_ChipTagArea) → Visible` ở bước 5) lúc viết doc v3.16, export K2Node thật của `CreateChipTagsForPath` không có node `SetVisibility` nào ở đây. |
 | 3.15 | 24/07/2026 — C9.0c HOÀN TẤT | Migrate `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`, None/Mesh/Combo) — migration xảy ra ngoài phiên Claude Code, doc trước đây không biết. Pure Function mới `IsReplaceModeActive() → Boolean` (bản riêng, song song với `BP_FurnitureInputManager`). `OnMeshSelected` nhánh Replace: Condition đổi sang `IsReplaceModeActive()` — bug fix (trước là literal EqualEqual đọc biến đã xóa, luôn sai). `EnterReplaceMode`: `SET ReplaceTarget=Mesh` (set cứng Mesh, Combo mode đi đường khác không qua hàm này). `ExitReplaceMode`: `SET ReplaceTarget=None` + THÊM `Regenerate All Entries(CTV_ComboCard)` (đường thoát duy nhất cho cả 2 mode). `BTN_Close` đưa vào doc lần đầu (chưa từng được ghi trước đây). Verify qua K2Node export thật, không suy đoán. Test regression 5/5 PASS. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.5, `Widgets/WBP_MeshControls.md`, `Widgets/WBP_DetailPopup.md`, `Widgets/WBP_FurnitureCard.md`, `Widgets/WBP_ComboCard.md`. |
