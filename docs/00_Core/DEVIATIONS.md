@@ -1182,6 +1182,59 @@ Chi tiết đầy đủ P1.2 + P3.2: `Blueprints/BP_FurnitureInputManager.md` v2
 
 ---
 
+## Replace UX Fix — P0→P5 HOÀN TẤT — 02/08/2026
+
+Toàn bộ P0→P5 đóng. 6 bug gốc (#1, #3a, #3b, #4, #5, #6) rụng hết. Đường ngược (Luật 6A) đóng
+đủ. Dead code `MeshToReplace` (single) đã xóa. Chi tiết đầy đủ node flow: `Widgets/
+WBP_FurnitureInventory.md` v3.19, `Blueprints/BP_FurnitureInputManager.md` v2.8.
+
+**[CORRECTION]** P1.1 — gap kiến trúc chip-builder combo (Phase0 §6.3) tự giải quyết bằng 2 hàm
+có sẵn `RebuildChipRowForPath`/`RefreshChipBreadcrumb`, không cần hàm mới
+`CreateComboChipTagsForPath` như Opus dự thảo. P1.2 build trên hướng này ngay từ đầu, không
+cần rework.
+
+**[BUG-FIX]** P2 — `OnMeshSelected` (`WBP_FurnitureInventory`) phản ứng nhầm với Broadcast
+deselect rỗng (Primary=None) từ `DeselectAll()` (bước đệm bắt buộc trước `SelectActors()` theo
+contract có sẵn, doc `BP_FurnitureInputManager.md` §SelectActors) → gọi `StartReplaceMode(mảng
+rỗng)` → dead-end tại `IsValid(PrimarySelectedActor)`. Fix: thêm guard `IsValid(SelectedActor)`
+đầu khối REPLACE trong `OnMeshSelected`, trước `ResolveSelectedComboRoot()`. Root cause xác nhận
+bằng Print String tại 3 điểm (route branch, `PrimarySelectedActor` validity, `InventoryRef`
+identity) — không phải doc-drift, không phải thứ tự node sai (2 giả thuyết trước đó bị bác bỏ
+bằng K2Node export thật).
+
+**[SCOPE]** Undo-giữa-replace (P4.3/P-2) chọn phương án (a): thoát Replace hẳn khi Undo (không
+giữ mode + refresh theo actor restore). Lý do: undo thuộc lịch sử scene, không thuộc "phiên
+Replace" — actor được restore có thể không còn liên quan gì đến target đang định thay, giữ
+mode dễ tạo trạng thái UI lệch scene thật (kiểu Aliasing dự án hay gặp).
+
+**[OBSERVATION]** P-1 — `ExitReplaceMode` chỉ SET `ReplaceTarget=None` + Regenerate 2 CTV,
+không đụng tab/chiptag. Test thực tế (Case B, T4.1): thoát combo-replace không để lại trạng
+thái kẹt/lỗi nào. Không sửa — khớp nguyên tắc "trạng thái browsing độc lập với Replace" (xem
+thêm quan sát T4.3.1: tree/chiptag không tự đồng bộ theo selection khi NGOÀI Replace mode —
+hành vi có sẵn từ trước, không phải bug, chấp nhận giữ nguyên).
+
+**[CLEANUP]** P4.4 — xóa biến `MeshToReplace` (single, dead code) khỏi `BP_FurnitureInputManager`.
+Chỉ còn 1 chỗ SET rác trong `BTN_Close` (`WBP_FurnitureInventory`), đã xóa cùng lúc lồng ghép
+với P4.2. Compile sạch 0 error sau xóa — không có cross-class reference nào khác dùng biến
+này. KHÔNG nhầm với `MeshesToReplace` (array, vẫn dùng thật, giữ nguyên).
+
+**[SCOPE]** P5.1 (#2 chỉ báo Replace mode) — đẩy khỏi đợt Replace UX Fix, gộp vào Sprint 6
+Polish UX (Feature-CanonicalStudioAngle, OBB dimension, C7 ComboDetailPopup). Lý do: kiểu chỉ
+báo (KP1 — banner/đổi text nút/cả hai) chưa chốt, không chặn functionality — an toàn để dành
+làm cùng đợt polish UX khác.
+
+**[GHI CHÚ CLAUDE CODE, 02/08]** `WBP_ComboCard.md` v1.6 (30/07/2026, mục P3.1/`BTN_ChangeCombo`)
+**đã ghi sẵn đúng logic gate** `Branch(ReplaceTarget==Combo)` trước khi đợt Replace UX Fix này
+bắt đầu — trong khi Phase 0 Verify Report (01/08) lại xác nhận qua K2Node export rằng thời điểm
+đó code THẬT là hardcode, không gate gì. Hai nguồn mâu thuẫn nhau về thời điểm 30/07→01/08.
+Không tìm ra lý do chênh lệch (có thể doc v1.6 ghi từ ghi chú/dự định chưa merge thật, xem cảnh
+báo nguồn ở đầu `WBP_ComboCard.md`). Vì nội dung SAU P3.1 (02/08) trùng khớp 100% với nội dung
+ĐANG có trong doc — không sửa gì `WBP_ComboCard.md` (không có gì để đổi), chỉ ghi nhận nghi vấn
+ở đây. Không chặn gì, không cần cuhoang quyết ngay — nêu để biết nếu sau này thấy `BTN_ChangeCombo`
+cư xử khác mô tả.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -1265,3 +1318,4 @@ Chi tiết đầy đủ P1.2 + P3.2: `Blueprints/BP_FurnitureInputManager.md` v2
 | 30/07/2026 | Thêm section "C9 Replace — 30/07/2026 — Folder Highlight Fix + C9.b–C9.f": 3 [BUG-FIX] (Folder Highlight ăn nhầm full path; Bug A2 OnMeshSelected nhảy tree Furniture giữa combo replace; Bug B EnterReplaceMode thiếu SET CurrentInventoryMode + visibility CTV + UpdateTabHighlight — bổ sung 31/07, sót lần merge trước); 1 [OPEN] chưa verify (StartReplaceMode nhánh DA legacy, format MeshFolderPath); 1 [CLEANUP] chốt normalize path tại Split.RightS; 1 [CEILING] Split hardcode "Object_Model/"; 1 [SCOPE] FilterComboByFolder build 2 lần/frame trong StartReplaceComboMode; 1 [PLAN-SAI] Cmb_ReplaceCenter→Cmb_ReplaceAnchor (CalculateCenter→CalculateComboAnchor, fix anchor-vs-center mismatch). |
 | 22/07/2026 (C6) | Thêm section "C6 — 22/07/2026 — Favorite + Recent combo DONE + 2 bug fix": [BUG-FIX] `AddRecentCombo` — `SaveUserPrefs` dead-end trong nhánh `False` của `Branch(RecentComboIDs.Length > 48)` (chỉ save khi vượt cap, mọi test thực tế <48 không bao giờ ghi đĩa) — merge cả 2 nhánh; cap thật=48 không phải 20 (`UX_Phase2_Plan.md` sai); [BUG-FIX] Recent hiển thị chỉ 1 card — `FilterByCategory` đổi `AddItem` loop → `Set List Items` batch, bài học ghi skill `ue5-blueprint-rules` L12; [OBSERVATION] duplicate `comboId` khi copy tay JSON — không phải bug, backlog cho Save As/Save đè. File mới: `Blueprints/BP_FurnitureUserPrefsManager.md`. |
 | 01/08/2026 (Replace UX Fix P1.2) | Thêm section "Replace UX Fix — P1.2 (01/08/2026) — Lỗi thứ tự tiềm ẩn trong RefreshComboFolderUI": phát hiện lúc implement fix #3b — đặt `RefreshChipBreadcrumb()` SAU `UpdateComboFolderHighlights()` (đúng thứ tự tài liệu ghi cho `RefreshComboFolderUI`) khiến chip mới dựng không được highlight; sửa bằng ĐẢO NGƯỢC thứ tự trong `StartReplaceComboMode`. Suy ra `RefreshComboFolderUI` (không sửa trong đợt này) có khả năng mang cùng lỗi thứ tự nhưng chưa lộ — ghi ceiling/trigger, không tự sửa (KP3). |
+| 02/08/2026 (Replace UX Fix P0→P5) | Thêm section "Replace UX Fix — P0→P5 HOÀN TẤT — 02/08/2026": 6 bug gốc rụng hết (#1/#3a/#3b/#4/#5/#6). [CORRECTION] P1.1 gap tự giải quyết, không cần hàm mới `CreateComboChipTagsForPath`. [BUG-FIX] P2 root cause thật = thiếu guard `IsValid(SelectedActor)` trong `OnMeshSelected` (2 giả thuyết trước bị bác bỏ bằng K2Node export). [SCOPE] Undo-giữa-replace chọn (a) thoát hẳn. [OBSERVATION] P-1 `ExitReplaceMode` không đụng tab/chiptag — chấp nhận, không phải bug. [CLEANUP] P4.4 xóa hẳn `MeshToReplace` (single) — đính chính luôn dòng Variables `BP_FurnitureInputManager.md` ghi sai "đã xóa từ v1.6". [SCOPE] P5.1 dời Sprint 6, P5.2 gác (thiếu file test). [GHI CHÚ] phát hiện `WBP_ComboCard.md` v1.6 đã có sẵn logic gate `BTN_ChangeCombo` đúng TRƯỚC khi P3.1 chạy — mâu thuẫn với Phase0 Verify Report (01/08) báo hardcode — không sửa gì (nội dung sau P3.1 trùng khớp), chỉ ghi nhận nghi vấn. |

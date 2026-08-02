@@ -1,8 +1,8 @@
 # Open Bugs — Bugs đang mở
 **Tạo từ:** `00_Core/DEVIATIONS.md` (mục BUGS DEFERRED) + `00_Core/01_Session_State.md` (BUG CÒN MỞ) + `00_Core/02_Current_Sprint.md` (bối cảnh Gate 1)
-**Cập nhật:** 01/08/2026 — Replace UX Fix P1.2+P3.2: 2 bug fix (#3a minimize, #3b chiptag/highlight
-combo-replace). C9 Replace DONE (30/07): 3 bug fix (Bug B, Bug A2, folder-highlight/chip).
-Bug mới ghi nhận: DA-legacy-path [OPEN, 🟢 Thấp].
+**Cập nhật:** 02/08/2026 — Replace UX Fix P0→P5 HOÀN TẤT: #1/#3a/#3b/#4/#5/#6 đều FIXED. Bug mới
+ghi nhận ngoài scope: Bug-EnterReplaceMode-MaterialPanel [OPEN, 🟢 Thấp]. P-5 (DA-legacy-path)
+gác lại — thiếu file save cũ để test.
 
 ---
 
@@ -24,9 +24,11 @@ Bug mới ghi nhận: DA-legacy-path [OPEN, 🟢 Thấp].
 | Bug-DomeCurvature-FootprintRong | ✅ FIXED (20/07) — dome custom (đồng nghiệp dựng) thay sphere engine, đáy phẳng bo cong bán kính ~500 unit | — | Test PASS combo Dẹt (thảm) + To (sofa 15 món, footprint lớn nhất từng có) trên dome mới. Xem DEVIATIONS mục "P2 — 20/07/2026 (Dome Custom)" |
 | Bug-CeilingGroundAlign | ✅ FIXED (20/07) — Function `ResolveThumbAlign` (Nấc 1) phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType`, thay công thức "neo xuống sàn" đơn nhất | — | Test 6/6 case PASS. Xem DEVIATIONS mục "P2 — 20/07/2026 (Nấc 1)" |
 | Note-DuplicateComboID | Copy tay file `.json` trong Explorer rồi đổi tên → field `comboId` bên trong KHÔNG tự đổi theo tên file → 2 file khác tên nhưng cùng ID logic (Favorite/Recent coi là 1 combo) | 🟢 Thấp | KHÔNG phải bug, không sửa bây giờ — backlog cho tính năng Save As/Save đè combo (chưa có plan) |
-| DA-legacy-path | [OPEN] StartReplaceMode nhánh DA legacy (RowName=="None") — chưa verify `DA_FurnitureItem.MeshFolderPath` có chứa `"Object_Model/"` giống `DT_FurnitureCatalog` không. Nếu khác format, `Split` trong `FilterByFolderPathWithUI` cắt sai → tree/chip sai khi Replace trên save cũ dùng DA path | 🟢 Thấp | Verify khi có save cũ thật, hoặc dồn vào C10 (Regression) |
+| DA-legacy-path (P-5) | [OPEN] StartReplaceMode nhánh DA legacy (RowName=="None") — chưa verify `DA_FurnitureItem.MeshFolderPath` có chứa `"Object_Model/"` giống `DT_FurnitureCatalog` không. Nếu khác format, `Split` trong `FilterByFolderPathWithUI` cắt sai → tree/chip sai khi Replace trên save cũ dùng DA path | 🟢 Thấp | **Gác lại 02/08** (Replace UX Fix P5.2) — thiếu file save cũ thật để test, KHÔNG code mù. Xem mục chi tiết dưới |
 | #3a (ComboReplace-Minimize) | ✅ FIXED (01/08) — combo-replace từ minimize: cửa sổ inventory không tự mở lại. `StartReplaceComboMode` thiếu bước un-minimize (nhánh mesh có qua `EnterReplaceMode→EnsureExpanded`, nhánh combo bỏ qua toàn bộ đường đó) | — | Fix: gọi `InventoryRef.EnsureExpanded()` trong `StartReplaceComboMode`. Test T3.3 PASS PIE. Xem `Blueprints/BP_FurnitureInputManager.md` v2.7 |
 | #3b (ComboReplace-ChiptagSync) | ✅ FIXED (01/08) — combo-replace: chiptag không rebuild + không highlight đúng (tree/card đúng combo nhưng chiptag vẫn Furniture) | — | Fix: gọi `RefreshChipBreadcrumb()` (hàm có sẵn) NGAY TRƯỚC `UpdateComboFolderHighlights()` trong `StartReplaceComboMode`. Test T1.1 PASS PIE. Xem `Blueprints/BP_FurnitureInputManager.md` v2.7, `DEVIATIONS.md` mục "Replace UX Fix — P1.2" |
+| #1, #4, #5, #6 | ✅ FIXED (02/08) — #1 BTN_ChangeCombo gate Visibility; #4 re-route Mesh↔Combo giữa chừng Replace; #5 card container theo mode; #6 chiptag đổi khi click tab Combo | — | Replace UX Fix P1.3/P2/P3.1 — node flow đầy đủ: `Widgets/WBP_FurnitureInventory.md` v3.19 (`OnMeshSelected`), `DEVIATIONS.md` mục "Replace UX Fix — P0→P5 HOÀN TẤT — 02/08/2026" |
+| Bug-EnterReplaceMode-MaterialPanel | [OPEN, ngoài scope] Từ tab Material bấm CB_Replace vào Replace Mesh → `CTV_FurnitureCard` bật Visible nhưng `CTV_MaterialCard`/`HB_SlotSwatches` KHÔNG Collapse → 2 panel chồng nhau | 🟢 Thấp | Phát hiện 02/08 qua test P4/T4.1 (Case A). Gác — xem mục chi tiết dưới |
 
 ---
 
@@ -472,6 +474,61 @@ của tool) — không có bug logic cần fix ngay. Cần xử lý đúng lúc 
 ### Trạng thái
 - **Backlog.** Chưa có plan riêng — ghi lại làm note kèm theo khi task Save As/Save đè được lên
   kế hoạch.
+
+---
+
+## Bug-EnterReplaceMode-MaterialPanel — EnterReplaceMode thiếu Collapse CTV_MaterialCard/HB_SlotSwatches
+
+**ID:** Bug-EnterReplaceMode-MaterialPanel
+**Phát hiện:** 02/08/2026, qua test P4/T4.1 (Case A — Replace UX Fix)
+**Ưu tiên:** 🟢 Thấp — ngoài scope 6 bug gốc đợt Replace UX Fix.
+
+### Triệu chứng
+Từ tab Material bấm `CB_Replace` (vào Replace Mesh) → `CTV_FurnitureCard` bật Visible nhưng
+`CTV_MaterialCard` KHÔNG bị Collapse → 2 panel chồng lên nhau → nhìn như tab không đổi (thực
+ra `CurrentInventoryMode` đã đổi đúng, chỉ là UI không dọn panel cũ).
+
+### Root cause
+`EnterReplaceMode` (`WBP_FurnitureInventory`) chỉ có:
+```
+SetVisibility(CTV_ComboCard, Collapsed)
+SetVisibility(CTV_FurnitureCard, Visible)
+```
+— không có case cho `CTV_MaterialCard`/`HB_SlotSwatches`.
+
+### Trạng thái
+- **Open, gác lại** — không thuộc 6 bug gốc đợt Replace UX Fix. cuhoang chọn gác (option Y,
+  không đụng ngay).
+
+### Fix đề xuất (chưa làm)
+Thêm 2 dòng `SetVisibility` Collapsed cho `CTV_MaterialCard` + `HB_SlotSwatches` vào
+`EnterReplaceMode`, cùng khối `SetVisibility` có sẵn (chèn sau dòng Collapsed `CTV_ComboCard`,
+trước dòng Visible `CTV_FurnitureCard` hoặc song song — không ảnh hưởng thứ tự exec hiện có).
+
+---
+
+## DA-legacy-path (P-5) — DA legacy RowNotFound
+
+**ID:** DA-legacy-path / P-5
+**Phát hiện:** C9 Replace 30/07/2026, elaborate thêm trong Replace UX Fix P5.2 (02/08/2026)
+**Ưu tiên:** 🟢 Thấp
+
+### Nghi vấn
+`MeshFolderPath` format khác nhau giữa `DA_FurnitureItem` (cũ, trước Sprint D) và
+`DT_FurnitureCatalog` (mới) → `FilterByFolderPathWithUI` cắt path sai (`Split.RightS`) khi
+Replace 1 actor từ save cũ (RowName=="None", đi nhánh fallback DAPath trong `StartReplaceMode`).
+
+### Trạng thái
+- **Chưa test được** (02/08) — không có file save cũ (tạo trước Sprint D, actor RowName=None)
+  để tái hiện. Không code mù.
+
+### Điều kiện mở lại
+Khi có save cũ thật, hoặc khi gặp báo lỗi thật từ người dùng dùng save cũ.
+
+### Fix dự kiến (nếu tái hiện)
+Normalize path tại `Split.RightS` trong `FilterByFolderPathWithUI` làm nguồn duy nhất. Ceiling:
+prefix `"Object_Model/"` hardcode (phương án đã chốt trong `DEVIATIONS.md` `[CLEANUP]` từ trước
+đợt Replace UX Fix).
 
 ---
 
