@@ -1250,6 +1250,112 @@ trong combo → Replace → Inventory không nhảy folder gốc). Luật Q9 m�
 
 ---
 
+## [DOC-DEBT đã đóng] PROGRESS.md P2 self-contradiction — 02/08/2026
+
+**Phát hiện:** rà bar đếm Sprint 5 theo yêu cầu cuhoang, đối chiếu `docs/00_Core/PROGRESS.md`
+dòng checklist P2 (Studio Thumbnail) với chính nó.
+
+`PROGRESS.md` tự mâu thuẫn về trạng thái P2: dòng 281 (top-level `- [ ]`), dòng 292 (`P2.Gate D`
+đánh dấu `[~]`) và dòng 307 (`Gate D — CHƯA đóng, còn treo case Cao`) đều nói P2 **CHƯA xong**,
+trong khi dòng 314 (ngay trong mô tả `P2.Gate F`, cùng file) viết **"P2 HOÀN TẤT VỀ TÍNH NĂNG
+(Gate A→F)"**. Gốc rễ: checklist chỉ có 2 trạng thái (`[x]`/`[ ]`, cộng `[~]` không định nghĩa rõ)
+— không diễn tả được ca thực tế "tính năng đã chạy xong, chỉ còn 1 nhánh nghiệm thu phụ (case
+Cao/Ceiling) chưa test bằng combo thật".
+
+**Fix (quyết định cuhoang 02/08/2026):**
+- P2 (Studio Thumbnail) = **DONE**. Case Cao (Ceiling, `P2.Gate D`) tách thành entry riêng
+  `Bugs/Open_Bugs.md` mục "Task-P2-SweepCao" (🟢 Thấp, không chặn Gate 2), không giữ task Gate D
+  mở nữa.
+- Áp cùng luật cho P1 (Thumbnail System C++) — G0→G4 xong, chỉ G5 (VRAM regression) deferred →
+  tick DONE, G5 tách entry riêng `Bugs/Open_Bugs.md` mục "Task-P1-VRAMRegression".
+- Bar TỔNG QUAN Sprint 5: `16/22` → `18/22` (P2 + P1).
+- Dòng mồ côi `"CHƯA bắt đầu."` (nằm lạc ngay sau mô tả `P2.Gate F`, dòng 316 cũ) — không xác
+  định được thuộc mục nào (không khớp ngữ cảnh Gate F vừa mô tả xong, không khớp mục kế `C4`) →
+  **XÓA**, không giữ lại phỏng đoán.
+- Thiết lập luật mới **`R-DOC-DONE`** (`Rules/Execution_Discipline.md` v3.1) để chặn tái diễn:
+  task tick `[x]` khi tính năng chạy xong, nghiệm thu/sweep/regression còn treo → tách
+  `Open_Bugs.md`, không giữ checklist mở chờ.
+
+**Trạng thái:** ✅ Đã đóng — `PROGRESS.md`, `Bugs/Open_Bugs.md`, `Rules/Execution_Discipline.md`
+đã cập nhật cùng lượt.
+
+---
+
+## [DOC-DEBT] C3 gộp 3 việc — 02/08/2026
+
+**Phát hiện:** VIỆC 5 quét lan (rà bar đếm Sprint 5) — mô tả checklist `C3` trong `PROGRESS.md`
+gộp chung 1 ô `[ ]` cho 3 việc độc lập, trong đó 2 việc thực ra đã xong ở chỗ khác.
+
+**Lệch:** ô checklist `C3` ("Save dialog + gộp P4 LOCALAPPDATA + móc capture thumbnail sau
+`SaveComboFromSelection`") gộp 3 việc độc lập → 2 xong (Save dialog qua C3b; móc capture
+thumbnail qua P2 Gate F 21/07), 1 chưa (P4 — path LOCALAPPDATA) — không diễn tả được bằng 1 ô
+`[ ]`/`[x]` duy nhất.
+
+**Quyết định cuhoang:** KHÔNG tick, KHÔNG tách C3 thành nhiều ô ngay (tách = đổi mẫu số Sprint 5,
+phải recount toàn bộ). Chỉ sửa TEXT mô tả ghi rõ từng phần (ĐÃ XONG / CHƯA LÀM) để hết overlap
+gây hiểu nhầm.
+
+**Ceiling:** mô tả text đã ghi rõ từng phần, đủ để không hiểu nhầm trong Sprint 5.
+**Upgrade trigger:** sang Sprint 6 → tách `C3` thành các ô riêng khi recount mẫu số đầu sprint.
+
+**Trạng thái:** ✅ Đã đóng (text-only fix) — xem `PROGRESS.md` dòng `C3`. Kèm luật mới
+`R-DOC-ATOMIC` (`Rules/Execution_Discipline.md`) để chặn tái diễn ô gộp nhiều việc.
+
+---
+
+## [DOC-DEBT] AS-BUILT lẫn trong Plans/Sprints — 02/08/2026
+
+**Phát hiện:** VIỆC 3 quét lan (Lô B, đóng dấu HISTORICAL) — 6 file mang tên "Plan"/"Task Card"
+trong `Plans/` và `Sprints/` bị ghi thẳng kết quả thực thi thật (test PASS, K2Node export,
+changelog per-gate) vào thân file, thay vì đưa về doc canonical trong `Blueprints/`/`Widgets/`.
+
+**Lệch:** kết quả thực thi được ghi thẳng vào file plan → as-built nằm rải rác trong file mang
+tên "Plan", trong khi doc canonical trong `Blueprints/` có thể cũ hơn hoặc thiếu chi tiết đó.
+
+**Ceiling:** 6 file đã đánh dấu banner `📌 [CHỨA AS-BUILT]` (xem `MERGE_LOG.md` mục "AS-BUILT
+lẫn trong Plans/Sprints — 02/08/2026"), đủ để không bỏ sót khi đọc.
+
+**Upgrade trigger:** sau Gate 2 → gom phần as-built về doc canonical tương ứng, hoặc lập thư mục
+riêng cho execution report, tách khỏi `Plans/`.
+
+**Trạng thái:** ✅ Đã đóng (banner-only fix) — không di chuyển/đổi tên file (quyết định cuhoang,
+tránh gãy đường dẫn chéo giữa lúc chuẩn bị Lô C + Save As). Kèm luật mới `R-DOC-ASBUILT`
+(`Rules/Execution_Discipline.md`).
+
+---
+
+## [DOC-DRIFT] ResolveSelectedComboRoot — PrimarySelectedActor vs SelectedActors[0] — 02/08/2026
+
+**Phát hiện:** viết doc `ResolveSelectedComboRoot()` vào `BP_FurnitureInputManager.md` (Lô D,
+nguồn K2Node export thật cuhoang cung cấp 02/08/2026).
+
+**Lệch:** `Plans/24-07-2026_C9_Execution_Plan.md` mục V7 ghi hàm `ResolveSelectedComboRoot`
+*"dùng `PrimarySelectedActor`"*; as-built thật (K2Node export 02/08/2026) dùng
+`SelectedActors[0]` (`Cast SelectedActors[0] → BP_FurnitureActor`). Hai giá trị này **khác nhau
+khi selection là multi** — `ToggleActor` SET `PrimarySelectedActor` = actor vừa được thêm/click
+gần nhất, còn `SelectedActors[0]` = actor được thêm ĐẦU TIÊN vào mảng (thứ tự khác nhau tùy cách
+user Ctrl-click).
+
+**Ceiling:** chưa gây lỗi trong C9 — Replace Combo hiện chỉ chạy với selection = 1 cụm combo
+(mọi actor trong cụm cùng `GroupID` → `GetGroupRoot` ra cùng 1 kết quả bất kể lấy phần tử nào
+của mảng), nên `PrimarySelectedActor` và `SelectedActors[0]` cho cùng kết quả trong mọi test case
+C9 đã chạy.
+
+**Upgrade trigger:** khi lên task card **Save As/Save đè** — tính năng này phải xử lý selection
+MIX (combo + mesh rời lẫn nhau), lúc đó `PrimarySelectedActor` và `SelectedActors[0]` có thể trỏ
+tới 2 actor khác hẳn nhau (1 trong combo, 1 mesh rời) → hành vi resolve combo root sẽ khác nhau
+tùy chọn dùng biến nào. **CHƯA QUYẾT hành vi đúng cho case mix — không tự chọn, phải chốt lúc lên
+task card Save As/Save đè.**
+
+**KHÔNG sửa** `Plans/24-07-2026_C9_Execution_Plan.md` mục V7 — file đã đóng dấu `📌 [CHỨA
+AS-BUILT]` (Lô B), sửa nội dung sẽ làm mất dấu vết quyết định/mô tả gốc lúc C9 được build. Ghi
+nhận drift ở đây + trong `BP_FurnitureInputManager.md` (mục `ResolveSelectedComboRoot`) thay vì
+sửa nguồn.
+
+**Trạng thái:** Ghi nhận, CHƯA đóng — chờ quyết định khi lên task card Save As/Save đè.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -1335,3 +1441,7 @@ trong combo → Replace → Inventory không nhảy folder gốc). Luật Q9 m�
 | 01/08/2026 (Replace UX Fix P1.2) | Thêm section "Replace UX Fix — P1.2 (01/08/2026) — Lỗi thứ tự tiềm ẩn trong RefreshComboFolderUI": phát hiện lúc implement fix #3b — đặt `RefreshChipBreadcrumb()` SAU `UpdateComboFolderHighlights()` (đúng thứ tự tài liệu ghi cho `RefreshComboFolderUI`) khiến chip mới dựng không được highlight; sửa bằng ĐẢO NGƯỢC thứ tự trong `StartReplaceComboMode`. Suy ra `RefreshComboFolderUI` (không sửa trong đợt này) có khả năng mang cùng lỗi thứ tự nhưng chưa lộ — ghi ceiling/trigger, không tự sửa (KP3). |
 | 02/08/2026 (Replace UX Fix P0→P5) | Thêm section "Replace UX Fix — P0→P5 HOÀN TẤT — 02/08/2026": 6 bug gốc rụng hết (#1/#3a/#3b/#4/#5/#6). [CORRECTION] P1.1 gap tự giải quyết, không cần hàm mới `CreateComboChipTagsForPath`. [BUG-FIX] P2 root cause thật = thiếu guard `IsValid(SelectedActor)` trong `OnMeshSelected` (2 giả thuyết trước bị bác bỏ bằng K2Node export). [SCOPE] Undo-giữa-replace chọn (a) thoát hẳn. [OBSERVATION] P-1 `ExitReplaceMode` không đụng tab/chiptag — chấp nhận, không phải bug. [CLEANUP] P4.4 xóa hẳn `MeshToReplace` (single) — đính chính luôn dòng Variables `BP_FurnitureInputManager.md` ghi sai "đã xóa từ v1.6". [SCOPE] P5.1 dời Sprint 6, P5.2 gác (thiếu file test). [GHI CHÚ] phát hiện `WBP_ComboCard.md` v1.6 đã có sẵn logic gate `BTN_ChangeCombo` đúng TRƯỚC khi P3.1 chạy — mâu thuẫn với Phase0 Verify Report (01/08) báo hardcode — không sửa gì (nội dung sau P3.1 trùng khớp), chỉ ghi nhận nghi vấn. |
 | 02/08/2026 (Q9 + 3 bug Surface) | Thêm section "Q9 S-Matrix Gate + 3 bug Surface (deferred) — 02/08/2026": luật Q9 mới trong `Rules/AI_Implementation_Rules.md` v2.14 (S-Scan 10 trạng thái + X-Check 10 hệ thống), phát hiện qua bug thật C9 Replace Combo (thiếu ca sử dụng, không phải bug code). 3 bug xác nhận tay ghi vào `Bugs/Open_Bugs.md`: Bug-MaterialPrimaryOnly, Bug-PasteVerticalCollapse, Bug-StaleSurfaceType — cả 3 dời sau Gate 2, kèm bảng ceiling/trigger. |
+| 02/08/2026 (DOC-DEBT P2) | Thêm section "[DOC-DEBT đã đóng] PROGRESS.md P2 self-contradiction — 02/08/2026": PROGRESS.md tự mâu thuẫn về trạng thái P2 (dòng checklist Gate D/sub-item vs dòng "P2 HOÀN TẤT VỀ TÍNH NĂNG" cùng file) — do checklist không diễn tả được "xong tính năng, treo nghiệm thu phụ". Fix: quyết định cuhoang P2=DONE + P1=DONE (cùng lý do), tách case Cao + G5 VRAM ra `Bugs/Open_Bugs.md`, xóa dòng mồ côi "CHƯA bắt đầu.", thiết lập luật mới `R-DOC-DONE` (`Rules/Execution_Discipline.md` v3.1). |
+| 02/08/2026 (DOC-DEBT C3) | Thêm section "[DOC-DEBT] C3 gộp 3 việc — 02/08/2026": ô checklist `C3` gộp 3 việc độc lập (Save dialog/móc capture thumbnail/P4 LOCALAPPDATA) — 2 xong 1 chưa, không diễn tả được bằng 1 ô. Quyết định cuhoang: KHÔNG tick, KHÔNG tách giữa sprint — chỉ sửa text mô tả rõ từng phần. Ceiling: text đủ rõ cho Sprint 5. Trigger: tách C3 thành ô riêng khi recount đầu Sprint 6. Thêm luật mới `R-DOC-ATOMIC` (`Rules/Execution_Discipline.md` v3.2). |
+| 02/08/2026 (DOC-DEBT AS-BUILT) | Thêm section "[DOC-DEBT] AS-BUILT lẫn trong Plans/Sprints — 02/08/2026": 6 file "Plan"/"Task Card" bị ghi thẳng kết quả thực thi thật (test PASS/K2Node export/changelog per-gate) vào thân, doc canonical `Blueprints/`/`Widgets/` có thể cũ hơn. Quyết định cuhoang: KHÔNG di chuyển/đổi tên — chỉ đóng dấu banner `📌 [CHỨA AS-BUILT]` (xem `MERGE_LOG.md`). Trigger: gom về canonical hoặc tách thư mục riêng sau Gate 2. Thêm luật mới `R-DOC-ASBUILT` (`Rules/Execution_Discipline.md` v3.3). |
+| 02/08/2026 (Lô D) | **Viết doc `ResolveSelectedComboRoot()` vào `BP_FurnitureInputManager.md`** (nguồn K2Node export thật cuhoang cung cấp — đóng MỤC 4 CrossCheck). Thêm section "[DOC-DRIFT] ResolveSelectedComboRoot — PrimarySelectedActor vs SelectedActors[0] — 02/08/2026": `Plans/24-07-2026_C9_Execution_Plan.md` §V7 ghi dùng `PrimarySelectedActor`, as-built thật dùng `SelectedActors[0]` — khác nhau khi selection multi. Chưa gây lỗi (C9 chỉ chạy selection 1 cụm) — ceiling giữ tới khi lên task card Save As/Save đè (phải xử lý selection mix). KHÔNG sửa file Plans (đã đóng dấu [CHỨA AS-BUILT]). Đóng thêm MERGE_LOG Q3 (`FindGroupData` không có Index) — sửa 3 file: `BP_FurnitureInputManager.md` v2.9, `BP_UndoManager.md` v1.13, `Blueprint_Logic_NodeFlow.md` v1.15 (đều tự mâu thuẫn nội bộ trước đó). |

@@ -88,7 +88,6 @@
 | [Flows/CopyPaste_Flow.md](../Blueprints/Flows/CopyPaste_Flow.md) | Node flow chi tiết Copy+Paste |
 | [Flows/Nudge_Flow.md](../Blueprints/Flows/Nudge_Flow.md) | Node flow chi tiết Nudge (arrow keys) |
 | [README.md](../Blueprints/README.md) | Mô tả thư mục Blueprints/ |
-| ~~BP_FurnitureInputManager_MERGED_v1.9.md~~ | Backup (giống BP_FurnitureInputManager.md — có thể bỏ) |
 
 ---
 

@@ -1,4 +1,9 @@
 # Sprint 2 — Context Menu: CB_ChangeMaterial + CB_Replace (Prep để thực thi cùng Sonnet 4.6)
+
+> ⚠️ **[HISTORICAL]** — File này mô tả THIẾT KẾ tại thời điểm viết, KHÔNG phải as-built hiện
+> tại. Nhiều quyết định đã bị override ở các sprint sau. Giữ lại để tra "vì sao đã quyết như
+> vậy". **As-built hiện tại xem:** `Blueprints/BP_FurnitureInputManager.md`.
+
 **Phiên bản:** 1.2 | **Cập nhật:** 24/07/2026 | §4.2 CB_Replace viết lại theo K2Node export thật (C9.0c, migrate `ReplaceTarget`) | Lighting_Mnger UE5.5.4
 
 > **v1.1 — chốt 3 câu hỏi:**

@@ -1,4 +1,10 @@
 # Sprint 4 — BUG FIX & UX EXECUTION (cho Sonnet 4.6)
+
+> ⚠️ **[AS-BUILT TẠI THỜI ĐIỂM SPRINT 4]** — File ghi lại thực thi Sprint 4, KHÔNG cập nhật
+> theo thay đổi sau đó. Một số chữ ký hàm đã đổi (vd `FindGroupData` nay chỉ có 2 output
+> `(GroupData, bFound)` — xem `Blueprints/BP_FurnitureInputManager.md`). Đọc để hiểu Sprint 4
+> đã làm gì; chữ ký/API hiện tại LUÔN tra doc canonical.
+
 **Phiên bản:** 1.0 | **Tạo:** 14/06/2026 — (Opus 4.8) | **Đọc kèm:** 09 (v2), 10 (v2), Blueprint_Logic v1.4, BP_FurnitureInputManager v1.8
 **Mục tiêu:** Đóng Sprint 4 — fix 4 lỗi + 1 feature + 1 bug undo, rồi chạy test suite. SAU đó mới sang Gate 1.
 

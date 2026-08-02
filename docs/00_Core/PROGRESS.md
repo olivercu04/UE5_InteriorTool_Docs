@@ -1,6 +1,8 @@
 # PROGRESS — Tiến độ Multi-Select / Group / Combo / Material v1.2
 **Nguồn:** `import_raw/PROGRESS.md` (12/06/2026) + `import_raw/PROGRESS_Sprint4BugFix_update.md` (patch 15/06/2026)
 **Cập nhật:** 31/07/2026 — C9.0c (Migrate E_ReplaceTarget) HOÀN TẤT, tiền đề cho C9 | K1 (WBP_Toast) DONE | C6 (Favorite + Recent combo) CHÍNH THỨC DONE HOÀN TOÀN | P2 Studio Thumbnail Gate F DONE, P2 HOÀN TẤT VỀ TÍNH NĂNG (Gate A→F) | P1 Combo Thumbnail DONE về tính năng | C5.8 CHÍNH THỨC DONE (13/07) | C9 (Replace Combo) DONE (30/07) — chuyển sang Save As/Save đè
+**Cập nhật (tiếp) 02/08/2026:** Replace UX Fix (P0→P5) ĐÓNG HOÀN TOÀN (01-02/08) — 6 bug UX gốc trên C9 (#1/#3a/#3b/#4/#5/#6) rụng hết, đường ngược Luật 6A đóng đủ, dead code `MeshToReplace` xóa. Bug-fix round trên ô C9 đã tick — không đổi bar đếm Sprint 5 (16/22). Xem `01_Session_State.md`.
+**Cập nhật (tiếp) 02/08/2026:** Luật Q9 (S-Matrix Gate) thiết lập + 3 bug mới xác nhận bằng test tay (Bug-MaterialPrimaryOnly/Bug-PasteVerticalCollapse/Bug-StaleSurfaceType), cả 3 dời sau Gate 2 — KHÔNG đổi thứ tự ưu tiên (Save As/Save đè → C11 → C10 → Gate 2). Xem `01_Session_State.md`.
 
 ---
 
@@ -13,17 +15,27 @@ Sprint 3 — Group cơ bản       ███████████████
 Sprint 4 — Edit + Nested      ████████████████ 8/8  SHIPPED ✅  (+5 bug fix thêm)
 Gate 1                        ████████████████ 3/3  DONE ✅ (16/06)
 Sprint D — Data Layer v2      ████████████████ 9/9  DONE ✅ (17/06)
-Sprint 5 — Combo Mesh         ████████████████░░░░░░  16/22 task
+Sprint 5 — Combo Mesh         ██████████████████░░░░  18/22 task
                                ✅ DONE: T1/T2 core/C0/C1/C2/C3a/C3b/Fix K3/C4/C5 (Folder Management
                                đầy đủ)/C6/Delete Combo/Field Kích thước Card/WBP_Toast (K1)/C8/C9
-                               (Replace Combo, 30/07)
-                               ⏳ CÒN LẠI (6): C3 (P4 LOCALAPPDATA chưa áp)/Thumbnail C++ (P1, G5
-                               VRAM regression deferred)/Studio Thumbnail (P2, case Cao chờ combo
-                               thật)/Xoay combo (P3)/C11 (Export/Import)/C10 (Regression)
+                               (Replace Combo, 30/07)/P2 (Studio Thumbnail, 02/08)/P1 (Thumbnail
+                               System C++, 02/08)
+                               ⏳ CÒN LẠI (4): C3 (P4 LOCALAPPDATA chưa áp)/Xoay combo (P3)/C11
+                               (Export/Import)/C10 (Regression)
                                [31/07 Doc-Sync: đếm lại theo R-DOC-COUNT (số ô tick thật, không
                                nuôi tay) — xem `Rules/Execution_Discipline.md` mục R-DOC. C7 dời
                                sang mẫu số Sprint 6 (xem dưới); dòng "C5 — Folder tree tab" trùng
                                lặp/lỗi thời đã XÓA khỏi checklist]
+                               [02/08 recount R-DOC-COUNT: Replace UX Fix (P0→P5, 01-02/08) là
+                               bug-fix round trên ô C9 ĐÃ TICK (30/07), không phải task/ô checklist
+                               mới → không đổi số lúc đó. Xem changelog 01/08 + 02/08 (Replace UX
+                               Fix).]
+                               [02/08 R-DOC-DONE (quyết định cuhoang): P2 (Studio Thumbnail) tick
+                               DONE 16/22→17/22 — case Cao (Ceiling, Gate D) tách bug riêng
+                               `Bugs/Open_Bugs.md` mục "Task-P2-SweepCao", không giữ task mở. P1
+                               (Thumbnail System C++) tick DONE 17/22→18/22 — G5 VRAM regression
+                               tách bug riêng cùng file mục "Task-P1-VRAMRegression". Luật mới
+                               `R-DOC-DONE`: xem `Rules/Execution_Discipline.md`.]
 Sprint 6 — Polish UX          ░░░░░░░░░░░░░░░  0/15 task (+C7, dời từ Sprint 5 31/07)
 Sprint 7 — Material v1.2      ░░░░░░░░░        0/9  task
 
@@ -258,8 +270,11 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 - [x] **C3b** — WBP_SaveComboDialog (dialog async lưu combo: ExistingFolders dropdown + folder mới + tags + validate). CB_SaveCombo → OpenSaveComboDialog (inventory đóng băng selection + UI-only mode). ✅ 24/06/2026
 - [x] **Fix K3** — SpawnFurnitureCopy thêm `bAddToRecent : Boolean = True`; spawn combo + RestoreSnapshot truyền False. ✅ RESOLVED (21/07/2026) — 2 call site pin `False`, 4 case test PASS. Xem `Bugs/Open_Bugs.md` mục K3.
 ──── **Giai đoạn 1 (~25/06): combo Tạo + Duyệt + Đặt qua nút** ────
-- [ ] **C3** — Save dialog + gộp P4 (GetCombosDir → `%LOCALAPPDATA%/InteriorFOFFTool/Combos`) + móc capture thumbnail sau SaveComboFromSelection thành công
-- [ ] **Thumbnail System C++ (P1)** — `SaveRenderTargetToPNG` + `LoadTexture2DFromFile`; SceneCapture2D theo góc camera → PNG. Gắn vào C3/C4.
+- [ ] **C3** — 3 phần độc lập gộp chung 1 ô (xem DEVIATIONS "[DOC-DEBT] C3 gộp 3 việc"): (1) Save
+      dialog → ĐÃ XONG qua C3b; (2) móc capture thumbnail sau `SaveComboFromSelection` thành công
+      → ĐÃ XONG qua P2 Gate F (21/07); (3) P4 — `GetCombosDir` → `%LOCALAPPDATA%/InteriorFOFFTool/Combos`
+      → **CHƯA LÀM, phần duy nhất còn lại của C3.**
+- [x] **Thumbnail System C++ (P1)** — `SaveRenderTargetToPNG` + `LoadTexture2DFromFile`; SceneCapture2D theo góc camera → PNG. Gắn vào C3/C4. ✅ DONE (02/08/2026, R-DOC-DONE).
   - [x] P1.G0-R (đổi từ G0 gốc — kiến trúc latent) — DONE 14/07/2026. Ảnh capture đúng màu/sáng/GI, xác nhận bằng so sánh trực tiếp với viewport thật (screenshot đối chiếu). Event End Play dọn rác actor/RT đã thêm (R4).
   - [x] P1.G1 — LoadComboThumbnail: đọc PNG → Texture2D transient, IImageWrapper SetCompressed/GetRaw, optional resize FImageUtils::ImageResize xuống MaxSize. Build PASS, test phím Y (tách riêng khỏi phím T capture) → size=256 đúng.
   - [x] P1.G2 — auto-fit khung hình (FitRatio) + ẩn gizmo (Get All Actors Of Class(BaseGizmo))
@@ -271,10 +286,11 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
   - [x] P1.G4 — wire full vào Save/Load flow + hiển thị WBP_ComboCard/WBP_FurnitureInventory.
         3 bug dead-end phát hiện (2 fixed, 1 backlog — xem Session_State). Test case 1,2,3,5,6
         PASS (case 4 xóa combo N/A, tính năng chưa tồn tại). 15/07/2026.
-  - [~] P1.G5 — regression VRAM — DEFERRED 15/07/2026 (phương pháp đo bị nhiễu, cần
-        RenderDoc/Nsight thay vì MemReport thô). Không chặn P1, coi P1 DONE tính năng.
-- [ ] **Studio Thumbnail (P2)** — Remote Studio + H-B turntable + Key/Fill RectLight + Manual
-      EV100. Plan: `docs/Plans/P2_StudioThumbnail_Execution.md`.
+  - [x] P1.G5 — regression VRAM — tách thành entry riêng trong `Bugs/Open_Bugs.md` mục
+        "Task-P1-VRAMRegression" (02/08, R-DOC-DONE) — phương pháp đo bị nhiễu, cần
+        RenderDoc/Nsight thay vì MemReport thô. Không chặn P1, không giữ task mở.
+- [x] **Studio Thumbnail (P2)** — Remote Studio + H-B turntable + Key/Fill RectLight + Manual
+      EV100. Plan: `docs/Plans/P2_StudioThumbnail_Execution.md`. ✅ DONE (02/08/2026, R-DOC-DONE).
   - [x] P2.Gate A — vertical slice: `SpawnComboForThumbnail` clone sạch + ground-align. TEST
         PASS 6/7 case (case 7 — tắt PIE giữa Delay — dời Gate F). 17/07/2026.
   - [x] P2.Gate B — dome: hình học + Material `M_StudioBackdrop`. Cast Shadow=False (quyết
@@ -284,9 +300,11 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
         Radius=8000) + Manual EV100 (Get/Set members in Post Process Settings) + camera H-B
         `bUseFixedAngle`. 12 bug/quyết định trong lúc làm — xem DEVIATIONS.md. Verify PASS:
         2 combo khác nhau → cùng góc + cùng độ sáng. 17/07/2026 (cuối phiên).
-  - [~] P2.Gate D — bóng + sweep hình dáng (nhỏ/to/dẹt/cao/tường). Rim Light + VRAM EndPlay
+  - [x] P2.Gate D — bóng + sweep hình dáng (nhỏ/to/dẹt/cao/tường). Rim Light + VRAM EndPlay
         fix + Source Size Key=500 DONE (20/07). Sweep 3/5 PASS (Nhỏ/To/Tường) ban đầu, 2 bug
-        kiến trúc mới phát hiện — TÁCH XỬ LÝ:
+        kiến trúc mới phát hiện — TÁCH XỬ LÝ. ✅ DONE (02/08, R-DOC-DONE) — case Cao (Ceiling)
+        tách thành entry riêng trong `Bugs/Open_Bugs.md` mục "Task-P2-SweepCao", không giữ task
+        mở:
         - [x] Bug-CeilingGroundAlign FIXED 20/07/2026 (Nấc 1) — Function ResolveThumbAlign,
               surface-aware align + Wall-priority rule + margin fix. Test 6/6 PASS (Floor,
               Ceiling, bàn thờ Wall+Floor, Mixed, combo cũ thiếu field, Undo/Recent/EMS). Xem
@@ -295,11 +313,14 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
               phẳng ~500 unit, Cast Shadow=True). Test PASS combo Dẹt + To. Xem DEVIATIONS mục
               "P2 — 20/07/2026 (Dome Custom)".
         - [x] Sweep Nhỏ/To/Dẹt/Tường — 4/5 loại PASS chính thức.
-        - [ ] Sweep Cao — PASS SƠ BỘ (stack dựng tay), CHỜ combo kệ/tủ cao thật để đóng hẳn.
+        - [x] Sweep Cao — PASS SƠ BỘ (stack dựng tay). Case Cao xem `Task-P2-SweepCao` trong
+              `Bugs/Open_Bugs.md` (02/08, R-DOC-DONE — không giữ ô mở song song với bug đã tách).
               Không chặn việc khác. Xem DEVIATIONS mục "(Sweep 5 Loại)".
         - [ ] Nấc 2 (below-front key + camera from-below cho pure Ceiling/Wall) — backlog,
               Switch stub đã dựng sẵn trong chuỗi phím U.
-        - [ ] Gate D — CHƯA đóng (còn treo case Cao). Đóng khi có combo thật test bổ sung.
+        - [x] Gate D — ĐÃ ĐÓNG (02/08, R-DOC-DONE). Case Cao (Ceiling) tách thành entry riêng
+              trong `Bugs/Open_Bugs.md` mục "Task-P2-SweepCao" — đóng khi có combo thật test bổ
+              sung, không giữ task Gate D mở chờ.
   - [x] P2.Gate E — DOF. Mở rộng Post Process Settings node sẵn có (Focal Distance xấp xỉ qua
         Vector Distance, Aperture=2.8 chốt bằng test đối chứng f/1.0). DONE 20/07/2026.
   - [x] P2.Gate F — DONE 21/07/2026. Custom Event mới `BeginThumbnailCapture` +
@@ -308,7 +329,6 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
         dời sang Event Tick tail; fix framing Radius rotation-invariant (C++); debug phím U +
         Enable Input đã xóa. **P2 HOÀN TẤT VỀ TÍNH NĂNG (Gate A→F).** Xem DEVIATIONS mục
         "P2 — 21/07/2026 — Gate F".
-        CHƯA bắt đầu.
 - [x] **C4** — WBP_ComboCard + ghost + drag-drop + CalculateComboAnchor + CTV_ComboCard. Ghost offset FIXED (Approach B). ✅ 25/06/2026
 - [x] **C5** ✅ DONE — 7 sub-task:
   - [x] C5.1 — C++ 3 helper (UpdateComboFolder/RenameFolderPrefix/ClearFolderPrefix) ✅ 25/06
@@ -401,3 +421,11 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 24/07/2026 | **C9.0c (Migrate E_ReplaceTarget) — HOÀN TẤT, 5/5 test regression PASS, 6/6 file compile sạch.** Prereq cho C9 (Replace Combo) — không phải bản thân C9. Migrate `bIsReplaceMode`→`ReplaceTarget` (Enum None/Mesh/Combo) trên `BP_FurnitureInputManager` + `WBP_FurnitureInventory`, xảy ra ngoài phiên Claude Code, ghi nhận qua K2Node export thật. Pure Function mới `IsReplaceModeActive()`. 3 bug fix (CB_Replace Branch dư, WBP_DetailPopup.BTN_ChangeMesh SET nhầm biến dead + refactor gọi thẳng StartReplaceMode, WBP_FurnitureCard.Get_Button_ChangeMesh_Visibility binding đọc biến đã xóa) + dọn dead code trùng tên trên WBP_ComboCard. Tiếp theo: **C9 (Replace Combo, tính năng thật)**. Chi tiết: `01_Session_State.md` mục C9.0c. |
 | 30/07/2026 | **C9 (Replace Combo) — DONE.** C9.b–C9.f + 3 bug fix (Bug B, Bug A2, folder-highlight/chip) — tất cả test pass. 1 test-debt: nhánh DA legacy (save cũ) chưa verify, dồn sang C10 (Regression). Tiếp theo: **Save As / Save đè combo** (UX chưa chốt). Chi tiết: `01_Session_State.md` mục C9, `Bugs/Open_Bugs.md`. |
 | 31/07/2026 (Doc-Sync) | **Doc-Sync pass: sửa bar đếm trôi lệch từ 01/07, thiết lập R-DOC.** Bar TỔNG QUAN Sprint 5 đứng im ở `15/19` suốt từ 01/07 dù nhiều task đã DONE sau đó (C5.6/C5.7/C5.8/K1/C6/Field Kích thước Card/Delete Combo/C9) — đếm lại theo checklist thật: `16/22` (tick thêm Fix K3, C5 parent, C9; thêm ô mới "Delete Combo" chưa từng có checklist riêng dù DONE từ 22/07; gỡ nhãn "chưa tính vào task count"). **XÓA** dòng `C5` trùng lặp/lỗi thời ("Folder tree tab 🧩 Combo trong WBP_FurnitureInventory") khỏi checklist — tàn dư trước khi C5 tách C5.0-C5.8, không còn ý nghĩa. **C7** đánh dấu `[DỜI → Sprint 6]`, bỏ khỏi mẫu số Sprint 5, cộng vào Sprint 6 (`0/14`→`0/15`) — theo quyết định `01_Session_State.md` 22/07 (chưa từng phản ánh vào PROGRESS.md checklist). TỔNG: `62/96`→`72/102` (không đổi thêm ở bước C7 vì chuyển ngang mẫu số giữa 2 sprint). `DEVIATIONS.md` bổ sung entry thiếu "Bug B" (EnterReplaceMode) vào mục "C9 Replace — 30/07/2026" (Session_State đã ghi nhưng DEVIATIONS sót). Thiết lập luật `R-DOC-COUNT`/`R-DOC-OWNER`/`R-DOC-PASS` (+ dòng đơn vị đếm/dời sprint theo yêu cầu cuhoang) — `Rules/Execution_Discipline.md` v3.0. Nguồn: `Delta_DocSync_31jul2026.md`, chỉnh theo phản hồi cuhoang 31/07. |
+| 01/08/2026 (Replace UX Fix) | **Replace UX Fix — bắt đầu.** Bug-fixing round trên **C9 (Replace Combo)** đã DONE 30/07 — dogfood sau khi ship phát hiện 6 bug UX (#1/#3a/#3b/#4/#5/#6). Phase 0 DONE 5/5. P1.2 (#3b — chiptag không rebuild/highlight đúng khi combo-replace) + P3.2 (#3a — inventory không tự mở lại từ minimize khi combo-replace) DONE, test PASS PIE. Không phải task mới trong checklist Sprint 5 — bug-fix round trên ô C9 đã tick, không đổi bar đếm. Chi tiết: `01_Session_State.md` (entry 01/08/2026). |
+| 02/08/2026 (Replace UX Fix) | **Replace UX Fix (P0→P5) — ✅ ĐÓNG. C9 (Replace Combo) nay hoàn tất luôn phần UX.** P1.3 (#5 — card container theo mode), P2 (#4 — re-route Mesh↔Combo giữa chừng Replace; root cause thật: thiếu guard `IsValid(SelectedActor)` trong `OnMeshSelected`, không phải doc-drift như nghi ban đầu), P3.1 (#1 — `BTN_ChangeCombo` gate Visibility), P4 (đường ngược Luật 6A + xóa dead code `MeshToReplace` số ít) đều DONE. 6 bug gốc (#1/#3a/#3b/#4/#5/#6) rụng hết. P5.1 (#2 — chỉ báo Replace mode) dời Sprint 6; P5.2 (DA legacy path) gác lại — thiếu file save cũ để test. Không đổi task count Sprint 5 (bug-fix round trên C9, không phải task mới — xem ghi chú recount trong TỔNG QUAN). Chi tiết: `Widgets/WBP_FurnitureInventory.md` v3.19, `Blueprints/BP_FurnitureInputManager.md` v2.8, `DEVIATIONS.md` mục "Replace UX Fix — P0→P5 HOÀN TẤT — 02/08/2026", `Bugs/Open_Bugs.md`, `01_Session_State.md`. |
+| 02/08/2026 (Q9 + 3 bug Surface) | **Luật Q9 (S-Matrix Gate) thiết lập** (`Rules/AI_Implementation_Rules.md` v2.14) + 3 bug mới xác nhận bằng test tay (Bug-MaterialPrimaryOnly, Bug-PasteVerticalCollapse, Bug-StaleSurfaceType — `Bugs/Open_Bugs.md`). Không đổi task count (không phải task Sprint 5, không backfill S-Scan cho task đã DONE). Cả 3 bug dời sau Gate 2, **KHÔNG đổi thứ tự ưu tiên: Save As/Save đè → C11 → C10 → Gate 2.** Chi tiết: `01_Session_State.md`, `DEVIATIONS.md` mục "Q9 S-Matrix Gate + 3 bug Surface — 02/08/2026". |
+| 02/08/2026 (R-DOC-DONE) | **Luật mới `R-DOC-DONE` thiết lập + P2/P1 tick DONE, bar 16/22→18/22.** Quyết định cuhoang: P2 (Studio Thumbnail) = DONE — sửa mâu thuẫn nội bộ đã báo cáo (dòng checklist Gate D/Gate D-sub vs dòng "P2 HOÀN TẤT VỀ TÍNH NĂNG" cùng file). Case Cao (Ceiling, Gate D) tách thành `Bugs/Open_Bugs.md` mục "Task-P2-SweepCao" (🟢 Thấp, không chặn Gate 2), không giữ task Gate D mở. Áp cùng luật cho P1 (Thumbnail System C++): G0-G4 xong, chỉ G5 (VRAM regression) deferred → tick DONE, G5 tách `Bugs/Open_Bugs.md` mục "Task-P1-VRAMRegression". Dòng mồ côi "CHƯA bắt đầu." (cuối mô tả P2.Gate F) không xác định được thuộc mục nào → XÓA. Chi tiết: `Rules/Execution_Discipline.md` mục R-DOC-DONE, `DEVIATIONS.md` mục "[DOC-DEBT đã đóng] PROGRESS.md P2 self-contradiction — 02/08/2026". |
+| 02/08/2026 (R-DOC-DONE tiếp) | **Chốt 2 câu hỏi từ VIỆC 5 (quét lan).** Sweep Cao (sub-item dưới `P2.Gate D`) tick `[x]` + trỏ sang `Task-P2-SweepCao` — bar KHÔNG đổi (sub-item, không phải task top-level, vẫn 18/22). `C3` KHÔNG tick — chỉ sửa TEXT mô tả tách rõ 3 phần độc lập đang gộp chung 1 ô: (1) Save dialog ĐÃ XONG qua C3b, (2) móc capture thumbnail sau save ĐÃ XONG qua P2 Gate F, (3) P4 LOCALAPPDATA CHƯA LÀM (phần duy nhất còn lại). Thêm luật mới `R-DOC-ATOMIC` (1 ô = 1 việc tick độc lập; ô gộp nhiều việc chỉ tách lúc recount mẫu số đầu sprint kế tiếp, không tách giữa sprint) — `Rules/Execution_Discipline.md`. Chi tiết: `DEVIATIONS.md` mục "[DOC-DEBT] C3 gộp 3 việc — 02/08/2026". |
+| 02/08/2026 (Lô D — CrossCheck follow-up) | **Đóng các mục từ CrossCheck_PreGate2 có nguồn thật.** Viết doc `ResolveSelectedComboRoot()` vào `BP_FurnitureInputManager.md` (K2Node export thật, cuhoang cung cấp — đóng MỤC 4 báo cáo). Ghi `[DOC-DRIFT]` `PrimarySelectedActor` vs `SelectedActors[0]` vào `DEVIATIONS.md` — chưa đóng, chờ task card Save As/Save đè, KHÔNG sửa `Plans/24-07-2026_C9_Execution_Plan.md` (đã đóng dấu as-built). Củng cố đóng MERGE_LOG Q3 (`FindGroupData` không Index) bằng nguồn độc lập thứ 2 + sửa thêm `BP_UndoManager.md` v1.13, `Blueprint_Logic_NodeFlow.md` v1.15 (cả 2 tự mâu thuẫn nội bộ, sót từ lần sửa trước). Không đụng: 3 mục [?] còn treo, MỤC 5 canonical lạc hậu, 3 open item C9 khác (RowNotFound/guard Length==0/`bIsReplaceMode` dòng 276) — cần K2Node export riêng. Chi tiết: `00_Core/MERGE_LOG.md`, `00_Core/DEVIATIONS.md`. |
+| 02/08/2026 (Lô E — ĐÓNG ĐỢT DỌN DOCS) | **Chốt Sprint 4 + tổng kết cả đợt (Lô A→E).** Đóng dấu thứ 3 `⚠️ [AS-BUILT TẠI THỜI ĐIỂM SPRINT 4]` cho `Sprints/Sprint4/Execution.md` + `Sprints/Sprint4/BugFix_Execution.md` — KHÔNG sửa chữ ký `FindGroupData` cũ bên trong (viết lại lịch sử = mất dấu vết quyết định gốc). Thêm bảng "3 LOẠI DẤU DOC" vào `MERGE_LOG.md` (phân biệt `[HISTORICAL]`/`[CHỨA AS-BUILT]`/`[AS-BUILT TẠI THỜI ĐIỂM X]`). Xác nhận `BP_FurnitureInputManager_MERGED_v1.9.md` **vẫn còn tồn tại** (đánh dấu xóa từ 17/06/2026, chưa ai xóa thật) — báo cáo, không tự xóa. Tạo `00_Core/DocCleanup_Summary_02aug2026.md` tổng kết toàn bộ: 4 luật mới (Q9/R-DOC-DONE/R-DOC-ATOMIC/R-DOC-ASBUILT), 3 loại dấu doc, danh sách còn treo (3 mục [?], MỤC 5 canonical lạc hậu ưu tiên `GetCombosDir`→C11, 3 open item C9, quyết định `ResolveSelectedComboRoot` chặn Save As/Save đè) — **không cái nào chặn Gate 2**. **Đợt dọn docs KẾT THÚC.** |
+| 02/08/2026 (Lô E, tiếp) | **`BP_FurnitureInputManager_MERGED_v1.9.md` — XÓA THẬT** (quyết định cuhoang, sau khi entry trên báo cáo file vẫn còn tồn tại). Bản backup v1.9 vs canonical v2.9 chênh 10 phiên bản — rủi ro đọc nhầm cao hơn giá trị lưu trữ, lịch sử đã có trong git. Đã kiểm + sửa mọi link trỏ tới file sang canonical (`BP_FurnitureInputManager.md`, `MERGE_LOG.md`, `00_INDEX.md`). Chi tiết: `MERGE_LOG.md` mục "File đã xóa". |

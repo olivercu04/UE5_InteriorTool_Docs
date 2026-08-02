@@ -1,4 +1,10 @@
 P2 — Combo Thumbnail "Studio Look" — Execution Plan
+
+> 📌 **[CHỨA AS-BUILT]** — File này bắt đầu là plan nhưng đã được ghi thêm kết quả thực thi
+> thật (test PASS / K2Node export / changelog per-gate). Phần kết quả là AS-BUILT, ưu tiên cao
+> hơn doc canonical nếu mâu thuẫn. **Phần nào là as-built:** mục Gate A–F (kết quả test từng
+> Gate nối thẳng vào thân plan — P2 nay đã DONE, xem `PROGRESS.md`).
+
 v1.3 — 18/07/2026 — Fable authored (v1.0 16/07), Gate A test kết quả thêm 17/07, Gate B+C kết quả thêm 17/07 cuối phiên, Gate D prerequisite (lighting isolation) thêm 18/07. Kế thừa P1 (Begin/Finish pipeline, DONE 15/07). Plan là giả thuyết: lệch thì ghi DEVIATIONS, không tiếc plan.
 0. Mục tiêu & phạm vi
 Thumbnail combo chuẩn ảnh sản phẩm (tham chiếu IKEA, ảnh cuhoang gửi 15/07): nền đơn sắc liền mạch không horizon, sáng đều, bóng mềm dưới đồ, khung hình + góc + sáng đồng nhất mọi combo (cảm giác UE Content Browser).

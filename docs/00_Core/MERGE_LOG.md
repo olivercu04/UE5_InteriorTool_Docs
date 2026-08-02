@@ -1,6 +1,13 @@
 # MERGE LOG — UE5 InteriorTool Docs
 **Mục đích:** Reviewer chỉ cần đọc file này để biết file nào cần soi kỹ.
 **Cập nhật:** 11/07/2026 13:14
+**Cập nhật (tiếp) 02/08/2026:** thêm mục "HISTORICAL stamps 02/08/2026" (banner [HISTORICAL] cho 8 file plan/Sprint cũ).
+**Cập nhật (tiếp) 02/08/2026 (b):** `Sprints/Sprint3/Regression_DualDispatcher_Log.md` — quyết định cuối KHÔNG đóng dấu (as-built phụ), thêm vào coverage như nguồn as-built phụ cho BP_FurnitureInputManager.md/BP_UndoManager.md.
+**Cập nhật (tiếp) 02/08/2026 (c):** thêm mục "AS-BUILT lẫn trong Plans/Sprints — 02/08/2026" — 6 file đóng dấu `📌 [CHỨA AS-BUILT]` (không di chuyển/đổi tên).
+**Cập nhật (tiếp) 02/08/2026 (d):** đóng 2 mục `[?]` — Q3 (`FindGroupData` không có Index, sửa chữ ký sai trong `BP_FurnitureInputManager.md` v2.9) và Q4 (layout `WBP_FurnitureInventory` = 512×1024, file đã đúng sẵn). Nguồn: `CrossCheck_PreGate2_02aug2026.md` MỤC 3. Q1/Q2/Q6 giữ nguyên treo (ngoài phạm vi).
+**Cập nhật (tiếp) 02/08/2026 (e, Lô D):** viết doc `ResolveSelectedComboRoot()` vào `BP_FurnitureInputManager.md` (K2Node export thật). Q3 củng cố thêm bằng chứng độc lập thứ 2 + sửa thêm 2 file còn sót chữ ký sai (`BP_UndoManager.md` v1.13, `Blueprint_Logic_NodeFlow.md` v1.15). Ghi nhận `[DOC-DRIFT]` mới (`PrimarySelectedActor` vs `SelectedActors[0]`) vào `DEVIATIONS.md` — CHƯA đóng, chờ task card Save As/Save đè. **Chưa đụng** (còn sót chữ ký `FindGroupData` cũ, cần quyết định riêng có nên sửa log lịch sử hay không): `Sprints/Sprint4/Execution.md`, `Sprints/Sprint4/BugFix_Execution.md`, `Blueprints/BP_FurnitureInputManager_MERGED_v1.9.md` (file duplicate đã bị đánh dấu xóa từ 17/06, không sửa).
+**Cập nhật (tiếp) 02/08/2026 (f, Lô E — ĐÓNG ĐỢT DỌN):** thêm dấu thứ 3 `⚠️ [AS-BUILT TẠI THỜI ĐIỂM SPRINT 4]` cho `Sprints/Sprint4/Execution.md` + `Sprints/Sprint4/BugFix_Execution.md` (KHÔNG sửa nội dung, chỉ banner). Thêm bảng "3 LOẠI DẤU DOC" (mục mới, trước "HISTORICAL stamps"). Xác nhận `BP_FurnitureInputManager_MERGED_v1.9.md` **vẫn còn tồn tại** trong repo dù đã đánh dấu xóa từ 17/06/2026 — báo cáo, không tự xóa. Tổng kết cả đợt: `00_Core/DocCleanup_Summary_02aug2026.md`. **Đợt dọn docs KẾT THÚC.**
+**Cập nhật (tiếp) 02/08/2026 (g):** `BP_FurnitureInputManager_MERGED_v1.9.md` — quyết định cuhoang: **XÓA THẬT** (git rm). Cập nhật mọi tham chiếu sang canonical (`BP_FurnitureInputManager.md` dòng 11, mục coverage `BP_FurnitureInputManager.md` + `C4`, `00_INDEX.md` — xóa dòng index). Thêm mục "File đã xóa" (cuối file) để tra lại lý do/ngày nếu cần.
 
 ---
 
@@ -14,7 +21,7 @@
 ---
 
 ## ✅ BP_FurnitureInputManager.md
-**Đích:** `docs/Blueprints/BP_FurnitureInputManager.md` (hiện ở `docs/00_Core/BP_FurnitureInputManager_MERGED_v1.9.md` — chờ move Lô C)
+**Đích:** `docs/Blueprints/BP_FurnitureInputManager.md` (move từ `BP_FurnitureInputManager_MERGED_v1.9.md` đã xong từ lâu; file nguồn đã XÓA THẬT 02/08/2026 — xem mục "File đã xóa" cuối MERGE_LOG.md)
 **Version:** 1.9 | 15/06/2026 | **Mẫu chuẩn** (done trước session)
 **Nguồn:** base v1.6 + patch v1.7 + patch v1.8 + patch v1.9
 
@@ -289,7 +296,9 @@ Coverage: Gate 1 (G1.T1 bIsRestoring guard, G1.T2 spawn merge, G1.T3 docs) + Spr
 ## ✅ C4: Blueprints/BP_FurnitureInputManager.md
 **Đích:** `docs/Blueprints/BP_FurnitureInputManager.md`
 **Nguồn:** `docs/Blueprints/BP_FurnitureInputManager_MERGED_v1.9.md` (826 dòng, đã merge từ session trước)
-**Ghi chú:** Move/copy — không có nội dung mới. File gốc _MERGED_v1.9.md giữ nguyên làm backup.
+**Ghi chú:** Move/copy — không có nội dung mới. File gốc _MERGED_v1.9.md từng giữ lại làm backup,
+**đã XÓA THẬT 02/08/2026** (quyết định cuhoang — canonical đã v2.9, chênh 10 phiên bản, rủi ro đọc
+nhầm cao hơn giá trị lưu trữ; lịch sử đã có trong git).
 **[?]:** Không
 **Session_State khớp:** Y (version 1.9 khớp kiến trúc v1.9)
 
@@ -529,8 +538,8 @@ Coverage: Gate 1 (G1.T1 bIsRestoring guard, G1.T2 spawn merge, G1.T3 docs) + Spr
 |---|---|---|
 | Q1 | WBP_MeshControls.md | Then 0 của Sequence OnSelectionChangedInfoBar có nội dung gì không? |
 | Q2 | WBP_MeshControls.md | BTN_Delete còn là single hay đã đổi sang DeleteSelected (multi)? |
-| Q3 | BP_UndoManager.md / BP_FurnitureInputManager.md | FindGroupData output pins: có pin Index không? |
-| Q4 | WBP_FurnitureInventory.md | Layout kích thước: 512×1024 hay 720×630? |
+| Q3 | BP_UndoManager.md / BP_FurnitureInputManager.md | ✅ GIẢI QUYẾT (02/08/2026, qua `CrossCheck_PreGate2_02aug2026.md` MỤC 3, củng cố thêm 02/08 Lô D). **KHÔNG có pin Index — `FindGroupData(InGroupID) → (S_GroupData, bFound)`, đúng 2 output.** Bằng chứng (2 nguồn độc lập): (1) `Plans/24-07-2026_C9_Execution_Plan.md` dòng 42 (§V8: *"FindGroupData chỉ có 2 output: (Group Data, Found) — KHÔNG có Index"*, K2Node export 23/07) + dòng 689; (2) K2Node export `ResolveSelectedComboRoot` 02/08/2026 (cuhoang cung cấp, gọi `FindGroupData(RootGID) → bFound / GroupData`, đúng 2 output) — xem `BP_FurnitureInputManager.md` mục `ResolveSelectedComboRoot`. Đã sửa chữ ký sai ở **3 file**: `BP_FurnitureInputManager.md` v2.9 (định nghĩa hàm + 2 call site còn sót `(data, _, bFound)`), `BP_UndoManager.md` v1.13 (`ValidateEditMode`), `Blueprint_Logic_NodeFlow.md` v1.15 (header tự mâu thuẫn "KHÔNG có Index...TRẢ Index"). |
+| Q4 | WBP_FurnitureInventory.md | ✅ GIẢI QUYẾT (02/08/2026, qua `CrossCheck_PreGate2_02aug2026.md` MỤC 3): **512×1024 là giá trị đúng hiện hành.** Bằng chứng: `Widgets/WBP_FurnitureInventory.md` dòng 144 (`## Layout (512×1024, resize 8 hướng)`) + dòng 1734 (`Set Size(512,1024)` ở Event Construct) — nhất quán, không hedge. `720×630` là giá trị LỊCH SỬ trước khi có Resize Window — còn thấy ở `Planning/UE5_InteriorTool_Overview.md` dòng 89 và `Sprints/Sprint0_UX/Resize_Window_Plan.md` (dòng 25, kích thước gốc trước khi resize) — cả 2 đều là doc cũ, KHÔNG sửa (ngoài phạm vi yêu cầu, giá trị đó đúng là lịch sử tại thời điểm viết). Không cần sửa `WBP_FurnitureInventory.md` — file đã đúng sẵn. |
 | Q5 | BP_FurnitureActor.md | ✅ GIẢI QUYẾT (17/06, D.T6): GroupID : String SaveGame (xác nhận Sprint 3 T2). Đã thêm vào v1.2. |
 | Q6 | Rules/Design.md | Phần cũ bị drop (pagination=50) có thông tin nào khác v1.1 không? |
 | Q7 | Planning/Master_Roadmap.md | ✅ GIẢI QUYẾT (17/06): ALIAS của Planning/00_Master_Plan.md (import_raw/28-05-2026_00_Master_Plan.md = C14-C29). KHÔNG tạo file mới. TODO: content lỗi thời (28/05), refresh khi làm Planning sprint. |
@@ -557,3 +566,116 @@ Coverage: Gate 1 (G1.T1 bIsRestoring guard, G1.T2 spawn merge, G1.T3 docs) + Spr
 
 ## ✅ [MỚI — không qua merge] Widgets/WBP_FolderTreePicker.md + WBP_FolderPickerRow.md
 Tạo trực tiếp 11/07/2026, C5.8 Task Card #2 — **không có nguồn import_raw**, viết thẳng từ task card + export K2Node (không qua bước merge base+patch như các file Lô A-D ở trên). WBP_FolderPickerRow.md v1.1, WBP_FolderTreePicker.md v1.0 (11/07 13:14, sau Giai đoạn 1 bug fix).
+
+---
+
+## 3 LOẠI DẤU DOC — đọc bảng này TRƯỚC khi gặp bất kỳ banner nào trong docs/
+
+Đợt dọn docs 02/08/2026 (Lô A→E) dùng 3 loại banner khác nhau — dễ nhầm nếu không tra bảng này.
+
+| Dấu | Ý nghĩa | Đọc thế nào | Ví dụ file |
+|---|---|---|---|
+| `⚠️ [HISTORICAL]` | File mô tả **THIẾT KẾ tại thời điểm viết** (plan), nhiều quyết định đã bị **override** ở sprint sau. Toàn bộ file coi như "vì sao đã quyết vậy", KHÔNG phải trạng thái hiện tại. | Đọc để hiểu bối cảnh/lý do quyết định. **KHÔNG** lấy bất kỳ chi tiết kỹ thuật nào (tên hàm, chữ ký, node flow) làm sự thật hiện tại — luôn tra doc canonical (`As-built hiện tại xem:` ghi ngay trong banner). | `Planning/03_Code_Inheritance_Strategy.md`, `Sprints/Sprint2/Plan.md`, `Sprints/Sprint3/Plan.md`... (xem mục "HISTORICAL stamps" dưới) |
+| `📌 [CHỨA AS-BUILT]` | File **bắt đầu là plan** nhưng bị ghi thêm **kết quả thực thi thật** (test PASS, K2Node export, changelog per-gate) thẳng vào thân. Banner ghi rõ phần nào là as-built. | Phần as-built được banner chỉ ra **ưu tiên cao hơn** doc canonical nếu 2 bên mâu thuẫn (đọc kỹ nhãn "Phần nào là as-built" trong banner). Phần còn lại của file (mô tả kế hoạch gốc) vẫn chỉ là plan — không tự động đúng. | `Plans/24-07-2026_C9_Execution_Plan.md`, `Plans/P2_StudioThumbnail_Execution.md`... (xem mục "AS-BUILT lẫn trong Plans/Sprints" dưới) |
+| `⚠️ [AS-BUILT TẠI THỜI ĐIỂM X]` | File ghi lại **đúng những gì đã thực thi tại 1 mốc thời gian** (vd Sprint 4) — KHÔNG phải plan, nhưng cũng **KHÔNG được cập nhật** theo các thay đổi sau đó. Một số chữ ký/API mô tả trong file có thể đã đổi. | Đọc để hiểu **việc đã làm** ở mốc đó (lý do, node flow lúc bấy giờ). **KHÔNG** suy ra chữ ký/API hiện tại từ file này — luôn tra doc canonical hiện hành trước khi code. Khác `[HISTORICAL]` ở chỗ: đây không phải "plan bị override", mà là "log đúng lúc đó, đơn giản là cũ". | `Sprints/Sprint4/Execution.md`, `Sprints/Sprint4/BugFix_Execution.md` |
+
+**Phân biệt nhanh:** `[HISTORICAL]` = "kế hoạch, không phải sự thật đã xảy ra". `[CHỨA AS-BUILT]` =
+"kế hoạch + có 1 phần sự thật mới hơn canonical trộn lẫn vào". `[AS-BUILT TẠI THỜI ĐIỂM X]` =
+"toàn bộ là sự thật đã xảy ra, nhưng là sự thật CŨ, có thể đã lỗi thời".
+
+---
+
+## HISTORICAL stamps 02/08/2026
+
+**Mục đích:** đóng dấu banner `⚠️ [HISTORICAL]` ngay sau dòng H1 cho các file mô tả THIẾT KẾ tại
+thời điểm viết (không phải as-built hiện tại), để người đọc không nhầm plan cũ với trạng thái
+code thật. Chỉ chèn banner — KHÔNG sửa nội dung nào khác trong các file này.
+
+| File đóng dấu | As-built hiện tại |
+|---|---|
+| `Planning/03_Code_Inheritance_Strategy.md` | `Blueprints/BP_FurnitureInputManager.md` + `Blueprints/BP_UndoManager.md` |
+| `Planning/04_Sprint_Details.md` | `00_Core/PROGRESS.md` |
+| `Planning/MultiSelect_Group_ComboMesh_Plan.md` | `Sprints/Sprint5/Combo_Execution.md` |
+| `Sprints/Sprint2/Plan.md` | `Blueprints/BP_FurnitureInputManager.md` |
+| `Sprints/Sprint2/ContextMenu_Prep.md` | `Blueprints/BP_FurnitureInputManager.md` (ghi chú KP3 nội bộ về §5.2 lỗi thời — GIỮ NGUYÊN) |
+| `Sprints/Sprint3/Plan.md` | `Blueprints/BP_FurnitureInputManager.md` |
+| `Sprints/Sprint4/Plan.md` | `Sprints/Sprint4/Execution.md` |
+| `Sprints/Sprint0_UX/UX_Phase2_Plan.md` | `Blueprints/Flows/*.md` |
+
+**KHÔNG đóng dấu (loại trừ tường minh):**
+- `Sprints/Sprint4/Execution.md` — vẫn là nguồn as-built của Sprint 4, không phải plan.
+- Mọi file trong `Rules/`, `Blueprints/`, `Widgets/`, `Data/`, `Bugs/`, `00_Core/`.
+
+**Sprint3/* — rà trước khi đóng dấu (theo yêu cầu riêng):** thư mục có 2 file —
+`Sprints/Sprint3/Plan.md` (đã đóng dấu, đúng là plan) và
+`Sprints/Sprint3/Regression_DualDispatcher_Log.md` — **QUYẾT ĐỊNH CUỐI (cuhoang, 02/08/2026):
+KHÔNG đóng dấu — as-built phụ, không phải plan.** Lý do: file ghi node flow của các function ĐÃ
+SỬA THẬT (as-built) trong đợt regression-fix Sprint 3, không phải plan thiết kế; đóng dấu
+[HISTORICAL] sẽ khiến session sau bỏ qua một nguồn as-built đúng. Xem mục coverage riêng bên
+dưới ("Regression_DualDispatcher_Log.md — nguồn as-built phụ").
+
+---
+
+## 📌 Sprints/Sprint3/Regression_DualDispatcher_Log.md — nguồn as-built phụ
+
+**Đích chính:** `Blueprints/BP_FurnitureInputManager.md` + `Blueprints/BP_UndoManager.md`
+**Vai trò:** KHÔNG phải plan, KHÔNG đóng dấu HISTORICAL — nguồn tham chiếu node flow cho các
+function ĐÃ SỬA THẬT trong đợt regression-fix + refactor dual-dispatcher sau Sprint 3 (10/06/2026):
+`CaptureSnapshot`, `RestoreSnapshot` (BP_UndoManager); hợp nhất dispatcher chọn lựa thành
+`OnSelectionChanged` duy nhất (xóa `OnMeshSelected`/`OnMeshDeselected`), xóa biến
+`MeshToReplace` (single) (BP_FurnitureInputManager).
+
+**Dùng khi nào:** `Blueprint_Logic_NodeFlow.md`/`BP_FurnitureInputManager.md`/`BP_UndoManager.md`
+thiếu chi tiết hoặc mâu thuẫn về node flow của các function trên — đối chiếu ngược lại file này
+trước khi hỏi cuhoang, vì đây là log chi tiết ghi tại thời điểm fix thật (không phải suy diễn).
+
+---
+
+## AS-BUILT lẫn trong Plans/Sprints — 02/08/2026
+
+**Bối cảnh:** VIỆC 3 quét lan (02/08) phát hiện 6 file mang tên "Plan"/"Task Card" nhưng bị ghi
+thêm kết quả thực thi thật (test PASS, K2Node export, changelog per-gate) thẳng vào thân file,
+thay vì đưa về doc canonical trong `Blueprints/`/`Widgets/`. Quyết định cuhoang: KHÔNG di
+chuyển/đổi tên (tránh gãy đường dẫn chéo giữa lúc chuẩn bị Lô C + Save As) — chỉ đóng dấu banner
+`📌 [CHỨA AS-BUILT]` ngay sau H1 của cả 6 file.
+
+| File | Phần nào là as-built | Đối chiếu doc canonical nào |
+|---|---|---|
+| `Plans/01-08-2026_Phase0_Verify_Report_ReplaceUXFix.md` | Toàn bộ file — báo cáo verify 5/5 mục bằng K2Node export thật | `Blueprints/BP_FurnitureInputManager.md`, `Widgets/WBP_FurnitureInventory.md` |
+| `Plans/P2_StudioThumbnail_Execution.md` | Mục Gate A–F (kết quả test từng Gate nối vào thân plan) | `Blueprints/BP_ComboManager.md` |
+| `Plans/P1_ComboThumbnail_Execution.md` | Bảng Changelog v1.1 (Sửa/Gate) + kết quả Gate G0→G4 | `Blueprints/BP_ComboManager.md` |
+| `Plans/24-07-2026_C9_Execution_Plan.md` | Ghi chú v1.1 (audit sửa 2 lỗi nghiêm trọng) + §10 kết quả test case | `Blueprints/BP_FurnitureInputManager.md`, `Blueprints/BP_ComboManager.md`, `Blueprints/BP_UndoManager.md` |
+| `Sprints/Sprint5/C5.8_TaskCard2_FixPlan_11jul2026.md` | Dòng "As-built binding" (K2Node 11/07) + "Test mục 1-5 PASS" | `Widgets/WBP_FolderPickerRow.md`, `Widgets/WBP_FolderTreePicker.md` |
+| `Sprints/Sprint5/C5.8_REG_TaskCard_11jul2026.md` | Bảng kết quả cuối file "✅ Khối A/B/C PASS" (regression C5.8, 13/07) | `Widgets/WBP_FolderTreePicker.md`, `Widgets/WBP_MoveToFolderDialog.md`, `Widgets/WBP_SaveComboDialog.md` |
+
+**Upgrade trigger:** sau Gate 2 → gom phần as-built về đúng doc canonical, hoặc lập thư mục riêng
+cho execution report, tách khỏi `Plans/`. Xem `DEVIATIONS.md` mục "[DOC-DEBT] AS-BUILT lẫn trong
+Plans/Sprints — 02/08/2026" + luật mới `R-DOC-ASBUILT` (`Rules/Execution_Discipline.md`).
+
+---
+
+## `[AS-BUILT TẠI THỜI ĐIỂM SPRINT 4]` stamps — 02/08/2026
+
+Khác 2 loại dấu trên (xem bảng "3 LOẠI DẤU DOC" phía trên) — 2 file dưới đây **KHÔNG phải
+plan**, mà là log thực thi THẬT của Sprint 4, nhưng chưa được cập nhật theo các thay đổi sau đó
+(vd `FindGroupData` đổi chữ ký ở MERGE_LOG Q3, 02/08/2026).
+
+| File đóng dấu | Vì sao KHÔNG sửa nội dung |
+|---|---|
+| `Sprints/Sprint4/Execution.md` | Ghi lại thực thi Sprint 4 (11/06/2026) — vẫn là nguồn as-built chính thức của Sprint 4 (không đóng dấu `[HISTORICAL]`). Sửa chữ ký `FindGroupData` trong này = viết lại lịch sử, mất dấu vết chữ ký lúc đó thật sự là gì. |
+| `Sprints/Sprint4/BugFix_Execution.md` | Cùng lý do — log bug-fix session 14/06/2026, giữ nguyên như lúc viết. |
+
+**Quyết định cuhoang (02/08/2026):** chỉ đóng dấu banner, KHÔNG sửa nội dung 2 file này dù chúng
+còn giữ chữ ký `FindGroupData` cũ (`(data, _, bFound)` — 3 output, đã xác nhận sai ở MERGE_LOG
+Q3). Nếu cần đọc lại Sprint 4 để hiểu logic lúc đó → vẫn dùng được, chỉ đừng lấy chữ ký hàm/API
+trong đây làm chuẩn hiện tại.
+
+---
+
+## File đã xóa
+
+| File | Ngày xóa | Lý do | Ghi chú |
+|---|---|---|---|
+| `Blueprints/BP_FurnitureInputManager_MERGED_v1.9.md` | 02/08/2026 | Quyết định cuhoang: bản backup v1.9, canonical (`BP_FurnitureInputManager.md`) đã v2.9 — chênh 10 phiên bản, rủi ro đọc nhầm cao hơn giá trị lưu trữ. Đã "đánh dấu xóa" từ 17/06/2026 nhưng chưa ai xóa thật cho tới lúc này. | Lịch sử đầy đủ vẫn còn trong git (`git log --follow`/`git show <commit>:<path>` nếu cần tra lại). Đã kiểm mọi tham chiếu trong `docs/` — cập nhật link/ghi chú sang canonical, không còn chỗ nào trỏ tới file đã xóa (xem `BP_FurnitureInputManager.md` dòng 11, `00_Core/00_INDEX.md`, và 2 mục coverage phía trên). |
+
+---

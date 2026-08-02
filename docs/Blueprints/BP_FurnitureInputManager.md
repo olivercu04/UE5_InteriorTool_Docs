@@ -1,8 +1,14 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 2.8 | **Cập nhật:** 02/08/2026 — Replace UX Fix P0→P5 HOÀN TẤT: biến `MeshToReplace` (single, dead code) XÓA HOÀN TOÀN (P4.4) — đính chính dòng Variables ghi sai đã "xóa từ v1.6". Node flow re-route (P2), card container (P1.3), clear đường thoát (P4.2), undo (P4.3) đều nằm ở `WBP_FurnitureInventory.md` (xem file đó, `ReplaceTarget`/`ResolveSelectedComboRoot`/`StartReplaceMode`/`StartReplaceComboMode` ở đây không đổi logic, chỉ được gọi từ route mới) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 2.9 | **Cập nhật:** 02/08/2026 (tiếp) — MERGE_LOG Q3 đóng: `FindGroupData` chữ ký đính chính từ `(S_GroupData, Index, bFound)` → `(S_GroupData, bFound)` (hàm không có output Index, tự mâu thuẫn với bài học "đã trả giá" ngay trong cùng file) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+
+> **v2.8 (Replace UX Fix P0→P5, 02/08/2026):** biến `MeshToReplace` (single, dead code) XÓA HOÀN
+> TOÀN (P4.4) — đính chính dòng Variables ghi sai đã "xóa từ v1.6". Node flow re-route (P2), card
+> container (P1.3), clear đường thoát (P4.2), undo (P4.3) đều nằm ở `WBP_FurnitureInventory.md`
+> (xem file đó, `ReplaceTarget`/`ResolveSelectedComboRoot`/`StartReplaceMode`/`StartReplaceComboMode`
+> ở đây không đổi logic, chỉ được gọi từ route mới).
 
 > **HỢP NHẤT TỪ:** base v1.6 + patch v1.7 + patch v1.8 + patch v1.9 (15/06/2026). Đây là bản đầy đủ, thay thế toàn bộ file gốc + patch trong import_raw.
-> **File canonical.** `BP_FurnitureInputManager_MERGED_v1.9.md` là bản duplicate — sẽ bị xóa (cuhoang 17/06/2026). Chỉ đọc file này.
+> **File canonical.** `BP_FurnitureInputManager_MERGED_v1.9.md` là bản duplicate — đã bị xóa thật (cuhoang 02/08/2026, sau khi ở trạng thái "đánh dấu xóa" từ 17/06/2026 mà chưa ai xóa). Lịch sử nằm trong git. Chỉ đọc file này.
 >
 > **v2.1 (19/06/2026):** `SpawnFurnitureCopy` — async load mesh + material qua `BP_FurnitureActor.LoadMeshAsync/LoadMaterialsAsync` (thay Load Asset Blocking). `NewActorCopy` đổi class var → local var. Add Recent Mesh parse `MeshPath` thay `DAPath`.
 > **v1.10 (Sprint D.T6):** Thêm `StartReplaceMode(Actors)` — document lần đầu. Primary actor → Branch RowName != "" → DT lookup MeshFolderPath (fallback DAPath). Mouse Left Pressed: ghi nhận + XÓA Step 11 (UpdateDetailPopup → stale popup bug).
@@ -411,8 +417,14 @@ Get All Actors With Tag("FurnitureSpawned") → ForEach:
 Return Children
 ```
 
-### FindGroupData(InGroupID) → (S_GroupData, Index, bFound)
-ForEach Groups → Break → so GroupID → match: trả data + index + true.
+### FindGroupData(InGroupID) → (S_GroupData, bFound)
+ForEach Groups → Break → so GroupID → match: trả data + true.
+
+⚠️ **[ĐÍNH CHÍNH 02/08/2026 — MERGE_LOG Q3 đóng]** Chữ ký ở trên trước đây ghi thêm output
+`Index` — SAI, hàm KHÔNG có output Index. Xác nhận qua K2Node export 24/07/2026
+(`Plans/24-07-2026_C9_Execution_Plan.md` §V6) và khớp với bài học "đã trả giá" ghi ngay dưới
+`UngroupActors` (dòng dưới: *"FindGroupData không có output Index → dùng rebuild pattern"*) —
+2 nguồn độc lập trong chính file này trước đây tự mâu thuẫn nhau.
 
 ### ExpandSelectionWithGroups(RawActors) → Array<BP_FurnitureActor>  ⭐ keystone
 **v1.7: VIẾT LẠI** dùng ResolveSelectionUnit (thay logic inline Sprint 3):
@@ -547,7 +559,7 @@ Completed → Return LocalChildren
 ```
 SET Current = InGroupID
 ForLoop(0..9):
-  FindGroupData(Current) → (data, _, bFound)
+  FindGroupData(Current) → (data, bFound)
   bFound==False → Return Current
   data.ParentGroupID=="" → Return Current
   Else → SET Current = data.ParentGroupID
@@ -558,7 +570,7 @@ Completed → Return Current
 ```
 SET Current = InGroupID
 ForLoop(0..9):
-  FindGroupData(Current) → (data, _, bFound)
+  FindGroupData(Current) → (data, bFound)
   bFound==False → Return ""
   data.ParentGroupID==TargetParent → Return Current
   data.ParentGroupID=="" → Return ""
@@ -1094,6 +1106,51 @@ area) NGAY TRƯỚC `UpdateComboFolderHighlights()`. Không cần viết hàm m�
 
 ---
 
+## ResolveSelectedComboRoot() → RootGroupID:String, ComboID:String, bFound:Bool — Function (ghi nhận 02/08/2026, K2Node export thật cuhoang cung cấp)
+
+**Local:** ResolveCombo_GID, ResolveCombo_RootGID, ResolveCombo_Data (S_GroupData),
+ResolveCombo_bDataFound, ResolveCombo_SCID
+
+Flow (6 Return node, mọi nhánh có đích — KHÔNG dead-end):
+```
+Entry
+▶→ Branch(Array_Length(SelectedActors) == 0)
+     True  ▶→ Return ["", "", false]                    ← không chọn gì
+     False ▶→ Cast SelectedActors[0] → BP_FurnitureActor
+              CastFailed ▶→ Return ["", "", false]        ← null guard (xem ⚠ dưới)
+              Success ●→ GroupID ▶→ SET ResolveCombo_GID
+▶→ Branch(ResolveCombo_GID == "")
+     True  ▶→ Return ["", "", false]                    ← đồ rời, không thuộc group
+     False ▶→ GetGroupRoot(ResolveCombo_GID) ●→ SET ResolveCombo_RootGID
+▶→ FindGroupData(ResolveCombo_RootGID)
+     ●→ bFound     ▶→ SET ResolveCombo_bDataFound
+     ●→ GroupData  ▶→ SET ResolveCombo_Data
+▶→ Branch(ResolveCombo_bDataFound == false)
+     True  ▶→ Return ["", "", false]                    ← group data hỏng/không tìm thấy
+     False ▶→ Break ResolveCombo_Data ●→ SourceComboID ▶→ SET ResolveCombo_SCID
+▶→ Branch(ResolveCombo_SCID == "")
+     True  ▶→ Return ["", "", false]                    ← group thường, KHÔNG phải combo
+     False ▶→ Return [ResolveCombo_RootGID, ResolveCombo_SCID, true]
+```
+
+⚠️ **GHI CHÚ BẮT BUỘC (chống "dọn warning" làm mất guard):** Node `Cast To BP_FurnitureActor` có
+compiler warning *"'Item' is already a 'BP Furniture Actor', you don't need Cast"*. **KHÔNG ĐƯỢC
+XÓA.** Nếu `SelectedActors[0]` là `None` (actor đã Destroy, ref chết — case sau
+`RestoreSnapshot`), Cast fail → nhánh CastFailed → trả not-found an toàn. Hàm này không có node
+`IsValid` nào khác — xóa cast = mất null guard duy nhất.
+
+**Nơi gọi:** `WBP_FurnitureInventory.OnMeshSelected` (nhánh Replace) và `ExecuteComboReplace`
+(mục ngay dưới, đoạn re-resolve sau `ReplaceCombo`) — xem thêm các call site khác đã ghi trong
+`Widgets/WBP_FurnitureInventory.md`.
+
+⚠️ **[DOC-DRIFT — xem `DEVIATIONS.md`]** `Plans/24-07-2026_C9_Execution_Plan.md` mục V7 ghi hàm
+này "dùng `PrimarySelectedActor`" — **as-built thật dùng `SelectedActors[0]`** (không phải
+`PrimarySelectedActor`). Hai giá trị khác nhau khi selection là multi. Chưa gây lỗi trong C9
+(Replace Combo chỉ chạy với selection 1 cụm) nhưng **PHẢI chốt trước khi lên task card Save
+As/Save đè** (selection có thể mix combo + mesh rời). Không tự sửa Blueprint ở đây.
+
+---
+
 ## ExecuteComboReplace(NewComboID : String) — Function (MỚI, C9.f, 30/07/2026)
 
 **Local:** ECR_RootGID2, ECR_ComboID2 (String), ECR_bFound2 (Boolean)
@@ -1142,4 +1199,5 @@ từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 | 2.5 | 24/07/2026 (tiếp) | **C9.0c HOÀN TẤT — 5/5 test regression PASS, 6/6 file compile sạch.** Pure Function mới `IsReplaceModeActive() → Boolean` (= `ReplaceTarget != None`), tồn tại song song trên cả `BP_FurnitureInputManager` và `WBP_FurnitureInventory` (2 bản riêng). `CB_Replace` (Custom Event) đưa vào doc canonical lần đầu — bug fix Branch dư literal=true chặn đường tới `StartReplaceMode`. `Event Tick — Box Select branch` (v1.5 canonical, KHÔNG phải bản tóm tắt ở `Blueprint_Logic_NodeFlow.md`) bổ sung 2 đoạn doc trước đây ghi thiếu (logic Blueprint đã có sẵn, chỉ chưa từng viết vào doc): guard `Branch(bIsPendingBoxSelect OR bIsBoxSelecting)` trước `HideBox`, và chuỗi thoát Replace Mode (`SET ReplaceTarget=None` + `Clear MeshesToReplace` + `ExitReplaceMode`) sau `DeselectAll` trong Branch A. Không sửa logic — verify K2Node export xác nhận đúng. Chi tiết đầy đủ 6 file liên quan: `Widgets/WBP_FurnitureInventory.md`, `Widgets/WBP_MeshControls.md`, `Widgets/WBP_DetailPopup.md`, `Widgets/WBP_FurnitureCard.md`, `Widgets/WBP_ComboCard.md`. |
 | 2.6 | 30/07/2026 | **C9.b/C9.d/C9.f DONE (delta "C9 Replace: Folder Highlight + Chip Fix & C9.b–C9.f").** 3 function mới: `DestroyComboCluster(RootGroupID)` (hủy cụm combo cũ, 🔴 `DeselectAll` bắt buộc trước `PruneEmptyGroups`); `StartReplaceComboMode(RootGroupID, ComboID)` (mirror `StartReplaceMode`, khối cuối as-built THÊM `PopulateComboTreeColumn`+`UpdateComboFolderHighlights` so với plan gốc); `ExecuteComboReplace(NewComboID)` (gọi `BP_ComboManager.ReplaceCombo`, re-resolve `ComboRootGroupIDToReplace` sau replace — Luật 6B). Biến mới `ComboRootGroupIDToReplace`. `StartReplaceMode` bổ sung ghi chú behavior: `MeshFolderPath` là full path, không strip (strip xảy ra trong `FilterByFolderPathWithUI`). Chi tiết đầy đủ: `Blueprints/BP_ComboManager.md` (`ReplaceCombo`, `SpawnComboByID` sửa), `Blueprints/BP_UndoManager.md` (`RestoreCurrentSnapshot`), `Widgets/WBP_FurnitureInventory.md` (`OnMeshSelected` guard Bug A2, `EnterReplaceMode`, `RefreshComboCardReplaceMode`, fix `FilterByFolderPathWithUI`), `Widgets/WBP_ComboCard.md` (`BTN_ChangeCombo` wired). |
 | 2.7 | 01/08/2026 | **StartReplaceComboMode — 2 fix sau Phase 0 verify (Replace UX Fix P1.2+P3.2).** (1) Fix #3a: thêm `InventoryRef.EnsureExpanded()` tại điểm hợp lưu `Branch(IsInViewport)`, TRƯỚC `SwitchInventoryMode(Combo)` — mirror vị trí gọi bên nhánh mesh (`EnterReplaceMode`). (2) Fix #3b: khối cuối đổi thứ tự — thêm gọi `RefreshChipBreadcrumb()` (hàm có sẵn từ 06/07, KHÔNG viết mới) NGAY TRƯỚC `UpdateComboFolderHighlights()` (đảo ngược thứ tự cũ — xem `DEVIATIONS.md` mục "Replace UX Fix — 01/08/2026"). Huỷ quyết định Opus #1 (viết hàm `CreateComboChipTagsForPath` mới) — không cần, `RefreshChipBreadcrumb` có sẵn làm đúng việc. Test PASS PIE: T1.1 (chiptag đúng combo, highlight đúng), T3.3 (minimize → tự mở lại). Chi tiết: `Plans/01-08-2026_ReplaceUX_Fix_Execution_Plan.md`, `Plans/01-08-2026_Phase0_Verify_Report_ReplaceUXFix.md`. |
+| 2.9 | 02/08/2026 (tiếp) | **MERGE_LOG Q3 đóng — `FindGroupData` đính chính chữ ký.** Header hàm trước ghi `(S_GroupData, Index, bFound)` — SAI, tự mâu thuẫn với ghi chú "đã trả giá" ngay dưới `UngroupActors` trong cùng file (*"FindGroupData không có output Index"*). Sửa lại đúng `(S_GroupData, bFound)`. Bằng chứng: K2Node export 24/07/2026 (`Plans/24-07-2026_C9_Execution_Plan.md` §V6, dòng 40 + 689) xác nhận không có Index. Phát hiện qua `CrossCheck_PreGate2_02aug2026.md` MỤC 3. Không đổi node flow thật nào — chỉ sửa mô tả chữ ký cho khớp as-built. |
 | 2.8 | 02/08/2026 | **Replace UX Fix P0→P5 HOÀN TẤT.** File này không đổi node flow (route mới P2 gọi các hàm có sẵn `ResolveSelectedComboRoot`/`StartReplaceMode`/`StartReplaceComboMode` không đổi — logic thay đổi nằm ở phía gọi, `WBP_FurnitureInventory.OnMeshSelected`, xem file đó v3.19). Chỉ 1 thay đổi thật ở đây: biến `MeshToReplace` (single, dead code) XÓA HOÀN TOÀN (P4.4) — Find References xác nhận chỉ còn 1 chỗ SET rác (`BTN_Close`), xóa cả 2 (biến + node) → compile sạch 0 error, không cross-class reference nào khác. Đính chính dòng Variables (mục Group) ghi sai "đã xóa từ v1.6, 10/06/2026" — biến thật ra vẫn tồn tại tới hôm nay. KHÔNG nhầm với `MeshesToReplace` (array, dùng thật, giữ nguyên). Chi tiết đầy đủ: `DEVIATIONS.md` mục "Replace UX Fix P0→P5 — 02/08/2026", `Widgets/WBP_FurnitureInventory.md` v3.19. |

@@ -1,5 +1,10 @@
 # C9 — REPLACE COMBO — Kế hoạch thực thi
 
+> 📌 **[CHỨA AS-BUILT]** — File này bắt đầu là plan nhưng đã được ghi thêm kết quả thực thi
+> thật (test PASS / K2Node export / changelog per-gate). Phần kết quả là AS-BUILT, ưu tiên cao
+> hơn doc canonical nếu mâu thuẫn. **Phần nào là as-built:** ghi chú v1.1 (sửa 2 lỗi nghiêm
+> trọng sau tự audit) + §10 kết quả test case (C9 nay đã DONE 30/07 — xem `01_Session_State.md`).
+
 **Phiên bản:** 1.1 | **Ngày:** 24/07/2026 | **Tác giả:** Opus (architect) | **Người thực thi:** Sonnet
 
 v1.1 — sau lượt tự audit (13 điểm mù). Sửa 2 lỗi nghiêm trọng: DestroyComboCluster thiếu

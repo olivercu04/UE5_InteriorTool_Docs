@@ -7,6 +7,9 @@ gác lại — thiếu file save cũ để test.
 trúc với Opus, luật Q9): Bug-MaterialPrimaryOnly, Bug-PasteVerticalCollapse, Bug-StaleSurfaceType
 — cả 3 KHÔNG chặn Gate 2, dời sau Gate 2. Thêm mục "Ô nghi ngờ chưa verify" (N1-N14, rút từ đọc
 docs, chưa chạy test).
+**Cập nhật (tiếp) 02/08/2026 (R-DOC-DONE):** Thêm 2 entry tách từ PROGRESS.md khi tick DONE P2/P1
+theo luật `R-DOC-DONE`: Task-P2-SweepCao (case Cao chưa test combo thật), Task-P1-VRAMRegression
+(G5 VRAM chưa đo được) — cả 2 🟢 Thấp, không chặn Gate 2.
 
 ---
 
@@ -24,6 +27,8 @@ docs, chưa chạy test).
 | Bug-SaveConfirm-EmptyName | WBP_SaveComboDialog: BTN_Confirm không disable khi tên combo trống nếu user chưa gõ gì | 🟡 Trung bình-Thấp | Phát hiện REG C5.8 khối A6 (13/07) — ngoài scope C5.8, chưa fix |
 | Bug-MoveFolder-Collision | Move Folder: không check trùng tên khi đích đã có con cùng tên với folder đang move | 🟡 Trung bình | Phát hiện REG C5.8 khối A7 (13/07) — backlog, task riêng ngoài scope C5.8 |
 | Task-RegenThumbnails | Regenerate all thumbnails cho combo library cũ (sau P2.F) | 🟢 Thấp | Backlog 16/07 — combo lưu trước P2 vẫn có ảnh capture kiểu cũ (không phải Studio Look), cần công cụ batch regenerate sau khi P2 Gate F đóng |
+| Task-P2-SweepCao | Combo "Cao" (kệ/tủ cao) cho Studio Thumbnail chưa test bằng combo thật — chỉ PASS SƠ BỘ bằng stack dựng tay | 🟢 Thấp | Tách khỏi P2 Gate D (02/08, R-DOC-DONE — P2 đã tick DONE trong PROGRESS.md). Đóng khi có combo kệ/tủ cao thật để test lại. Không chặn Gate 2 |
+| Task-P1-VRAMRegression | P1.G5 — regression VRAM cho Thumbnail System C++ chưa đo được (phương pháp đo bị nhiễu, cần RenderDoc/Nsight) | 🟢 Thấp | Tách khỏi P1 (02/08, R-DOC-DONE — P1 đã tick DONE trong PROGRESS.md). Không chặn Gate 2 |
 | Feature-CanonicalStudioAngle | Thumbnail combo chụp theo góc user đặt+nhìn → không đồng bộ catalogue (sofa chữ U chụp trúng lưng, quạt chắn giữa). Cần "nắn về góc chuẩn" / user chọn mặt trước | 🟢 Thấp | Sprint 6 — Polish UX |
 | Bug-DomeCurvature-FootprintRong | ✅ FIXED (20/07) — dome custom (đồng nghiệp dựng) thay sphere engine, đáy phẳng bo cong bán kính ~500 unit | — | Test PASS combo Dẹt (thảm) + To (sofa 15 món, footprint lớn nhất từng có) trên dome mới. Xem DEVIATIONS mục "P2 — 20/07/2026 (Dome Custom)" |
 | Bug-CeilingGroundAlign | ✅ FIXED (20/07) — Function `ResolveThumbAlign` (Nấc 1) phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType`, thay công thức "neo xuống sàn" đơn nhất | — | Test 6/6 case PASS. Xem DEVIATIONS mục "P2 — 20/07/2026 (Nấc 1)" |
@@ -325,6 +330,47 @@ Công cụ/flow batch: với mỗi combo cũ trong `Saved/Combos/`, gọi lại
 ### Trạng thái
 - **Backlog.** Chỉ làm SAU khi P2 Gate F đóng (pipeline Studio Look ổn định). Task riêng,
   chưa có execution plan.
+
+---
+
+## Task-P2-SweepCao — Combo "Cao" chưa test bằng combo thật (P2 Gate D)
+
+**ID:** Task-P2-SweepCao
+**Phát hiện:** P2 Gate D sweep, 20/07/2026 — tách thành entry riêng 02/08/2026 (luật `R-DOC-DONE`,
+P2 đã tick DONE trong `PROGRESS.md`)
+**Ưu tiên:** 🟢 Thấp — KHÔNG chặn Gate 2
+
+### Bối cảnh
+Sweep 5 loại combo cho Studio Thumbnail: 4/5 loại (Nhỏ/To/Dẹt/Tường) PASS chính thức bằng combo
+thật có sẵn trong thư viện. Loại "Cao" (kệ/tủ cao, item Ceiling/trên cao) chỉ PASS SƠ BỘ bằng
+cách dựng stack tay (không phải combo tự nhiên có sẵn) — chưa có combo "Cao" thật trong thư viện
+để test.
+
+### Trạng thái
+- **Open, không chặn gì.** P2 (Studio Thumbnail) đã tick DONE 02/08/2026 theo luật `R-DOC-DONE`
+  — tính năng hoạt động, phần nghiệm thu còn treo (case Cao) tách ra đây thay vì giữ task Gate D
+  mở. Xem `DEVIATIONS.md` mục "[DOC-DEBT đã đóng] PROGRESS.md P2 self-contradiction — 02/08/2026".
+- Đóng khi nào: có combo kệ/tủ cao thật trong thư viện → chạy lại sweep test.
+
+---
+
+## Task-P1-VRAMRegression — Regression VRAM Thumbnail System C++ chưa đo được (P1.G5)
+
+**ID:** Task-P1-VRAMRegression
+**Phát hiện:** P1 Gate G5, 15/07/2026 — tách thành entry riêng 02/08/2026 (luật `R-DOC-DONE`, P1
+đã tick DONE trong `PROGRESS.md`)
+**Ưu tiên:** 🟢 Thấp — KHÔNG chặn Gate 2
+
+### Bối cảnh
+G5 (regression VRAM cho pipeline Thumbnail C++ P1) bị DEFERRED 15/07/2026 — phương pháp đo bằng
+`stat rhi`/MemReport thô bị nhiễu bởi texture streaming theo camera, không tách được đóng góp
+riêng của combo thumbnail. Cần RenderDoc hoặc Nsight để đo chính xác.
+
+### Trạng thái
+- **Open, không chặn gì.** P1 (Thumbnail System C++) đã tick DONE 02/08/2026 theo luật
+  `R-DOC-DONE` — tính năng hoạt động (G0→G4), phần đo regression còn treo (G5) tách ra đây thay vì
+  giữ task P1 mở.
+- Đóng khi nào: có công cụ đo VRAM chính xác hơn (RenderDoc/Nsight) rảnh tay để chạy.
 
 ---
 

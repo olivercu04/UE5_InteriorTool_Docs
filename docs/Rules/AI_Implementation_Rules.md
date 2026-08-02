@@ -292,6 +292,10 @@ Mục tiêu:  ~80% bắt lúc plan (S-Scan + X-Check)
 
 **Vấn đề giải quyết:** L1-L10 là kiến thức thụ động. AI "biết" nhưng không tự đối chiếu lúc sinh logic → lặp lại lỗi cũ đã có trong file.
 
+**Quan hệ với Q9:** Q9 chạy ở tầng PLAN (trước khi cắt task card — rà ma trận trạng thái
+`SelectedActors`); Q8 chạy ở tầng NODE FLOW (trước khi viết node cụ thể trong task đó). Hai gate
+khác tầng, KHÔNG thay thế nhau — task card qua Q9 trước, node flow bên trong task vẫn phải qua Q8.
+
 **Quy tắc cứng (v2.1):** Trước khi đưa ra MỌI node flow, AI phải viết 1 dòng self-check VISIBLE, gồm ĐỦ 5 điểm:
 
 ```

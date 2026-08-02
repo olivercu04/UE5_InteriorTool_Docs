@@ -1,6 +1,8 @@
 # Blueprint Logic — Node Flow Reference
 **HỢP NHẤT TỪ 3 file:** v1.3 base (07/06) + v1.4_patch (12/06) + v1.5_patch (15/06)
-**Phiên bản:** 1.14 | **Cập nhật:** 01/08/2026 — `PopulateComboTreeColumn()` viết lại toàn bộ theo K2Node export thật (Phase 0 Replace UX Fix) — doc cũ thiếu/sai 6 điểm, xem mục C5.0
+**Phiên bản:** 1.15 | **Cập nhật:** 02/08/2026 — MERGE_LOG Q3 đóng: `FindGroupData` đính chính chữ ký (bỏ output `Index` không tồn tại) + sửa ghi chú tự mâu thuẫn
+
+> **v1.14 (01/08/2026):** `PopulateComboTreeColumn()` viết lại toàn bộ theo K2Node export thật (Phase 0 Replace UX Fix) — doc cũ thiếu/sai 6 điểm, xem mục C5.0
 **Mục đích:** Ghi lại thứ tự node logic để không cần chụp ảnh lại Blueprint. Full flows sống trong file BP_*.md / WBP_*.md tương ứng — file này ghi node-by-node diff và cross-BP flows.
 
 ---
@@ -629,11 +631,15 @@ Get All Actors With Tag("FurnitureSpawned") → ForEach:
 Return Children
 ```
 
-## FindGroupData(InGroupID) → (S_GroupData, Index, bFound)
+## FindGroupData(InGroupID) → (S_GroupData, bFound)
 ```
-ForEach Groups → For Each With Break → so GroupID → match: trả data + index + true
+ForEach Groups → For Each With Break → so GroupID → match: trả data + true
 ```
-> ⚠ KHÔNG có output Index ở 1 số call site Sprint 4 — `FindGroupData` TRẢ Index. Khi cần Index dùng rebuild pattern thay Set Array Elem.
+> ⚠ **[ĐÍNH CHÍNH 02/08/2026]** Dòng trên trước đây ghi thêm output `Index` — SAI, tự mâu thuẫn
+> (viết "KHÔNG có Index" rồi lại viết "TRẢ Index" trong cùng câu). Hàm KHÔNG có output Index.
+> Khi cần Index dùng rebuild pattern thay Set Array Elem. Bằng chứng: K2Node export
+> `ResolveSelectedComboRoot` 02/08/2026 + `Plans/24-07-2026_C9_Execution_Plan.md` §V8 — xem
+> `00_Core/MERGE_LOG.md` mục Q3.
 
 ## CreateGroup() — Ctrl+G (v1.4 — nested, Sprint 4 T6 sửa ParentGroupID)
 ```
@@ -1415,4 +1421,5 @@ tiếp)
 | 1.11 | 20/07/2026 | **BP_ComboManager — Gate D: Rim Light + VRAM/GPU Crash Fix.** Rim Light [SCOPE] mở rộng Gate C: biến mới `Cmb_StudioRimLight`, `SpawnStudioLight` gọi lần 3 ở BeginPlay (`180.0, 2500000.0`); đổi `InVect` RotateAngleAxis (1500,0,1200)→(1200,0,1500), Attenuation Radius Key/Fill 8000→3000 + Rim=3000 mới, Post Process Exposure Compensation 0.0→+6.0. VRAM/GPU Crash Fix: Event End Play sắp xếp lại — `Get Texture Target` (node mới, chờ xác nhận) → `Release Render Target 2D` trước `Map_Clear(Cmb_ThumbnailCache)` (nay chạy VÔ ĐIỀU KIỆN, không còn lồng trong Branch IsValid handle) → `Reset Combo Accumulation` gọi TRƯỚC `SET Cmb_CaptureHandle=None` (trước đây SET chạy trước khiến hàm nhận None, no-op). CHƯA verify bằng đo VRAM dài hạn — xác nhận bằng đọc code + export K2Node. Bối cảnh đầy đủ: `DEVIATIONS.md` mục "P2 — 20/07/2026". |
 | 1.12 | 21/07/2026 | **BP_ComboManager — Gate F: nối Studio pipeline vào Save flow thật.** Nguồn: export K2Node THẬT của Event U (đối chiếu trực tiếp trước khi xóa). Custom Event mới `BeginThumbnailCapture(ComboID, DeltaYaw)` (tách khối spawn→align→Begin→enable-tick từ debug U cũ) dùng chung cho `SaveComboFromSelection` Bước 7 (thay capture in-place P1 cũ). Event Tick tail sửa 3 điểm: `ComboID` Finish đọc `Cmb_PendingCaptureComboID` (thay Concat debug array + suffix `_studio`), thêm `Broadcast OnComboLibraryChanged` cuối cùng (chạy mọi lần Finish kể cả fail). Bước 7: Broadcast nhánh True dời hẳn sang Tick tail (bắt buộc do pipeline async N=24). Đính chính giá trị thật: `FixedAngle.Yaw`=55 (không phải 0 như doc cũ) — promote `Cmb_StudioCamYaw`. Debug phím U + Enable Input đã XÓA. Bối cảnh đầy đủ: `DEVIATIONS.md` mục "P2 — 21/07/2026 — Gate F", `BP_ComboManager.md` v1.10. |
 | 1.13 | 24/07/2026 | **BP_FurnitureInputManager — Event Tick box branch verified (C9.0c).** Nguồn: K2Node text export thật (Ctrl+A→Ctrl+C→paste). Không sửa logic — chỉ xác nhận đúng + phát hiện 1 khác biệt so với doc cũ: nhánh `bInventoryOpen==False` có thêm guard `Branch(bIsPendingBoxSelect OR bIsBoxSelecting)` trước `HideBox` (doc cũ mô tả gọi thẳng không điều kiện). Đóng mục "CHƯA kiểm" trong note WIP C9.0c. Ghi chú: `OnLMBReleased` Then 2 (mục kế tiếp trong file) chưa được delta này đụng tới, vẫn ghi tên biến cũ `bIsReplaceMode` — tên thật hiện tại là `ReplaceTarget` (xem `BP_FurnitureInputManager.md` v2.4). Bối cảnh đầy đủ: `Blueprints/BP_FurnitureInputManager.md` v2.4, `Sprints/Sprint2/ContextMenu_Prep.md` v1.2. |
+| 1.15 | 02/08/2026 | **MERGE_LOG Q3 đóng.** `FindGroupData(InGroupID) → (S_GroupData, Index, bFound)` đính chính thành `(S_GroupData, bFound)` — dòng ghi chú cũ tự mâu thuẫn ("KHÔNG có Index" rồi lại "TRẢ Index" trong cùng câu). Bằng chứng: K2Node export `ResolveSelectedComboRoot` 02/08/2026 + `Plans/24-07-2026_C9_Execution_Plan.md` §V8. Không đổi node flow thật. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.9, `00_Core/MERGE_LOG.md`. |
 | 1.14 | 01/08/2026 | **`PopulateComboTreeColumn()` viết lại toàn bộ theo K2Node export thật (Phase 0 Replace UX Fix).** Doc v1.13 thiếu/sai 6 điểm: (1) thiếu hẳn node "+ New" (`then_0`, `FolderPath="__NEWFOLDER__"`); (2) thiếu bind `OnNodeRightClicked` trên cả 4 loại node; (3) thiếu bind `OnNodeRenameCommitted` trên FolderNode/SubFolderNode; (4) **[SAI quan trọng nhất]** doc cũ mô tả cấp 2 (lvl2) luôn dựng cho MỌI lvl1 chỉ gate bằng `bFound2` — thực tế có thêm gate active-path (`lvl1==CurrentComboFolderPath OR StartsWith(...)`) TRƯỚC `bFound2`, nghĩa là cây combo là accordion/expand-on-active-path chứ không xoè phẳng toàn bộ 2 cấp; (5) thiếu `RefreshDisplay(bIsActive=...)` trên cả lvl1 lẫn lvl2 (cơ chế highlight node active); (6) `UncatNode.FolderPath=""` chưa ghi rõ quy ước. Nguồn: node flow do cuhoang cung cấp (K2Node export 01/08/2026, điều tra Phase 0 Replace UX Fix). Xem `DEVIATIONS.md` §"Replace UX Fix — Phase 0" (**[CẦN TẠO/XÁC NHẬN]** — mục này chưa tìm thấy trong `DEVIATIONS.md` hiện tại lúc patch, xem ghi chú cuối file). |

@@ -1,4 +1,9 @@
 # Kế hoạch UX Phase 2.1 — Tối ưu thao tác
+
+> ⚠️ **[HISTORICAL]** — File này mô tả THIẾT KẾ tại thời điểm viết, KHÔNG phải as-built hiện
+> tại. Nhiều quyết định đã bị override ở các sprint sau. Giữ lại để tra "vì sao đã quyết như
+> vậy". **As-built hiện tại xem:** `Blueprints/Flows/*.md`.
+
 **Phiên bản:** 1.1 | **Cập nhật:** 20/05/2026 | Project: Lighting_Mnger (UE5.5.4)
 
 ---

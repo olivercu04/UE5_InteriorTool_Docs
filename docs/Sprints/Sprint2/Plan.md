@@ -1,5 +1,9 @@
 # Sprint 2 — Box Select + Context Menu (Plan v2, đã review)
 
+> ⚠️ **[HISTORICAL]** — File này mô tả THIẾT KẾ tại thời điểm viết, KHÔNG phải as-built hiện
+> tại. Nhiều quyết định đã bị override ở các sprint sau. Giữ lại để tra "vì sao đã quyết như
+> vậy". **As-built hiện tại xem:** `Blueprints/BP_FurnitureInputManager.md`.
+
 **Phiên bản:** 2.0 | **Ngày viết:** 05/06/2026 | **Người review:** Opus 4.8
 **Trạng thái:** Planned (chưa thực thi) | **Ước tính:** 3-4 ngày, 7 tasks
 **Tiền đề:** Sprint 1 COMPLETE (multi-select Move+Rotate+Scale đã ship)

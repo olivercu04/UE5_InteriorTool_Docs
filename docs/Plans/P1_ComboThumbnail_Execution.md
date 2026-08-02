@@ -1,4 +1,10 @@
 # P1 — Combo Thumbnail System (C++ chụp / đọc / cache)
+
+> 📌 **[CHỨA AS-BUILT]** — File này bắt đầu là plan nhưng đã được ghi thêm kết quả thực thi
+> thật (test PASS / K2Node export / changelog per-gate). Phần kết quả là AS-BUILT, ưu tiên cao
+> hơn doc canonical nếu mâu thuẫn. **Phần nào là as-built:** bảng Changelog v1.1 (Sửa/Gate) +
+> kết quả từng Gate G0→G4 (P1 nay đã DONE — xem `PROGRESS.md`).
+
 **Version:** 1.1 | **Cập nhật:** 04/07/2026
 **Vị trí trong Sprint 5:** sau WBP_Toast (K1) + Fix K3, trước C9. Móng của C7 DetailPopup, C11 Export (base64), B3/B4 sau này.
 **Thực thi:** Sonnet step-by-step. Mỗi gate = 1 lần test-and-confirm, PASS mới sang gate sau.

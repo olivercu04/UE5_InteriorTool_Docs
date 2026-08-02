@@ -1,6 +1,8 @@
 # BP_UndoManager
 **HỢP NHẤT TỪ 6 file:** v1.2 (16/05) → v1.4 (04/06) → v1.5 (07/06) → **v1.6 base** (10/06) + v1.7_patch (12/06) + v1.8_patch (15/06)
-**Phiên bản:** 1.12 | **Cập nhật:** 30/07/2026 | C9.c: Custom Event mới `RestoreCurrentSnapshot()` (khôi phục snapshot hiện hành, không dịch con trỏ history) cho rollback của `ReplaceCombo` — Actor riêng, quản lý toàn bộ Undo/Redo
+**Phiên bản:** 1.13 | **Cập nhật:** 02/08/2026 | MERGE_LOG Q3 đóng: `ValidateEditMode` — đính chính `FindGroupData(gid) → (_, _, bFound)` (3 output, SAI) → `(_, bFound)` (2 output, đúng — hàm không có Index)
+
+> **v1.12 (C9.c, 30/07/2026):** Custom Event mới `RestoreCurrentSnapshot()` (khôi phục snapshot hiện hành, không dịch con trỏ history) cho rollback của `ReplaceCombo` — Actor riêng, quản lý toàn bộ Undo/Redo
 
 > **v1.8 (Sprint 4 Bug Fix A12):** `EditModeStack` vào snapshot (Version 4 = `EditModeStackSnapshot`). Thêm `TempEditModeStack` var. Fix: Undo restore đúng edit mode state.
 > **v1.7 (Sprint 4 T8):** Thêm `ValidateEditMode()` — cắt `EditModeStack` từ group đã xoá sau Undo. Chèn vào RestoreSnapshot sau SyncGroupsToContainer.
@@ -207,7 +209,9 @@ Entry ▶→ CLEAR LocalValid                              ← local Array of St
             False ▶→ Return
             True  ▶→ GET InputRef.EditModeStack
                    ▶→ For Each Loop with Break (gid):
-                        LoopBody ▶→ Call InputRef.FindGroupData(gid) → (_, _, bFound)
+                        LoopBody ▶→ Call InputRef.FindGroupData(gid) → (_, bFound)   ← ĐÍNH CHÍNH
+                                    02/08/2026: hàm chỉ có 2 output (S_GroupData, bFound), KHÔNG
+                                    có Index — xem MERGE_LOG Q3, `BP_FurnitureInputManager.md`
                                  ▶→ Branch(bFound):
                                       True  ▶→ ADD gid → LocalValid   ← group còn tồn tại
                                       False ▶→ BREAK                   ← group mất → cắt từ đây (con cũng vô nghĩa)
@@ -407,3 +411,4 @@ Event End Play →
 | 1.10 | 16/06/2026 — 16h11p ICT | G1.T2 — Hợp nhất spawn path: RestoreSnapshot Step 4 không tự spawn inline nữa, gọi SpawnFurnitureCopy(bAutoSelect=False) qua reference cached 1 lần trước ForEach (class var RestoreInputMgr, tránh Get All Actors Of Class lặp trong loop). NewActor output đã type BP_FurnitureActor sẵn — bỏ Cast thừa so với plan gốc. Xóa toàn bộ code spawn inline cũ (Spawn Actor From Class, Load Asset Blocking, Set Static Mesh, ADD tag, restore material loop) — SpawnFurnitureCopy tự lo các bước này. Bug phát hiện trong test: bAutoSelect bị wire nhầm True → mọi lần restore chọn hết tất cả item trong scene → fix lại False. Test 5 case PASS (case crash khi tắt PIE sau Save/Load/Undo — defer Gate 2, nghi GPU/VRAM không liên quan thay đổi này). |
 | 1.11 | 21/07/2026 | **K3 (bAddToRecent) DONE.** RestoreSnapshot: pin `bAddToRecent=False` tại node SpawnFurnitureCopy (Step 4) — verify qua Blueprint Export Method (K2Node text) + screenshot thật. Test 4 case PASS (spawn combo, Undo/Redo, spawn furniture từ card, copy/paste — Recent behavior đúng cho từng case). Kèm sửa doc: đoạn body Step 4 trước ghi nhãn "v1.8: VIẾT LẠI" nhưng vẫn mô tả spawn inline cũ (mâu thuẫn với changelog v1.10 đã đúng) — đối chiếu export K2Node thật, viết lại khớp thực tế. Thêm class var `RestoreInputMgr` vào mục Variables (sót từ v1.10). Chi tiết: `DEVIATIONS.md`, `Bugs/Open_Bugs.md` mục K3. |
 | 1.12 | 30/07/2026 | **C9.c DONE (delta "C9 Replace: Folder Highlight + Chip Fix & C9.b–C9.f").** Custom Event mới `RestoreCurrentSnapshot()` — guard `Is Valid Index(SnapshotHistory, CurrentIndex)` → `RestoreSnapshot(CurrentIndex)`, KHÔNG dịch con trỏ history (khác Undo/Redo). Dùng cho rollback của `BP_ComboManager.ReplaceCombo` khi spawn combo thay thế fail. Chi tiết: `Blueprints/BP_ComboManager.md` v1.14. |
+| 1.13 | 02/08/2026 | **MERGE_LOG Q3 đóng.** `ValidateEditMode`: đính chính `Call InputRef.FindGroupData(gid) → (_, _, bFound)` (3 output, tự mâu thuẫn với chữ ký thật) → `(_, bFound)` (2 output). Bằng chứng: K2Node export `ResolveSelectedComboRoot` 02/08/2026 + `Plans/24-07-2026_C9_Execution_Plan.md` §V8 xác nhận `FindGroupData` chỉ có `(S_GroupData, bFound)`. Không đổi node flow thật — chỉ sửa mô tả cho khớp as-built. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.9, `00_Core/MERGE_LOG.md`. |

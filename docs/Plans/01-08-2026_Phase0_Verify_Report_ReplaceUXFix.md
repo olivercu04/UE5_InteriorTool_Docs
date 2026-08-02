@@ -1,4 +1,10 @@
 # Phase 0 Verify Report — Replace UX Fix (sau C9)
+
+> 📌 **[CHỨA AS-BUILT]** — File này bắt đầu là plan nhưng đã được ghi thêm kết quả thực thi
+> thật (test PASS / K2Node export / changelog per-gate). Phần kết quả là AS-BUILT, ưu tiên cao
+> hơn doc canonical nếu mâu thuẫn. **Phần nào là as-built:** toàn bộ file — đây là báo cáo
+> verify 5/5 mục bằng K2Node export thật (không phải kế hoạch dự kiến).
+
 **Ngày:** 01/08/2026 | **Từ:** Sonnet (execution) | **Gửi:** Opus (architect) — qua cuhoang
 **Nguồn plan gốc:** v1 — `docs/Archive/01-08-2026_ReplaceUX_Fix_Execution_Plan_v1_SUPERSEDED.md`
 (SUPERSEDED, giữ tham chiếu lịch sử — link cập nhật 01/08 khi archive, xem ghi chú cuối file).

@@ -1,4 +1,9 @@
 # Kế hoạch Multi-Select → Group Mesh → Combo Mesh → Material Edit v1.2
+
+> ⚠️ **[HISTORICAL]** — File này mô tả THIẾT KẾ tại thời điểm viết, KHÔNG phải as-built hiện
+> tại. Nhiều quyết định đã bị override ở các sprint sau. Giữ lại để tra "vì sao đã quyết như
+> vậy". **As-built hiện tại xem:** `Sprints/Sprint5/Combo_Execution.md`.
+
 **Phiên bản:** 2.0 | **Ngày:** 26/05/2026 — 09:40 ICT
 **Project:** Lighting_Mnger (UE5.5.4) — UE5 Interior Design Tool
 

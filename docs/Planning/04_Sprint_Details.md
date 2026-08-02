@@ -1,4 +1,9 @@
 # 04 — Sprint Details (chi tiết từng task)
+
+> ⚠️ **[HISTORICAL]** — File này mô tả THIẾT KẾ tại thời điểm viết, KHÔNG phải as-built hiện
+> tại. Nhiều quyết định đã bị override ở các sprint sau. Giữ lại để tra "vì sao đã quyết như
+> vậy". **As-built hiện tại xem:** `00_Core/PROGRESS.md`.
+
 **Mục đích:** Phân rã từng sprint thành tasks nhỏ, mỗi task có thể làm trong 1-2 giờ.
 
 ---

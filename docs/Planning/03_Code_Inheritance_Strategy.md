@@ -1,4 +1,9 @@
 # 03 — Code Inheritance Strategy
+
+> ⚠️ **[HISTORICAL]** — File này mô tả THIẾT KẾ tại thời điểm viết, KHÔNG phải as-built hiện
+> tại. Nhiều quyết định đã bị override ở các sprint sau. Giữ lại để tra "vì sao đã quyết như
+> vậy". **As-built hiện tại xem:** `Blueprints/BP_FurnitureInputManager.md` + `Blueprints/BP_UndoManager.md`.
+
 **Mục đích:** Tận dụng tối đa code hiện có, tránh viết lại từ đầu.
 
 ---

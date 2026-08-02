@@ -1,4 +1,9 @@
 # Sprint 3 — Group Cơ Bản (Plan chi tiết — Opus 4.8)
+
+> ⚠️ **[HISTORICAL]** — File này mô tả THIẾT KẾ tại thời điểm viết, KHÔNG phải as-built hiện
+> tại. Nhiều quyết định đã bị override ở các sprint sau. Giữ lại để tra "vì sao đã quyết như
+> vậy". **As-built hiện tại xem:** `Blueprints/BP_FurnitureInputManager.md`.
+
 **Phiên bản:** 1.0 | **Ngày:** 08/06/2026 — 11:24 ICT | Lighting_Mnger UE5.5.4
 **Thay thế:** phần Sprint 3 trong plan_v3/04_Sprint_Details.md (giữ file gốc làm reference)
 

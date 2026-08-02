@@ -1,4 +1,10 @@
 # Sprint 4 — Edit Mode + Nested Group (EXECUTION step-by-step — Opus 4.8)
+
+> ⚠️ **[AS-BUILT TẠI THỜI ĐIỂM SPRINT 4]** — File ghi lại thực thi Sprint 4, KHÔNG cập nhật
+> theo thay đổi sau đó. Một số chữ ký hàm đã đổi (vd `FindGroupData` nay chỉ có 2 output
+> `(GroupData, bFound)` — xem `Blueprints/BP_FurnitureInputManager.md`). Đọc để hiểu Sprint 4
+> đã làm gì; chữ ký/API hiện tại LUÔN tra doc canonical.
+
 **Phiên bản:** 2.0 (execution) | **Ngày:** 11/06/2026 ICT | Lighting_Mnger UE5.5.4
 **Thay thế phần thực thi của:** `Sprint4_Plan_Opus.md` v1.0 (giữ v1.0 làm reference triết lý).
 **Đối tượng đọc:** model thực thi (Sonnet 4.6). Làm **TỪNG TASK MỘT**, mỗi task có test riêng, làm xong **báo cuhoang** rồi mới qua task sau.

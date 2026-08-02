@@ -1,6 +1,6 @@
 # 10 — Kỷ Luật Thực Thi (Không bỏ cuộc, không đi lạc)
 **Nguồn:** `import_raw/28-05-2026_10_Execution_Discipline.md` (base v1.0) + `import_raw/10_Execution_Discipline_patch_v2.md` (v2.0, 14/06/2026)
-**Phiên bản:** 3.0 | **Cập nhật:** 31/07/2026
+**Phiên bản:** 3.3 | **Cập nhật:** 02/08/2026 (tiếp 2) — thêm R-DOC-ASBUILT (kết quả thực thi phải về doc canonical, không giữ trong file plan; tạm ghi ở plan → bắt buộc banner [CHỨA AS-BUILT])
 **Mục đích:** Cơ chế đảm bảo bám kế hoạch nhưng vẫn thích nghi được khi plan sai, không trôi dạt, không bỏ cuộc giữa chừng.
 
 ⚠️ Đọc file này cùng với `Rules/AI_Implementation_Rules.md`. File 09 = cách code đúng. File 10 = cách KHÔNG đi lạc trong quá trình code.
@@ -275,6 +275,38 @@ ai bắt (1 sự thật bị chép tay ở nhiều chỗ độc lập → sớm 
 - **Lần chạy ĐẦU TIÊN** (kèm delta 31/07): soi ngược từ đầu Sprint 5 → dọn nốt lệch cũ còn ẩn.
   Sau đó chỉ chạy cuối mỗi Sprint, KHÔNG thành nghi thức định kỳ.
 
+### R-DOC-DONE — Tick DONE khi tính năng chạy, không chờ nghiệm thu 100% (thêm 02/08/2026)
+- Task tick `[x]` khi **tính năng hoạt động và không còn ai làm tiếp** — KHÔNG chờ mọi nhánh
+  nghiệm thu/sweep/regression phụ đóng hết mới tick.
+- Bug/nghiệm thu còn treo tại thời điểm tick → **tách thành entry riêng trong `Bugs/Open_Bugs.md`**
+  (kèm mức ưu tiên thật), **KHÔNG giữ task checklist mở** chỉ vì 1 nhánh phụ chưa xong — đó là
+  nguồn gốc mâu thuẫn nội bộ kiểu "PROGRESS.md vừa nói DONE vừa để sub-item `[ ]`/`[~]`" (xem
+  `DEVIATIONS.md` mục "[DOC-DEBT đã đóng] PROGRESS.md P2 self-contradiction — 02/08/2026").
+- `[~]` (đang làm dở) **chỉ dùng cho việc đang code/test trong sprint hiện tại** — không dùng để
+  "giữ chỗ" cho việc đã xong tính năng nhưng còn treo nghiệm thu bên ngoài scope sprint.
+- Khi tick DONE mà tách bug ra `Open_Bugs.md`: phải dẫn ngược (tên entry) từ dòng checklist đã
+  tick, để ai đọc `PROGRESS.md` cũng lần ra được nghiệm thu còn treo ở đâu.
+
+### R-DOC-ATOMIC — 1 ô checklist = 1 việc tick độc lập (thêm 02/08/2026)
+- Mỗi ô checklist (`- [ ]`/`- [x]`) chỉ nên diễn tả **1 việc tick độc lập được**. Ô gộp nhiều việc
+  độc lập (vd "Save dialog + P4 LOCALAPPDATA + móc capture thumbnail") sẽ rơi vào tình trạng
+  không tick được khi 1 phần xong, phần khác chưa — nguồn gốc doc-drift kiểu C3 (xem
+  `DEVIATIONS.md` mục "[DOC-DEBT] C3 gộp 3 việc — 02/08/2026").
+- Phát hiện ô gộp nhiều việc **giữa sprint** → **KHÔNG tách ngay** (tách = đổi mẫu số `X/Y` của
+  sprint, kéo theo phải recount toàn bộ). Chỉ sửa TEXT mô tả ghi rõ phần nào xong/chưa, giữ
+  nguyên 1 ô cho tới hết sprint.
+- Tách ô gộp thành nhiều ô riêng **CHỈ làm lúc recount mẫu số đầu sprint kế tiếp** (cùng nhịp
+  R-DOC-PASS).
+
+### R-DOC-ASBUILT — Kết quả thực thi thuộc về doc canonical, không phải file plan (thêm 02/08/2026)
+- Kết quả thực thi (test PASS, K2Node export, đính chính as-built) **phải được cập nhật vào doc
+  canonical** trong `Blueprints/`/`Widgets/` — KHÔNG chỉ ghi trong file plan (`Plans/`,
+  `Sprints/`).
+- Nếu vì lý do nào đó phải TẠM ghi kết quả thực thi ngay trong file plan (chưa kịp phân phối
+  về canonical) → **bắt buộc chèn banner `📌 [CHỨA AS-BUILT]` NGAY LÚC GHI**, không để dồn lại
+  rồi quét sau. Nguồn: 6 file "Plan"/"Task Card" bị lẫn as-built phát hiện qua quét lan 02/08 —
+  xem `DEVIATIONS.md` mục "[DOC-DEBT] AS-BUILT lẫn trong Plans/Sprints — 02/08/2026".
+
 ---
 
 ## Lịch sử cập nhật
@@ -284,3 +316,6 @@ ai bắt (1 sự thật bị chép tay ở nhiều chỗ độc lập → sớm 
 | 1.0 | 28/05/2026 | 5 cơ chế chống đi lạc + chống bỏ cuộc |
 | 2.0 | 14/06/2026 | Cơ chế 6 — Đối xứng thao tác: Luật 6A (forward+backward), Luật 6B (đối xứng cấu trúc). Definition of Done +2 điều kiện. Nguồn: bug CreateGroup bottom-up không nest (14/06). |
 | 3.0 | 31/07/2026 | Thêm mục R-DOC (R-DOC-COUNT/R-DOC-OWNER/R-DOC-PASS) — kỷ luật đồng bộ số đếm task giữa PROGRESS.md/checklist, chống trôi lệch như bar Sprint 5 đứng im 15/19 từ 01/07→30/07 không ai bắt. Nguồn: `Delta_DocSync_31jul2026.md` (Opus), quyết định rút gọn của cuhoang (bỏ R-DOC-1 manifest + R-DOC-3 luật A/B). |
+| 3.1 | 02/08/2026 | Thêm **R-DOC-DONE** — task tick `[x]` khi tính năng chạy và không ai làm tiếp; nghiệm thu/sweep/regression còn treo → tách entry riêng `Bugs/Open_Bugs.md`, KHÔNG giữ task checklist mở. `[~]` chỉ dùng cho việc đang làm dở trong sprint hiện tại. Nguồn: mâu thuẫn nội bộ PROGRESS.md phát hiện quanh trạng thái P2 (Studio Thumbnail) — xem `DEVIATIONS.md` "[DOC-DEBT đã đóng] PROGRESS.md P2 self-contradiction — 02/08/2026". |
+| 3.2 | 02/08/2026 (tiếp) | Thêm **R-DOC-ATOMIC** — 1 ô checklist = 1 việc tick độc lập; ô gộp nhiều việc độc lập không tách giữa sprint (chỉ sửa text mô tả), chỉ tách thành nhiều ô lúc recount mẫu số đầu sprint kế tiếp. Nguồn: ô `C3` trong PROGRESS.md gộp 3 việc (Save dialog/móc capture thumbnail/P4 LOCALAPPDATA) — xem `DEVIATIONS.md` "[DOC-DEBT] C3 gộp 3 việc — 02/08/2026". |
+| 3.3 | 02/08/2026 (tiếp 2) | Thêm **R-DOC-ASBUILT** — kết quả thực thi (test PASS/K2Node export/đính chính as-built) phải cập nhật vào doc canonical `Blueprints/`/`Widgets/`, không chỉ ghi trong file plan; tạm ghi ở plan → bắt buộc chèn banner `📌 [CHỨA AS-BUILT]` ngay lúc ghi. Nguồn: 6 file Plan/Task Card lẫn as-built phát hiện qua quét lan — xem `DEVIATIONS.md` "[DOC-DEBT] AS-BUILT lẫn trong Plans/Sprints — 02/08/2026". |
