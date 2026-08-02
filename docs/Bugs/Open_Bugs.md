@@ -3,6 +3,10 @@
 **Cập nhật:** 02/08/2026 — Replace UX Fix P0→P5 HOÀN TẤT: #1/#3a/#3b/#4/#5/#6 đều FIXED. Bug mới
 ghi nhận ngoài scope: Bug-EnterReplaceMode-MaterialPanel [OPEN, 🟢 Thấp]. P-5 (DA-legacy-path)
 gác lại — thiếu file save cũ để test.
+**Cập nhật (tiếp) 02/08/2026:** Thêm 3 bug xác nhận bằng test tay trong editor (phiên bàn kiến
+trúc với Opus, luật Q9): Bug-MaterialPrimaryOnly, Bug-PasteVerticalCollapse, Bug-StaleSurfaceType
+— cả 3 KHÔNG chặn Gate 2, dời sau Gate 2. Thêm mục "Ô nghi ngờ chưa verify" (N1-N14, rút từ đọc
+docs, chưa chạy test).
 
 ---
 
@@ -29,6 +33,9 @@ gác lại — thiếu file save cũ để test.
 | #3b (ComboReplace-ChiptagSync) | ✅ FIXED (01/08) — combo-replace: chiptag không rebuild + không highlight đúng (tree/card đúng combo nhưng chiptag vẫn Furniture) | — | Fix: gọi `RefreshChipBreadcrumb()` (hàm có sẵn) NGAY TRƯỚC `UpdateComboFolderHighlights()` trong `StartReplaceComboMode`. Test T1.1 PASS PIE. Xem `Blueprints/BP_FurnitureInputManager.md` v2.7, `DEVIATIONS.md` mục "Replace UX Fix — P1.2" |
 | #1, #4, #5, #6 | ✅ FIXED (02/08) — #1 BTN_ChangeCombo gate Visibility; #4 re-route Mesh↔Combo giữa chừng Replace; #5 card container theo mode; #6 chiptag đổi khi click tab Combo | — | Replace UX Fix P1.3/P2/P3.1 — node flow đầy đủ: `Widgets/WBP_FurnitureInventory.md` v3.19 (`OnMeshSelected`), `DEVIATIONS.md` mục "Replace UX Fix — P0→P5 HOÀN TẤT — 02/08/2026" |
 | Bug-EnterReplaceMode-MaterialPanel | [OPEN, ngoài scope] Từ tab Material bấm CB_Replace vào Replace Mesh → `CTV_FurnitureCard` bật Visible nhưng `CTV_MaterialCard`/`HB_SlotSwatches` KHÔNG Collapse → 2 panel chồng nhau | 🟢 Thấp | Phát hiện 02/08 qua test P4/T4.1 (Case A). Gác — xem mục chi tiết dưới |
+| Bug-MaterialPrimaryOnly | [OPEN] Đổi vật liệu khi chọn cả cụm combo chỉ áp cho 1 mesh (Primary), không toast báo — người dùng tưởng đã đổi cả cụm | 🟡 Trung bình | Test tay 02/08. Vá tạm: toast cảnh báo (~15 phút). Vá thật: gộp Sprint 7 Material Edit multi-apply (E1). Xem mục chi tiết dưới |
+| Bug-PasteVerticalCollapse | [OPEN] Paste nhiều món chênh cao độ (đồ trần + đồ sàn) → TÂM nhóm bị neo vào bề mặt trace trúng thay vì từng món neo bề mặt riêng → đồ trần lơ lửng, đồ sàn chìm | 🔴 Cao | Test tay 02/08. KHÔNG chặn Gate 2. Backlog "Sprint Surface" sau Gate 2. Xem mục chi tiết dưới |
+| Bug-StaleSurfaceType | [OPEN] Kéo đồ bằng gizmo sang bề mặt khác → `PlacementSurfaceType` không cập nhật lại (chỉ SET 1 lần lúc drag-drop) → nudge phím mũi tên đi sai trục | 🟡 Trung bình | Test tay 02/08. KHÔNG chặn Gate 2. Backlog "Sprint Surface" sau Gate 2. Xem mục chi tiết dưới |
 
 ---
 
@@ -529,6 +536,144 @@ Khi có save cũ thật, hoặc khi gặp báo lỗi thật từ người dùng 
 Normalize path tại `Split.RightS` trong `FilterByFolderPathWithUI` làm nguồn duy nhất. Ceiling:
 prefix `"Object_Model/"` hardcode (phương án đã chốt trong `DEVIATIONS.md` `[CLEANUP]` từ trước
 đợt Replace UX Fix).
+
+---
+
+## Bug-MaterialPrimaryOnly — Đổi vật liệu cả cụm combo chỉ ăn 1 món
+
+**ID:** Bug-MaterialPrimaryOnly
+**Phát hiện:** Test tay 02/08/2026 (xác nhận qua editor thật, không phải suy đoán từ doc)
+**Ưu tiên:** 🟡 Trung bình — KHÔNG chặn Gate 2
+
+### Triệu chứng
+```
+Spawn combo → chọn CẢ cụm → tab Material
+→ swatch hiện ra là slot của MỘT mesh trong combo (không phải cả cụm)
+→ chọn swatch → click vật liệu
+→ chỉ 1 món đổi màu
+```
+
+### Root cause
+`ApplyMaterial` nhắm `TargetFurnitureActor` = `PrimarySelectedActor` (single), trong khi
+`SelectedActors` là multi. Bất đối xứng có từ Change Material v1.1, chưa từng được xem là vấn đề
+vì lúc đó chưa có combo.
+
+Nghiêm trọng ở chỗ: không có toast, không có lỗi — người dùng tưởng đã đổi cả cụm.
+
+### Fix đề xuất
+- **Vá rẻ (15 phút, không đụng kiến trúc):** thêm toast "Chỉ áp cho món đang chọn chính" khi
+  `SelectedActors.Length > 1`. Không sửa hành vi, chỉ hết lừa người dùng.
+- **Vá thật:** Sprint 7 Material Edit đã có sẵn plan multi-apply (E1 — ForEach `SelectedActors`
+  trong `LoadAndApplyMaterial`). Gộp vào đó, không làm lẻ.
+
+### Trạng thái
+- **Open.** Chưa fix trong đợt này (KP3 — chỉ ghi nhận). Xem `DEVIATIONS.md` mục "Q9 S-Matrix
+  Gate + 3 bug Surface — 02/08/2026". Xem thêm ghi chú "Gốc chung 3 bug Surface" bên dưới.
+
+---
+
+## Bug-PasteVerticalCollapse — Paste nhiều món làm sai cao độ TẤT CẢ các món
+
+**ID:** Bug-PasteVerticalCollapse
+**Phát hiện:** Test tay 02/08/2026 (xác nhận qua editor thật, không phải suy đoán từ doc)
+**Ưu tiên:** 🔴 Cao — nhưng KHÔNG chặn Gate 2 (Copy/Paste vẫn dùng được với đồ cùng cao độ)
+
+### Triệu chứng
+```
+Đặt 1 đồ trần (quạt/điều hòa) + 1 đồ sàn → chọn cả 2 → Ctrl+C
+→ Ctrl+V, trace xuống nền nhà
+→ Kết quả: TÂM của nhóm bị đặt xuống sàn
+   → đồ trần lơ lửng giữa sàn và trần
+   → đồ sàn CHÌM xuống dưới nền
+```
+
+### Root cause
+```
+CopyMesh:  RelativeLocation = ActorLocation − tâm nhóm
+PasteMesh: PasteCenter = điểm trace trúng SÀN
+           actualLocation = PasteCenter + RelativeLocation
+           → TÂM nhóm bị neo vào sàn, không phải từng món neo vào bề mặt của nó
+```
+
+Phạm vi rộng hơn tên gọi: không riêng đồ trần. Áp cho **mọi** paste nhiều món có chênh cao độ
+(đồ trên bàn + đồ dưới sàn, tranh tường + sofa...).
+
+Bất đối xứng kèm theo: `PasteMesh` detect **một** `SurfaceType` từ HitNormal rồi áp **chung cả
+nhóm**, trong khi `DuplicateMesh` giữ `SurfaceType` riêng từng món. Hai đường xử lý lệch nhau.
+
+### Trạng thái
+- **Open.** KHÔNG chặn Gate 2. Đề xuất mở "Sprint Surface" SAU Gate 2, gộp chung với
+  Bug-StaleSurfaceType (xem ghi chú "Gốc chung" bên dưới). Xem `DEVIATIONS.md` mục "Q9 S-Matrix
+  Gate + 3 bug Surface — 02/08/2026".
+
+---
+
+## Bug-StaleSurfaceType — Kéo đồ đi chỗ khác, PlacementSurfaceType không cập nhật
+
+**ID:** Bug-StaleSurfaceType
+**Phát hiện:** Test tay 02/08/2026 (xác nhận qua editor thật, không phải suy đoán từ doc)
+**Ưu tiên:** 🟡 Trung bình — KHÔNG chặn Gate 2
+
+### Triệu chứng
+```
+Đặt 1 tranh lên tường → dùng gizmo kéo ra giữa phòng → bấm phím mũi tên
+→ nó nhích theo kiểu ĐỒ TƯỜNG (sai trục)
+```
+
+### Root cause
+`PlacementSurfaceType` chỉ được SET một lần trong `WBP_DragOverlay.On Drag Over` lúc drag-drop lần
+đầu. Move mode KHÔNG snap surface, KHÔNG cập nhật lại (đã ghi trong Key Notes
+`WBP_DragOverlay_FurnitureCard.md` như một quyết định thiết kế, nhưng hệ quả chưa từng được đánh
+giá).
+
+Lan sang đâu: Nudge chạy sai nhánh; thumbnail `ResolveThumbAlign` phân loại sai; combo lưu sai
+`surfaceType` vào JSON.
+
+### Trạng thái
+- **Open.** KHÔNG chặn Gate 2. Đề xuất mở "Sprint Surface" SAU Gate 2, gộp chung với
+  Bug-PasteVerticalCollapse (xem ghi chú "Gốc chung" bên dưới). Xem `DEVIATIONS.md` mục "Q9
+  S-Matrix Gate + 3 bug Surface — 02/08/2026".
+
+---
+
+## Ghi chú — Gốc chung 3 bug Surface
+
+**Phát hiện:** 02/08/2026, cùng phiên xác nhận Bug-MaterialPrimaryOnly / Bug-PasteVerticalCollapse
+/ Bug-StaleSurfaceType.
+
+```
+Sự thật nằm ở ĐÂU?
+
+Bug-MaterialPrimaryOnly:      ở PRIMARY,     đáng lẽ ở CẢ NHÓM
+Bug-PasteVerticalCollapse:    ở TÂM nhóm,    đáng lẽ ở TỪNG MÓN so với bề mặt của nó
+Bug-StaleSurfaceType:         ở LÚC SPAWN,   đáng lẽ ở VỊ TRÍ HIỆN TẠI
+```
+
+Cùng một loại lỗi: chọn sai điểm neo cho sự thật. Đề xuất: mở "Sprint Surface" SAU Gate 2, gộp cả
+3 — sửa chung rẻ hơn sửa lẻ.
+
+---
+
+## Ô nghi ngờ chưa verify
+
+> Rút từ đọc docs, CHƯA chạy test. Không được coi là kết luận. Ưu tiên verify khi chạm vào vùng
+> liên quan. Nguồn: phiên bàn kiến trúc với Opus, 02/08/2026.
+
+| # | Nghi ngờ | Cơ sở trong doc |
+|---|---|---|
+| N1 | `SelectSimilarMesh` không đi qua `ExpandSelectionWithGroups` — dùng thẳng `Get All Actors With Tag`. Đang edit mode mà bấm "Chọn đồ giống" có chọn cả đồ ngoài scope không? | Sprint 2 T5 + BP_FurnitureInputManager v1.5 |
+| N2 | Replace Mesh khi selection = combo root (S4): `MeshesToReplace = SelectedActors` = toàn bộ member → cả cụm biến thành N bản cùng 1 mesh? | ContextMenu_Prep §2.1 |
+| N3 | Delete / Duplicate 1 món **trong** combo → cụm thiếu/thừa món nhưng `SourceComboID` vẫn nguyên → Save đè sẽ ghi đè combo gốc bằng bản đã méo | F4 spawn auto-join scope + C9.5 |
+| N4 | `UngroupActors` peel-one-level trên combo root → `SourceComboID` đi đâu? | Sprint 4 D4-8 |
+| N5 | Copy/Paste cả cụm: clipboard không lưu GroupID → paste ra N mesh rời, mất combo | Combo_Execution backlog |
+| N7 | **2 kho material lệch nhau:** actor/snapshot/EMS lưu **full path**, combo JSON lưu **RowName**. Đổi material 1 món trong combo rồi Save đè → material ngoài catalog reverse lookup fail → lưu `""` → **mất im lặng**, không toast, không crash | Combo_Execution §1 + backlog |
+| N9 | Copy/Paste material slot khi `TargetFurnitureActor` là mesh trong combo (S6) — có làm bẩn `SourceComboID` không | Material_CopyPaste v0 |
+| N12 | Combo ghost align **đáy cube vào sàn** (`GhostExtentZ`) → không có đường nào drop combo Ceiling/Wall đúng chỗ | WBP_DragOverlay v1.8 |
+| N13 | Replace Combo spawn tại Center cũ, **rotation reset 0** → combo áp tường mất hướng, đâm xuyên tường | Combo_Execution C9 |
+| N14 | `CalculateCenter` as-built không loại pivot/container (doc cũ mô tả sai) → anchor lệch nếu mảng lẫn actor khác | C9_Execution_Plan §11 |
+
+> N6 / N10 / N11 đã verify → chuyển thành 3 bug: xem `Bug-MaterialPrimaryOnly`,
+> `Bug-PasteVerticalCollapse`, `Bug-StaleSurfaceType` ở trên.
 
 ---
 

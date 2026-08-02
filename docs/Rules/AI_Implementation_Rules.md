@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.13 | **Cập nhật:** 22/07/2026 — thêm node đã confirm `To Text (Float)` (Field Kích thước Combo Card) + node chờ xác nhận `Get Local Bounds` (Dimension Fix)
+**Phiên bản:** 2.14 | **Cập nhật:** 02/08/2026 — thêm mục Q9 S-MATRIX GATE (S-Scan + X-Check), đặt ngay trước Q8
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -160,6 +160,131 @@ IfThenElse kiểm IsValid(LoadedTex) dead-end → khi gọi liên tục trong Fo
 (LoadComboLibrary), combo chưa có thumbnail hiện NHẦM ảnh của combo trước đó trong vòng
 lặp. Q8 self-check L2 khi audit Function có Return Value: liệt kê ĐỦ từng nhánh, xác nhận
 mỗi nhánh có Return Node riêng.
+
+---
+
+## ⭐ Q9 — S-MATRIX GATE (cổng bắt buộc TRƯỚC khi cắt task card đụng `SelectedActors`)
+
+**Vấn đề giải quyết:** danh sách entry point (context menu, drag-drop...) không bắt được bug do
+CÙNG entry point nhưng TRẠNG THÁI mesh khác nhau (đứng độc lập vs nằm trong combo/group) đòi hành
+vi khác nhau. Ma trận trạng thái mới bắt được loại thiếu sót này. Nguồn: bug thật C9 Replace Combo
+(02/08/2026) — chọn 1 mesh đơn TRONG combo → Replace → Inventory không nhảy folder gốc.
+
+### 1.1 Khi nào bắt buộc
+
+| Tình huống | Q9 |
+|---|---|
+| Chức năng mới/sửa có đụng `SelectedActors` | **BẮT BUỘC** |
+| Chức năng chỉ thao tác thư viện (folder move/rename/delete, import/export) | **MIỄN** tầng 1 — chỉ chạy X-Check |
+| Sửa lỗi chính tả, đổi tên biến, chỉnh layout widget | MIỄN hoàn toàn |
+
+### 1.2 Ai chịu trách nhiệm
+
+| Vai | Nghĩa vụ |
+|---|---|
+| **Opus** | Chạy Q9 và viết bảng vào task card TRƯỚC khi cắt task. Task card thiếu bảng = không được phát hành. |
+| **Sonnet** | Nhận task card KHÔNG có bảng Q9 → **TỪ CHỐI execute**, hỏi ngược Opus. Đây là điểm chặn mạnh nhất vì Sonnet là bên đọc task card. |
+| **Sonnet** | Đang code gặp trạng thái không có trong bảng → **DỪNG, báo cuhoang** (KP1). Không tự suy diễn hành vi. |
+| **cuhoang** | Chỉ cần yêu cầu: *"đưa bảng rà trước khi lên task card"*. Xem ô nào bị đánh dấu ⚠ thì hỏi lại. KHÔNG cần thuộc bảng. |
+
+### 1.3 Định dạng viết trong task card
+
+Giống Q8: viết VISIBLE, không được ghi "đã check Q9" suông.
+
+---
+
+## TẦNG 1 (Q9) — BẢNG S-SCAN (bắt buộc, ~5 phút)
+
+10 hàng, 1 cột. Trạng thái suy ra từ **data thật**, không đoán bằng cảm giác.
+
+| ID | Trạng thái chọn | Điều kiện data |
+|---|---|---|
+| S0 | Không chọn gì | `SelectedActors.Length == 0` |
+| S1 | 1 mesh rời | Length==1, `GroupID == ""` |
+| S2 | N mesh rời | Length>1, mọi actor `GroupID == ""` |
+| S3 | 1 group thường | resolve ra cả cây, group root `SourceComboID == ""` |
+| S4 | 1 combo (cả cụm) | resolve ra cả cây, group root `SourceComboID != ""` |
+| S5 | 1 mesh trong group thường | EditModeStack≠rỗng, `gid == EditScope`, root không phải combo |
+| S6 | 1 mesh trong combo | EditModeStack≠rỗng, `gid == EditScope`, root có `SourceComboID` |
+| S7 | 1 sub-group nested | đang edit, `WalkUpUntilParent != ""` |
+| S8 | Mix (group/combo + mesh rời) | Ctrl-click chéo loại |
+| S9 | Selection do máy sinh | sau `RestoreSnapshot` / `SpawnFurnitureCopy` / `SpawnComboByID` |
+
+> S9 tách riêng vì actor là **instance mới**, reference cũ chết. Đây là gốc của bug B1 và bug
+> "GroupID lost sau Replace" đã trả giá.
+
+**Mỗi ô nhận đúng 1 trong 3 giá trị:**
+
+| Ký hiệu | Nghĩa |
+|---|---|
+| `→Sx` | Y hệt trạng thái x, không cần nghĩ thêm |
+| `⚠ <mô tả>` | Khác biệt thật → **bắt buộc mở tầng 2** |
+| `N/A: <lý do>` | Chủ động chặn — vẫn phải test là **đã chặn đúng** |
+
+**Ô trống = task card KHÔNG hợp lệ.**
+
+**Luật riêng cho Material:** vì Material nhắm `TargetFurnitureActor` = Primary (single) trong khi
+selection là multi → các hàng **S2, S3, S4, S8** mặc định là ô `⚠`, KHÔNG được ghi `→S1`.
+
+---
+
+## TẦNG 2 (Q9) — X-CHECK (chỉ chạy cho ô đánh dấu ⚠)
+
+| # | Hệ thống | Câu hỏi |
+|---|---|---|
+| X1 | Undo | CaptureSnapshot có/không, label gì, có dính `bIsRestoring` không |
+| X2 | Persistence — **4 kho** | Ghi vào kho nào, kho nào KHÔNG được ghi (xem 4 kho bên dưới) |
+| X3 | Inventory UI | mode tab nào, folder navigate tới đâu, chip/highlight, visibility nút trên card |
+| X4 | Selection sau action | còn chọn gì, `PrimarySelectedActor` là ai |
+| X5 | Gizmo / Pivot | attach đúng actor? Deactivate trước Activate? |
+| X6 | Group data | `Groups` array, `PruneEmptyGroups`, GroupID kế thừa, `SourceComboID` còn nguyên? |
+| X7 | Toast | người dùng có biết chuyện gì vừa xảy ra không |
+| X8 | EditModeStack | còn hợp lệ? `ValidateEditMode` chạy chưa |
+| X9 | Material state | `TargetFurnitureActor` trỏ đúng ai? `SelectedSlotIndex` reset chưa? `MaterialOverrides` còn khớp số slot mesh mới? swatch refresh chưa? |
+| X10 | Placement & Anchor | `PlacementSurfaceType` kế thừa từ đâu? snap surface có chạy ở đường này không? pivot/anchor tính từ đâu? rotation giữ hay reset? |
+
+**Bốn kho ghi độc lập (dùng cho X2):**
+```
+Kho 1: Snapshot history  (in-memory, BP_UndoManager)
+Kho 2: EMS save file
+Kho 3: BP_UserPreferencesSave  (Recent/Favorite — KHÔNG qua undo, KHÔNG qua EMS)
+Kho 4: Combo JSON + thumbnail PNG
+```
+`AddRecentMesh` bị gọi từ drag-drop, replace, combo spawn — mỗi đường một kiểu. X2 phải trả lời
+rõ từng kho.
+
+**Bốn trục ngữ cảnh (hỏi bên trong X-Check, KHÔNG thành chiều bảng):**
+```
+Trục B — EditModeStack        : rỗng / có giá trị
+Trục C — ReplaceTarget        : None / Mesh / Combo
+Trục D — CurrentInventoryMode : Furniture / Material / Combo
+Trục E — Surface context      : Floor thuần / Wall thuần / Ceiling thuần / MIXED
+```
+> Trục E, giá trị **MIXED**, là ô đẻ bug đã có tiền lệ thật: `Bug-CeilingGroundAlign` và
+> Wall-priority (combo bàn thờ). Combo gần như luôn rơi vào MIXED.
+
+---
+
+## TEST KỂ CẢ Ô `N/A` (Q9)
+
+Chỗ dễ hỏng nhất: ô ghi `N/A — disable` nhưng thực tế code không chặn gì cả, chỉ là không ai nghĩ
+tới. Cuối sprint, bảng S-Scan phải có kết quả test thật cho **từng ô**, kể cả ô `N/A` (test là
+**đã chặn đúng**).
+
+---
+
+## GIỚI HẠN CỦA LUẬT Q9 — GHI RÕ ĐỂ KHÔNG KỲ VỌNG SAI
+
+Q9 **không bắt được 100%** ca thiếu. Mục tiêu thực tế:
+
+```
+Trước:     phát hiện SAU khi đóng sprint, qua dùng thử tình cờ
+Mục tiêu:  ~80% bắt lúc plan (S-Scan + X-Check)
+           ~20% còn lại bắt cuối sprint qua dogfood kịch bản xâu chuỗi
+```
+
+**Dogfood cuối sprint:** chạy kịch bản nối nhiều chức năng liên tiếp, không test tính năng mới
+đứng một mình. Ví dụ: spawn combo → group → chọn món con → replace → undo → save → load.
 
 ---
 
@@ -541,3 +666,4 @@ Sau khi 1 sprint/task lớn xong:
 | 2.11 | 20/07/2026 | Thêm `Get Texture Target` vào "Nodes chờ xác nhận" — P2 Gate D VRAM/GPU Crash Fix: EndPlay `BP_ComboManager` gọi `Release Render Target 2D` tường minh trước dọn cache thumbnail. Bối cảnh: xem `DEVIATIONS.md` mục "P2 — 20/07/2026". |
 | 2.12 | 22/07/2026 | Thêm `To Text (Float)` vào bảng NODE CHÍNH XÁC ĐÃ XÁC NHẬN — đã confirm qua screenshot editor thật (Field Kích thước Combo Card, `WBP_ComboCard.md` v1.3). |
 | 2.13 | 22/07/2026 (tiếp) | Thêm `Get Local Bounds` (StaticMeshComponent) vào "Nodes chờ xác nhận" — Dimension Fix `CalculateComboBoundingExtent` (`BP_ComboManager.md`), thay `Get Actor Bounds` (World AABB) để tránh phồng khi actor tự xoay tại chỗ. |
+| 2.14 | 02/08/2026 | Thêm mục **Q9 — S-MATRIX GATE**, đặt NGAY TRƯỚC Q8: TẦNG 1 bảng S-Scan (S0-S9), TẦNG 2 X-Check (X1-X10 + 4 kho persistence + 4 trục ngữ cảnh B/C/D/E), test kể cả ô N/A, giới hạn thực tế của luật (~80% bắt lúc plan). Nguồn: phiên bàn kiến trúc với Opus, phát hiện qua bug thật C9 Replace Combo. Xem `DEVIATIONS.md` mục "Q9 S-Matrix Gate + 3 bug Surface — 02/08/2026". |

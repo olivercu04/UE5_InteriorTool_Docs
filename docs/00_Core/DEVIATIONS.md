@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 30/07/2026
+**Cập nhật:** 02/08/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1235,6 +1235,21 @@ cư xử khác mô tả.
 
 ---
 
+## Q9 S-Matrix Gate + 3 bug Surface (deferred) — 02/08/2026
+
+Nguồn: phiên bàn kiến trúc với Opus, phát hiện qua bug thật C9 Replace Combo (chọn mesh đơn
+trong combo → Replace → Inventory không nhảy folder gốc). Luật Q9 mới:
+`Rules/AI_Implementation_Rules.md` mục "Q9 — S-MATRIX GATE" (v2.14). 3 bug xác nhận tay:
+`Bugs/Open_Bugs.md` (Bug-MaterialPrimaryOnly, Bug-PasteVerticalCollapse, Bug-StaleSurfaceType).
+
+| Lệch | Ceiling | Upgrade trigger |
+|---|---|---|
+| Q9 chỉ có 1 trục thành hàng (trục A); B/C/D/E là câu hỏi trong X-Check | Bảng còn đọc được trong 1 màn hình | Có ≥3 ca miss liên tiếp cùng rơi vào 1 trục ẩn → nâng trục đó thành hàng riêng |
+| 3 bug xác nhận 02/08 KHÔNG sửa ngay, dời sau Gate 2 | Gate 2 = packaged build chạy được, không đòi hoàn hảo | Bug-PasteVerticalCollapse gây mất dữ liệu người dùng thật (không chỉ sai vị trí) → kéo lên trước Gate 2 |
+| Bug-MaterialPrimaryOnly vá tạm bằng toast, không sửa hành vi | Người dùng không bị lừa | Sprint 7 Material Edit multi-apply làm tới → gỡ toast, sửa thật |
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -1319,3 +1334,4 @@ cư xử khác mô tả.
 | 22/07/2026 (C6) | Thêm section "C6 — 22/07/2026 — Favorite + Recent combo DONE + 2 bug fix": [BUG-FIX] `AddRecentCombo` — `SaveUserPrefs` dead-end trong nhánh `False` của `Branch(RecentComboIDs.Length > 48)` (chỉ save khi vượt cap, mọi test thực tế <48 không bao giờ ghi đĩa) — merge cả 2 nhánh; cap thật=48 không phải 20 (`UX_Phase2_Plan.md` sai); [BUG-FIX] Recent hiển thị chỉ 1 card — `FilterByCategory` đổi `AddItem` loop → `Set List Items` batch, bài học ghi skill `ue5-blueprint-rules` L12; [OBSERVATION] duplicate `comboId` khi copy tay JSON — không phải bug, backlog cho Save As/Save đè. File mới: `Blueprints/BP_FurnitureUserPrefsManager.md`. |
 | 01/08/2026 (Replace UX Fix P1.2) | Thêm section "Replace UX Fix — P1.2 (01/08/2026) — Lỗi thứ tự tiềm ẩn trong RefreshComboFolderUI": phát hiện lúc implement fix #3b — đặt `RefreshChipBreadcrumb()` SAU `UpdateComboFolderHighlights()` (đúng thứ tự tài liệu ghi cho `RefreshComboFolderUI`) khiến chip mới dựng không được highlight; sửa bằng ĐẢO NGƯỢC thứ tự trong `StartReplaceComboMode`. Suy ra `RefreshComboFolderUI` (không sửa trong đợt này) có khả năng mang cùng lỗi thứ tự nhưng chưa lộ — ghi ceiling/trigger, không tự sửa (KP3). |
 | 02/08/2026 (Replace UX Fix P0→P5) | Thêm section "Replace UX Fix — P0→P5 HOÀN TẤT — 02/08/2026": 6 bug gốc rụng hết (#1/#3a/#3b/#4/#5/#6). [CORRECTION] P1.1 gap tự giải quyết, không cần hàm mới `CreateComboChipTagsForPath`. [BUG-FIX] P2 root cause thật = thiếu guard `IsValid(SelectedActor)` trong `OnMeshSelected` (2 giả thuyết trước bị bác bỏ bằng K2Node export). [SCOPE] Undo-giữa-replace chọn (a) thoát hẳn. [OBSERVATION] P-1 `ExitReplaceMode` không đụng tab/chiptag — chấp nhận, không phải bug. [CLEANUP] P4.4 xóa hẳn `MeshToReplace` (single) — đính chính luôn dòng Variables `BP_FurnitureInputManager.md` ghi sai "đã xóa từ v1.6". [SCOPE] P5.1 dời Sprint 6, P5.2 gác (thiếu file test). [GHI CHÚ] phát hiện `WBP_ComboCard.md` v1.6 đã có sẵn logic gate `BTN_ChangeCombo` đúng TRƯỚC khi P3.1 chạy — mâu thuẫn với Phase0 Verify Report (01/08) báo hardcode — không sửa gì (nội dung sau P3.1 trùng khớp), chỉ ghi nhận nghi vấn. |
+| 02/08/2026 (Q9 + 3 bug Surface) | Thêm section "Q9 S-Matrix Gate + 3 bug Surface (deferred) — 02/08/2026": luật Q9 mới trong `Rules/AI_Implementation_Rules.md` v2.14 (S-Scan 10 trạng thái + X-Check 10 hệ thống), phát hiện qua bug thật C9 Replace Combo (thiếu ca sử dụng, không phải bug code). 3 bug xác nhận tay ghi vào `Bugs/Open_Bugs.md`: Bug-MaterialPrimaryOnly, Bug-PasteVerticalCollapse, Bug-StaleSurfaceType — cả 3 dời sau Gate 2, kèm bảng ceiling/trigger. |
