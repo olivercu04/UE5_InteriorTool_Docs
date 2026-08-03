@@ -1352,7 +1352,40 @@ AS-BUILT]` (Lô B), sửa nội dung sẽ làm mất dấu vết quyết định
 nhận drift ở đây + trong `BP_FurnitureInputManager.md` (mục `ResolveSelectedComboRoot`) thay vì
 sửa nguồn.
 
-**Trạng thái:** Ghi nhận, CHƯA đóng — chờ quyết định khi lên task card Save As/Save đè.
+**Trạng thái:** ✅ ĐÃ QUYẾT 03/08/2026 — Save As/Save đè KHÔNG dùng biến nào trong 2 biến này. Cả hai đều
+lấy MỘT actor rồi leo lên → kết quả phụ thuộc thứ tự Ctrl-click. Tính năng mới dùng hàm
+riêng `ResolveActiveComboForSave()` quét TOÀN BỘ SelectedActors, đếm số combo root khác
+nhau. `ResolveSelectedComboRoot()` giữ nguyên, KHÔNG sửa (KP3 — C9 vừa test PASS 30/07).
+Xem `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 2.8.
+
+---
+
+## [CEILING] Hai nơi cùng biết cách leo combo root — 03/08/2026
+
+**Lệch:** T1 tạo `GetComboRootOfActor()` làm hàm nguyên thủy, nhưng KHÔNG đấu lại
+`ResolveSelectedComboRoot()` (C9) vào nó → 2 nơi cùng biết cách leo combo root.
+
+**Vì sao:** `ResolveSelectedComboRoot` nằm giữa đường Replace vừa test PASS 02/08; sửa lúc
+này kéo theo regression C9 giữa lúc làm tính năng khác.
+
+**Ceiling:** chấp nhận tới hết đợt Save As/Save đè.
+
+**Trigger:** C10 (regression full) — đấu lại + chạy 5 case C9 (bộ test đã bật sẵn, chi phí
+thêm ~0). Hoặc SỚM HƠN nếu có bất kỳ thay đổi nào về cách xác định combo root.
+
+---
+
+## [DOC-DEBT] GetGroupRoot chưa từng có doc — phát hiện 03/08/2026
+
+Hàm dùng ở 6+ chỗ nhưng chưa có mục doc riêng ở bất kỳ file nào — chỉ được nhắc tên trong
+flow của hàm khác. K2Node export 03/08 lộ 3 hành vi chưa ai ghi:
+- (1) cap 10 tầng (ForLoop LastIndex=9), vượt → trả nửa chừng, KHÔNG báo lỗi;
+- (2) không tìm thấy group → trả lại CHÍNH GID truyền vào, KHÔNG trả "";
+- (3) vòng cha-con quẩn (A→B→A) không bị phát hiện.
+
+Cả 3 không chặn T1. KHÔNG sửa hàm (KP3).
+
+**Trigger:** (1) và (3) nâng lên bug thật nếu combo lồng vượt 3 tầng được cho phép.
 
 ---
 

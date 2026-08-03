@@ -930,6 +930,11 @@ NewRot = CombineRotators(OldRot, R)
 
 ### C9.5 — Save As / Save đè combo (MỚI, thêm 22/07/2026 — ⚠️ UX CHƯA CHỐT)
 
+⚠️ [HISTORICAL]
+SUPERSEDED 03/08/2026 — UX đã chốt, KHÔNG theo Phương án A/B mô tả bên dưới. Nguồn duy
+nhất: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`. Giữ mục này để tra "vì sao đã
+từng cân nhắc 2 phương án".
+
 **Chưa có mã C-number chính thức** — tạm gọi "C9.5" (chèn sau C9 trong thứ tự thực thi), để
 Fable đặt tên khi lên task card chi tiết. Ghi lại từ delta bàn kế hoạch 22/07/2026 — THUẦN KẾ
 HOẠCH, chưa có Blueprint/code nào thay đổi.

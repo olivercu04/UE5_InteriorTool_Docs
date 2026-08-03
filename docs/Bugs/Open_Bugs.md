@@ -41,6 +41,7 @@ theo luật `R-DOC-DONE`: Task-P2-SweepCao (case Cao chưa test combo thật), T
 | Bug-MaterialPrimaryOnly | [OPEN] Đổi vật liệu khi chọn cả cụm combo chỉ áp cho 1 mesh (Primary), không toast báo — người dùng tưởng đã đổi cả cụm | 🟡 Trung bình | Test tay 02/08. Vá tạm: toast cảnh báo (~15 phút). Vá thật: gộp Sprint 7 Material Edit multi-apply (E1). Xem mục chi tiết dưới |
 | Bug-PasteVerticalCollapse | [OPEN] Paste nhiều món chênh cao độ (đồ trần + đồ sàn) → TÂM nhóm bị neo vào bề mặt trace trúng thay vì từng món neo bề mặt riêng → đồ trần lơ lửng, đồ sàn chìm | 🔴 Cao | Test tay 02/08. KHÔNG chặn Gate 2. Backlog "Sprint Surface" sau Gate 2. Xem mục chi tiết dưới |
 | Bug-StaleSurfaceType | [OPEN] Kéo đồ bằng gizmo sang bề mặt khác → `PlacementSurfaceType` không cập nhật lại (chỉ SET 1 lần lúc drag-drop) → nudge phím mũi tên đi sai trục | 🟡 Trung bình | Test tay 02/08. KHÔNG chặn Gate 2. Backlog "Sprint Surface" sau Gate 2. Xem mục chi tiết dưới |
+| Bug-ReplaceInCombo-TabJump | [OPEN, ĐÃ CÓ PLAN] Replace 1 mesh bên trong combo (edit mode) → inventory tự nhảy sang tab Combo, breadcrumb vẫn đứng ở path folder mesh | 🟡 Trung bình | Là T2 của đợt Save As/Save đè. Xem mục chi tiết dưới |
 
 ---
 
@@ -525,8 +526,30 @@ của tool) — không có bug logic cần fix ngay. Cần xử lý đúng lúc 
 - Save đè giữ nguyên `comboId` cũ.
 
 ### Trạng thái
-- **Backlog.** Chưa có plan riêng — ghi lại làm note kèm theo khi task Save As/Save đè được lên
-  kế hoạch.
+- **Backlog → ĐÃ CÓ PLAN 03/08/2026.** Save As sinh comboId mới, Save đè giữ nguyên — chốt tại
+  `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 2.4. Đóng khi T4 xong.
+
+---
+
+## Bug-ReplaceInCombo-TabJump — Replace trong combo làm inventory tự nhảy tab Combo
+
+**ID:** Bug-ReplaceInCombo-TabJump
+**Phát hiện:** 03/08/2026 (test tay verify lớp dữ liệu, phiên lập kế hoạch Save As)
+**Ưu tiên:** 🟡 Trung bình — KHÔNG chặn Gate 2
+
+### Triệu chứng
+Replace 1 mesh bên trong combo (đang edit mode) → xong thì inventory tự nhảy
+sang tab Combo (foldertree/chiprow/chiptag/CTV_ComboCard đổi theo combo),
+breadcrumb vẫn đứng ở path folder mesh.
+
+### Giả thuyết gốc (CHƯA verify bằng Print)
+`ResolveSelectedComboRoot()` mù edit mode — luôn
+GetGroupRoot leo tận combo root, không nhận EditScope (khác
+`ResolveSelectionUnit(Actor, EditScope)` của Sprint 4). Không phải bug của
+re-route P2.
+
+### Trạng thái
+- **ĐÃ CÓ PLAN** — là T2 của đợt Save As/Save đè. ⚠ KHÔNG ghi hướng fix như đã chốt — chưa verify.
 
 ---
 

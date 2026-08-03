@@ -1,11 +1,18 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 02/08/2026 — **Replace UX Fix (P0→P5) ĐÓNG HOÀN TOÀN** — 6 bug gốc (#1/#3a/#3b/#4/#5/#6)
+**Phiên bản:** 03/08/2026 — **Replace UX Fix (P0→P5) ĐÓNG HOÀN TOÀN** — 6 bug gốc (#1/#3a/#3b/#4/#5/#6)
 rụng hết, đường ngược (Luật 6A) đóng đủ, dead code `MeshToReplace` xóa — tiếp theo
 **Save As/Save đè (mới) → C11 → C10 → Gate 2**. C9 (Replace Combo, tính năng thật) HOÀN TẤT 30/07
 (5/5 test regression PASS, 6/6 file compile sạch). K1 (WBP_Toast) DONE (5/5 test PASS). C6 (Favorite + Recent combo) CHÍNH THỨC DONE HOÀN TOÀN (C6.1-C6.4 + K3 + 2 bug fix). C7 dời hẳn Sprint 6 (thay bằng field kích thước trên Combo Card, DONE). Field Kích thước Card + Delete Combo (5/5 test) + Dimension Fix đều DONE. **P2 (Studio Thumbnail) DONE về tính năng (Gate A→F)** — Gate F nối Save flow thật + fix framing rotation-invariant. Backlog: VRAM regression (SSAA 2048² chưa đo) + Feature-CanonicalStudioAngle (Sprint 6). Debug phím U đã xóa. **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
 **Cập nhật (tiếp) 02/08/2026:** Luật **Q9 (S-Matrix Gate)** thiết lập — xem `Rules/AI_Implementation_Rules.md` v2.14. 3 bug xác nhận bằng test tay (Bug-MaterialPrimaryOnly, Bug-PasteVerticalCollapse, Bug-StaleSurfaceType) — xem `Bugs/Open_Bugs.md`. Cả 3 dời sau Gate 2, **KHÔNG đổi thứ tự ưu tiên hiện tại: Save As/Save đè → C11 → C10 → Gate 2.**
+**Cập nhật (tiếp) 03/08/2026:** Save As/Save đè — LẬP KẾ HOẠCH XONG (khung 5 task), task card T1 đã phát hành.
+Kế hoạch đầy đủ: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`.
+UX chốt: 2 nút trong WBP_SaveComboDialog (Ghi đè / Lưu thành combo mới), nút Ghi đè xám khi
+0 hoặc ≥2 combo root, hoặc đang trong edit mode. Test lớp dữ liệu 03/08 PASS: GroupID sống
+sót qua Replace kể cả group lồng 3 tầng → Save đè không cần thiết kế đặc biệt.
+Bug UX 'replace trong combo → inventory nhảy tab Combo' GỘP vào đợt này làm T2.
+Tiếp theo: T1 (2 Function mới trong BP_FurnitureInputManager).
 
 ---
 
