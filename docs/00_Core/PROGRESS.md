@@ -369,6 +369,12 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 - [x] **C8** — Drag-drop + surface-snap ✅ **MERGED vào C4** (24/06/2026)
 - [ ] **Xoay combo (P3)** — verify gizmo group xoay cả cụm; tùy chọn xoay-lúc-kéo (R/scroll)
 - [x] **C9** — Replace combo (+ verify K2 EMS SourceComboID + CalculateCenter chung + auto-rollback spawn-fail) — ✅ DONE (30/07/2026). Xem `01_Session_State.md` mục C9.
+- [ ] **Save As / Save đè combo** (T1-T5, xem `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`)
+  - [x] T1 — `ResolveActiveComboForSave()` + `GetComboRootOfActor()` (`BP_FurnitureInputManager` v3.0). Test PASS 6/6. ✅ DONE (03/08/2026)
+  - [ ] T2 — Guard edit-scope cho re-route replace (`Bug-ReplaceInCombo-TabJump`)
+  - [ ] T3 — 2 nút + trạng thái xám + tooltip (`WBP_SaveComboDialog`)
+  - [ ] T4 — Ghi đè thật + xác nhận + thumbnail (C++ `ComboSerializer` + `BP_ComboManager`)
+  - [ ] T5 — Regression + docs
 ──── **Giai đoạn 3: share** ────
 - [ ] **C11** — Export/Import cả 2 hướng (K5): file-save dialog TRƯỚC, fallback thư mục cố định
 - [ ] **C10** — Regression (K4 nested-3 / P5-liên quan / VRAM stat rhi) + Docs

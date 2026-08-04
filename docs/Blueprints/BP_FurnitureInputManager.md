@@ -1,5 +1,5 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 2.9 | **Cập nhật:** 02/08/2026 (tiếp) — MERGE_LOG Q3 đóng: `FindGroupData` chữ ký đính chính từ `(S_GroupData, Index, bFound)` → `(S_GroupData, bFound)` (hàm không có output Index, tự mâu thuẫn với bài học "đã trả giá" ngay trong cùng file) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 3.0 | **Cập nhật:** 03/08/2026 20:45 — Save As/Save đè T1: thêm `GetGroupRoot()` (doc lần đầu, as-built K2Node) + 2 hàm mới `GetComboRootOfActor()` + `ResolveActiveComboForSave()`, test PASS 6/6 | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 > **v2.8 (Replace UX Fix P0→P5, 02/08/2026):** biến `MeshToReplace` (single, dead code) XÓA HOÀN
 > TOÀN (P4.4) — đính chính dòng Variables ghi sai đã "xóa từ v1.6". Node flow re-route (P2), card
@@ -598,6 +598,130 @@ FindGroupData(InGroupID) → bFound: True → ADD data → LocalGroups
   Completed → (để trống)
 Completed → Return LocalGroups
 ```
+
+### GetGroupRoot(InGroupID) → RootGroupID : String
+
+**Ghi as-built K2Node export 03/08/2026 (Save As/Save đè T0).**
+
+```
+Local: Current (String)
+Entry ▶→ SET Current = InGroupID
+      ▶→ ForLoop (FirstIndex=0, LastIndex=9)        → cap 10 vòng
+           LoopBody ▶→ FindGroupData(Current) ─→ GroupData, bFound
+                    ▶→ Branch(bFound == false)
+                         True  ▶→ Return Current
+                         False ▶→ Branch(ParentGroupID == "")
+                                    True  ▶→ Return Current      → đã là root
+                                    False ▶→ SET Current = ParentGroupID
+                                             (then bỏ trống → hợp lệ, ForLoop tự chạy vòng sau)
+           Completed ▶→ Return Current                            → hết 10 vòng chưa tới root
+```
+
+3 điều doc chưa từng ghi trước đợt Save As/Save đè:
+1. **Cap 10 tầng, không phải đệ quy.** Vượt 10 tầng lồng → trả về nửa chừng, KHÔNG báo lỗi.
+2. **Không tìm thấy group → trả lại CHÍNH GID truyền vào, KHÔNG trả `""`.** ⚠ Chuỗi khác rỗng
+   ở đây KHÔNG chứng minh group tồn tại — mọi caller phải tự `FindGroupData` lại để xác nhận.
+3. **Vòng lặp cha-con quẩn (A→B→A) không bị phát hiện** — chỉ bị cap 10 chặn rồi trả kết quả sai.
+
+Cả 3 không chặn bất kỳ caller hiện có (T1 Save As/Save đè, `ResolveSelectedComboRoot` C9). KHÔNG
+sửa hàm (KP3). Xem `DEVIATIONS.md` mục "[DOC-DEBT] GetGroupRoot chưa từng có doc — 03/08/2026".
+
+### GetComboRootOfActor(Actor : BP_FurnitureActor) → (RootGroupID, ComboID : String, bFound : Bool)
+
+**Mới 03/08/2026 (Save As/Save đè T1).** Test PASS: actor trong combo đã save → `bFound=true` +
+đúng `ComboID`; actor rời → `bFound=false`.
+
+**Local:** `GCR_GID`, `GCR_RootGID`, `GCR_SCID` (String) · `GCR_Data` (S_GroupData) ·
+`GCR_bDataFound` (Bool)
+
+```
+Entry
+▶→ Branch(IsValid(Actor))
+     False ▶→ Return ["", "", false]                     → ref chết
+     True  ▶→ GET Actor.GroupID ─→ SET GCR_GID
+▶→ Branch(GCR_GID == "")
+     True  ▶→ Return ["", "", false]                     → đồ rời
+     False ▶→ GetGroupRoot(GCR_GID) ─→ SET GCR_RootGID
+▶→ FindGroupData(GCR_RootGID)
+     ─→ GroupData ▶→ SET GCR_Data
+     ─→ bFound    ▶→ SET GCR_bDataFound
+▶→ Branch(GCR_bDataFound == false)
+     True  ▶→ Return ["", "", false]                     → GetGroupRoot trả GID cũ, group không tồn tại
+     False ▶→ Break GCR_Data ─→ SourceComboID ▶→ SET GCR_SCID
+▶→ Branch(GCR_SCID == "")
+     True  ▶→ Return ["", "", false]                     → group thường, chưa Save Combo
+     False ▶→ Return [GCR_RootGID, GCR_SCID, true]
+```
+
+⚠️ **KHÔNG bỏ bước `FindGroupData` sau `GetGroupRoot`** — `GetGroupRoot` khi không tìm thấy group
+trả lại CHÍNH GID truyền vào (không phải `""`); chuỗi khác rỗng không chứng minh group tồn tại.
+
+**Ceiling:** hàm này KHÔNG đấu vào `ResolveSelectedComboRoot()` (C9) — 2 nơi cùng biết cách leo
+combo root. Xem `DEVIATIONS.md` mục "[CEILING] Hai nơi cùng biết cách leo combo root — 03/08/2026".
+
+### ResolveActiveComboForSave() → (ComboID, RootGroupID : String, ItemCount : Int, bCanOverwrite : Bool, ReasonText : String)
+
+**Mới 03/08/2026 (Save As/Save đè T1).** Quét toàn bộ `SelectedActors`, đếm số combo root khác
+nhau — KHÔNG dùng `PrimarySelectedActor` hay `SelectedActors[0]` (2 biến này lấy MỘT actor rồi leo
+lên → kết quả phụ thuộc thứ tự Ctrl-click, xem `DEVIATIONS.md` mục DOC-DRIFT đóng 03/08/2026).
+
+**Local:** `ResolveSave_ActorsCopy` (Array BP_FurnitureActor) · `ResolveSave_Roots`,
+`ResolveSave_ComboIDs` (Array String) · `ResolveSave_Count` (Int) · `ResolveSave_Scope`,
+`ResolveSave_Root`, `ResolveSave_CID` (String) · `ResolveSave_bFound` (Bool)
+
+```
+Entry
+▶→ CLEAR ResolveSave_Roots · CLEAR ResolveSave_ComboIDs · SET ResolveSave_Count = 0
+▶→ GetCurrentEditScope() ─→ SET ResolveSave_Scope
+▶→ Branch(ResolveSave_Scope != "")
+     True  ▶→ Return ["", "", 0, false,
+                      "Đang sửa bên trong nhóm — thoát nhóm rồi mới ghi đè được"]
+     False ▶→ SET ResolveSave_ActorsCopy = SelectedActors    → copy trước khi lặp (pass-by-ref)
+
+▶→ ForEach ResolveSave_ActorsCopy (Actor)
+     Loop Body:
+       Branch(IsValid(Actor))
+         False ▶→ (để trống — bỏ qua ref chết)
+         True  ▶→ SET ResolveSave_Count = ResolveSave_Count + 1
+                ▶→ GetComboRootOfActor(Actor)
+                     ─→ RootGroupID ▶→ SET ResolveSave_Root
+                     ─→ ComboID     ▶→ SET ResolveSave_CID
+                     ─→ bFound      ▶→ SET ResolveSave_bFound
+                ▶→ Branch(ResolveSave_bFound)
+                     False ▶→ (để trống)
+                     True  ▶→ Branch(NOT Contains(ResolveSave_Roots, ResolveSave_Root))
+                                True  ▶→ ADD ResolveSave_Root → ResolveSave_Roots
+                                       ▶→ ADD ResolveSave_CID  → ResolveSave_ComboIDs
+                                False ▶→ (để trống — root đã có, không đếm 2 lần)
+
+     Completed:
+▶→ Branch(ResolveSave_Count == 0)
+     True  ▶→ Return ["", "", 0, false, "Chưa chọn gì"]
+     False ▶→ Branch(Array Length(ResolveSave_Roots) == 1)
+                True  ▶→ Return [ResolveSave_ComboIDs[0], ResolveSave_Roots[0],
+                                 ResolveSave_Count, true, ""]
+                False ▶→ Branch(Array Length(ResolveSave_Roots) == 0)
+                           True  ▶→ Return ["", "", ResolveSave_Count, false,
+                                    "Chưa chọn combo nào có sẵn — chỉ lưu được thành combo mới"]
+                           False ▶→ Return ["", "", ResolveSave_Count, false,
+                                    "Đang chọn nhiều combo — chỉ lưu được thành combo mới"]
+```
+
+**Vì sao KHÔNG trả tên combo:** tên hiển thị nằm trong file `.json`, không nằm trong `S_GroupData`.
+T3/T4 tra tên qua `BP_ComboManager` (nguồn thật).
+
+Test PASS 6/6 (03/08/2026, Print tạm trong `CB_SaveCombo_Handler`, đã xóa sau test):
+
+| # | Case | Kết quả log |
+|---|---|---|
+| 1 | 2 mesh rời | `can=false n=2 id= why=Chưa chọn combo nào có sẵn…` |
+| 2 | 1 combo cả cụm (S4) | `can=true n=21 id=combo_05EB1115… Root=8307B660…` |
+| 3 | Combo A + 3 mesh rời (S8, hội tụ) | `can=true n=13 id=combo_3850A77C…` |
+| 4 | Combo A + Combo B (S8, 2 root) | `can=false n=31 why=Đang chọn nhiều combo…` |
+| 5 | Trong edit mode, chọn 1 món | `can=false n=0 why=Đang sửa bên trong nhóm…` |
+| 6 | Sau Ctrl+Z vài lần, chọn lại cụm (S9) | `can=true n=21 id=combo_05EB1115…` — khớp case 2, không Accessed None |
+
+Chi tiết plan gốc: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 6.3, 6.4, 6.5.
 
 ### ResolveSelectionUnit(Actor, EditScope) → Array<BP_FurnitureActor> ⭐ NÃO Sprint 4
 **THỨ TỰ NHÁNH BẮT BUỘC (Q9a: edit-scope trước đồ-loose):**

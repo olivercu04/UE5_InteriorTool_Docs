@@ -1,5 +1,5 @@
 # Current Sprint — Sprint 5: Combo Mesh (Save As / Save đè combo)
-**Cập nhật:** 03/08/2026 — Lập kế hoạch xong (khung 5 task), T1 đang chạy.
+**Cập nhật:** 03/08/2026 — T1 DONE (test PASS 6/6), mở T2.
 
 ---
 
@@ -9,8 +9,8 @@ Nguồn duy nhất: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`.
 
 | # | Nhiệm vụ | Đụng gì | Định nghĩa XONG | Trạng thái |
 |---|---|---|---|---|
-| **T1** | `ResolveActiveComboForSave()` — đọc trạng thái | `BP_FurnitureInputManager` (2 Function mới) | Print đúng 6 case, chưa có UI | 🔄 Đang chạy |
-| **T2** | Guard edit-scope cho re-route replace (bug 2.9) | `WBP_FurnitureInventory.OnMeshSelected` | Replace mesh trong combo → inventory ở nguyên tab mesh | ⏳ Chưa mở |
+| **T1** | `ResolveActiveComboForSave()` — đọc trạng thái | `BP_FurnitureInputManager` (2 Function mới) | Print đúng 6 case, chưa có UI | ✅ DONE (test PASS 6/6) |
+| **T2** | Guard edit-scope cho re-route replace (bug 2.9) | `WBP_FurnitureInventory.OnMeshSelected` | Replace mesh trong combo → inventory ở nguyên tab mesh | 🔄 Đang mở |
 | **T3** | 2 nút + trạng thái xám + tooltip + auto-fill | `WBP_SaveComboDialog` | Bấm nút chỉ Print, chưa ghi file | ⏳ Chưa mở |
 | **T4** | Ghi đè thật + xác nhận + chụp lại thumbnail | C++ `ComboSerializer` + `BP_ComboManager` | File `.json` đổi nội dung, `comboId` giữ nguyên | ⏳ Chưa mở |
 | **T5** | Regression + docs | — | Save As vẫn sinh ID mới; combo cũ load được; docs cập nhật | ⏳ Chưa mở |

@@ -966,6 +966,26 @@ lúc bàn lại — KHÔNG coi là đã chốt:
 
 ---
 
+### T1 — Save As/Save đè: test log `ResolveActiveComboForSave()` (as-built, 03/08/2026)
+
+📌 [CHỨA AS-BUILT] — bảng dưới là kết quả test thật (Print tạm trong `CB_SaveCombo_Handler`, đã
+xóa sau test), không phải kế hoạch. Nguồn: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`
+mục 6.5. Node flow đầy đủ: `Blueprints/BP_FurnitureInputManager.md` (`GetComboRootOfActor` +
+`ResolveActiveComboForSave`, v3.0).
+
+| # | Case | Kết quả log |
+|---|---|---|
+| 1 | 2 mesh rời | `can=false n=2 id= why=Chưa chọn combo nào có sẵn…` |
+| 2 | 1 combo cả cụm (S4) | `can=true n=21 id=combo_05EB1115… Root=8307B660…` |
+| 3 | Combo A + 3 mesh rời (S8, hội tụ) | `can=true n=13 id=combo_3850A77C…` |
+| 4 | Combo A + Combo B (S8, 2 root) | `can=false n=31 why=Đang chọn nhiều combo…` |
+| 5 | Trong edit mode, chọn 1 món | `can=false n=0 why=Đang sửa bên trong nhóm…` |
+| 6 | Sau Ctrl+Z vài lần, chọn lại cụm (S9) | `can=true n=21 id=combo_05EB1115…` — khớp case 2, không Accessed None |
+
+**Trạng thái:** ✅ PASS 6/6 — T1 ĐÓNG. Tiếp theo: T2 (guard edit-scope, `Bug-ReplaceInCombo-TabJump`).
+
+---
+
 ### C11 — Export / Import combo (chia sẻ thủ công) — CẢ 2 hướng
 **Mục tiêu:** Share nhóm KHÔNG cần server — export file JSON gửi đi (Zalo/USB/Drive), import vào thư viện máy khác.
 **⚠️ Thứ tự thực thi:** C9 → **C11** → C10. C11 là feature mới nên phải chạy TRƯỚC C10 để regression test bao luôn.

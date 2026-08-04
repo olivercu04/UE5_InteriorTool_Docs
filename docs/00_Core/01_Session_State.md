@@ -13,6 +13,13 @@ UX chốt: 2 nút trong WBP_SaveComboDialog (Ghi đè / Lưu thành combo mới)
 sót qua Replace kể cả group lồng 3 tầng → Save đè không cần thiết kế đặc biệt.
 Bug UX 'replace trong combo → inventory nhảy tab Combo' GỘP vào đợt này làm T2.
 Tiếp theo: T1 (2 Function mới trong BP_FurnitureInputManager).
+**Cập nhật (tiếp) 03/08/2026 (T1 DONE):** T1 (`GetComboRootOfActor` + `ResolveActiveComboForSave`,
+`BP_FurnitureInputManager` v3.0) — ĐÓNG, test PASS 6/6. Priority queue giữ nguyên: Save As/Save đè
+(T1 done) → T2 (UI trigger tại `CB_SaveCombo_Handler`/`OnMeshSelected`) → T3 (WBP_SaveComboDialog +
+Toast lý do) → T4 (C++ ghi file, gộp combo logic) → T5 (regression 15-step) → C11 → C10 → Gate 2.
+Mở task card **T2** tiếp theo. Ghi chú: `[CEILING]` "2 nơi cùng biết cách leo combo root"
+(`ResolveSelectedComboRoot` C9 chưa đấu lại vào `GetComboRootOfActor`) — vẫn treo tới C10, xem
+`DEVIATIONS.md`.
 
 ---
 
