@@ -116,6 +116,34 @@ Bảng đầy đủ + danh sách file: `docs/00_Core/MERGE_LOG.md` mục "3 LO�
 rời)? Chưa gây lỗi ở C9 (chỉ chạy selection 1 cụm) nhưng **PHẢI chốt trước khi viết task card
 Save As/Save đè**. Xem `DEVIATIONS.md` mục "[DOC-DRIFT] ResolveSelectedComboRoot".
 
+> ✅ **Đóng 03/08/2026** — Save As/Save đè dùng hàm riêng `ResolveActiveComboForSave()`, quét
+> toàn bộ `SelectedActors`, không dùng biến nào trong 2 biến này. Xem
+> `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 2.8.
+
+### 4.5 Nợ doc — Xếp ưu tiên (04/08/2026, quyết định cuhoang)
+
+Nguồn: `DELTA_04-08-2026_LoA_SaveCombo_Verify.md` mục D. Lô A (đường ghi combo A1/A2/A3) **ĐÃ
+ĐÓNG 04/08/2026** — xem `Blueprints/BP_ComboManager.md` v1.15, `Data/ComboSerializer_Reference.md`.
+Ba lô còn lại xếp theo **"cái gì sắp đụng tới"**, không theo tuổi doc:
+
+| Lô | Nội dung | Khi nào |
+|---|---|---|
+| ~~A~~ | ~~Đường ghi combo (A1/A2/A3)~~ | ✅ **ĐÓNG 04/08/2026** |
+| **B** | `GetCombosDir` — mục "MỤC 5 canonical lạc hậu" (mục 4.2 ở trên) | Trước **C11** |
+| **C** | Vùng Replace — 4 mục, 1 lần export | Gộp vào **C10 regression** (sau T5) |
+| **D** | 3 mục `[?]` MERGE_LOG (mục 4.1 ở trên) + 3 open item C9 (mục 4.3 ở trên) | Cuối, không chặn gì |
+
+**Lô C — 4 mục cần export cùng lượt:**
+1. `CB_Replace` — ✓K2 24/07 nhưng sau đó có 3 đợt sửa vùng lân cận (Replace UX Fix 01–02/08, T2
+   04/08) — xác nhận lại.
+2. `OnLMBReleased` — đường thoát replace thứ 2, **chưa từng export**. Plan C9 §8 tự cảnh báo:
+   *"CB_Replace KHÔNG phải đường thoát duy nhất"*.
+3. `StartReplaceComboMode` — `BP_FurnitureInputManager.md` dòng ~1208 khai `SRC Inv Ref`, dòng
+   ~1215 gọi `InventoryRef.EnsureExpanded()` — lệch tên trong cùng 1 đoạn doc, cách 4 dòng. Hai
+   khả năng: (a) gõ sai trong doc, (b) BP thật đọc 2 thứ khác nhau. **Chưa kết luận.**
+4. `EnterReplaceMode` (+4 dòng) và `RefreshComboCardReplaceMode` — doc v3.16 tự ghi
+   *"FUNCTION-LEVEL (chưa re-export node)"*.
+
 ---
 
 ## 5. KHÔNG CÁI NÀO Ở MỤC 4 CHẶN GATE 2

@@ -1,6 +1,6 @@
 # Kế hoạch Save As / Save đè combo — Execution Plan
 
-**Phiên bản:** 1.0 — 03/08/2026
+**Phiên bản:** 1.3 — 04/08/2026 (xem mục 9 — lịch sử cập nhật)
 **Tác giả:** Opus (phiên lập kế hoạch 03/08/2026)
 **Sprint:** 5 (Combo Mesh) — hạng mục kế tiếp sau C9 Replace Combo
 **Vị trí trong hàng đợi:** **Save As/Save đè → C11 → C10 → Gate 2**
@@ -181,6 +181,13 @@ sát được vẫn đứng ở path mesh. Hoặc hàm đó không đổi breadc
 | **T4** | Ghi đè thật + xác nhận + chụp lại thumbnail | C++ `ComboSerializer` + `BP_ComboManager` | File `.json` đổi nội dung, `comboId` giữ nguyên |
 | **T5** | Regression + docs | — | Save As vẫn sinh ID mới; combo cũ load được; docs cập nhật |
 
+> **Ghi chú scope T3 (thêm 04/08/2026, xem mục 7b):** cột "Đụng gì" ở trên chỉ ghi
+> `WBP_SaveComboDialog`, nhưng scope thật rộng hơn — T3 đụng **3 asset**: `WBP_SaveComboDialog`
+> (UI) + `WBP_FurnitureInventory` (2 Function mới + `OpenSaveComboDialog` mở rộng) +
+> `BP_FurnitureInputManager` (1 node chèn vào `CB_SaveCombo_Handler`). Auto-fill không sống
+> trong dialog được vì dialog không giữ `AllComboViews_Combo` — plumbing bắt buộc, không phải
+> feature thêm (KP2, đã trình cuhoang duyệt).
+
 **Xương sống: T1 → T3 → T4.** T1 trả lời "đang ở cửa sổ nào", T3 hỏi user "muốn gì", T4 thi hành.
 
 **T2 chen giữa** vì: cùng vùng code, nhỏ (1 Branch), và làm sớm thì lúc test T3/T4 không bỏ nhiều
@@ -209,6 +216,36 @@ T2 ───┴─────────┘
 | **T4** | T3 xong: biết chính xác user bấm nút nào, dialog trả về gì | Ghi file phải biết ghi cái gì, đè lên ID nào |
 | **T4** | Tên combo tra được qua `BP_ComboManager` | T1 KHÔNG trả tên (xem 6.4) |
 | **T5** | T1→T4 xong | Regression cần đủ đường để chạy |
+
+### 4.1 — Quyết định kiến trúc cho T4 (chốt 04/08/2026, verify Lô A — CHƯA thực thi)
+
+> Nguồn: `DELTA_04-08-2026_LoA_SaveCombo_Verify.md` mục B.2. Đây là **quyết định kiến trúc**,
+> KHÔNG phải task card — chưa viết node, chưa test. Task card T4 thật sẽ mở sau khi T3 đóng
+> (mục 5, luật "mỗi lần chỉ mở 1 task").
+
+Verify Lô A xác nhận (`Data/ComboSerializer_Reference.md`): `UComboSerializer` **không có**
+primitive C++ "ghi đè combo" (không có `SaveCombo(ComboID, Data)`/`OverwriteCombo`;
+`UpdateComboFolder` chỉ sửa 1 field). Ghi đè cả struct phải ghép ở tầng BP:
+`ComboToJson` → `SaveStringToFile` — đúng cặp hàm `SaveComboFromSelection` đã dùng sẵn.
+
+**Quyết định:** nối `SaveComboFromSelection` (`BP_ComboManager`) bằng 1 Branch tại đúng điểm sinh
+`ComboID` (Bước 5a, xem `Blueprints/BP_ComboManager.md` v1.15) — **KHÔNG** viết primitive C++ mới:
+
+```
+Thêm 2 param: bOverwrite (Bool, default false) · OverwriteComboID (String, default "")
+
+Tại Bước 5a, thay node SET đơn bằng:
+  Branch(bOverwrite)
+    True  ▶→ SET SaveCombo_ComboID = OverwriteComboID       ← nhánh MỚI
+    False ▶→ SET SaveCombo_ComboID = "combo_" + NewGuid()   ← node CŨ, giữ nguyên
+```
+
+Caller cũ truyền `bOverwrite=false` → hành vi không đổi (additive, không phá C3b/C9).
+
+**Vì sao chọn Branch tại chỗ thay vì hàm C++ mới:** điểm sinh `ComboID` là **chốt duy nhất**
+mọi thứ phía sau khóa theo (path `.json`, thumbnail) — xem ghi chú Bước 5a trong
+`BP_ComboManager.md`. Thêm Branch ở đây là surgical nhất; viết primitive C++ mới phải đụng
+`.h`/`.cpp` + rebuild plugin, rủi ro cao hơn cho lợi ích tương đương.
 
 ---
 
@@ -691,6 +728,368 @@ khác, dù được dùng ở 6+ chỗ. Khi phân phối delta T1: thêm mục `
 
 ---
 
+## 7b. TASK CARD T3 — Dialog 2 nút Save As / Save đè
+
+> Nguồn: `DELTA_04-08-2026_T3_SaveComboDialog.md` (Opus, 04/08/2026). **PLAN — chưa thực thi,
+> chưa test.** Đánh số `7b` (không phải `## 8`) để tránh đụng số mục `## 8. COMMAND BLOCK` đã có
+> sẵn trong file — theo đúng pattern `6b` dùng cho task card T2.
+
+**Người chạy:** Sonnet
+**Phạm vi:** `BP_FurnitureInputManager` (1 node chèn) · `WBP_FurnitureInventory` (2 Function mới
++ 1 Custom Event mở rộng) · `WBP_SaveComboDialog` (UI + 1 Function + sửa 1 Function)
+**KHÔNG:** ghi file · KHÔNG `CaptureSnapshot` · KHÔNG đụng `SaveComboFromSelection`.
+
+> ⚠️ **Scope thật rộng hơn dòng khung mục 3** ("Đụng gì: `WBP_SaveComboDialog`"). Auto-fill
+> không sống trong dialog được — dialog không giữ `AllComboViews_Combo` (R3). Dữ liệu phải chảy
+> qua inventory. Đây là plumbing bắt buộc, KHÔNG phải feature thêm (KP2 — đã trình cuhoang duyệt
+> 04/08/2026).
+
+### 7b.0 — T0: bảng dấu nguồn tin cậy
+
+| Dựa vào | Dấu |
+|---|---|
+| `CB_SaveCombo_Handler` guard `>=2` + chuỗi exec | ✓K2 04/08/2026 — ⚠️ XEM CẢNH BÁO XUNG ĐỘT: mục này KHÔNG được merge vào `BP_FurnitureInputManager.md` trong đợt này, xem báo cáo cuối |
+| `ResolveActiveComboForSave` — 5 output | ✓TEST 6/6 03/08/2026 |
+| `AllComboViews_Combo` (Array `BP_ComboItemView`) | ✓ as-built |
+| `BP_ComboItemView`: ComboName · FolderPath · Description · Tags | ✓ as-built (v1.3) |
+| `OpenSaveComboDialog` + freeze `PendingSelectedActors` | ✓ as-built (C3b) |
+| `ValidateComboName` gate `BTN_Confirm` | ✓ as-built |
+| **Tooltip hiện được trên Button đã `SetIsEnabled(false)`** | ⚠ **CHƯA VERIFY — xem 7b.5** |
+
+⚠ duy nhất nằm ở 7b.5 và phải test TRƯỚC khi code phần UI.
+
+### 7b.1 — Chèn resolve (`BP_FurnitureInputManager.CB_SaveCombo_Handler`)
+
+```
+Q8: Container=Custom Event (KHÔNG Local Var — wire thẳng output pin, né L9) |
+IsValid: giữ nguyên 2 guard sẵn có ✓ | L2: chèn nối tiếp, không đẻ nhánh mới ✓ |
+No latent ✓ | 6A: thuần đọc; đường ngược = BTN_Cancel dialog (sẵn có) ✓
+```
+
+```
+Branch(Length >= 2).True
+  ▶→ ResolveActiveComboForSave()            ← CHÈN MỚI, đứng ĐẦU nhánh True
+       ─→ ComboID · bCanOverwrite · ReasonText     (3 pin wire thẳng xuống 7b.3)
+  ▶→ CalculateComboAnchor(...)              ← giữ nguyên
+  ▶→ GetAllWidgetsOfClass(...)              ← giữ nguyên
+  ▶→ Branch(IsValid(FoundWidgets[0]))       ← giữ nguyên
+       True ▶→ OpenSaveComboDialog(SelectedActors, Center, +3 pin mới)
+```
+
+- Resolve chạy **ĐÚNG 1 lần**, cùng frame với freeze selection — không lệch (chặn ca S9).
+- `ItemCount` / `RootGroupID` **KHÔNG truyền** — T3 chưa dùng; thêm pin thừa = speculative (KP2).
+- Output pin node impure đã latch — không cần biến trung gian.
+
+⚠️ **Ghi chú vị trí chèn:** node flow ở trên mô tả theo bản K2Node export 04/08 (mục A của delta
+nguồn), nhưng bản export đó XUNG ĐỘT với section `CB_SaveCombo_Handler` hiện có trong
+`BP_FurnitureInputManager.md` (khác cấu trúc guard + có thêm bước `ContextMenuRef.Hide` chưa từng
+ghi). Khi thực thi T3 thật, PHẢI đối chiếu lại với bản as-built THẬT SỰ đang nằm trong doc canonical
+lúc đó (có thể đã khác cả 2 bản này), không giả định bản nào đúng — xem báo cáo mâu thuẫn cuối
+delta gốc.
+
+### 7b.2 — Hai Function mới trong `WBP_FurnitureInventory`
+
+Tách đôi theo nguyên tắc T1: **sự thật** tách khỏi **chính sách**.
+
+```
+GetComboViewByID        → SỰ THẬT    "combo này còn trong thư viện không, metadata là gì"
+BuildSaveDialogPrefill  → CHÍNH SÁCH "thế thì có cho ghi đè không, điền sẵn gì"
+```
+
+**Vị trí:** đặt cạnh `GetExistingFolders` / `GetAllUsedTags` (cùng họ hàm đọc
+`AllComboViews_Combo`).
+
+> **[ARCH-DEBT]** Nơi tối ưu LÂU DÀI của `GetComboViewByID` là `BP_ComboManager`. Không dời bây
+> giờ vì `AllComboViews_Combo` đang sống trong widget — đặt hàm ở manager sẽ khiến manager (tầng
+> dữ liệu) phụ thuộc ngược vào widget (tầng bề mặt), sai chiều nặng hơn. Xem entry backlog
+> `DEVIATIONS.md` mục "[ARCH-DEBT] AllComboViews_Combo sống ở widget".
+
+#### `GetComboViewByID(ComboID : String) → (View : BP_ComboItemView, bFound : Bool)`
+
+```
+Q8: Container=Function (Local Var OK) | Branch match trước khi SET View ✓ |
+L2: dead-end trong Loop Body hợp lệ (macro tự chạy vòng sau); Completed có Return ✓ |
+No latent ✓ | 6A: thuần đọc ✓
+```
+
+**Local:** `Found_View` (BP_ComboItemView) · `Found_bOK` (Bool)
+
+```
+Entry ▶→ SET Found_bOK = false                    ← CLEAR đầu function
+      ▶→ ForEachLoopWithBreak(AllComboViews_Combo)
+           Loop Body ▶→ Branch(Element.ComboID == ComboID)
+                          True  ▶→ SET Found_View = Element
+                                 ▶→ SET Found_bOK = true
+                                 ▶→ Break
+                          False ▶→ (trống)
+           Completed ▶→ Return(Found_View, Found_bOK)
+```
+
+> Pattern y hệt đoạn loop inline sẵn có trong `CB_MoveCombo` (đã chạy tốt) — không phải node lạ.
+> **KHÔNG refactor `CB_MoveCombo` cho gọi hàm mới** (KP3 — chỉ ghi nhận, không tiện tay sửa).
+
+#### `BuildSaveDialogPrefill(ComboID : String, bCanOverwrite : Bool, ReasonIn : String) → (PrefillName, PrefillFolder, PrefillDesc, PrefillTagsText : String, bOverwriteAllowed : Bool, ReasonOut : String)`
+
+```
+Q8: Container=Function (Local Var OK) | chỉ đọc View trong nhánh bFound=true ✓ |
+L2: SET default TRƯỚC Branch, nhánh False để trống (L10) ✓ | No latent ✓ | 6A: thuần đọc ✓
+```
+
+**Local:** `Pre_Name` · `Pre_Folder` · `Pre_Desc` · `Pre_TagsText` · `Pre_Reason` (String) ·
+`Pre_bAllow` (Bool) · `Pre_View` (BP_ComboItemView) · `Pre_bFound` (Bool)
+
+```
+Entry ▶→ SET Pre_Name = "" · Pre_Folder = "" · Pre_Desc = "" · Pre_TagsText = ""
+      ▶→ SET Pre_bAllow = false · SET Pre_Reason = ReasonIn        ← default TRƯỚC mọi Branch
+      ▶→ Branch(bCanOverwrite)
+           False ▶→ (trống — giữ default; lý do đã là ReasonIn nguyên văn từ T1)
+           True  ▶→ GetComboViewByID(ComboID) ─→ Pre_View, Pre_bFound
+                 ▶→ Branch(Pre_bFound)
+                      False ▶→ SET Pre_Reason =
+                               "Combo gốc không còn trong thư viện — chỉ lưu được thành combo mới"
+                      True  ▶→ SET Pre_bAllow = true
+                             ▶→ SET Pre_Reason = ""
+                             ▶→ SET Pre_Name     = Pre_View.ComboName
+                             ▶→ SET Pre_Folder   = Pre_View.FolderPath
+                             ▶→ SET Pre_Desc     = Pre_View.Description
+                             ▶→ Join(Pre_View.Tags, ", ") ─→ SET Pre_TagsText
+      (merge) ▶→ Return(Pre_Name, Pre_Folder, Pre_Desc, Pre_TagsText, Pre_bAllow, Pre_Reason)
+```
+
+**Vì sao lý do MỚI này viết ở widget, không đẩy về T1:** "combo còn trong thư viện không" thuộc
+miền dữ liệu của widget (`AllComboViews_Combo`); `BP_FurnitureInputManager` không biết gì về thư
+viện. Nơi ra quyết định là nơi viết lý do — nhất quán với bài học "phiếu từ chối" ở T1, không mâu
+thuẫn.
+
+### 7b.3 — `OpenSaveComboDialog` mở rộng (`WBP_FurnitureInventory`)
+
+Signature thêm 3 param: `ActiveComboID : String` · `bCanOverwrite : Bool` · `ReasonText : String`.
+
+```
+Q8: Container=Custom Event (đã latent-free) | Branch IsValid(SaveComboDialogRef) sẵn có ✓ |
+L2: chèn TRƯỚC Create Widget, không đẻ nhánh mới ✓ | No latent ✓ |
+6A: OnDialogCancelled sẵn có ✓
+```
+
+```
+SET PendingSelectedActors / PendingCenter          ← giữ nguyên (freeze C3b)
+GetAllUsedTags() → TempTags                        ← giữ nguyên
+▶→ BuildSaveDialogPrefill(ActiveComboID, bCanOverwrite, ReasonText)   ← CHÈN, trước Create Widget
+     ─→ 6 output wire thẳng vào Create Widget
+▶→ Create Widget(WBP_SaveComboDialog,
+       TagVocabulary       = TempTags,             ← pin cũ
+       bOverwriteAllowed   = Pre_bAllow,           ←
+       OverwriteComboID    = ActiveComboID,        ←
+       OverwriteName       = PrefillName,          ←
+       DisabledReason      = ReasonOut,            ← 8 pin Expose on Spawn MỚI
+       PrefillName         = PrefillName,          ←
+       PrefillFolder       = PrefillFolder,        ←
+       PrefillDesc         = PrefillDesc,          ←
+       PrefillTagsText     = PrefillTagsText)      ←
+(phần còn lại giữ nguyên: Branch IsValid → BuildComboFolderTree → Picker.SetFolders →
+ bind 2 dispatcher → AddToViewport → Set Input Mode UI Only)
+```
+
+Sau `Picker.SetFolders(Entries)` nối thêm:
+```
+▶→ Picker.ExpandToPath(PrefillFolder)      ← dùng lại đúng cặp node của HandleSaveDialogCreateFolder
+```
+> ⚠ Cách set SelectedPath của Picker chưa verify trong đợt này — nếu `ExpandToPath` không tự
+> chọn path, **DỪNG, báo cuhoang** (KP1), không tự đoán API của `WBP_FolderTreePicker`.
+
+### 7b.4 — `WBP_SaveComboDialog`
+
+#### Designer (surgical)
+
+- **GIỮ `BTN_Confirm`**, chỉ đổi Text → `"Lưu thành combo mới…"`.
+  KHÔNG rename biến (rename = gãy `ValidateComboName` + binding sẵn có).
+- **THÊM `Border_OverwriteWrap`** trong `HB_Buttons`, đặt **bên trái** `BTN_Confirm`;
+  bên trong chứa `BTN_Overwrite`.
+  → `ToolTipText` đặt trên **Border**, KHÔNG trên Button (lý do: 7b.5).
+
+#### Expose on Spawn (8 biến mới)
+`bOverwriteAllowed : Bool` · `OverwriteComboID : String` · `OverwriteName : String` ·
+`DisabledReason : String` · `PrefillName : String` · `PrefillFolder : String` ·
+`PrefillDesc : String` · `PrefillTagsText : String`
+
+#### Function mới `RefreshButtonStates()` — nguồn DUY NHẤT quyết định 2 nút
+
+```
+Q8: Container=Function (Local Var OK) | không object access ngoài widget con ✓ |
+L2: 1 đường thẳng, SET đủ cả 2 nút ✓ | No latent ✓ |
+6A: gõ lại tên → gọi lại hàm này, trạng thái tự đảo ✓
+```
+
+**Local:** `bNameOK` (Bool)
+
+```
+▶→ GET Text(TextBox_ComboName) → ToString → IsEmpty → NOT ─→ SET bNameOK
+▶→ Set Is Enabled(BTN_Confirm, bNameOK)
+▶→ AND(bNameOK, bOverwriteAllowed) ─→ Set Is Enabled(BTN_Overwrite, <kết quả AND>)
+▶→ Set Tool Tip Text(Border_OverwriteWrap, DisabledReason)
+```
+
+> Tên rỗng → **CẢ HAI** nút xám. Nếu chỉ gate `BTN_Confirm` như hiện tại thì Overwrite sống lúc
+> tên rỗng → T4 sẽ ghi metadata rỗng đè lên combo thật.
+
+#### Sửa `ValidateComboName(Text)`
+
+Thay 2 nhánh `Set Is Enabled(BTN_Confirm, …)` bằng **1 node gọi `RefreshButtonStates`**.
+→ Luật 6B: hai đường (Event Construct và OnTextChanged) dẫn tới cùng cấu trúc phải cho cùng kết quả.
+
+#### Event Construct — nối thêm SAU đoạn cũ
+
+```
+▶→ SetText(TextBox_ComboName, PrefillName)
+▶→ SetText(TextBox_Description_MultiLine, PrefillDesc)
+▶→ SetText(TextBox_Tags, PrefillTagsText)
+▶→ SetText(<TextBlock trong BTN_Overwrite>, "Ghi đè \"" + OverwriteName + "\"")
+▶→ RefreshButtonStates()                          ← thay dòng Set Is Enabled(BTN_Confirm,false) cũ
+```
+> Folder prefill do `Picker` lo ở 7b.3, không set trong Construct.
+
+#### `BTN_Overwrite.OnClicked` — T3 CHỈ Print
+
+```
+Print String: "T3-OVERWRITE | id=" + OverwriteComboID + " | name=" + TextBox_ComboName
+              [DevelopmentOnly]
+```
+KHÔNG broadcast, KHÔNG `Remove from Parent`. Dispatcher là mặt cắt của T4 (mục 7b.6).
+
+#### Ngữ nghĩa đã chốt
+Sửa tên trong ô rồi bấm **Ghi đè** = **đổi tên tại chỗ**, `comboId` GIỮ NGUYÊN.
+Đúng mô hình Save của phần mềm desktop. KHÔNG phải bug.
+
+### 7b.5 — ⚠ BẪY UMG — TEST TRƯỚC KHI CODE PHẦN UI
+
+**Button đã `SetIsEnabled(false)` thường KHÔNG nhận hover event — tooltip có thể không hiện.**
+Toàn bộ thiết kế "nút xám + tooltip nêu lý do" (quyết định 2.2, mục 2 plan gốc) đứng hay sập ở đây.
+
+**Test 1 phút, làm TRƯỚC mọi việc khác trong T3:**
+dựng tạm 1 Border có `ToolTipText`, nhét 1 Button `IsEnabled=false` vào, PIE, rê chuột lên.
+
+| Kết quả | Hành động |
+|---|---|
+| Tooltip hiện | Theo đúng card này |
+| Tooltip KHÔNG hiện | **DỪNG, báo cuhoang.** Plan B: hiện lý do bằng 1 TextBlock nhỏ ngay dưới hàng nút (luôn thấy, không cần hover) |
+
+### 7b.6 — Q9 S-MATRIX GATE
+
+Trạng thái xét: selection tại thời điểm bấm **Save Combo** (dialog phản chiếu đúng snapshot đó).
+
+#### Tầng 1 — S-Scan
+
+| ID | Trạng thái | Kết quả T3 |
+|---|---|---|
+| S0 | Không chọn gì | `N/A: guard Array_Length >= 2 chặn trước khi mở dialog` (✓K2 mục 7b.0) |
+| S1 | 1 mesh rời | `N/A: cùng guard >= 2` |
+| S2 | N mesh rời (≥2) | `⚠` Overwrite xám (ReasonText T1 "Chưa chọn combo nào…"), Save-new sống |
+| S3 | 1 group thường | `≡S2` — `SourceComboID == ""` → T1 trả `bCanOverwrite=false` |
+| S4 | 1 combo cả cụm | `⚠` **Đường chính** — prefill + gap `bFound` (xem X-Check) |
+| S5 | mesh trong group thường (edit) | `N/A: T1 guard EditScope → xám + lý do` |
+| S6 | mesh trong combo (edit) | `N/A: T1 guard EditScope → xám + lý do` — ca mất dữ liệu nguy hiểm nhất |
+| S7 | sub-group nested (edit) | `≡S6` — cùng điều kiện `EditScope != ""` |
+| S8 | Mix (combo + mesh rời) | `⚠` 1 combo root → như S4; ≥2 → xám (T1) |
+| S9 | Selection do máy sinh | `⚠` instance mới sau undo/spawn — resolve chạy cùng frame với freeze (7b.1) |
+
+#### Tầng 2 — X-Check (ô `⚠` + ô `N/A`)
+
+| # | Hệ thống | Kết luận |
+|---|---|---|
+| X1 | Undo | KHÔNG `CaptureSnapshot` — T3 chỉ hiển thị + Print |
+| X2 | Persistence (4 kho) | **Ghi 0/4 kho.** Kho 4 (combo JSON + PNG) là việc của T4 |
+| X3 | Inventory UI | Dialog là overlay modal — KHÔNG đổi tab/folder nền. Prefill chỉ set Picker BÊN TRONG dialog |
+| X4 | Selection sau action | KHÔNG SET `SelectedActors`. Freeze `PendingSelectedActors` sẵn có (C3b) |
+| X5 | Gizmo / Pivot | Không đụng |
+| X6 | Group data | Chỉ ĐỌC qua `ResolveActiveComboForSave` |
+| X7 | Toast | Không bắn toast trong T3 |
+| X8 | EditModeStack | **ĐỌC** — là gate của S5/S6/S7 (qua T1) |
+| X9 | Material state | N/A |
+| X10 | Placement & Anchor | N/A — `CalculateComboAnchor` giữ nguyên, T3 không đụng |
+
+**Trục ngữ cảnh:** B (EditModeStack) — đã là gate qua T1. D (CurrentInventoryMode) — prefill đọc
+`AllComboViews_Combo` bất kể tab đang mở, ghi nhận, không thành vấn đề. C / E: N/A.
+
+#### ⭐ Ca Q9 bắt được — hai nguồn sự thật lệch nhau
+
+```
+bCanOverwrite  → nguồn: Groups        (group root có SourceComboID)
+bFound         → nguồn: thư viện      (combo .json còn trong AllComboViews_Combo)
+```
+
+Hai cái này **KHÔNG cùng nguồn**. Ca hở: spawn combo vào scene → xoá combo đó trong tab thư viện
+(actor trong scene vẫn giữ `SourceComboID`) → bấm Save Combo:
+- T1 trả `bCanOverwrite = true`
+- `GetComboViewByID` trả `bFound = false`
+- → nhãn nút thành `Ghi đè ""`, prefill rỗng, và **T4 sẽ định ghi đè lên file không còn tồn tại**
+
+**Fix (đã đưa vào 7b.2):** nút Overwrite sống = `bCanOverwrite AND bFound`.
+Nếu bỏ qua Q9, ca này lọt tới T4 mới nổ — đúng lúc đang thao tác file trên đĩa.
+
+### 7b.7 — TEST T3 (8 case, map thẳng S-Scan)
+
+| # | Thao tác | Kỳ vọng | S |
+|---|---|---|---|
+| 1 | Chọn 1 món → Save Combo | Không mở dialog, không crash (ghi nhận: chặn im lặng) | S0/S1 |
+| 2 | 2 mesh rời → Save | Dialog mở; Overwrite XÁM + tooltip "Chưa chọn combo nào…"; 4 field trống | S2 |
+| 3 | Spawn combo → chọn cả cụm → Save | Overwrite SỐNG; nhãn `Ghi đè "<tên>"`; 4 field prefill đúng; Picker ở đúng folder | S4 |
+| 4 | Combo A + 3 mesh rời → Save | Như case 3; `id=` in ra là combo A | S8 |
+| 5 | Combo A + combo B → Save | Overwrite xám; tooltip "Đang chọn nhiều combo…" | S8 |
+| 6 | Vào edit mode → chọn 2 món → Save | Overwrite xám; tooltip "Đang sửa bên trong nhóm…" | S6 |
+| 7 | Spawn combo → **xoá combo đó trong tab thư viện** → chọn cụm → Save | Overwrite xám; tooltip "Combo gốc không còn trong thư viện…" | ca Q9 |
+| 8 | Xoá trắng ô tên (ở case 3) | **CẢ HAI** nút xám | — |
+
+**PASS = 8/8** → xoá Print tạm → hỏi 2 câu kiểm tra hiểu bài → mở task card T4.
+
+### 7b.8 — MỤC DẠY (2 câu hỏi SAU khi test 8/8 PASS)
+
+1. Vì sao `bCanOverwrite` (từ T1) và `bFound` (từ `GetComboViewByID`) phải **cùng đúng** thì nút
+   Ghi đè mới sống — trong khi cả hai nghe như đang trả lời cùng một câu hỏi "combo này có tồn
+   tại không"?
+2. Vì sao lý do "Combo gốc không còn trong thư viện" viết ở **widget**, còn 4 lý do kia
+   ("Chưa chọn gì" / "Chưa chọn combo nào" / "Đang chọn nhiều combo" / "Đang sửa bên trong nhóm")
+   viết ở **InputManager** — mà vẫn coi là nhất quán, không phải hai nơi cùng suy luận?
+
+---
+
+### 7b.9 — Mặt cắt bàn giao T4 / T5 (chưa phải task card — chỉ hợp đồng)
+
+```
+T3 kết thúc bằng 2 đường ra:
+
+BTN_Confirm    → OnDialogConfirmed(Name, Folder, Desc, Tags)          → đường CŨ, KHÔNG đụng
+                 → T4: SaveComboFromSelection(...) sinh comboId MỚI
+
+BTN_Overwrite  → OnDialogConfirmedOverwrite(ComboID, Name, Folder, Desc, Tags)   → T4 tạo
+                 → T4: GIỮ comboId, ghi đè .json, InvalidateThumbnail + chụp lại
+                 → dùng PendingSelectedActors (mảng đã đóng băng),
+                   KHÔNG đọc lại SelectedActors
+```
+
+T5 nhận: bảng S-Scan T3 (test kết quả thật cho **từng ô**, kể cả ô `N/A`) + đóng
+`Note-DuplicateComboID`.
+
+#### T0 sơ bộ cho T4 (chỉ liệt kê phụ thuộc — KHÔNG viết node)
+
+Chạy trước để biết T4 có ép T3 đổi mặt cắt không. Ô `⚠` phải gỡ bằng export/đọc `.h` trước khi
+viết task card T4.
+
+| T4 dựa vào | Dấu |
+|---|---|
+| `SaveComboFromSelection` — có nhận ComboID từ ngoài, hay luôn tự sinh GUID? | ⚠ DOC-ONLY |
+| Tín hiệu "ghi json thành công" là pin nào? (V7 treo từ P1.G4) | ⚠ DOC-ONLY |
+| Hàm load 1 combo (`LoadCombo`?) — tên chưa xác nhận | ⚠ tên chưa verify |
+| `InvalidateThumbnail` + `BeginComboCapture`/`FinishComboCapture` | ✓ as-built |
+| `PendingSelectedActors` freeze | ✓ as-built |
+
+> **KHÔNG viết task card T4/T5 lúc này** (luật mục 5: mỗi lần chỉ mở kế hoạch chi tiết 1 task).
+> Lý do cụ thể: 3 ô ⚠ trên chỉ gỡ được bằng đọc code/export thật; thumbnail re-capture là cặp
+> 2 pha chạy qua Event Tick (24 frame), thiết kế mà chưa nhìn flow thật = đoán. Riêng T5 về bản
+> chất không lên trước được — nội dung nó là regression + đọc `DEVIATIONS.md`, mà deviation chưa
+> xảy ra.
+
+---
+
 ## 8. COMMAND BLOCK — GIAO CLAUDE CODE
 
 ```
@@ -827,3 +1226,5 @@ BÁO CÁO SAU KHI XONG
 |---|---|---|
 | 1.0 | 03/08/2026 | Tạo mới. Chốt UX (2 nút, bảng trạng thái nút Ghi đè), đóng `[DOC-DRIFT] ResolveSelectedComboRoot`, gộp bug `Bug-ReplaceInCombo-TabJump` làm T2, khung 5 task, task card T1 đầy đủ (Q9 S-Scan + X-Check, 2 Function, 6 case test, mục DẠY thử nghiệm lần 1), ghi nhận as-built `GetGroupRoot` từ K2Node export 03/08. |
 | 1.1 | 03/08/2026 | Phát hành task card T2 (mục 6b) — guard edit-scope cho re-route Replace (`Bug-ReplaceInCombo-TabJump`). T0 2 việc (K2Node export `OnMeshSelected` + Print xác nhận giả thuyết, 3-strike rule), Q9 S-Scan+X-Check, hàm mới `ShouldRouteReplaceToCombo()`, đổi đúng 1 call site trong `OnMeshSelected`, 6 case test (case 4 = chống regression P2), mục DẠY thử nghiệm lần 2. **CHƯA test — task card mới phát hành, chờ T0 + 6/6 PASS.** |
+| 1.2 | 04/08/2026 | Phát hành task card T3 (mục 7b, đánh số `7b` để né mục `## 8. COMMAND BLOCK` sẵn có) — dialog 2 nút Save As/Save đè. Scope thật rộng hơn dòng khung mục 3 (3 asset, không chỉ `WBP_SaveComboDialog`) — thêm ghi chú dưới bảng mục 3. 2 Function mới (`GetComboViewByID`, `BuildSaveDialogPrefill`), Q9 bắt ca "2 nguồn sự thật lệch nhau" (`bCanOverwrite` vs `bFound`), bẫy UMG tooltip-trên-button-disabled (7b.5, phải test trước khi code UI), 8 case test, mặt cắt bàn giao T4/T5 + T0 sơ bộ T4. **CHƯA test — task card mới phát hành.** ⚠️ Mục A của delta nguồn (K2Node export `CB_SaveCombo_Handler` 04/08) KHÔNG merge vào `BP_FurnitureInputManager.md` — xung đột với section as-built đã có (khác cấu trúc guard + thiếu bước `ContextMenuRef.Hide`), báo cáo cả 2 bản, chờ cuhoang chọn — xem `DEVIATIONS.md` mục "[CONFLICT] CB_SaveCombo_Handler — 2 bản không khớp — 04/08/2026". *(Đóng sau đó cùng ngày — xem `DEVIATIONS.md` mục "[DOC-DEBT đã đóng]": không phải xung đột thật, doc cũ chỉ thiếu 2 bước.)* |
+| 1.3 | 04/08/2026 | Thêm mục 4.1 — quyết định kiến trúc cho T4 (verify Lô A, `DELTA_04-08-2026_LoA_SaveCombo_Verify.md`): nối `SaveComboFromSelection` bằng 1 Branch tại điểm sinh `ComboID` (2 param mới `bOverwrite`/`OverwriteComboID`), KHÔNG viết primitive C++ mới. **CHƯA thực thi, không phải task card.** Nguồn xác nhận: `UComboSerializer` không có hàm ghi-đè-combo/`LoadCombo` — xem `Data/ComboSerializer_Reference.md`. |

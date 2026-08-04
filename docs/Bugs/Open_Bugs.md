@@ -43,6 +43,8 @@ theo luật `R-DOC-DONE`: Task-P2-SweepCao (case Cao chưa test combo thật), T
 | Bug-StaleSurfaceType | [OPEN] Kéo đồ bằng gizmo sang bề mặt khác → `PlacementSurfaceType` không cập nhật lại (chỉ SET 1 lần lúc drag-drop) → nudge phím mũi tên đi sai trục | 🟡 Trung bình | Test tay 02/08. KHÔNG chặn Gate 2. Backlog "Sprint Surface" sau Gate 2. Xem mục chi tiết dưới |
 | Bug-ReplaceInCombo-TabJump | [OPEN, ĐÃ CÓ PLAN] Replace 1 mesh bên trong combo (edit mode) → inventory tự nhảy sang tab Combo, breadcrumb vẫn đứng ở path folder mesh | 🟡 Trung bình | Là T2 của đợt Save As/Save đè. Xem mục chi tiết dưới |
 | B-EditStackLeak | [OPEN, DEFERRED] editStack rò rỉ vào snapshot ở thao tác không build selection (Deselect/Spawn) sau khi thoát edit mode — pre-existing từ v1.8/A12, KHÔNG do T2 | 🔴 Cao | Không sửa Sprint 5. Xem mục chi tiết dưới |
+| Bug-SaveComboSilentBlock | [OPEN] Save Combo với <2 món bị chặn im lặng — không toast/log/dialog | 🟢 Thấp | Phát hiện lúc lập kế hoạch T3 (04/08). Không chặn Gate 2. Xem mục chi tiết dưới |
+| Bug-ComboCategoryHardcode | [OPEN] Mọi combo lưu ra đều có `category="MyCombo"` (hardcode, đáng lẽ rỗng) | 🟢 Thấp | Phát hiện lúc verify Lô A (04/08). Không chặn Gate 2. Xem mục chi tiết dưới |
 
 ---
 
@@ -741,6 +743,58 @@ lưu. Lệch ở Deselect/Spawn → M1. Bằng nhau (cả hai =3) → M2 (exit k
 
 ### Trạng thái
 - **Open, deferred.** KHÔNG sửa trong Sprint 5 — ghi nhận, chờ lịch fix riêng.
+
+---
+
+## Bug-SaveComboSilentBlock — Save Combo với <2 món bị chặn im lặng
+
+**ID:** Bug-SaveComboSilentBlock
+**Phát hiện:** 04/08/2026 (K2Node export `CB_SaveCombo_Handler`, phiên lập kế hoạch T3)
+**Ưu tiên:** 🟢 Thấp — KHÔNG chặn Gate 2
+
+### Triệu chứng
+`CB_SaveCombo_Handler` có guard `Array_Length(SelectedActors) >= 2`. Nhánh False **trống hoàn
+toàn** — không toast, không log, không dialog. User chọn 1 món rồi bấm Save Combo → không có
+phản hồi nào, không rõ đã bấm trúng hay tính năng hỏng.
+
+### Hệ quả kèm theo
+Combo đúng **1 món** không bao giờ ghi đè được — guard chặn trước cả khi tới dialog. Ghi nhận làm
+giới hạn đã biết, KHÔNG xử lý trong đợt Save As/Save đè.
+
+### Hướng fix (chưa làm)
+Nhánh False → `ShowToastMsg("Chọn ít nhất 2 món để lưu combo")` (WBP_Toast đã có từ K1).
+
+### Trạng thái
+- **Open.** Pre-existing, phát hiện lúc lập kế hoạch T3. KHÔNG sửa trong T3 (KP3 — chỉ đụng đúng
+  chỗ task yêu cầu). Chờ xếp lịch.
+
+---
+
+## Bug-ComboCategoryHardcode — Mọi combo lưu ra đều có category="MyCombo"
+
+**ID:** Bug-ComboCategoryHardcode
+**Phát hiện:** 04/08/2026 (K2Node export `SaveComboFromSelection`, Lô A)
+**Ưu tiên:** 🟢 Thấp — KHÔNG chặn Gate 2
+
+### Triệu chứng
+Pin `Category` của node `Make FComboData` trong `SaveComboFromSelection` có
+`DefaultValue="MyCombo"` (không nối dây). Mọi file `.json` combo lưu ra đều mang
+`"category": "MyCombo"`.
+
+### Vì sao sai
+Quyết định C3a/C3b chốt rõ: **bỏ ô Category khỏi dialog save v1**, Category nhập ở flow Publish
+(Phase B) — field phải RỖNG. `"MyCombo"` là rác sót lại từ thời hardcode tên combo (trước C3b).
+
+### Ảnh hưởng
+Chưa ai đọc field này (`WBP_ComboDetailPopup` C7 có dòng Category nhưng Collapse khi rỗng — với
+giá trị "MyCombo" thì sẽ HIỆN sai). Rác tích lũy: mỗi combo lưu thêm 1 giá trị sai.
+
+### Hướng fix (chưa làm)
+Xoá DefaultValue của pin `Category` (để rỗng). 1 thao tác, không đụng dây.
+
+### Trạng thái
+- **Open.** Pre-existing, phát hiện lúc verify Lô A. KHÔNG sửa trong đợt này (ngoài phạm vi). Chờ
+  xếp lịch — nên gộp vào T4 hoặc C7.
 
 ---
 

@@ -1389,6 +1389,101 @@ Cả 3 không chặn T1. KHÔNG sửa hàm (KP3).
 
 ---
 
+## [DOC-DEBT đã đóng] CB_SaveCombo_Handler — doc cũ thiếu 2 bước — 04/08/2026
+
+**Phát hiện:** merge delta `DELTA_04-08-2026_T3_SaveComboDialog.md` mục A (K2Node export thật,
+04/08/2026) — đối chiếu với section `CB_SaveCombo_Handler` đã có sẵn trong
+`Blueprints/BP_FurnitureInputManager.md` (dòng 918, gắn nhãn "C3b — 24/06/2026; C4:
+CalculateComboAnchor").
+
+**Kết luận (cuhoang đối chiếu K2Node export với section dòng 918, 04/08/2026): KHÔNG có xung đột
+thật.** 3 điểm nghi vấn ban đầu đều là doc cũ THIẾU hoặc diễn đạt ngược chiều, không phải mô tả
+trái ngược:
+
+1. "`LENGTH < 2 → dead-end`" (bản cũ 24/06) và "`Branch(>=2)`, nhánh False trống" (bản export
+   04/08) là **CÙNG một Branch**, chỉ phát biểu ngược chiều nhau. Không mâu thuẫn.
+2. Bước `ContextMenuRef.Hide → SET ContextMenuRef=None`: doc cũ **THIẾU**, export có thật. Đây là
+   bổ sung, không phải sai lệch.
+3. `InActors`/`ReturnVec` vs `SelectedActors`/`Center`: pin của **HAI NODE KHÁC NHAU**
+   (`CalculateComboAnchor` vs `OpenSaveComboDialog`), nối nhau qua 2 Knot. Không xung đột.
+
+**Phát hiện mới xác nhận từ export (không phải suy đoán):** doc cũ (24/06) mô tả
+"`Get(0) → IsValid → Cast → InventoryRef`". K2Node export 04/08/2026 cho thấy **KHÔNG có node
+Cast**, và **KHÔNG có biến `InventoryRef`** trong đường này — `GetAllWidgetsOfClass` trả mảng đã
+đúng kiểu `WBP_FurnitureInventory_C`; phần tử `[0]` cắm thẳng vào `IsValid` và qua Knot vào self
+pin của `OpenSaveComboDialog`. Rủi ro: người đọc doc cũ đi tìm biến `InventoryRef` sẽ không thấy,
+hoặc tự tạo biến trùng vai (cùng loại drift với ca `ReplaceTarget` 2 bản trùng tên).
+
+**Doc cũ (24/06) lạc hậu ít nhất 1 đợt** — `C5.8` (13/07) đã từng sửa `OpenSaveComboDialog`
+(signature/wiring) mà không quay lại cập nhật `CB_SaveCombo_Handler`. Đã thay bằng bản
+✓K2 04/08/2026 — xem `Blueprints/BP_FurnitureInputManager.md` v3.1, mục `CB_SaveCombo_Handler`.
+
+**Trạng thái:** Đã đóng — section canonical đã re-export, giữ nguyên dòng ghi chú kiến trúc gốc
+("delegate sang inventory để inventory đóng băng selection + quản lý dialog async").
+
+---
+
+## [ARCH-DEBT] AllComboViews_Combo sống ở widget — 04/08/2026
+
+**Bối cảnh:** lập kế hoạch T3 (Save As/Save đè), cần hàm tra `ComboID → BP_ComboItemView`.
+
+`AllComboViews_Combo` (thư viện combo in-memory) hiện nằm trong `WBP_FurnitureInventory`, không
+nằm trong `BP_ComboManager`. Hệ quả: mọi hàm tra cứu thư viện buộc phải đặt ở widget —
+`GetExistingFolders`, `GetAllUsedTags`, và nay thêm `GetComboViewByID`.
+
+**Vì sao KHÔNG dời trong T3:** đặt `GetComboViewByID` vào `BP_ComboManager` bây giờ sẽ khiến
+manager (tầng dữ liệu) với tay vào mảng nằm trong widget (tầng bề mặt) — phụ thuộc ngược chiều,
+sai nặng hơn hiện trạng. Dời "đúng" phải dời cả mảng + `LoadComboLibrary` + mọi call site
+C4/C5/C6/C7 — ngoài scope T3, không surgical.
+
+| Lệch | Ceiling | Upgrade trigger |
+|---|---|---|
+| Thư viện combo in-memory nằm ở widget, không ở manager | Chỉ widget cần tra cứu thư viện | Xuất hiện consumer **non-widget** thứ 2 cần tra combo theo ID (vd phím tắt Ctrl+S ở InputManager, hoặc Phase B cloud sync) → dời `AllComboViews_Combo` + `GetComboViewByID` sang `BP_ComboManager` cùng lúc |
+
+**Nợ có sẵn từ C1**, không phải do T3 tạo ra.
+
+---
+
+## [AS-BUILT] Broadcast OnComboLibraryChanged nằm ở nhánh GHI FILE THẤT BẠI — 04/08/2026
+
+**Nguồn:** K2Node export `BP_ComboManager.SaveComboFromSelection` (khối cuối), 04/08/2026 — Lô A.
+
+Cấu trúc thật:
+```
+Branch( SaveStringToFile → bOK )
+  True  ▶→ BeginThumbnailCapture(...)  → then TRỐNG
+  False ▶→ Broadcast OnComboLibraryChanged
+```
+
+**Khác plan `P1_ComboThumbnail_Execution.md` §"Nối 1"**, vốn ghi: *"capture TRƯỚC Broadcast; chụp
+fail KHÔNG chặn lưu combo"* — hàm ý cả 2 nhánh đều tới Broadcast.
+
+**Giả thuyết (CHƯA VERIFY):** Broadcast ở đường thành công đã dời sang `FinishThumbnailCapture`
+(cặp capture 2 pha chạy qua Event Tick, ~24 frame) để card hiện ảnh thật ngay lần đầu. Chưa export
+`FinishThumbnailCapture` nên KHÔNG kết luận.
+
+**Ceiling:** hiện tại card vẫn cập nhật đúng sau khi lưu (test C3a/P1.G4 đã PASS) — không phải bug.
+**Upgrade trigger:** T4 (Save đè) phải bảo đảm đường ghi-đè cũng refresh thư viện — lúc đó export
+`FinishThumbnailCapture` xác nhận Broadcast nằm ở đâu, rồi mới nối.
+
+---
+
+## [DOC-DRIFT] Plan C7 dựa vào `UComboSerializer::LoadCombo` — hàm không tồn tại — 04/08/2026
+
+**Nguồn:** Đọc trực tiếp `ComboSerializer.h` (plugin FurnitureToolkit), 04/08/2026 — Lô A.
+
+`Plans/Post_C5_Execution_Plan_v1.md` §C7.2 (`InitComboPopup`) mở đầu bằng
+`UComboSerializer::LoadCombo(ComboID) ─→ ComboData, bOK`, có dấu `[VERIFY tên hàm]`.
+Danh sách public thật (13 hàm, xem `Data/ComboSerializer_Reference.md`) **không có `LoadCombo`**,
+cũng không có hàm nào nhận ComboID trả `FComboData`.
+
+**Cách đúng:** `LoadStringFromFile(GetCombosDir() + "/" + ComboID + ".json")` → `JsonToCombo(...)`.
+
+**Ceiling:** C7 chưa thực thi — chưa gây lỗi. KHÔNG sửa file Plans (đã đóng dấu `[CHỨA AS-BUILT]`).
+**Upgrade trigger:** khi mở task card C7 — dùng cặp 2 hàm trên, không tìm `LoadCombo`.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |

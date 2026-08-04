@@ -3,6 +3,7 @@
 **Tạo:** 14/07/2026 — bổ sung docs/Data (3+ tuần chưa cập nhật theo Sprint 5 Combo + P1 Thumbnail)
 **Cập nhật:** 19/07/2026 — P2 Noise + Aliasing Fix: `AccumulateComboFrame`/`ResetComboAccumulation` mới, `BeginComboCapture`/`FinishComboCapture` đổi hành vi (SSAA 2× + temporal accumulation N=24)
 21/07/2026 — P2 Gate F: Radius rotation-invariant (BeginComboCapture)
+04/08/2026 — Lô A (Save As/Save đè, T0 của T4): đối chiếu lại `UComboSerializer.h` — xác nhận đúng 13 hàm public, không thiếu/thừa. Ghi nhận `LoadCombo` không tồn tại (drift từ `Post_C5_Execution_Plan_v1.md`).
 
 > File này là TÀI LIỆU THAM KHẢO — liệt kê function signature + hành vi thật từ source. Struct `FComboData`/`FComboGroupData`/`FComboItemData` xem `Data_Structures.md`.
 
@@ -10,6 +11,21 @@
 
 ## Class: UComboSerializer
 **Plugin:** FurnitureToolkit | **Files:** `ComboSerializer.h` / `ComboSerializer.cpp` | Base: `UBlueprintFunctionLibrary`
+
+> ✓SOURCE 04/08/2026 (Lô A, verify T0 của T4) — đối chiếu lại toàn bộ `ComboSerializer.h`: đúng
+> **13 hàm public**, khớp 100% danh sách đã liệt kê dưới đây (không thiếu, không thừa so với
+> doc). Nguồn: `DELTA_04-08-2026_LoA_SaveCombo_Verify.md` mục B.
+>
+> ⚠️ **`UComboSerializer::LoadCombo(ComboID)` KHÔNG TỒN TẠI** — không có hàm nào tên vậy, cũng
+> không có hàm nào nhận `ComboID` trả thẳng `FComboData`. `Plans/Post_C5_Execution_Plan_v1.md`
+> §C7.2 từng giả định hàm này (đã tự đánh dấu `[VERIFY tên hàm]`, không sửa file đó — đã đóng dấu
+> `[CHỨA AS-BUILT]`). **Cách đọc 1 combo đúng — ghép 2 bước:**
+> ```
+> LoadStringFromFile( GetCombosDir() + "/" + ComboID + ".json" ) ─→ OutContent, bOK
+>   ▶→ JsonToCombo( OutContent ) ─→ OutCombo, bOK
+> ```
+> Khớp pattern as-built sẵn có trong `WBP_FurnitureInventory.HandleDeleteComboConfirmed`. Xem
+> `DEVIATIONS.md` mục "[DOC-DRIFT] Plan C7 dựa vào `UComboSerializer::LoadCombo`".
 
 ### GetCombosDir() → FString (BlueprintPure)
 ```cpp

@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.14 | **Ngày:** 30/07/2026 | **C9.b/C9.c DONE — SpawnComboByID +SnapshotLabel param, Custom Event ReplaceCombo mới**
+**Version:** 1.15 | **Ngày:** 04/08/2026 15:20 | **Lô A verify (T0 của T4):** `SaveComboFromSelection` re-export K2Node — xác nhận Bước 1-8 khớp doc cũ, bổ sung Bước 0 (param→class var, chưa từng ghi) + xác nhận Bước 5a/Bước 7 as-built
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -318,12 +318,26 @@ Map Remove(Cmb_ThumbnailCache, ComboID).
 ---
 
 ## Custom Events
-### SaveComboFromSelection(SelectedActors, Center, ComboName, Description, FolderPath, Tags)
+### SaveComboFromSelection(SelectedActors, Center, ComboName, Description, FolderPath, Tags) ✓K2 04/08/2026 (Lô A — verify T0 của T4)
+
+**Bước 0 (K2Node export 04/08/2026 — chưa từng ghi trước đây):** Entry nhồi TOÀN BỘ 6 param vào
+class var cùng tên NGAY ĐẦU event, TRƯỚC Bước 1: `SET Folder Path=FolderPath · Tags_0=Tags ·
+Description=Description · Combo Name=ComboName · Center=Center · Selected Actors=SelectedActors`.
+Mọi bước sau đọc **class var**, KHÔNG đọc lại pin param — kể cả `Make FComboData` ở Bước 5e
+(Name/Description/Tags/FolderPath thật ra đọc class var, không đọc thẳng param như liệt kê ban
+đầu bên dưới có thể gợi ý). Đây là lý do T4 (Save đè) can thiệp được bằng đúng 1 điểm — xem
+Bước 5a.
+
 **Bước 1:** Guard Length < 2 → dead-end  
 **Bước 3:** CLEAR LeafGroupIDs → ForEach SelectedActors → unique GroupID != "" → ADD  
 **Bước 3b (C0-LCA):** CLEAR SaveCombo_ComboGroups → CalculateLCAList → ForEach LCARoots → GetGroupsInHierarchy → ADD (unique)  
 **Bước 4:** CLEAR TokenMap → ForEach ComboGroups → token = "g"+index → ADD map  
-**Bước 5a:** SET SaveCombo_ComboID = "combo_"+NewGuid  
+**Bước 5a:** SET SaveCombo_ComboID = "combo_"+NewGuid — **✓K2 04/08/2026 xác nhận: `NewGuid()`
+chạy VÔ ĐIỀU KIỆN, không Branch, không nhận ID từ ngoài; `SaveCombo_ComboID` là class var SET
+đúng 1 chỗ duy nhất trong cả event.** Mọi thứ phía sau khóa theo biến này (path `.json` Bước 6,
+`BeginThumbnailCapture(ComboID)` Bước 7). Quyết định T4 (nới hàm này cho Save đè bằng 1 Branch
+tại đúng điểm này) ghi ở `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 4 (bổ sung) —
+**CHƯA thực thi**.  
 **Bước 5b:** CLEAR OutputGroups/Items  
 **Bước 5c:** ForEach ComboGroups → resolve ParentToken (via TokenMap, branch "")→ Make FComboGroupData → ADD OutputGroups  
 **Bước 5d:** ForEach SelectedActors → Cast → CLEAR MaterialOverrides_SaveCombo → ForEach MaterialPaths → FindMaterialRowNameByPath → ADD; SET ItemRowName_SaveCombo: Branch RowName.ToString=="None" → True: ParseIntoArray(MeshPath, ".") → Last Index → Get → SET ItemRowName_SaveCombo; False: SET ItemRowName_SaveCombo = RowName gốc; Branch GroupToken → Make FComboItemData(RowName=ItemRowName_SaveCombo) → ADD OutputItems  
@@ -345,8 +359,8 @@ Map Remove(Cmb_ThumbnailCache, ComboID).
 - Visibility = "Private" (default)
 - BoundingBoxExtent ← SaveCombo_BoundingExtent  ← C4
 **Bước 6:** GetCombosDir → MakeDirectory → ComboToJson → SaveStringToFile  
-**Bước 7 (Gate F 21/07/2026 — nối Studio pipeline, ĐÈ bản G4 15/07 chụp in-place):** Sau
-SaveStringToFile → Branch(bSaveOK):
+**Bước 7 (Gate F 21/07/2026 — nối Studio pipeline, ĐÈ bản G4 15/07 chụp in-place) — ✓K2
+04/08/2026 tái xác nhận:** Sau SaveStringToFile → Branch(bSaveOK):
 ```
 True  ▶→ BeginThumbnailCapture(
            ComboID  = SaveCombo_ComboID,
@@ -776,3 +790,4 @@ không giật thêm dù RT giờ 2048²).
 | 23/07/2026 | 1.13 | K1 (WBP_Toast) DONE — `SpawnComboByID` Sub-step C, nhánh `Get Data Table Row` → `Row Not Found`: THÊM toast "Bỏ qua món: RowName '...' không tồn tại" (gọi thẳng `GameInstance.ToastRef.ShowToast`, không qua `ShowToastMsg` — Actor không có đường Function Widget). Trước đây dead-end trần trụi (doc cũ ghi nhầm "Print skip", thực tế chưa từng có). Test K1 5/5 case PASS (case 5 = chỗ này). Chi tiết: `Widgets/WBP_Toast.md` (mới), `Widgets/WBP_FurnitureInventory.md` v3.14. |
 | 22/07/2026 | 1.12 | Dimension Fix — `CalculateComboBoundingExtent` đổi `Get Actor Bounds` (World AABB, phồng khi actor tự xoay tại chỗ) → `Get Local Bounds`×Scale+Location (bounds local mesh, không bị Actor Rotation ảnh hưởng). Node mới `Get Local Bounds` chờ xác nhận (`AI_Implementation_Rules.md`). Giới hạn còn lại: cả đội hình combo xoay lệch trục vẫn phồng theo World AABB — merge backlog `Feature-CanonicalStudioAngle` (Sprint 6, cần field `ReferenceYaw`). Combo lưu trước 22/07/2026 giữ số cũ, không migrate hàng loạt. Test 3 case PASS. Ảnh hưởng: `WBP_ComboCard.md` mục Field Kích thước đọc field này. |
 | 30/07/2026 | 1.14 | **C9.b/C9.c DONE (delta "C9 Replace: Folder Highlight + Chip Fix & C9.b–C9.f").** `SpawnComboByID` +param `SnapshotLabel` (qua node `Select`, Custom Event input không có Default Value); Sub-step A reset `Cmb_LastSpawnSucceeded=False` đầu tiên (bắt buộc — 2 đường thoát sớm không chạy tới Sub-step D); Sub-step D SET cờ ở cả 2 nhánh. Custom Event mới `ReplaceCombo(RootGroupID, NewComboID)` — destroy cụm cũ (`DestroyComboCluster`) → spawn cụm mới tại `Cmb_ReplaceAnchor` → rollback qua `UndoManagerRef.RestoreCurrentSnapshot()` nếu fail. 3 class var mới: `Cmb_LastSpawnSucceeded`, `Cmb_ReplaceAnchor`, `Cmb_ReplaceActors` (CLEAR đầu event + End Play, R4). **Deviation:** đổi tên `Cmb_ReplaceCenter`→`Cmb_ReplaceAnchor` + `CalculateCenter`→`CalculateComboAnchor` so với `docs/Plans/24-07-2026_C9_Execution_Plan.md` §6 — fix bug anchor-vs-center mismatch. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` (`DestroyComboCluster`), `Blueprints/BP_UndoManager.md` (`RestoreCurrentSnapshot`), `DEVIATIONS.md`. |
+| 04/08/2026 15:20 | 1.15 | **Lô A — Verify đường ghi combo (T0 của T4, Save As/Save đè).** `SaveComboFromSelection` re-export K2Node — Bước 1-8 khớp doc cũ 1:1 (không mâu thuẫn), bổ sung **Bước 0** chưa từng ghi (6 param nhồi vào class var ngay Entry, mọi bước sau đọc class var chứ không đọc lại pin param). Xác nhận Bước 5a (`NewGuid()` vô điều kiện, `SaveCombo_ComboID` set đúng 1 chỗ) và Bước 7 (Broadcast `OnComboLibraryChanged` CHỈ ở nhánh `bSaveOK=False`; nhánh True broadcast qua Event Tick tail, không đổi so với doc 1.10). Nguồn: `DELTA_04-08-2026_LoA_SaveCombo_Verify.md`. Xem thêm `Bugs/Open_Bugs.md` mục `Bug-ComboCategoryHardcode` (Category hardcode "MyCombo" — đã ghi nhận từ v1.4, nay lên bug tracking chính thức) + `DEVIATIONS.md` mục "[AS-BUILT] Broadcast OnComboLibraryChanged..." và "[DOC-DRIFT] Plan C7 dựa vào LoadCombo...". |

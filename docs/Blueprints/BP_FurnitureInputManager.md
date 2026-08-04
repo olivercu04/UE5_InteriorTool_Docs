@@ -1,5 +1,5 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 3.0 | **Cập nhật:** 03/08/2026 20:45 — Save As/Save đè T1: thêm `GetGroupRoot()` (doc lần đầu, as-built K2Node) + 2 hàm mới `GetComboRootOfActor()` + `ResolveActiveComboForSave()`, test PASS 6/6 | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 3.1 | **Cập nhật:** 04/08/2026 10:20 — Save As/Save đè T3 (as-built mục A): `CB_SaveCombo_Handler` re-export theo K2Node 04/08/2026 — thay bản mô tả cũ (24/06/2026) thiếu 2 điều (bước `ContextMenuRef.Hide` + không có biến `InventoryRef`/node Cast trung gian) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 > **v2.8 (Replace UX Fix P0→P5, 02/08/2026):** biến `MeshToReplace` (single, dead code) XÓA HOÀN
 > TOÀN (P4.4) — đính chính dòng Variables ghi sai đã "xóa từ v1.6". Node flow re-route (P2), card
@@ -915,15 +915,35 @@ CB_Replace        → [STUB — TODO, làm tiếp session sau]
 CB_SaveCombo      → CB_SaveCombo_Handler
 ```
 
-### CB_SaveCombo_Handler (C3b — 24/06/2026; C4: CalculateComboAnchor)
+### CB_SaveCombo_Handler (C3b 24/06/2026 · C4 CalculateComboAnchor · ✓K2 04/08/2026)
 ```
-Guard LENGTH(SelectedActors) < 2 → dead-end
-CalculateComboAnchor(SelectedActors) → Center  ← C4: đổi từ CalculateCenter để anchor z≈0
-Get All Widgets Of Class(WBP_FurnitureInventory) → Get(0) → IsValid → Cast → InventoryRef
-Branch IsValid(InventoryRef):
-  True  → InventoryRef.OpenSaveComboDialog(SelectedActors=SelectedActors, Center=Center)
-  False → Print String "CB_SaveCombo: Inventory ref not found"
+CB_SaveCombo_Handler  (Custom Event)   ✓K2 04/08/2026
+▶→ Branch( Array_Length(SelectedActors) >= 2 )
+     False ▶→ (TRỐNG — chặn im lặng, không toast/log)
+     True  ▶→ CalculateComboAnchor(InActors=SelectedActors) ─→ ReturnVec
+           ▶→ GetAllWidgetsOfClass(WBP_FurnitureInventory) ─→ FoundWidgets
+           ▶→ Branch( IsValid( FoundWidgets[0] ) )
+                False ▶→ Print "CB_SaveCombo: Inventory ref not found" [DevelopmentOnly]
+                True  ▶→ Inventory.OpenSaveComboDialog(SelectedActors, Center=ReturnVec)
+                      ▶→ Branch( IsValid(ContextMenuRef) )
+                           True  ▶→ ContextMenuRef.Hide ▶→ SET ContextMenuRef = None
+                           False ▶→ (trống — cuối chain, L2 hợp lệ)
 ```
+
+3 điều doc bản 24/06/2026 chưa từng ghi:
+1. Guard là `Array_Length >= 2` (GreaterEqual_IntInt, B=2) — chặn S0/S1 TRƯỚC khi mở dialog.
+2. Nhánh False **trống hoàn toàn** — chặn im lặng, user không nhận phản hồi nào (xem
+   `Bugs/Open_Bugs.md` mục `Bug-SaveComboSilentBlock`).
+3. `SelectedActors` được đọc **live 3 lần** trong cùng event (Length / CalculateComboAnchor /
+   truyền vào OpenSaveComboDialog) — cùng frame, không có kẽ hở async.
+
+⚠️ **Không có biến `InventoryRef` hay node `Cast` trung gian trên đường này** (khác mô tả doc
+24/06/2026 cũ "Get(0) → IsValid → Cast → InventoryRef"). `GetAllWidgetsOfClass` trả mảng đã đúng
+kiểu `WBP_FurnitureInventory_C`; phần tử `FoundWidgets[0]` cắm thẳng vào `IsValid` và qua Knot vào
+self pin của `OpenSaveComboDialog`. Ai tìm biến `InventoryRef` ở hàm này sẽ không thấy — đừng tự
+tạo biến trùng vai (cùng loại drift với ca `ReplaceTarget` 2 bản trùng tên, xem mục
+`ResolveSelectedComboRoot`/Aliasing trong `Widgets/WBP_FurnitureInventory.md`).
+
 > Không gọi SaveComboFromSelection trực tiếp — delegate sang inventory để inventory đóng băng selection + quản lý dialog async.
 
 ### SelectSimilarMesh (T5)
@@ -1325,3 +1345,5 @@ từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 | 2.7 | 01/08/2026 | **StartReplaceComboMode — 2 fix sau Phase 0 verify (Replace UX Fix P1.2+P3.2).** (1) Fix #3a: thêm `InventoryRef.EnsureExpanded()` tại điểm hợp lưu `Branch(IsInViewport)`, TRƯỚC `SwitchInventoryMode(Combo)` — mirror vị trí gọi bên nhánh mesh (`EnterReplaceMode`). (2) Fix #3b: khối cuối đổi thứ tự — thêm gọi `RefreshChipBreadcrumb()` (hàm có sẵn từ 06/07, KHÔNG viết mới) NGAY TRƯỚC `UpdateComboFolderHighlights()` (đảo ngược thứ tự cũ — xem `DEVIATIONS.md` mục "Replace UX Fix — 01/08/2026"). Huỷ quyết định Opus #1 (viết hàm `CreateComboChipTagsForPath` mới) — không cần, `RefreshChipBreadcrumb` có sẵn làm đúng việc. Test PASS PIE: T1.1 (chiptag đúng combo, highlight đúng), T3.3 (minimize → tự mở lại). Chi tiết: `Plans/01-08-2026_ReplaceUX_Fix_Execution_Plan.md`, `Plans/01-08-2026_Phase0_Verify_Report_ReplaceUXFix.md`. |
 | 2.9 | 02/08/2026 (tiếp) | **MERGE_LOG Q3 đóng — `FindGroupData` đính chính chữ ký.** Header hàm trước ghi `(S_GroupData, Index, bFound)` — SAI, tự mâu thuẫn với ghi chú "đã trả giá" ngay dưới `UngroupActors` trong cùng file (*"FindGroupData không có output Index"*). Sửa lại đúng `(S_GroupData, bFound)`. Bằng chứng: K2Node export 24/07/2026 (`Plans/24-07-2026_C9_Execution_Plan.md` §V6, dòng 40 + 689) xác nhận không có Index. Phát hiện qua `CrossCheck_PreGate2_02aug2026.md` MỤC 3. Không đổi node flow thật nào — chỉ sửa mô tả chữ ký cho khớp as-built. |
 | 2.8 | 02/08/2026 | **Replace UX Fix P0→P5 HOÀN TẤT.** File này không đổi node flow (route mới P2 gọi các hàm có sẵn `ResolveSelectedComboRoot`/`StartReplaceMode`/`StartReplaceComboMode` không đổi — logic thay đổi nằm ở phía gọi, `WBP_FurnitureInventory.OnMeshSelected`, xem file đó v3.19). Chỉ 1 thay đổi thật ở đây: biến `MeshToReplace` (single, dead code) XÓA HOÀN TOÀN (P4.4) — Find References xác nhận chỉ còn 1 chỗ SET rác (`BTN_Close`), xóa cả 2 (biến + node) → compile sạch 0 error, không cross-class reference nào khác. Đính chính dòng Variables (mục Group) ghi sai "đã xóa từ v1.6, 10/06/2026" — biến thật ra vẫn tồn tại tới hôm nay. KHÔNG nhầm với `MeshesToReplace` (array, dùng thật, giữ nguyên). Chi tiết đầy đủ: `DEVIATIONS.md` mục "Replace UX Fix P0→P5 — 02/08/2026", `Widgets/WBP_FurnitureInventory.md` v3.19. |
+| 3.0 | 03/08/2026 20:45 | **Save As/Save đè T1.** Thêm mục `GetGroupRoot()` (doc lần đầu, as-built K2Node 03/08) + 2 hàm mới `GetComboRootOfActor()` + `ResolveActiveComboForSave()`, test PASS 6/6. Chi tiết: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 6.3/6.4/6.5. *(Ghi bổ sung 04/08/2026 — bảng lịch sử trước đó thiếu dòng này dù header đã bump lên 3.0.)* |
+| 3.1 | 04/08/2026 10:20 | **Save As/Save đè T3 (as-built mục A) — đóng `[CONFLICT] CB_SaveCombo_Handler`.** Re-export `CB_SaveCombo_Handler` theo K2Node 04/08/2026, thay bản mô tả cũ (24/06/2026). Kết luận cuhoang (đối chiếu export thật): KHÔNG phải xung đột — bản cũ chỉ THIẾU 2 điều: (1) bước `ContextMenuRef.Hide` + `SET ContextMenuRef=None` sau khi mở dialog, (2) đường thật KHÔNG có biến `InventoryRef`/node `Cast` trung gian — `GetAllWidgetsOfClass` trả đúng kiểu sẵn, cắm thẳng qua Knot vào self pin của `OpenSaveComboDialog`. Guard "LENGTH<2→dead-end" (cũ) và "Branch(>=2), False trống" (mới) là CÙNG 1 Branch, chỉ phát biểu ngược chiều. Giữ nguyên dòng ghi chú kiến trúc cuối section (delegate sang inventory) — export không chứa dòng này, không được mất. Xem `DEVIATIONS.md` mục "[DOC-DEBT đã đóng] CB_SaveCombo_Handler — doc cũ thiếu 2 bước — 04/08/2026". |
