@@ -42,6 +42,7 @@ theo luật `R-DOC-DONE`: Task-P2-SweepCao (case Cao chưa test combo thật), T
 | Bug-PasteVerticalCollapse | [OPEN] Paste nhiều món chênh cao độ (đồ trần + đồ sàn) → TÂM nhóm bị neo vào bề mặt trace trúng thay vì từng món neo bề mặt riêng → đồ trần lơ lửng, đồ sàn chìm | 🔴 Cao | Test tay 02/08. KHÔNG chặn Gate 2. Backlog "Sprint Surface" sau Gate 2. Xem mục chi tiết dưới |
 | Bug-StaleSurfaceType | [OPEN] Kéo đồ bằng gizmo sang bề mặt khác → `PlacementSurfaceType` không cập nhật lại (chỉ SET 1 lần lúc drag-drop) → nudge phím mũi tên đi sai trục | 🟡 Trung bình | Test tay 02/08. KHÔNG chặn Gate 2. Backlog "Sprint Surface" sau Gate 2. Xem mục chi tiết dưới |
 | Bug-ReplaceInCombo-TabJump | [OPEN, ĐÃ CÓ PLAN] Replace 1 mesh bên trong combo (edit mode) → inventory tự nhảy sang tab Combo, breadcrumb vẫn đứng ở path folder mesh | 🟡 Trung bình | Là T2 của đợt Save As/Save đè. Xem mục chi tiết dưới |
+| B-EditStackLeak | [OPEN, DEFERRED] editStack rò rỉ vào snapshot ở thao tác không build selection (Deselect/Spawn) sau khi thoát edit mode — pre-existing từ v1.8/A12, KHÔNG do T2 | 🔴 Cao | Không sửa Sprint 5. Xem mục chi tiết dưới |
 
 ---
 
@@ -702,6 +703,44 @@ Lan sang đâu: Nudge chạy sai nhánh; thumbnail `ResolveThumbAlign` phân lo�
 - **Open.** KHÔNG chặn Gate 2. Đề xuất mở "Sprint Surface" SAU Gate 2, gộp chung với
   Bug-PasteVerticalCollapse (xem ghi chú "Gốc chung" bên dưới). Xem `DEVIATIONS.md` mục "Q9
   S-Matrix Gate + 3 bug Surface — 02/08/2026".
+
+---
+
+## B-EditStackLeak — editStack rò rỉ vào snapshot sau khi thoát edit mode
+
+**ID:** B-EditStackLeak
+**Phát hiện:** 03/08/2026 (diagnostic Undo, phiên Save As/Save đè)
+**Ưu tiên:** 🔴 Cao
+**Trạng thái:** OPEN, DEFERRED (không sửa Sprint 5)
+**Nguồn gốc:** pre-existing từ v1.8/A12 (15/06). KHÔNG do T2.
+
+### Triệu chứng (VERIFIED bằng log)
+```
+Edit sâu g1>g2>g3 → Select/Replace (stack=3) → Thoát edit → Deselect → Spawn → Select.
+Snapshot lưu: Select=3✓ Replace=3✓ | Deselect=3✗ Spawn=3✗ (phải 0) | Select=0✓.
+```
+→ editStack giữ giá trị cũ ở các thao tác KHÔNG build selection, tự đúng lại ở Select kế.
+
+### Hệ quả
+Undo về Deselect/Spawn snapshot → bar edit mode hiện bậy.
+
+### Hai giả thuyết (chưa phân định)
+- **M1 stale-temp** (giống v1.5): `SET TempEditModeStack` nằm nhánh selection, Deselect/Spawn bypass.
+- **M2 exec pin SET sai nhịp.**
+
+Doc `CaptureSnapshot` ghi SET ở Step 0b main-line → mâu thuẫn với log quan sát → doc drift, cần
+K2 export xác minh.
+
+### Discriminator (lúc fix)
+Print live `InputManager.EditModeStack.Length` ngay đầu `CaptureSnapshot`, so với editStack đã
+lưu. Lệch ở Deselect/Spawn → M1. Bằng nhau (cả hai =3) → M2 (exit không clear).
+
+### Fix ứng viên nếu M1
+`CLEAR TempEditModeStack` ở Step 0 + đưa SET lên main-line (đúng như v1.5 đã làm cho
+`TempSelectedIndices`).
+
+### Trạng thái
+- **Open, deferred.** KHÔNG sửa trong Sprint 5 — ghi nhận, chờ lịch fix riêng.
 
 ---
 

@@ -22,6 +22,10 @@
 ---
 
 ## ✅ BP_FurnitureInputManager.md
+> ⚠️ Số version dưới đây là as-built TẠI THỜI ĐIỂM MERGE (snapshot lịch sử của lần merge từ
+> `import_raw`), KHÔNG phải version hiện hành — tra version sống ở header file canonical
+> (`docs/Blueprints/BP_FurnitureInputManager.md` dòng 2). (Ghi chú thêm 03/08/2026, không đổi số.)
+
 **Đích:** `docs/Blueprints/BP_FurnitureInputManager.md` (move từ `BP_FurnitureInputManager_MERGED_v1.9.md` đã xong từ lâu; file nguồn đã XÓA THẬT 02/08/2026 — xem mục "File đã xóa" cuối MERGE_LOG.md)
 **Version:** 1.9 | 15/06/2026 | **Mẫu chuẩn** (done trước session)
 **Nguồn:** base v1.6 + patch v1.7 + patch v1.8 + patch v1.9

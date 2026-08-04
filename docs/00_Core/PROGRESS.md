@@ -15,13 +15,18 @@ Sprint 3 — Group cơ bản       ███████████████
 Sprint 4 — Edit + Nested      ████████████████ 8/8  SHIPPED ✅  (+5 bug fix thêm)
 Gate 1                        ████████████████ 3/3  DONE ✅ (16/06)
 Sprint D — Data Layer v2      ████████████████ 9/9  DONE ✅ (17/06)
-Sprint 5 — Combo Mesh         ██████████████████░░░░  18/22 task
+Sprint 5 — Combo Mesh         ██████████████████░░░░  18/23 task
                                ✅ DONE: T1/T2 core/C0/C1/C2/C3a/C3b/Fix K3/C4/C5 (Folder Management
                                đầy đủ)/C6/Delete Combo/Field Kích thước Card/WBP_Toast (K1)/C8/C9
                                (Replace Combo, 30/07)/P2 (Studio Thumbnail, 02/08)/P1 (Thumbnail
                                System C++, 02/08)
-                               ⏳ CÒN LẠI (4): C3 (P4 LOCALAPPDATA chưa áp)/Xoay combo (P3)/C11
-                               (Export/Import)/C10 (Regression)
+                               ⏳ CÒN LẠI (5): C3 (P4 LOCALAPPDATA chưa áp)/Xoay combo (P3)/C11
+                               (Export/Import)/C10 (Regression)/Save As-Save đè [~] (T1 done, T2-T5
+                               còn — xem `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`)
+                               [03/08 R-DOC-ATOMIC: Save As/Save đè là tính năng RIÊNG (execution
+                               plan riêng, T1→T5 riêng) — thêm 1 ô mẫu số 22→23 (`[~]`, KHÔNG tick
+                               khống thành DONE). Tử số KHÔNG +1 máy móc — chỉ [x] khi T5 (regression
+                               + docs closure) xong. Bar Sprint đếm theo tính năng, không đếm T2 rời.]
                                [31/07 Doc-Sync: đếm lại theo R-DOC-COUNT (số ô tick thật, không
                                nuôi tay) — xem `Rules/Execution_Discipline.md` mục R-DOC. C7 dời
                                sang mẫu số Sprint 6 (xem dưới); dòng "C5 — Folder tree tab" trùng
@@ -39,7 +44,7 @@ Sprint 5 — Combo Mesh         ████████████████
 Sprint 6 — Polish UX          ░░░░░░░░░░░░░░░  0/15 task (+C7, dời từ Sprint 5 31/07)
 Sprint 7 — Material v1.2      ░░░░░░░░░        0/9  task
 
-TỔNG: 72/102 task
+TỔNG: 72/103 task
 ```
 
 ---
@@ -369,7 +374,7 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 - [x] **C8** — Drag-drop + surface-snap ✅ **MERGED vào C4** (24/06/2026)
 - [ ] **Xoay combo (P3)** — verify gizmo group xoay cả cụm; tùy chọn xoay-lúc-kéo (R/scroll)
 - [x] **C9** — Replace combo (+ verify K2 EMS SourceComboID + CalculateCenter chung + auto-rollback spawn-fail) — ✅ DONE (30/07/2026). Xem `01_Session_State.md` mục C9.
-- [ ] **Save As / Save đè combo** (T1-T5, xem `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`)
+- [~] **Save As / Save đè combo** (T1-T5, xem `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`) — ô riêng trong mẫu số Sprint 5 (03/08, R-DOC-ATOMIC). Chỉ [x] khi T5 xong.
   - [x] T1 — `ResolveActiveComboForSave()` + `GetComboRootOfActor()` (`BP_FurnitureInputManager` v3.0). Test PASS 6/6. ✅ DONE (03/08/2026)
   - [ ] T2 — Guard edit-scope cho re-route replace (`Bug-ReplaceInCombo-TabJump`)
   - [ ] T3 — 2 nút + trạng thái xám + tooltip (`WBP_SaveComboDialog`)

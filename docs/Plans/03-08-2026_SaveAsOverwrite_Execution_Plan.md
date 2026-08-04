@@ -461,6 +461,205 @@ hỏi nó trả lời* là đường dẫn tới hàm 5 tham số bool không ai
 
 ---
 
+## 6b. TASK CARD T2 — Guard edit-scope cho re-route Replace
+
+**Bug:** `Bug-ReplaceInCombo-TabJump` (`Bugs/Open_Bugs.md`, phát hiện 03/08/2026)
+**Người chạy:** Sonnet | **Phạm vi:** `BP_FurnitureInputManager` (1 Function mới) +
+`WBP_FurnitureInventory.OnMeshSelected` (đổi 1 call site)
+
+**KHÔNG** đụng: `CB_SaveCombo_Handler`, `WBP_SaveComboDialog`, Toast (K1), `ComboSerializer`,
+`ResolveActiveComboForSave()`. T2 độc lập hoàn toàn với luồng Save — xem mục 4 (bảng phụ thuộc).
+
+### 6b.0 T0 — Bảng dấu nguồn tin cậy (PHẢI ĐÓNG TRƯỚC KHI VIẾT NODE)
+
+| Dựa vào | Dấu | Ghi chú |
+|---|---|---|
+| `GetComboRootOfActor` | ✓TEST 03/08 (T1, 6/6 PASS) | Dùng lại nguyên vẹn |
+| `GetCurrentEditScope` | ✓K2 24/07 | |
+| `GetGroupRoot` | ✓K2 03/08 | Gián tiếp qua `GetComboRootOfActor` |
+| `OnMeshSelected` — cấu trúc nhánh | **⚠ DOC-ONLY** | Cần biết chèn Branch vào ĐÚNG chỗ nào |
+| `StartReplaceComboMode` — có đổi breadcrumb không | **⚠ DOC-ONLY** | Doc ghi CÓ gọi `RefreshChipBreadcrumb` (fix #3b, 01/08); quan sát thực tế 03/08 thấy breadcrumb KHÔNG đổi |
+
+**T0 gồm 2 việc, làm TRƯỚC khi sửa bất cứ node nào:**
+
+**T0.a — Export K2Node** `WBP_FurnitureInventory.OnMeshSelected` (toàn bộ event, ước ~15–25 node)
+→ cuhoang paste vào chat → Opus/Sonnet đối chiếu, xác định điểm chèn Branch chính xác.
+
+**T0.b — Print xác nhận giả thuyết gốc rễ.** Chèn tạm 2 Print, KHÔNG sửa logic:
+
+```
+Print A — đầu OnMeshSelected:
+  "T2-A | scope=" + GetCurrentEditScope() + " | replaceMode=" + IsReplaceModeActive()
+
+Print B — ngay TRƯỚC node StartReplaceComboMode:
+  "T2-B | vao nhanh combo | breadcrumb hien tai=" + <text đang hiển thị của TB_Breadcrumb>
+```
+
+Thao tác: edit mode trong combo → chọn 1 mesh → Replace → ChangeMesh.
+
+| Kết quả Print | Kết luận |
+|---|---|
+| A in `scope=<gid> replaceMode=true`, B CÓ in | ✅ Giả thuyết 2.9 ĐÚNG → làm tiếp 6b.3 |
+| A in `scope=""` | ❌ Edit scope đã bị xoá trước đó → **DỪNG, báo cuhoang**, thiết kế khác |
+| B KHÔNG in mà tab vẫn nhảy | ❌ Thủ phạm là đường khác → **DỪNG, báo cuhoang** |
+
+> ⚠️ Đây là 3-strike rule đặt trước: giả thuyết sai → KHÔNG tự mò tiếp, dừng và báo.
+
+**Câu hỏi breadcrumb** (mục 2.9): sau khi có Print B, ghi lại quan sát vào `DEVIATIONS.md`.
+**KHÔNG sửa breadcrumb trong T2** — ngoài scope (KP3). Chỉ ghi nhận.
+
+### 6b.1 Q9 — TẦNG 1: S-SCAN
+
+Trạng thái xét: actor được truyền vào `OnMeshSelected` khi đang ở Replace mode.
+
+| ID | Trạng thái | Kết quả sau T2 |
+|---|---|---|
+| S0 | Không chọn gì | `N/A: chặn bằng Branch(IsValid) có sẵn từ 02/08` — T2 không đổi |
+| S1 | 1 mesh rời | `→` route MESH (giữ nguyên hành vi hiện tại) |
+| S2 | N mesh rời | `→S1` — Replace nhắm Primary, không đổi |
+| S3 | 1 group thường | `→` route MESH (`SourceComboID==""` → không phải combo) |
+| S4 | 1 combo cả cụm (KHÔNG edit) | `→` route COMBO — **giữ nguyên**, đây là hành vi đúng của P2 |
+| S5 | 1 mesh trong group thường (edit) | `→` route MESH (trước & sau đều mesh — không đổi) |
+| S6 | 1 mesh trong combo (edit) | **⚠ ĐỔI: trước = route COMBO (sai) → sau = route MESH** ← chính là bug |
+| S7 | Sub-group nested (đang edit) | `→S6` — cùng điều kiện `EditScope != ""` |
+| S8 | Mix | `N/A: Replace chỉ nhắm Primary`, T2 không đổi hành vi mix |
+| S9 | Selection do máy sinh | `⚠` actor mới spawn từ `F_ExecuteReplace` — ref hợp lệ nhưng là instance MỚI |
+
+> **Ô đổi hành vi duy nhất: S6 (+S7 kéo theo).** Mọi hàng khác giữ nguyên → rủi ro regression
+> khoanh vào đúng 1 ca.
+
+### 6b.2 Q9 — TẦNG 2: X-CHECK (ô `⚠` + ô `N/A`)
+
+| # | Hệ thống | Kết luận |
+|---|---|---|
+| X1 | Undo | Không CaptureSnapshot. `F_ExecuteReplace` đã capture "Replace" ở đường riêng — T2 không chạm |
+| X2 | Persistence (4 kho) | Không ghi kho nào. ⚠ Kiểm: `AddRecentMesh` nằm ở `F_ExecuteReplace`, KHÔNG nằm ở `OnMeshSelected` → T2 không ảnh hưởng kho 3 |
+| X3 | Inventory UI | **Trọng tâm.** S6 sau fix: giữ tab Furniture, giữ folder mesh, KHÔNG rebuild chip/foldertree sang combo |
+| X4 | Selection sau action | Không đổi — T2 chỉ đọc, không SET `SelectedActors`/`PrimarySelectedActor` |
+| X5 | Gizmo / Pivot | Không đụng |
+| X6 | Group data | Chỉ ĐỌC qua `GetComboRootOfActor` |
+| X7 | Toast | **Không bắn toast.** Route đúng tab là hành vi thầm lặng, không phải sự kiện cần báo |
+| X8 | EditModeStack | **ĐỌC** — là điều kiện của toàn bộ fix. Không SET, không pop |
+| X9 | Material state | `N/A`: `OnMeshSelected` là nhánh Furniture; nhánh Material đi `OnSelectionChangedMaterial` riêng |
+| X10 | Placement & Anchor | `N/A`: T2 không spawn/di chuyển gì |
+
+### 6b.3 Hàm mới — `ShouldRouteReplaceToCombo(Actor : BP_FurnitureActor)`
+
+**Đặt tại:** `BP_FurnitureInputManager`
+**Outputs:** `bRouteToCombo : Bool` · `ComboID : String` · `RootGroupID : String`
+**Local:** `RRT_Scope`, `RRT_Root`, `RRT_CID` (String) · `RRT_bFound` (Bool)
+
+> **Vì sao là Function trong InputManager, không phải Branch trực tiếp trong widget:**
+> `OnMeshSelected` là Event (bind từ Dispatcher) → **KHÔNG có Local Variable** (L9). Viết thẳng
+> trong widget thì phải đẻ class var trong `WBP_FurnitureInventory` chỉ để giữ giá trị tạm — trái
+> R2/R4 (widget ôm thêm state) và trái nguyên tắc "sự thật đặt ở nơi giữ dữ liệu". Widget gọi 1
+> node, nhận 3 pin, hết.
+
+> **Trả luôn `ComboID` + `RootGroupID`** để widget không phải gọi thêm hàm thứ hai lấy dữ liệu
+> cho `StartReplaceComboMode`. Đây KHÔNG phải prep ngoài scope (KP2): đó là dữ liệu chính call
+> site hiện tại đang cần.
+
+```
+Q8: Container=Function (Local Var OK, no latent) | IsValid(Actor) đầu hàm ✓ |
+L2: 4 nhánh đều chạm Return Node (L12) ✓ | No latent ✓ |
+6A: đường ngược = thoát edit mode → route quay lại COMBO, có case test riêng (6b.5 case 4) ✓
+```
+
+```
+Entry (Actor)
+▶→ Branch(IsValid(Actor))
+     False ▶→ Return [false, "", ""]                    ← ref chết (S9)
+     True  ▶→ GetCurrentEditScope() ●→ SET RRT_Scope
+▶→ Branch(RRT_Scope != "")
+     True  ▶→ Return [false, "", ""]        ← ĐANG EDIT: đơn vị thao tác là MESH, không phải combo
+     False ▶→ GetComboRootOfActor(Actor)
+                  ●→ RootGroupID ▶→ SET RRT_Root
+                  ●→ ComboID     ▶→ SET RRT_CID
+                  ●→ bFound      ▶→ SET RRT_bFound
+▶→ Branch(RRT_bFound)
+     True  ▶→ Return [true, RRT_CID, RRT_Root]          ← S4: route COMBO (hành vi đúng, giữ)
+     False ▶→ Return [false, "", ""]                    ← S1/S3: route MESH
+```
+
+### 6b.4 Sửa call site — `WBP_FurnitureInventory.OnMeshSelected`
+
+**Đổi đúng 1 chỗ.** Điểm chèn chính xác chốt sau T0.a (K2Node export).
+
+```
+TRƯỚC:
+  ▶→ ResolveSelectedComboRoot() ●→ bFound, ComboID, RootGID
+  ▶→ Branch(bFound)
+       True  ▶→ StartReplaceComboMode(ComboID, RootGID)
+       False ▶→ <nhánh mesh có sẵn>
+
+SAU:
+  ▶→ ShouldRouteReplaceToCombo(SelectedActor) ●→ bRouteToCombo, ComboID, RootGroupID
+  ▶→ Branch(bRouteToCombo)
+       True  ▶→ StartReplaceComboMode(ComboID, RootGroupID)     ← giữ nguyên node đích
+       False ▶→ <nhánh mesh có sẵn>                             ← giữ nguyên node đích
+```
+
+**Ràng buộc KP3 — chỉ đổi node NGUỒN dữ liệu, giữ nguyên 2 node ĐÍCH và mọi node sau chúng.**
+
+⚠️ **KHÔNG sửa `ResolveSelectedComboRoot()`.** Nó vẫn được gọi ở nơi khác (C9). Ceiling "2 nơi
+cùng biết cách leo combo root" giữ nguyên, trigger vẫn là C10 — xem `DEVIATIONS.md` 03/08.
+
+⚠️ **Khác biệt cần biết:** `ResolveSelectedComboRoot` đọc `SelectedActors[0]`;
+`ShouldRouteReplaceToCombo` đọc **actor được truyền vào event**. Trong Replace mode hai giá trị
+này thường trùng, nhưng bản mới đúng hơn về ngữ nghĩa (dùng đúng actor mà event đang nói tới).
+Nếu case test 5 lộ khác biệt → ghi `DEVIATIONS.md`, không tự "sửa cho khớp" bản cũ.
+
+### 6b.5 TEST T2
+
+Xóa Print T0.b trước khi test chính thức.
+
+| # | Thao tác | Kỳ vọng | Bắt |
+|---|---|---|---|
+| 1 | Edit mode trong combo → chọn 1 mesh → Replace → ChangeMesh | Inventory **ở nguyên tab Furniture**, nguyên folder mesh; mesh mới thay đúng chỗ | **S6 — bug gốc** |
+| 2 | Như case 1, group lồng 3 tầng | Y hệt case 1 | S7 |
+| 3 | Edit mode trong **group thường** (không combo) → Replace | Ở nguyên tab Furniture (không đổi so với trước) | S5 |
+| 4 | **Thoát edit mode** → chọn cả cụm combo → Replace | Nhảy sang tab Combo như cũ — **hành vi P2 còn nguyên** | S4 · **6A đường ngược** |
+| 5 | Chọn 1 mesh rời (ngoài mọi group) → Replace | Ở tab Furniture, folder đúng mesh đó | S1 |
+| 6 | Case 1 → Ctrl+Z → chọn lại mesh trong combo → Replace | Y hệt case 1, không Accessed None | S9 |
+
+**Case 4 là case chống regression quan trọng nhất** — nếu nó hỏng thì T2 đã phá tính năng P2 vừa
+đóng 02/08.
+
+**PASS = 6/6** → xóa mọi Print tạm → trả lời câu hiểu bài (6b.6) → mở task card T3.
+
+### 6b.6 MỤC DẠY (thử nghiệm lần 2)
+
+**Khái niệm: cùng một câu hỏi, hai *đơn vị* trả lời khác nhau.**
+
+Ví dụ ngoài UE5 (nghiệp vụ thư viện): độc giả cầm 1 cuốn trong bộ *Tuyển tập Nguyễn Du, 5 tập*.
+Hỏi "cái này là cái gì?" — trả lời thế nào tuỳ **ngữ cảnh nghiệp vụ**:
+
+```
+Ở quầy mượn (mượn cả bộ)     → "bộ Tuyển tập Nguyễn Du"     ← đơn vị = BỘ
+Trong kho (kiểm kê từng cuốn) → "tập 3, mã kho XYZ"          ← đơn vị = CUỐN
+```
+
+Không phải một câu đúng một câu sai — **cùng vật thể, khác đơn vị thao tác**.
+
+Bug này y hệt: đang edit trong combo, đơn vị thao tác của người dùng là **món lẻ**, nhưng
+`ResolveSelectedComboRoot` luôn trả lời theo đơn vị **cả cụm**. Hàm không sai — nó bị hỏi trong
+ngữ cảnh nó không biết.
+
+Đó cũng là lý do fix **không** đụng vào `ResolveSelectedComboRoot`: chữa cái trả lời sẽ làm hỏng
+những nơi thật sự cần đơn vị "cả cụm". Chỗ phải chữa là **nơi đặt câu hỏi** — nó mới là nơi biết
+đang ở ngữ cảnh nào.
+
+`ResolveSelectionUnit(Actor, EditScope)` của Sprint 4 đã học bài này trước rồi: nó **nhận
+EditScope làm tham số**. C9 sinh sau nhưng không kế thừa. Đây là bài học lặp lại, không phải mới.
+
+**2 câu kiểm tra hiểu bài — hỏi SAU khi test 6/6 PASS:**
+1. Vì sao fix đặt ở `OnMeshSelected` mà không sửa thẳng `ResolveSelectedComboRoot` cho nó nhận
+   `EditScope`? Nêu 1 hậu quả cụ thể nếu sửa hàm cũ.
+2. Case test 4 (thoát edit → chọn cả cụm → Replace) kiểm tra điều gì mà 5 case kia không kiểm
+   được?
+
+---
+
 ## 7. GHI KẾT QUẢ Ở ĐÂU (bắt buộc, theo `R-DOC-ASBUILT`)
 
 ### 7.1 Task card chi tiết của task SAU
@@ -627,3 +826,4 @@ BÁO CÁO SAU KHI XONG
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 03/08/2026 | Tạo mới. Chốt UX (2 nút, bảng trạng thái nút Ghi đè), đóng `[DOC-DRIFT] ResolveSelectedComboRoot`, gộp bug `Bug-ReplaceInCombo-TabJump` làm T2, khung 5 task, task card T1 đầy đủ (Q9 S-Scan + X-Check, 2 Function, 6 case test, mục DẠY thử nghiệm lần 1), ghi nhận as-built `GetGroupRoot` từ K2Node export 03/08. |
+| 1.1 | 03/08/2026 | Phát hành task card T2 (mục 6b) — guard edit-scope cho re-route Replace (`Bug-ReplaceInCombo-TabJump`). T0 2 việc (K2Node export `OnMeshSelected` + Print xác nhận giả thuyết, 3-strike rule), Q9 S-Scan+X-Check, hàm mới `ShouldRouteReplaceToCombo()`, đổi đúng 1 call site trong `OnMeshSelected`, 6 case test (case 4 = chống regression P2), mục DẠY thử nghiệm lần 2. **CHƯA test — task card mới phát hành, chờ T0 + 6/6 PASS.** |
