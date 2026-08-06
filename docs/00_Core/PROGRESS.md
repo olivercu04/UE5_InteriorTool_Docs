@@ -376,7 +376,7 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 - [x] **C9** — Replace combo (+ verify K2 EMS SourceComboID + CalculateCenter chung + auto-rollback spawn-fail) — ✅ DONE (30/07/2026). Xem `01_Session_State.md` mục C9.
 - [~] **Save As / Save đè combo** (T1-T5, xem `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`) — ô riêng trong mẫu số Sprint 5 (03/08, R-DOC-ATOMIC). Chỉ [x] khi T5 xong.
   - [x] T1 — `ResolveActiveComboForSave()` + `GetComboRootOfActor()` (`BP_FurnitureInputManager` v3.0). Test PASS 6/6. ✅ DONE (03/08/2026)
-  - [ ] T2 — Guard edit-scope cho re-route replace (`Bug-ReplaceInCombo-TabJump`)
+  - [x] T2 — Guard edit-scope cho re-route replace (`Bug-ReplaceInCombo-TabJump`). Test PASS 6/6. ✅ DONE (03/08/2026)
   - [ ] T3 — 2 nút + trạng thái xám + tooltip (`WBP_SaveComboDialog`)
   - [ ] T4 — Ghi đè thật + xác nhận + thumbnail (C++ `ComboSerializer` + `BP_ComboManager`)
   - [ ] T5 — Regression + docs

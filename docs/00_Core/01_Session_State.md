@@ -20,6 +20,14 @@ Toast lý do) → T4 (C++ ghi file, gộp combo logic) → T5 (regression 15-ste
 Mở task card **T2** tiếp theo. Ghi chú: `[CEILING]` "2 nơi cùng biết cách leo combo root"
 (`ResolveSelectedComboRoot` C9 chưa đấu lại vào `GetComboRootOfActor`) — vẫn treo tới C10, xem
 `DEVIATIONS.md`.
+**Cập nhật (tiếp) 03/08/2026 (T2 DONE):** T2 (`ShouldRouteReplaceToCombo()`,
+`BP_FurnitureInputManager` v3.3) — ĐÓNG, 6/6 case test PASS + 2 câu hiểu bài PASS. Đóng
+`Bug-ReplaceInCombo-TabJump` (gốc rễ: `ResolveSelectedComboRoot()` mù edit-scope) tại call site
+`OnMeshSelected`. Kèm fix phụ trợ `Bug-RowNameLostOnUndo` (`S_FurniturePlacement` thiếu field
+`RowName` — `BP_UndoManager` v1.15) phát hiện lúc verify case 6. ⚠️ Claim "call site thứ 2 =
+`CB_Replace`" KHÔNG xác nhận được — section `CB_Replace` hiện tại không có node route-combo nào
+để thay, ghi nhận mâu thuẫn, không tự sửa. Tiếp theo: **T3** (`WBP_SaveComboDialog`, task card đã
+phát hành 04/08, mục 7b của Plan).
 
 ---
 

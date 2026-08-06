@@ -1,6 +1,6 @@
 # BP_UndoManager
 **HỢP NHẤT TỪ 6 file:** v1.2 (16/05) → v1.4 (04/06) → v1.5 (07/06) → **v1.6 base** (10/06) + v1.7_patch (12/06) + v1.8_patch (15/06)
-**Phiên bản:** 1.13 | **Cập nhật:** 02/08/2026 | MERGE_LOG Q3 đóng: `ValidateEditMode` — đính chính `FindGroupData(gid) → (_, _, bFound)` (3 output, SAI) → `(_, bFound)` (2 output, đúng — hàm không có Index)
+**Phiên bản:** 1.15 | **Cập nhật:** 04/08/2026 11:05 | Fix Bug-RowNameLostOnUndo: `S_FurniturePlacement` +field `RowName : Name` (✓K2 03/08), `CaptureSnapshot` Step 3 GET RowName (✓K2), `RestoreSnapshot` Step 4 SET NewActor.RowName (✓K2) — struct thiếu field này kể từ khi migrate RowName-based (Sprint D.T6, 17/06) mà chưa cập nhật theo
 
 > **v1.12 (C9.c, 30/07/2026):** Custom Event mới `RestoreCurrentSnapshot()` (khôi phục snapshot hiện hành, không dịch con trỏ history) cho rollback của `ReplaceCombo` — Actor riêng, quản lý toàn bộ Undo/Redo
 
@@ -60,8 +60,10 @@ EditModeStackSnapshot   : Array of String      ← v1.8 (Version 4): stack Group
 - V3: Groups (Sprint 3)
 - **V4: Groups + EditModeStackSnapshot (Sprint 4 Bug Fix A12, 15/06/2026)**
 
-**S_FurniturePlacement** (v1.6 thêm `GroupID`):
-`UniqueID(String), MeshPath, DAPath, Location, Rotation, Scale, ActorTag, MaterialPaths(Array<String>), GroupID(String)`.
+**S_FurniturePlacement** (v1.6 thêm `GroupID`; v1.14 thêm `RowName`):
+`UniqueID(String), MeshPath, DAPath, Location, Rotation, Scale, ActorTag, MaterialPaths(Array<String>), GroupID(String), RowName(Name)`.
+✓K2 03/08/2026 — export Make/Break struct thật xác nhận field `RowName` kiểu **Name** (khớp
+`BP_FurnitureActor.RowName : Name`, xem `Blueprints/BP_FurnitureActor.md`).
 
 **S_GroupData**: `GroupID(String), GroupName(String), ParentGroupID(String), bIsLocked(Boolean)`.
 
@@ -144,6 +146,8 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Length → Branch > 0:
       Location, Rotation, Scale, ActorTag
       MaterialPaths = GET BP_FurnitureActor.MaterialOverrides
       GroupID       = GET BP_FurnitureActor.GroupID          ← v1.6
+      RowName       = GET BP_FurnitureActor.RowName          ← v1.14 (03/08/2026) ✓K2 — node
+                                                                 flow y hệt GroupID đứng cạnh
     ADD to TempMeshes
 
 4.  ← v1.4: Build mảng index các đồ ĐANG CHỌN:
@@ -260,6 +264,9 @@ xóa** — sửa lại cho khớp thực tế bên dưới.
                                  khiến mọi lần restore chọn hết tất cả item trong scene
      bAddToRecent = False     ← v1.11 (K3, 21/07/2026) — Undo không nên nhồi Recent
    ) ●→ NewActor              (output đã type BP_FurnitureActor sẵn — KHÔNG Cast thừa so plan gốc)
+   SET NewActor.RowName = Placement.RowName    ← v1.14 (03/08/2026) ✓K2 — RowName KHÔNG nằm
+                                                  trong param SpawnFurnitureCopy, phải SET riêng
+                                                  sau khi actor đã spawn, TRƯỚC SET GroupID
    SET NewActor.GroupID = Placement.GroupID    ← v1.6 (restore quan hệ group)
    ADD NewActor to SpawnedActors
    ← SpawnFurnitureCopy tự lo toàn bộ: Spawn Actor, Load Mesh/Material Async, ADD tag
@@ -412,3 +419,5 @@ Event End Play →
 | 1.11 | 21/07/2026 | **K3 (bAddToRecent) DONE.** RestoreSnapshot: pin `bAddToRecent=False` tại node SpawnFurnitureCopy (Step 4) — verify qua Blueprint Export Method (K2Node text) + screenshot thật. Test 4 case PASS (spawn combo, Undo/Redo, spawn furniture từ card, copy/paste — Recent behavior đúng cho từng case). Kèm sửa doc: đoạn body Step 4 trước ghi nhãn "v1.8: VIẾT LẠI" nhưng vẫn mô tả spawn inline cũ (mâu thuẫn với changelog v1.10 đã đúng) — đối chiếu export K2Node thật, viết lại khớp thực tế. Thêm class var `RestoreInputMgr` vào mục Variables (sót từ v1.10). Chi tiết: `DEVIATIONS.md`, `Bugs/Open_Bugs.md` mục K3. |
 | 1.12 | 30/07/2026 | **C9.c DONE (delta "C9 Replace: Folder Highlight + Chip Fix & C9.b–C9.f").** Custom Event mới `RestoreCurrentSnapshot()` — guard `Is Valid Index(SnapshotHistory, CurrentIndex)` → `RestoreSnapshot(CurrentIndex)`, KHÔNG dịch con trỏ history (khác Undo/Redo). Dùng cho rollback của `BP_ComboManager.ReplaceCombo` khi spawn combo thay thế fail. Chi tiết: `Blueprints/BP_ComboManager.md` v1.14. |
 | 1.13 | 02/08/2026 | **MERGE_LOG Q3 đóng.** `ValidateEditMode`: đính chính `Call InputRef.FindGroupData(gid) → (_, _, bFound)` (3 output, tự mâu thuẫn với chữ ký thật) → `(_, bFound)` (2 output). Bằng chứng: K2Node export `ResolveSelectedComboRoot` 02/08/2026 + `Plans/24-07-2026_C9_Execution_Plan.md` §V8 xác nhận `FindGroupData` chỉ có `(S_GroupData, bFound)`. Không đổi node flow thật — chỉ sửa mô tả cho khớp as-built. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.9, `00_Core/MERGE_LOG.md`. |
+| 1.14 | 04/08/2026 | **RowName preservation qua Undo (phát hiện lúc verify case 6, T2 Save As/Save đè).** `S_FurniturePlacement` +field `RowName`. `CaptureSnapshot` Step 3: `RowName = GET BP_FurnitureActor.RowName` nối vào Make struct. `RestoreSnapshot` Step 4: THÊM `SET NewActor.RowName = Placement.RowName` ngay sau `SpawnFurnitureCopy`, TRƯỚC `SET NewActor.GroupID` — `RowName` KHÔNG nằm trong param `SpawnFurnitureCopy`, phải SET riêng. ✓TEST 03/08/2026: Print xác nhận `RowName=CLAMP_table_karkas_005` (không còn `None`) sau chuỗi Replace→Move→Undo→Replace lại. Trước fix này, actor respawn qua Undo mất `RowName` → nghi vấn cùng lỗ hổng có thể lan sang `S_ClipboardEntry` (Copy/Paste/Duplicate) — xem `Bugs/Open_Bugs.md` mục `Bug-RowName-MissingInClipboard` (chưa verify). |
+| 1.15 | 04/08/2026 11:05 | **Fix Bug-RowNameLostOnUndo (03/08)** — struct `S_FurniturePlacement` thiếu field `RowName` kể từ khi migrate RowName-based (Sprint D.T6, 17/06) — chỉ `CaptureSnapshot`/`RestoreSnapshot` dùng struct này chưa được cập nhật theo. Nâng dấu 3 chỗ (struct field, Step 3, Step 4) từ "chốt theo lời cuhoang" lên `✓K2 03/08/2026` (export Make/Break struct thật xác nhận). Đính chính type: `RowName` là **Name** (khớp `BP_FurnitureActor.RowName`), không phải `String` như ghi nhầm ở v1.14. |

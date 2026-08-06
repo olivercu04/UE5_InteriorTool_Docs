@@ -11,6 +11,43 @@
 **Cập nhật (tiếp) 03/08/2026:** thêm `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` — plan Save As/Save đè combo (khung 5 task, task card T1 đầy đủ). File đang chạy, CHƯA có as-built — không đóng dấu banner nào. Đích tương lai (khi T1+ xong): `Blueprints/BP_FurnitureInputManager.md`, `Widgets/WBP_SaveComboDialog.md`, `Data/ComboSerializer_Reference.md`.
 **Cập nhật (tiếp) 04/08/2026:** merge delta `DELTA_04-08-2026_T3_SaveComboDialog.md` — thêm mục `7b. TASK CARD T3` vào `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` (v1.0→v1.2, PLAN, chưa test). 2 entry backlog mới: `Bugs/Open_Bugs.md` (`Bug-SaveComboSilentBlock`), `DEVIATIONS.md` (`[ARCH-DEBT] AllComboViews_Combo sống ở widget`). **KHÔNG merge** mục A của delta (K2Node export `CB_SaveCombo_Handler` 04/08) vào `Blueprints/BP_FurnitureInputManager.md` — xung đột với section as-built đã có sẵn (khác cấu trúc guard + thiếu bước `ContextMenuRef.Hide`), ghi cả 2 bản vào `DEVIATIONS.md` mục `[CONFLICT] CB_SaveCombo_Handler — 2 bản không khớp — 04/08/2026`, chờ cuhoang xác nhận. `02_Current_Sprint.md`: chỉ đổi ô T3 → 🔄 Đang mở, KHÔNG đụng ô T2.
 **Cập nhật (tiếp) 04/08/2026 (b):** cuhoang đối chiếu K2Node export → đóng `[CONFLICT] CB_SaveCombo_Handler` (KHÔNG phải xung đột thật, doc cũ 24/06 chỉ thiếu 2 bước) — đổi tên mục thành `[DOC-DEBT đã đóng]` trong `DEVIATIONS.md`. `Blueprints/BP_FurnitureInputManager.md` v3.0→v3.1: thay section `CB_SaveCombo_Handler` bằng bản ✓K2 04/08/2026, bù dòng lịch sử `3.0` bị thiếu từ trước.
+**Cập nhật (tiếp) 04/08/2026 (h, đóng caveat CB_Replace):** Amendment cuhoang — re-export `CB_Replace`
+✓K2 03/08/2026 xác nhận CÓ nhánh `ShouldRouteReplaceToCombo`; bản mô tả 24/07 cũ chỉ là đọc lúc
+chưa re-export, không phải code thật thiếu nhánh. `Blueprints/BP_FurnitureInputManager.md`
+v3.3→v3.4: thay section `CB_Replace` (bản cũ đánh `[SUPERSEDED 03/08]`, giữ lịch sử). Đóng caveat
+"chỉ xác nhận 1/2 call site" ở 3 nơi: `BP_FurnitureInputManager.md`, `Bugs/Open_Bugs.md` (mục
+`Bug-ReplaceInCombo-TabJump`, gỡ caveat hoàn toàn), `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`
+v1.5→v1.6.
+**Cập nhật (tiếp) 04/08/2026 (g, T2 ĐÓNG):** `ShouldRouteReplaceToCombo()` merge as-built vào
+`Blueprints/BP_FurnitureInputManager.md` v3.3 (✓K2 03/08). `Widgets/WBP_FurnitureInventory.md`
+v3.20: `OnMeshSelected` đổi 1 node nguồn (`ResolveSelectedComboRoot`→`ShouldRouteReplaceToCombo`),
+giữ nguyên 2 node đích. `Bugs/Open_Bugs.md`: `Bug-ReplaceInCombo-TabJump` → ✅ ĐÃ SỬA (call site
+`OnMeshSelected`). `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` v1.4→v1.5: mục 6b (T2) →
+✅ DONE, bảng 6/6 case điền kết quả thật. `02_Current_Sprint.md` + `01_Session_State.md` +
+`PROGRESS.md`: T2 → DONE.
+⚠️ **MÂU THUẪN CHƯA GIẢI QUYẾT (ghi nhận, không tự sửa):** claim "fix tại 2 call site
+(`OnMeshSelected` + `CB_Replace`)" — chỉ `OnMeshSelected` có ground truth. Section `CB_Replace`
+hiện tại (`BP_FurnitureInputManager.md`, không đổi trong lượt này) gọi thẳng `StartReplaceMode`,
+không hề gọi `ResolveSelectedComboRoot()` hay bất kỳ hàm route-combo nào — không có node để
+"thay". Ghi nhận ở 3 nơi: `BP_FurnitureInputManager.md` v3.3, `Bugs/Open_Bugs.md`, Plan v1.5.
+**Cập nhật (tiếp) 04/08/2026 (f):** `Bugs/Open_Bugs.md` — thêm entry chính thức `Bug-RowNameLostOnUndo`
+(✅ ĐÃ FIX 03/08) — Tổng quan + mục chi tiết + bảng "Closed Bugs (reference nhanh)". Đóng khoảng
+trống: 2 file Blueprint đã tham chiếu ID này (`BP_UndoManager.md` v1.15, `BP_FurnitureInputManager.md`
+v3.2) từ trước khi entry tồn tại.
+**Cập nhật (tiếp) 04/08/2026 (e, RowName fix — nâng dấu ✓K2):** `Blueprints/BP_UndoManager.md`
+v1.14→v1.15 — nâng dấu 3 chỗ (struct field/Step 3/Step 4) từ "chốt theo lời cuhoang" lên
+`✓K2 03/08/2026` (export Make/Break struct thật). Đính chính type `RowName` từ `String` (ghi sai
+ở v1.14) sang đúng **`Name`** (khớp `BP_FurnitureActor.RowName`). Đặt tên chính thức
+`Bug-RowNameLostOnUndo` trong changelog. `Blueprints/BP_FurnitureInputManager.md` v3.1→v3.2 —
+thêm 1 dòng chú (không sửa node flow) vào `StartReplaceMode`, trỏ nguyên nhân dead-end nhánh
+False về `Bug-RowNameLostOnUndo`.
+**Cập nhật (tiếp) 04/08/2026 (d, RowName fix):** `Blueprints/BP_UndoManager.md` v1.13→v1.14 —
+`S_FurniturePlacement` +field `RowName`, `CaptureSnapshot` Step 3 GET RowName, `RestoreSnapshot`
+Step 4 SET NewActor.RowName (✓TEST 03/08, Print `RowName=CLAMP_table_karkas_005` sau
+Replace→Move→Undo→Replace). Bug mới `Bugs/Open_Bugs.md` mục `Bug-RowName-MissingInClipboard`
+(chưa verify — nghi `S_ClipboardEntry` cùng lỗ hổng). `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`
+v1.3→v1.4: banner `📌 [CHỨA AS-BUILT]` cho case 6 mục 6b.5 — **T2 vẫn CHƯA đóng** (chỉ 1/6 case +
+không có T0 của chính T2).
 **Cập nhật (tiếp) 04/08/2026 (c, Lô A):** merge delta `DELTA_04-08-2026_LoA_SaveCombo_Verify.md` (as-built, T0 của T4). `Blueprints/BP_ComboManager.md` v1.14→v1.15: `SaveComboFromSelection` re-export ✓K2 04/08 — additive (thêm Bước 0 param→class var + xác nhận Bước 5a/7), KHÔNG đổi hệ đánh số "Bước N" (tránh gãy cross-reference nhiều nơi trong file). `Data/ComboSerializer_Reference.md`: ✓SOURCE 04/08 xác nhận đúng 13 hàm public `UComboSerializer`, ghi nhận `LoadCombo` không tồn tại. `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` v1.2→v1.3: thêm mục 4.1 (quyết định kiến trúc T4 — Branch tại điểm sinh ComboID, chưa thực thi). 2 entry mới `Bugs/Open_Bugs.md` (`Bug-ComboCategoryHardcode`) + 2 entry `DEVIATIONS.md` (`[AS-BUILT] Broadcast OnComboLibraryChanged...`, `[DOC-DRIFT] Plan C7 dựa vào LoadCombo...`). `DocCleanup_Summary_02aug2026.md`: thêm mục 4.5 (xếp ưu tiên Lô B/C/D). KHÔNG đụng `02_Current_Sprint.md`/`PROGRESS.md` (delta không chứa kết quả thực thi task).
 
 ---

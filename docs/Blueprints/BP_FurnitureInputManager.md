@@ -1,5 +1,5 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 3.1 | **Cập nhật:** 04/08/2026 10:20 — Save As/Save đè T3 (as-built mục A): `CB_SaveCombo_Handler` re-export theo K2Node 04/08/2026 — thay bản mô tả cũ (24/06/2026) thiếu 2 điều (bước `ContextMenuRef.Hide` + không có biến `InventoryRef`/node Cast trung gian) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 3.4 | **Cập nhật:** 04/08/2026 13:15 — `CB_Replace` re-export ✓K2 03/08/2026: có nhánh `ShouldRouteReplaceToCombo` (bản 24/07 cũ chưa phản ánh, đánh SUPERSEDED giữ lịch sử). Xác nhận đủ 2 call site T2 (`OnMeshSelected` + `CB_Replace`) — đóng caveat ghi ở v3.3 | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 > **v2.8 (Replace UX Fix P0→P5, 02/08/2026):** biến `MeshToReplace` (single, dead code) XÓA HOÀN
 > TOÀN (P4.4) — đính chính dòng Variables ghi sai đã "xóa từ v1.6". Node flow re-route (P2), card
@@ -723,6 +723,57 @@ Test PASS 6/6 (03/08/2026, Print tạm trong `CB_SaveCombo_Handler`, đã xóa s
 
 Chi tiết plan gốc: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 6.3, 6.4, 6.5.
 
+### ShouldRouteReplaceToCombo(Actor : BP_FurnitureActor) → (bRouteToCombo : Bool, ComboID, RootGroupID : String)
+
+**Mới 03/08/2026 (Save As/Save đè T2, đóng `Bug-ReplaceInCombo-TabJump`).** ✓K2 03/08/2026 —
+input `Actor` là param sự kiện, output `bRouteToCombo` nối thẳng Condition, không lệch pin.
+
+**Local:** `RRT_Scope`, `RRT_Root`, `RRT_CID` (String) · `RRT_bFound` (Bool)
+
+Vì sao là Function trong `BP_FurnitureInputManager`, không phải Branch trực tiếp trong widget:
+`OnMeshSelected` là Event (bind từ Dispatcher) → KHÔNG có Local Variable (L9). Viết thẳng trong
+widget thì phải đẻ class var trong `WBP_FurnitureInventory` chỉ để giữ giá trị tạm — trái R2/R4
+(widget ôm thêm state). Trả luôn `ComboID` + `RootGroupID` để widget không phải gọi thêm hàm thứ
+hai lấy dữ liệu cho `StartReplaceComboMode`.
+
+```
+Q8: Container=Function (Local Var OK, no latent) | IsValid(Actor) đầu hàm ✓ |
+L2: 4 nhánh đều chạm Return Node (L12) ✓ | No latent ✓ |
+6A: đường ngược = thoát edit mode → route quay lại COMBO, có case test riêng (case 4, xem dưới) ✓
+```
+
+```
+Entry (Actor)
+▶→ Branch(IsValid(Actor))
+     False ▶→ Return [false, "", ""]                    ← ref chết (S9)
+     True  ▶→ GetCurrentEditScope() ●→ SET RRT_Scope
+▶→ Branch(RRT_Scope != "")
+     True  ▶→ Return [false, "", ""]        ← ĐANG EDIT: đơn vị thao tác là MESH, không phải combo
+     False ▶→ GetComboRootOfActor(Actor)
+                  ●→ RootGroupID ▶→ SET RRT_Root
+                  ●→ ComboID     ▶→ SET RRT_CID
+                  ●→ bFound      ▶→ SET RRT_bFound
+▶→ Branch(RRT_bFound)
+     True  ▶→ Return [true, RRT_CID, RRT_Root]          ← S4: route COMBO (hành vi đúng, giữ)
+     False ▶→ Return [false, "", ""]                    ← S1/S3: route MESH
+```
+
+⚠️ **KHÔNG sửa `ResolveSelectedComboRoot()`.** Vẫn được gọi ở call site khác (C9,
+`ExecuteComboReplace`). Ceiling "2 nơi cùng biết cách leo combo root" giữ nguyên, trigger vẫn là
+C10 — xem `DEVIATIONS.md` 03/08.
+
+**Nơi gọi (03/08/2026):** `WBP_FurnitureInventory.OnMeshSelected` (nhánh Replace) — xem
+`Widgets/WBP_FurnitureInventory.md`. Thay thế lời gọi `ResolveSelectedComboRoot()` trước đây tại
+call site này.
+
+⚠️ **Call site thứ 2 (`CB_Replace`) — KHÔNG XÁC NHẬN ĐƯỢC, xem báo cáo mâu thuẫn cuối phiên merge
+04/08/2026.** Section `CB_Replace` hiện tại trong file này (phía dưới) gọi thẳng
+`StartReplaceMode(Actors = SelectedActors)`, KHÔNG hề gọi `ResolveSelectedComboRoot()` hay bất kỳ
+hàm route combo nào — không có node nào để "thay thế". KHÔNG tự sửa `CB_Replace` cho khớp tuyên
+bố "2 call site" khi không có ground truth (node flow/K2Node export) cho thay đổi đó.
+
+Test PASS 6/6 (03/08/2026) — xem `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 6b.5.
+
 ### ResolveSelectionUnit(Actor, EditScope) → Array<BP_FurnitureActor> ⭐ NÃO Sprint 4
 **THỨ TỰ NHÁNH BẮT BUỘC (Q9a: edit-scope trước đồ-loose):**
 ```
@@ -1122,6 +1173,10 @@ tìm thấy đoạn này. Có thể nằm trong 1 doc khác chưa phân phối v
 vậy khối B lặp 3 lần trong export là sự thật quan sát trực tiếp (không phụ thuộc việc xác minh
 được deviation cũ hay không) — không coi là bug mới, chỉ chưa xác nhận được lịch sử ghi chép.
 
+**Lưu ý 03/08:** nhánh False (`RowName` rỗng → `LoadAsset DAPath`) từng dead-end vì actor sau
+Undo có `RowName=None` — gốc rễ ở `BP_UndoManager` (`Bug-RowNameLostOnUndo`), không phải lỗi tại
+đây. Xem `BP_UndoManager.md` mục `S_FurniturePlacement`.
+
 ---
 
 ## IsReplaceModeActive() → Boolean — Pure Function (MỚI, C9.0c, 24/07/2026)
@@ -1138,9 +1193,15 @@ hiện/ẩn nút riêng cho furniture card) → so sánh trực tiếp `ReplaceT
 
 ---
 
-## CB_Replace — Custom Event (EventGraph, verified qua K2Node export 24/07/2026 — C9.0c)
+## CB_Replace — Custom Event (EventGraph, verified qua K2Node export 03/08/2026 — Save As/Save đè T2)
+
+⚠️ [SUPERSEDED 03/08/2026] Bản mô tả ✓K2 24/07/2026 dưới đây KHÔNG có nhánh route combo
+(`ShouldRouteReplaceToCombo`) — do đọc lúc đó CHƯA re-export sau T2, không phải vì code thật
+thiếu nhánh này. Giữ lại làm lịch sử, KHÔNG dùng làm nguồn hiện hành — xem bản ✓K2 03/08 ngay
+dưới đây.
 
 ```
+[BẢN CŨ ✓K2 24/07/2026 — SUPERSEDED, giữ lịch sử]
 CB_Replace.then
 ▶→ Branch(IsValid ContextMenuRef)
      True ▶→ Remove from Parent(ContextMenuRef)
@@ -1167,7 +1228,50 @@ CB_Replace.then
 `SET ContextMenuRef=None`, Condition không nối gì (literal mặc định = `true`) → nhánh dẫn tới
 `StartReplaceMode` không bao giờ chạy được. Đã xóa Branch dư, nối thẳng vào
 `Branch(IsReplaceModeActive)`. Verify: mọi pin `then`/`execute` khớp `LinkedTo` 2 chiều, không
-còn node dư. Bản mirror ở `Sprints/Sprint2/ContextMenu_Prep.md` §4.2 (doc prep gốc, giữ đồng bộ).
+còn node dư. Bản mirror ở `Sprints/Sprint2/ContextMenu_Prep.md` §4.2 (doc prep gốc, giữ đồng bộ)
+— **doc prep đó cũng chưa phản ánh nhánh route combo 03/08, đọc cẩn thận nếu tham chiếu.**
+
+### ✓K2 03/08/2026 — bản hiện hành
+
+```
+CB_Replace.then
+▶→ Branch(IsValid ContextMenuRef)
+     True ▶→ Remove from Parent(ContextMenuRef)
+          ▶→ SET ContextMenuRef = None
+          ▶→ Branch(IsReplaceModeActive)
+               True (đang active — tắt) ▶→
+                    SET ReplaceTarget = E_ReplaceTarget::None
+                    ▶→ Clear Array(MeshesToReplace)
+                    ▶→ SET ComboRootGroupIDToReplace = ""        ← MỚI 03/08 (T2) — thiếu ở bản cũ
+                    ▶→ Get Game Instance → Cast Foff_GameInstance
+                         ▶→ Branch(IsValid FurnitureInventoryRef)
+                              True ▶→ Branch(IsInViewport)
+                                   True ▶→ ExitReplaceMode
+                                   False ▶→ [dead-end]
+                              False ▶→ [dead-end]
+               False (chưa active — bật) ▶→
+                    Branch(IsValid PrimarySelectedActor)
+                         True ▶→ Branch(SelectedActors.Length > 0)
+                              True ▶→ ShouldRouteReplaceToCombo(Actor = PrimarySelectedActor)   ← MỚI 03/08 (T2)
+                                     ●→ bRouteToCombo, ComboID, RootGroupID
+                                     ▶→ Branch(bRouteToCombo)
+                                          True  ▶→ StartReplaceComboMode(RootGroupID, ComboID)   ← MỚI 03/08 (T2)
+                                          False ▶→ StartReplaceMode(Actors = SelectedActors)      ← node CŨ, giữ nguyên
+                              False ▶→ [dead-end]
+                         False ▶→ [dead-end]
+     False ▶→ [dead-end]
+```
+
+**Xác nhận 03/08/2026:** đây CHÍNH XÁC là call site thứ 2 đã fix trong T2 (cùng với
+`OnMeshSelected`, xem `Widgets/WBP_FurnitureInventory.md` v3.20). Test 2 trial chuột phải PASS
+(đang edit trong combo → chuột phải Replace → giữ tab Furniture; thoát edit → chuột phải Replace
+cả cụm → giữ tab Combo). KHÔNG có `ResolveSelectedComboRoot()` trong đoạn này — claim trước đó về
+"không tìm thấy node để thay" là do đọc bản doc CHƯA re-export (✓K2 24/07), không phải code thật
+thiếu nhánh. Đóng caveat ghi ở `Bugs/Open_Bugs.md` mục `Bug-ReplaceInCombo-TabJump` và
+`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 6b.5.
+
+Bug fix Branch dư (24/07, xem bản cũ ở trên) vẫn còn nguyên trong bản 03/08 — không bị cuốn lại
+khi thêm nhánh route combo.
 
 ---
 
@@ -1347,3 +1451,6 @@ từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 | 2.8 | 02/08/2026 | **Replace UX Fix P0→P5 HOÀN TẤT.** File này không đổi node flow (route mới P2 gọi các hàm có sẵn `ResolveSelectedComboRoot`/`StartReplaceMode`/`StartReplaceComboMode` không đổi — logic thay đổi nằm ở phía gọi, `WBP_FurnitureInventory.OnMeshSelected`, xem file đó v3.19). Chỉ 1 thay đổi thật ở đây: biến `MeshToReplace` (single, dead code) XÓA HOÀN TOÀN (P4.4) — Find References xác nhận chỉ còn 1 chỗ SET rác (`BTN_Close`), xóa cả 2 (biến + node) → compile sạch 0 error, không cross-class reference nào khác. Đính chính dòng Variables (mục Group) ghi sai "đã xóa từ v1.6, 10/06/2026" — biến thật ra vẫn tồn tại tới hôm nay. KHÔNG nhầm với `MeshesToReplace` (array, dùng thật, giữ nguyên). Chi tiết đầy đủ: `DEVIATIONS.md` mục "Replace UX Fix P0→P5 — 02/08/2026", `Widgets/WBP_FurnitureInventory.md` v3.19. |
 | 3.0 | 03/08/2026 20:45 | **Save As/Save đè T1.** Thêm mục `GetGroupRoot()` (doc lần đầu, as-built K2Node 03/08) + 2 hàm mới `GetComboRootOfActor()` + `ResolveActiveComboForSave()`, test PASS 6/6. Chi tiết: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 6.3/6.4/6.5. *(Ghi bổ sung 04/08/2026 — bảng lịch sử trước đó thiếu dòng này dù header đã bump lên 3.0.)* |
 | 3.1 | 04/08/2026 10:20 | **Save As/Save đè T3 (as-built mục A) — đóng `[CONFLICT] CB_SaveCombo_Handler`.** Re-export `CB_SaveCombo_Handler` theo K2Node 04/08/2026, thay bản mô tả cũ (24/06/2026). Kết luận cuhoang (đối chiếu export thật): KHÔNG phải xung đột — bản cũ chỉ THIẾU 2 điều: (1) bước `ContextMenuRef.Hide` + `SET ContextMenuRef=None` sau khi mở dialog, (2) đường thật KHÔNG có biến `InventoryRef`/node `Cast` trung gian — `GetAllWidgetsOfClass` trả đúng kiểu sẵn, cắm thẳng qua Knot vào self pin của `OpenSaveComboDialog`. Guard "LENGTH<2→dead-end" (cũ) và "Branch(>=2), False trống" (mới) là CÙNG 1 Branch, chỉ phát biểu ngược chiều. Giữ nguyên dòng ghi chú kiến trúc cuối section (delegate sang inventory) — export không chứa dòng này, không được mất. Xem `DEVIATIONS.md` mục "[DOC-DEBT đã đóng] CB_SaveCombo_Handler — doc cũ thiếu 2 bước — 04/08/2026". |
+| 3.2 | 04/08/2026 11:05 | **`StartReplaceMode` — thêm 1 dòng chú, KHÔNG sửa node flow.** Nhánh False (`RowName` rỗng → `LoadAsset DAPath`) từng dead-end vì actor sau Undo có `RowName=None` — gốc rễ ở `BP_UndoManager` (`Bug-RowNameLostOnUndo`, fix 03/08, xem `BP_UndoManager.md` v1.15 — `S_FurniturePlacement` thiếu field `RowName` từ khi migrate RowName-based Sprint D.T6 17/06), không phải lỗi tại `StartReplaceMode`. |
+| 3.3 | 04/08/2026 12:00 | **Save As/Save đè T2 DONE.** Thêm `ShouldRouteReplaceToCombo(Actor)` (✓K2 03/08/2026) — guard `EditScope` trước khi hỏi `GetComboRootOfActor`, đóng `Bug-ReplaceInCombo-TabJump`. Call site xác nhận: `WBP_FurnitureInventory.OnMeshSelected` (thay `ResolveSelectedComboRoot()` cũ). Test PASS 6/6 (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 6b.5). ⚠️ **KHÔNG xác nhận được** claim "call site thứ 2 = `CB_Replace`" — section `CB_Replace` hiện tại (không đổi trong lượt này) gọi thẳng `StartReplaceMode` không qua bất kỳ hàm route combo nào; không có node flow/K2Node export nào cho 1 thay đổi ở đó — ghi nhận mâu thuẫn, không tự sửa. Xem ghi chú trong mục hàm. |
+| 3.4 | 04/08/2026 13:15 | **`CB_Replace` re-export ✓K2 03/08/2026 — đóng caveat v3.3.** Bản mô tả cũ (✓K2 24/07) đọc lúc CHƯA re-export sau T2 — SUPERSEDED, giữ lại làm lịch sử (không xóa). Bản mới: nhánh BẬT thêm `ShouldRouteReplaceToCombo(Actor=PrimarySelectedActor)` → `Branch(bRouteToCombo)` → `StartReplaceComboMode`/`StartReplaceMode` (node CŨ giữ nguyên ở nhánh False); nhánh TẮT thêm `SET ComboRootGroupIDToReplace=""` (thiếu ở bản cũ). Xác nhận: đủ 2 call site T2 (`OnMeshSelected` + `CB_Replace`), test 2 trial chuột phải PASS 03/08. Bug fix Branch dư (24/07) không bị cuốn lại. |

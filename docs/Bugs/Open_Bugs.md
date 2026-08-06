@@ -41,10 +41,12 @@ theo luật `R-DOC-DONE`: Task-P2-SweepCao (case Cao chưa test combo thật), T
 | Bug-MaterialPrimaryOnly | [OPEN] Đổi vật liệu khi chọn cả cụm combo chỉ áp cho 1 mesh (Primary), không toast báo — người dùng tưởng đã đổi cả cụm | 🟡 Trung bình | Test tay 02/08. Vá tạm: toast cảnh báo (~15 phút). Vá thật: gộp Sprint 7 Material Edit multi-apply (E1). Xem mục chi tiết dưới |
 | Bug-PasteVerticalCollapse | [OPEN] Paste nhiều món chênh cao độ (đồ trần + đồ sàn) → TÂM nhóm bị neo vào bề mặt trace trúng thay vì từng món neo bề mặt riêng → đồ trần lơ lửng, đồ sàn chìm | 🔴 Cao | Test tay 02/08. KHÔNG chặn Gate 2. Backlog "Sprint Surface" sau Gate 2. Xem mục chi tiết dưới |
 | Bug-StaleSurfaceType | [OPEN] Kéo đồ bằng gizmo sang bề mặt khác → `PlacementSurfaceType` không cập nhật lại (chỉ SET 1 lần lúc drag-drop) → nudge phím mũi tên đi sai trục | 🟡 Trung bình | Test tay 02/08. KHÔNG chặn Gate 2. Backlog "Sprint Surface" sau Gate 2. Xem mục chi tiết dưới |
-| Bug-ReplaceInCombo-TabJump | [OPEN, ĐÃ CÓ PLAN] Replace 1 mesh bên trong combo (edit mode) → inventory tự nhảy sang tab Combo, breadcrumb vẫn đứng ở path folder mesh | 🟡 Trung bình | Là T2 của đợt Save As/Save đè. Xem mục chi tiết dưới |
+| Bug-ReplaceInCombo-TabJump | ✅ ĐÃ SỬA (03/08) — đủ 2 call site (`OnMeshSelected` + `CB_Replace`) | — | `ShouldRouteReplaceToCombo()`, `BP_FurnitureInputManager.md` v3.3/v3.4. Test 6/6 PASS + 2 trial CB_Replace PASS |
 | B-EditStackLeak | [OPEN, DEFERRED] editStack rò rỉ vào snapshot ở thao tác không build selection (Deselect/Spawn) sau khi thoát edit mode — pre-existing từ v1.8/A12, KHÔNG do T2 | 🔴 Cao | Không sửa Sprint 5. Xem mục chi tiết dưới |
 | Bug-SaveComboSilentBlock | [OPEN] Save Combo với <2 món bị chặn im lặng — không toast/log/dialog | 🟢 Thấp | Phát hiện lúc lập kế hoạch T3 (04/08). Không chặn Gate 2. Xem mục chi tiết dưới |
 | Bug-ComboCategoryHardcode | [OPEN] Mọi combo lưu ra đều có `category="MyCombo"` (hardcode, đáng lẽ rỗng) | 🟢 Thấp | Phát hiện lúc verify Lô A (04/08). Không chặn Gate 2. Xem mục chi tiết dưới |
+| Bug-RowName-MissingInClipboard | [CHƯA VERIFY] Nghi `S_ClipboardEntry` (Copy/Paste/Duplicate) cùng thiếu `RowName` như `S_FurniturePlacement` từng thiếu (đã fix 03/08) | 🟡 Trung bình (nếu đúng) | Chưa verify — xem mục chi tiết dưới |
+| Bug-RowNameLostOnUndo | ✅ FIXED (03/08) — `S_FurniturePlacement` thiếu field `RowName`, Undo respawn actor mất danh tính | — | Xem `Blueprints/BP_UndoManager.md` v1.15, mục chi tiết dưới |
 
 ---
 
@@ -545,14 +547,29 @@ Replace 1 mesh bên trong combo (đang edit mode) → xong thì inventory tự n
 sang tab Combo (foldertree/chiprow/chiptag/CTV_ComboCard đổi theo combo),
 breadcrumb vẫn đứng ở path folder mesh.
 
-### Giả thuyết gốc (CHƯA verify bằng Print)
+### Giả thuyết gốc (✅ VERIFIED 03/08/2026)
 `ResolveSelectedComboRoot()` mù edit mode — luôn
 GetGroupRoot leo tận combo root, không nhận EditScope (khác
 `ResolveSelectionUnit(Actor, EditScope)` của Sprint 4). Không phải bug của
 re-route P2.
 
+### Fix
+Hàm mới `ShouldRouteReplaceToCombo(Actor)` — đọc `GetCurrentEditScope()` TRƯỚC, đang edit thì ép
+route MESH bất kể actor có thuộc combo hay không. Gọi tại **2 call site**:
+`WBP_FurnitureInventory.OnMeshSelected` (thay `ResolveSelectedComboRoot()`) và `CB_Replace`
+(`BP_FurnitureInputManager`, nhánh bật replace — thêm mới, bản mô tả 24/07 cũ đọc lúc chưa
+re-export nên chưa từng ghi nhánh này). Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v3.3
+(`ShouldRouteReplaceToCombo`) + v3.4 (`CB_Replace` re-export).
+
+### Verify
+Bằng chứng 6/6 case bảng T2 (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 6b.5) đúng
+kỳ vọng — case 1/2/3/5 → tab Furniture đúng folder; case 4 → tab Combo, P2 không regress; case 6
+→ RowName restore đúng sau Undo (log `CLAMP_table_karkas_005`). Riêng call site `CB_Replace`:
+2 trial chuột phải PASS 03/08 (đang edit trong combo → chuột phải Replace → giữ tab Furniture;
+thoát edit → chuột phải Replace cả cụm → giữ tab Combo).
+
 ### Trạng thái
-- **ĐÃ CÓ PLAN** — là T2 của đợt Save As/Save đè. ⚠ KHÔNG ghi hướng fix như đã chốt — chưa verify.
+- **✅ ĐÃ SỬA 03/08/2026** — đủ 2 call site (`OnMeshSelected` + `CB_Replace`), cả 2 đã verify.
 
 ---
 
@@ -798,6 +815,69 @@ Xoá DefaultValue của pin `Category` (để rỗng). 1 thao tác, không đụ
 
 ---
 
+## Bug-RowName-MissingInClipboard — nghi clipboard cùng thiếu RowName như snapshot từng thiếu
+
+**ID:** Bug-RowName-MissingInClipboard
+**Phát hiện:** 04/08/2026 (suy từ fix `S_FurniturePlacement`/`RestoreSnapshot`, xem
+`Blueprints/BP_UndoManager.md` v1.14)
+**Ưu tiên:** 🟡 Trung bình (nếu xác nhận đúng) — **CHƯA VERIFY, chỉ là nghi vấn**
+
+### Nghi vấn
+`S_FurniturePlacement` (dùng cho Undo snapshot) từng thiếu field `RowName` — actor spawn lại qua
+`RestoreSnapshot` mất `RowName` (đã fix 03/08/2026: thêm field + SET sau `SpawnFurnitureCopy`).
+`S_ClipboardEntry` (dùng cho `CopyMesh`/`PasteMesh`/`DuplicateMesh`) là struct **khác**, chưa kiểm
+tra — có khả năng mắc cùng lỗ hổng (thiếu `RowName`, actor paste/duplicate ra mất `RowName`).
+
+### Trigger verify
+Print `RowName` ngay sau `PasteMesh`/`DuplicateMesh` — nếu ra `None`/rỗng thay vì RowName thật
+→ xác nhận đúng nghi vấn.
+
+### Hướng fix (nếu xác nhận đúng — CHƯA quyết định)
+Cân nhắc thêm param `RowName` vào `SpawnFurnitureCopy` (đổi hàm chung, sửa mọi call site) thay vì
+vá lẻ tẻ từng nơi (Copy/Paste/Duplicate riêng) — nếu đúng có lỗ hổng thật, sửa hàm chung 1 lần
+mới đáng, không vá rời rạc.
+
+### Trạng thái
+- **Chưa verify.** Không tự kết luận khi chưa có Print xác nhận. Chờ test.
+
+---
+
+## Bug-RowNameLostOnUndo — S_FurniturePlacement thiếu field RowName, Undo respawn actor mất danh tính
+
+**ID:** Bug-RowNameLostOnUndo
+**Phát hiện:** 03/08/2026 (diagnostic case 6, T2)
+**Trạng thái:** ✅ ĐÃ FIX 03/08/2026
+
+### Gốc rễ
+`S_FurniturePlacement` (struct snapshot) chưa có field `RowName` kể từ khi dự án migrate sang
+RowName-based identity (Sprint D.T6, 17/06). `CaptureSnapshot`/`RestoreSnapshot` vẫn chỉ
+capture/restore `MeshPath`+`DAPath` (kiểu cũ) — actor spawn sau v1.6 chỉ có `RowName`, không có
+`DAPath`, nên qua 1 vòng Undo bị respawn với `RowName=None` + `DAPath=""` → tay trắng danh tính.
+
+### Triệu chứng
+Sau Replace → Move → Undo → chuột phải Replace lại → không vào mode, không hiện nút Change Mesh.
+Nguyên nhân sâu: `StartReplaceMode` nhánh False (`RowName` rỗng) gọi `LoadAsset_Blocking` với
+`DAPath` cũng rỗng → `Cast DA_FurnitureItem` fail → `CastFailed` dead-end (L2 fatal), hàm chết
+giữa chừng trước khi kịp `EnterReplaceMode`.
+
+### Fix
+`S_FurniturePlacement` +field `RowName(Name)`. `CaptureSnapshot` Step 3: `GET RowName ●→ Make
+struct`. `RestoreSnapshot` Step 4: `SET NewActor.RowName = Placement.RowName` (cạnh `SET
+GroupID`).
+
+### Verify
+Print `RowName` sau fix = `"CLAMP_table_karkas_005"` (không còn `None`). Case 6 (T2 Save
+As/Save đè) PASS.
+
+### Liên quan
+`Bug-RowName-MissingInClipboard` (chưa verify, nghi cùng gốc ở `S_ClipboardEntry` —
+Copy/Paste/Duplicate, KHÁC bug này, chưa fix).
+
+Chi tiết node flow: `Blueprints/BP_UndoManager.md` v1.15, `Blueprints/BP_FurnitureInputManager.md`
+v3.2 (ghi chú `StartReplaceMode`).
+
+---
+
 ## Ghi chú — Gốc chung 3 bug Surface
 
 **Phát hiện:** 02/08/2026, cùng phiên xác nhận Bug-MaterialPrimaryOnly / Bug-PasteVerticalCollapse
@@ -854,3 +934,4 @@ Cùng một loại lỗi: chọn sai điểm neo cho sự thật. Đề xuất: 
 | B-stale-popup | Popup hiển thị đồ cũ sau click | Sprint D.T6 | UpdateDetailPopup bound to OnSelectionChanged. WBP_MeshControls v1.7 |
 | Bug-Pagination | Furniture pagination dừng sớm 1 trang (7/8 thay vì 8/8) | Sprint D.T9 | Int to Float trước Ceil ở Next-page check. WBP_FurnitureInventory v2.6 |
 | Bug-Maximize | BTN_Maximize không nhảy về góc trên-trái | Sprint D.T9 | Set Position thêm vào Slot VerticalBox_0. WBP_ResizeWindow v1.1 |
+| Bug-RowNameLostOnUndo | S_FurniturePlacement thiếu field RowName, Undo respawn actor mất danh tính | Sprint 5 (Save As/Save đè, diagnostic T2) | S_FurniturePlacement +RowName(Name); CaptureSnapshot Step 3 GET + RestoreSnapshot Step 4 SET. BP_UndoManager v1.15 |

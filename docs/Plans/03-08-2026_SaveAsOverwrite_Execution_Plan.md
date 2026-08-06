@@ -1,6 +1,6 @@
 # Kế hoạch Save As / Save đè combo — Execution Plan
 
-**Phiên bản:** 1.3 — 04/08/2026 (xem mục 9 — lịch sử cập nhật)
+**Phiên bản:** 1.6 — 04/08/2026 (xem mục 9 — lịch sử cập nhật)
 **Tác giả:** Opus (phiên lập kế hoạch 03/08/2026)
 **Sprint:** 5 (Combo Mesh) — hạng mục kế tiếp sau C9 Replace Combo
 **Vị trí trong hàng đợi:** **Save As/Save đè → C11 → C10 → Gate 2**
@@ -498,9 +498,10 @@ hỏi nó trả lời* là đường dẫn tới hàm 5 tham số bool không ai
 
 ---
 
-## 6b. TASK CARD T2 — Guard edit-scope cho re-route Replace
+## 6b. TASK CARD T2 — Guard edit-scope cho re-route Replace — ✅ DONE 03/08/2026
 
-**Bug:** `Bug-ReplaceInCombo-TabJump` (`Bugs/Open_Bugs.md`, phát hiện 03/08/2026)
+**Bug:** `Bug-ReplaceInCombo-TabJump` (`Bugs/Open_Bugs.md`, phát hiện 03/08/2026, ✅ ĐÃ SỬA đủ 2
+call site `OnMeshSelected` + `CB_Replace`)
 **Người chạy:** Sonnet | **Phạm vi:** `BP_FurnitureInputManager` (1 Function mới) +
 `WBP_FurnitureInventory.OnMeshSelected` (đổi 1 call site)
 
@@ -650,19 +651,31 @@ Nếu case test 5 lộ khác biệt → ghi `DEVIATIONS.md`, không tự "sửa 
 
 Xóa Print T0.b trước khi test chính thức.
 
-| # | Thao tác | Kỳ vọng | Bắt |
-|---|---|---|---|
-| 1 | Edit mode trong combo → chọn 1 mesh → Replace → ChangeMesh | Inventory **ở nguyên tab Furniture**, nguyên folder mesh; mesh mới thay đúng chỗ | **S6 — bug gốc** |
-| 2 | Như case 1, group lồng 3 tầng | Y hệt case 1 | S7 |
-| 3 | Edit mode trong **group thường** (không combo) → Replace | Ở nguyên tab Furniture (không đổi so với trước) | S5 |
-| 4 | **Thoát edit mode** → chọn cả cụm combo → Replace | Nhảy sang tab Combo như cũ — **hành vi P2 còn nguyên** | S4 · **6A đường ngược** |
-| 5 | Chọn 1 mesh rời (ngoài mọi group) → Replace | Ở tab Furniture, folder đúng mesh đó | S1 |
-| 6 | Case 1 → Ctrl+Z → chọn lại mesh trong combo → Replace | Y hệt case 1, không Accessed None | S9 |
+| # | Thao tác | Kỳ vọng | Bắt | Kết quả thật (03/08) |
+|---|---|---|---|---|
+| 1 | Edit mode trong combo → chọn 1 mesh → Replace → ChangeMesh | Inventory **ở nguyên tab Furniture**, nguyên folder mesh; mesh mới thay đúng chỗ | **S6 — bug gốc** | ✅ PASS — Furniture, folder đúng |
+| 2 | Như case 1, group lồng 3 tầng | Y hệt case 1 | S7 | ✅ PASS — Furniture, folder đúng |
+| 3 | Edit mode trong **group thường** (không combo) → Replace | Ở nguyên tab Furniture (không đổi so với trước) | S5 | ✅ PASS — Furniture |
+| 4 | **Thoát edit mode** → chọn cả cụm combo → Replace | Nhảy sang tab Combo như cũ — **hành vi P2 còn nguyên** | S4 · **6A đường ngược** | ✅ PASS — tab Combo, P2 không regress ⭐ |
+| 5 | Chọn 1 mesh rời (ngoài mọi group) → Replace | Ở tab Furniture, folder đúng mesh đó | S1 | ✅ PASS — Furniture, folder đúng |
+| 6 | Case 1 → Ctrl+Z → chọn lại mesh trong combo → Replace | Y hệt case 1, không Accessed None | S9 | ✅ PASS — RowName restore đúng, log `CLAMP_table_karkas_005`, không Accessed None |
 
 **Case 4 là case chống regression quan trọng nhất** — nếu nó hỏng thì T2 đã phá tính năng P2 vừa
-đóng 02/08.
+đóng 02/08. **PASS.**
 
-**PASS = 6/6** → xóa mọi Print tạm → trả lời câu hiểu bài (6b.6) → mở task card T3.
+📌 [CHỨA AS-BUILT — 04/08/2026] **PASS = 6/6 — T2 ĐÓNG.** Case 6 dùng chung bằng chứng với fix
+`Bug-RowNameLostOnUndo` (`RestoreSnapshot` SET `NewActor.RowName` sau Undo — xem
+`Blueprints/BP_UndoManager.md` v1.15) — 2 fix độc lập nhưng case 6 xác nhận cả hai cùng lúc.
+2 câu hiểu bài (6b.6): PASS. Node flow as-built: `Blueprints/BP_FurnitureInputManager.md` v3.3
+(`ShouldRouteReplaceToCombo`) + v3.4 (`CB_Replace` re-export), `Widgets/WBP_FurnitureInventory.md`
+v3.20 (`OnMeshSelected`).
+
+✅ **Đủ 2 call site đã xác nhận (04/08/2026):** `OnMeshSelected` (test 6/6) + `CB_Replace`
+(2 trial chuột phải PASS 03/08). Caveat trước đó ("chưa xác nhận được call site `CB_Replace`") đã
+đóng — `CB_Replace` được re-export ✓K2 03/08, bản mô tả 24/07 cũ đọc lúc chưa re-export nên chưa
+từng ghi nhánh route combo, không phải code thật thiếu nhánh.
+
+**Mở task card T3 tiếp theo** (đã phát hành, mục 7b).
 
 ### 6b.6 MỤC DẠY (thử nghiệm lần 2)
 
@@ -1228,3 +1241,6 @@ BÁO CÁO SAU KHI XONG
 | 1.1 | 03/08/2026 | Phát hành task card T2 (mục 6b) — guard edit-scope cho re-route Replace (`Bug-ReplaceInCombo-TabJump`). T0 2 việc (K2Node export `OnMeshSelected` + Print xác nhận giả thuyết, 3-strike rule), Q9 S-Scan+X-Check, hàm mới `ShouldRouteReplaceToCombo()`, đổi đúng 1 call site trong `OnMeshSelected`, 6 case test (case 4 = chống regression P2), mục DẠY thử nghiệm lần 2. **CHƯA test — task card mới phát hành, chờ T0 + 6/6 PASS.** |
 | 1.2 | 04/08/2026 | Phát hành task card T3 (mục 7b, đánh số `7b` để né mục `## 8. COMMAND BLOCK` sẵn có) — dialog 2 nút Save As/Save đè. Scope thật rộng hơn dòng khung mục 3 (3 asset, không chỉ `WBP_SaveComboDialog`) — thêm ghi chú dưới bảng mục 3. 2 Function mới (`GetComboViewByID`, `BuildSaveDialogPrefill`), Q9 bắt ca "2 nguồn sự thật lệch nhau" (`bCanOverwrite` vs `bFound`), bẫy UMG tooltip-trên-button-disabled (7b.5, phải test trước khi code UI), 8 case test, mặt cắt bàn giao T4/T5 + T0 sơ bộ T4. **CHƯA test — task card mới phát hành.** ⚠️ Mục A của delta nguồn (K2Node export `CB_SaveCombo_Handler` 04/08) KHÔNG merge vào `BP_FurnitureInputManager.md` — xung đột với section as-built đã có (khác cấu trúc guard + thiếu bước `ContextMenuRef.Hide`), báo cáo cả 2 bản, chờ cuhoang chọn — xem `DEVIATIONS.md` mục "[CONFLICT] CB_SaveCombo_Handler — 2 bản không khớp — 04/08/2026". *(Đóng sau đó cùng ngày — xem `DEVIATIONS.md` mục "[DOC-DEBT đã đóng]": không phải xung đột thật, doc cũ chỉ thiếu 2 bước.)* |
 | 1.3 | 04/08/2026 | Thêm mục 4.1 — quyết định kiến trúc cho T4 (verify Lô A, `DELTA_04-08-2026_LoA_SaveCombo_Verify.md`): nối `SaveComboFromSelection` bằng 1 Branch tại điểm sinh `ComboID` (2 param mới `bOverwrite`/`OverwriteComboID`), KHÔNG viết primitive C++ mới. **CHƯA thực thi, không phải task card.** Nguồn xác nhận: `UComboSerializer` không có hàm ghi-đè-combo/`LoadCombo` — xem `Data/ComboSerializer_Reference.md`. |
+| 1.4 | 04/08/2026 | Mục 6b.5 (test T2) case 6 — thêm banner `📌 [CHỨA AS-BUILT]`: bằng chứng Print thật (`RowName=CLAMP_table_karkas_005`, không còn `None`) sau Replace→Move→Undo→Replace lại, đến từ fix `RestoreSnapshot.RowName` (xem `Blueprints/BP_UndoManager.md` v1.14) — KHÔNG phải từ T0 của chính T2. **T2 vẫn CHƯA đóng** — 5/6 case + T0 (K2Node export `OnMeshSelected`) chưa có bằng chứng. Bug mới `Bug-RowName-MissingInClipboard` (chưa verify) ghi vào `Bugs/Open_Bugs.md`. |
+| 1.5 | 04/08/2026 | **T2 ĐÓNG (mục 6b).** 6/6 case test PASS, điền bảng kết quả thật. `ShouldRouteReplaceToCombo()` (✓K2 03/08) merge as-built vào `BP_FurnitureInputManager.md` v3.3; `OnMeshSelected` merge as-built vào `WBP_FurnitureInventory.md` v3.20 (đổi đúng 1 node nguồn, giữ nguyên 2 node đích). Đóng `Bug-ReplaceInCombo-TabJump` cho call site `OnMeshSelected`. ⚠️ **KHÔNG xác nhận được** claim "call site thứ 2 = `CB_Replace`" — section `CB_Replace` hiện tại không có node route-combo nào để thay, không có ground truth cho 1 thay đổi ở đó — ghi nhận mâu thuẫn ở cả `BP_FurnitureInputManager.md` v3.3 lẫn `Bugs/Open_Bugs.md`, không tự sửa. Mở task card T3 tiếp theo (đã phát hành từ trước, mục 7b). |
+| 1.6 | 04/08/2026 | **Đóng caveat v1.5 — `CB_Replace` re-export ✓K2 03/08/2026.** Amendment cuhoang: bản mô tả 24/07 cũ đọc lúc CHƯA re-export sau T2, không phải code thật thiếu nhánh route combo. `CB_Replace` merge as-built vào `BP_FurnitureInputManager.md` v3.4 — bản 24/07 đánh `[SUPERSEDED]` giữ lịch sử, không xóa. Xác nhận đủ 2 call site T2, test 2 trial chuột phải PASS 03/08. `Bugs/Open_Bugs.md` mục `Bug-ReplaceInCombo-TabJump`: gỡ caveat, đóng hoàn toàn. |
