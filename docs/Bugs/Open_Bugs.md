@@ -10,6 +10,7 @@ docs, chưa chạy test).
 **Cập nhật (tiếp) 02/08/2026 (R-DOC-DONE):** Thêm 2 entry tách từ PROGRESS.md khi tick DONE P2/P1
 theo luật `R-DOC-DONE`: Task-P2-SweepCao (case Cao chưa test combo thật), Task-P1-VRAMRegression
 (G5 VRAM chưa đo được) — cả 2 🟢 Thấp, không chặn Gate 2.
+**Cập nhật (tiếp) 05/08/2026:** Thêm Feature-SaveInEditMode (backlog) — phát hiện lúc lập kế hoạch T3.
 
 ---
 
@@ -47,6 +48,7 @@ theo luật `R-DOC-DONE`: Task-P2-SweepCao (case Cao chưa test combo thật), T
 | Bug-ComboCategoryHardcode | [OPEN] Mọi combo lưu ra đều có `category="MyCombo"` (hardcode, đáng lẽ rỗng) | 🟢 Thấp | Phát hiện lúc verify Lô A (04/08). Không chặn Gate 2. Xem mục chi tiết dưới |
 | Bug-RowName-MissingInClipboard | [CHƯA VERIFY] Nghi `S_ClipboardEntry` (Copy/Paste/Duplicate) cùng thiếu `RowName` như `S_FurniturePlacement` từng thiếu (đã fix 03/08) | 🟡 Trung bình (nếu đúng) | Chưa verify — xem mục chi tiết dưới |
 | Bug-RowNameLostOnUndo | ✅ FIXED (03/08) — `S_FurniturePlacement` thiếu field `RowName`, Undo respawn actor mất danh tính | — | Xem `Blueprints/BP_UndoManager.md` v1.15, mục chi tiết dưới |
+| Feature-SaveInEditMode | Save trong edit mode: 2 ý định (ghi đè A / tách sub-group thành combo mới) chưa tách bạch | 🟢 Thấp | Backlog sau Gate 2 |
 
 ---
 
@@ -875,6 +877,38 @@ Copy/Paste/Duplicate, KHÁC bug này, chưa fix).
 
 Chi tiết node flow: `Blueprints/BP_UndoManager.md` v1.15, `Blueprints/BP_FurnitureInputManager.md`
 v3.2 (ghi chú `StartReplaceMode`).
+
+---
+
+## Feature-SaveInEditMode — Save trong Edit Mode: 2 ý định chưa tách bạch
+
+**ID:** Feature-SaveInEditMode
+**Phát hiện:** 05/08/2026 (phiên lập kế hoạch T3, phân tích luồng người dùng)
+**Ưu tiên:** 🟢 Thấp — KHÔNG chặn Gate 2
+
+### Bối cảnh
+Combo lồng nhiều cấp: A (root) › B (sub-group) › C. User vào edit mode tới cấp B,
+chọn vài món, bấm Save Combo. Cùng 1 thao tác nhưng CÓ 2 Ý ĐỊNH khác nhau:
+- Ý định 1: cập nhật/ghi đè combo A (cả cụm).
+- Ý định 2: tách riêng nhóm B thành 1 combo MỚI, độc lập (lưu con thành combo riêng).
+
+### Hành vi hiện tại (chấp nhận cho Gate 2)
+Luồng cũ (BTN_Confirm → OnDialogConfirmed → SaveComboFromSelection) VẪN chạy khi
+đang edit mode: lưu đúng `PendingSelectedActors` (mấy món đang chọn trong scope B)
+thành 1 combo MỚI. Đây là ý định 2, đang hoạt động NHƯNG theo cách tình cờ — chưa
+ai đặt tên/thiết kế có chủ đích.
+
+T3 (Save As/Save đè) KHÔNG chặn edit mode: khi `bOverwriteAllowed=false` (gồm cả
+trường hợp đang edit mode), nút Save rơi về luồng Save As — giữ nguyên hành vi cũ.
+
+### Cần làm trong tương lai (sau Gate 2)
+Tách bạch 2 ý định bằng UX rõ ràng. Khi làm, gắn vào nhánh `bOverwriteAllowed=false`
+của dialog (thêm nút thứ 3 "Lưu nhóm này thành combo mới" khi phát hiện đang edit
+sub-group hợp lệ). `ResolveActiveComboForSave()` đã trả sẵn `RootGroupID` (T3 chưa
+dùng) — dùng field này để biết đang ở nhánh nào của cây khi làm feature.
+
+### Trạng thái
+- **Backlog.** KHÔNG làm trong T3. Quyết định UX sau Gate 2.
 
 ---
 

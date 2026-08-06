@@ -973,6 +973,55 @@ KHÔNG broadcast, KHÔNG `Remove from Parent`. Dispatcher là mặt cắt của 
 Sửa tên trong ô rồi bấm **Ghi đè** = **đổi tên tại chỗ**, `comboId` GIỮ NGUYÊN.
 Đúng mô hình Save của phần mềm desktop. KHÔNG phải bug.
 
+### 7c — T3 SCOPE THU GỌN (CHỐT 05/08/2026 — ĐÈ thiết kế 7b ở các điểm ghi dưới)
+
+Sau khi phân tích luồng người dùng (05/08/2026), UX chốt lại đơn giản hơn 7b:
+
+NGỮ NGHĨA:
+- bOverwriteAllowed=true  → nút Save = ghi đè combo gốc (T4).
+- bOverwriteAllowed=false (MỌI lý do, kể cả đang edit mode) → nút Save rơi về
+  luồng Save As (lưu selection thành combo mới). KHÔNG đặc biệt hóa edit mode.
+
+CẮT khỏi 7b (KHÔNG làm trong T3):
+- KHÔNG thêm output bIsEditGroup vào ResolveActiveComboForSave.
+- KHÔNG làm nhánh cảnh báo Edit Group (3 nút).
+- KHÔNG thêm dispatcher OnRequestExitEditAndSave + handler InputManager.
+- KHÔNG tách Function dùng chung trong CB_SaveCombo_Handler.
+- Ca Q9 "bCanOverwrite vs bFound" (7b.6): GIỮ nguyên trong BuildSaveDialogPrefill
+  (đã code, đã ✓K2) — vẫn đúng, không cắt.
+
+CÒN LẠI trong T3 (4 việc, đều trong WBP_SaveComboDialog):
+1. RefreshButtonStates() — Function: cả 2 nút chỉ xám theo tên rỗng (bNameOK);
+   set tooltip DisabledReason lên Border_OverwriteWrap; nhãn/logic nút Save theo
+   bOverwriteAllowed.
+2. Sửa ValidateComboName → gọi RefreshButtonStates (Luật 6B).
+3. Event Construct: set text các ô prefill + gọi RefreshButtonStates.
+4. BTN_Overwrite.OnClicked — Branch(bOverwriteAllowed): True→Print "ghi đè";
+   False→chạy đúng luồng BTN_Confirm hiện có (Save As).
+
+ĐÃ HOÀN THÀNH TRƯỚC MỤC NÀY (ghi nhận as-built, chi tiết node flow ở doc canonical
+khi phân phối sau):
+- GetComboViewByID, BuildSaveDialogPrefill (Function mới, WBP_FurnitureInventory) — ✓K2.
+- BP_ComboItemView thêm field Description + nối LoadComboLibrary.
+- 8 biến Expose on Spawn trong WBP_SaveComboDialog.
+- OpenSaveComboDialog mở rộng (+3 param, gọi BuildSaveDialogPrefill, nối 8 pin,
+  Picker.ExpandToPath).
+- Chèn ResolveActiveComboForSave vào CB_SaveCombo_Handler (BP_FurnitureInputManager).
+- Designer: Border_OverwriteWrap + BTN_Overwrite; đổi text BTN_Confirm="Lưu dưới
+  dạng…", BTN_Overwrite="Lưu".
+
+TEST T3 (6 case):
+1. 2 mesh rời → Save → nút Save="Lưu dưới dạng…", form trống.
+2. Spawn combo → chọn cả cụm → Save → nút="Lưu" (ghi đè), nhãn combo đúng, 4 field
+   prefill, Picker đúng folder.
+3. Combo A + 3 mesh rời → Save → như case 2, id= là combo A.
+4. Combo A + Combo B → Save → nút Save As, tooltip "Đang chọn nhiều combo…".
+5. Đang edit mode → chọn món → Save → nút Save As (KHÔNG chặn), tooltip lý do edit.
+6. Xóa trắng ô tên (ở case 2) → cả 2 nút xám.
+PASS 6/6 → xóa Print → 2 câu hiểu bài → mở T4.
+
+---
+
 ### 7b.5 — ⚠ BẪY UMG — TEST TRƯỚC KHI CODE PHẦN UI
 
 **Button đã `SetIsEnabled(false)` thường KHÔNG nhận hover event — tooltip có thể không hiện.**

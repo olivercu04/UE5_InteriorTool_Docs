@@ -28,6 +28,14 @@ Mở task card **T2** tiếp theo. Ghi chú: `[CEILING]` "2 nơi cùng biết c�
 `CB_Replace`" KHÔNG xác nhận được — section `CB_Replace` hiện tại không có node route-combo nào
 để thay, ghi nhận mâu thuẫn, không tự sửa. Tiếp theo: **T3** (`WBP_SaveComboDialog`, task card đã
 phát hành 04/08, mục 7b của Plan).
+**Cập nhật (tiếp) 05/08/2026:** T3 (Save As/Save đè) — SCOPE THU GỌN sau phân tích luồng người
+dùng. Bỏ nhánh cảnh báo Edit Mode 3 nút + bIsEditGroup + dispatcher OnRequestExitEditAndSave.
+Ngữ nghĩa chốt: bOverwriteAllowed=false (mọi lý do) → Save rơi về Save As, không đặc biệt hóa
+edit mode. Đã xong: 2 Function mới + BP_ComboItemView.Description + 8 Expose-on-Spawn +
+OpenSaveComboDialog mở rộng + chèn ResolveActiveComboForSave. Còn lại: RefreshButtonStates +
+ValidateComboName + Event Construct prefill + BTN_Overwrite.OnClicked (đều trong
+WBP_SaveComboDialog). Backlog mới: Feature-SaveInEditMode (Open_Bugs.md). Chi tiết kế hoạch:
+Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md mục 7c.
 
 ---
 
