@@ -11,6 +11,8 @@ docs, chưa chạy test).
 theo luật `R-DOC-DONE`: Task-P2-SweepCao (case Cao chưa test combo thật), Task-P1-VRAMRegression
 (G5 VRAM chưa đo được) — cả 2 🟢 Thấp, không chặn Gate 2.
 **Cập nhật (tiếp) 05/08/2026:** Thêm Feature-SaveInEditMode (backlog) — phát hiện lúc lập kế hoạch T3.
+**Cập nhật (tiếp) 07/08/2026 (T3 DONE):** Đóng `Bug-SaveConfirm-EmptyName` — fix tự nhiên qua
+`RefreshButtonStates()` (T3, `WBP_SaveComboDialog`).
 
 ---
 
@@ -25,7 +27,7 @@ theo luật `R-DOC-DONE`: Task-P2-SweepCao (case Cao chưa test combo thật), T
 | Bug-Pagination | ✅ FIXED (17/06, D.T9) — Furniture pagination dừng ở 7/8 thay vì 8/8 | — | Xem WBP_FurnitureInventory.md v2.6, mục Pagination |
 | Bug-Maximize | ✅ FIXED (17/06, D.T9) — BTN_Maximize không nhảy về góc trên-trái | — | Xem WBP_ResizeWindow.md v1.1 |
 | K3 | ✅ RESOLVED (21/07) — pin `bAddToRecent=False` tại 2 call site còn thiếu: `RestoreSnapshot` (BP_UndoManager) + `SpawnComboByID` (BP_ComboManager) | — | Verify qua Blueprint Export Method (K2Node text) + screenshot thật. 4 case test PASS |
-| Bug-SaveConfirm-EmptyName | WBP_SaveComboDialog: BTN_Confirm không disable khi tên combo trống nếu user chưa gõ gì | 🟡 Trung bình-Thấp | Phát hiện REG C5.8 khối A6 (13/07) — ngoài scope C5.8, chưa fix |
+| Bug-SaveConfirm-EmptyName | ✅ CLOSED (07/08) — BTN_Confirm/BTN_Overwrite không disable khi tên combo trống nếu user chưa gõ gì | — | Fix tự nhiên qua `RefreshButtonStates()` (T3). Xem mục chi tiết dưới |
 | Bug-MoveFolder-Collision | Move Folder: không check trùng tên khi đích đã có con cùng tên với folder đang move | 🟡 Trung bình | Phát hiện REG C5.8 khối A7 (13/07) — backlog, task riêng ngoài scope C5.8 |
 | Task-RegenThumbnails | Regenerate all thumbnails cho combo library cũ (sau P2.F) | 🟢 Thấp | Backlog 16/07 — combo lưu trước P2 vẫn có ảnh capture kiểu cũ (không phải Studio Look), cần công cụ batch regenerate sau khi P2 Gate F đóng |
 | Task-P2-SweepCao | Combo "Cao" (kệ/tủ cao) cho Studio Thumbnail chưa test bằng combo thật — chỉ PASS SƠ BỘ bằng stack dựng tay | 🟢 Thấp | Tách khỏi P2 Gate D (02/08, R-DOC-DONE — P2 đã tick DONE trong PROGRESS.md). Đóng khi có combo kệ/tủ cao thật để test lại. Không chặn Gate 2 |
@@ -277,11 +279,13 @@ Thêm `Set Position` vào cùng node `Slot as Canvas Slot(VerticalBox_0)` đang 
 
 ---
 
-## Bug-SaveConfirm-EmptyName — BTN_Confirm Save dialog không disable khi tên trống chưa gõ gì
+## Bug-SaveConfirm-EmptyName — ✅ CLOSED (07/08/2026) — BTN_Confirm Save dialog không disable khi tên trống chưa gõ gì
 
 **ID:** Bug-SaveConfirm-EmptyName
 **Phát hiện:** REG C5.8 khối A6, 13/07/2026
-**Ưu tiên:** 🟡 Trung bình-Thấp
+**Đóng:** 07/08/2026 — fix tự nhiên qua `RefreshButtonStates()` được gọi trong `Event Construct`
+của `WBP_SaveComboDialog` (T3, Việc 3). Không cần patch riêng. Xem `Widgets/WBP_SaveComboDialog.md` v2.1.
+**Ưu tiên:** 🟡 Trung bình-Thấp (đã đóng)
 
 ### Triệu chứng
 `WBP_SaveComboDialog`: nếu user CHƯA gõ gì vào ô tên combo (chỉ để trống từ đầu), `BTN_Confirm` vẫn Enabled — save được combo không tên.
@@ -295,7 +299,9 @@ Bug có sẵn từ C3b (24/06/2026) — KHÔNG phải do Wire Save C5.8, chỉ m
 Gọi `ValidateComboName` (hoặc `Set Is Enabled(BTN_Confirm, false)` trực tiếp) ngay trong Event Construct, không chỉ chờ `OnTextChanged`.
 
 ### Trạng thái
-- **Open.** Ngoài scope C5.8 — không sửa trong đợt này.
+- **✅ CLOSED 07/08/2026.** `RefreshButtonStates()` (mới, T3) gọi trong `Event Construct` set
+  `Set Is Enabled(BTN_Confirm, bNameOK)` ngay cả khi user chưa gõ gì — thay thế hoàn toàn cơ chế
+  chỉ-bind-OnTextChanged cũ. Fix tự nhiên, không phải patch riêng cho bug này.
 
 ---
 
@@ -969,3 +975,4 @@ Cùng một loại lỗi: chọn sai điểm neo cho sự thật. Đề xuất: 
 | Bug-Pagination | Furniture pagination dừng sớm 1 trang (7/8 thay vì 8/8) | Sprint D.T9 | Int to Float trước Ceil ở Next-page check. WBP_FurnitureInventory v2.6 |
 | Bug-Maximize | BTN_Maximize không nhảy về góc trên-trái | Sprint D.T9 | Set Position thêm vào Slot VerticalBox_0. WBP_ResizeWindow v1.1 |
 | Bug-RowNameLostOnUndo | S_FurniturePlacement thiếu field RowName, Undo respawn actor mất danh tính | Sprint 5 (Save As/Save đè, diagnostic T2) | S_FurniturePlacement +RowName(Name); CaptureSnapshot Step 3 GET + RestoreSnapshot Step 4 SET. BP_UndoManager v1.15 |
+| Bug-SaveConfirm-EmptyName | BTN_Confirm Save dialog không disable khi tên combo trống nếu user chưa gõ gì | Sprint 5 (Save As/Save đè, T3) | Fix tự nhiên qua `RefreshButtonStates()` gọi trong Event Construct — không cần patch riêng. WBP_SaveComboDialog v2.1 |

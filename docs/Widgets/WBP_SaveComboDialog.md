@@ -1,13 +1,21 @@
 # WBP_SaveComboDialog — Dialog Lưu Combo
-**Version:** 2.0 | **Ngày:** 24/06/2026 | **Sửa:** 13/07/2026 — C5.8 Wire Save: thay field Folder cũ bằng `WBP_FolderTreePicker` + `BTN_AddFolder` | **Widget BP — dialog async nhập tên/folder/tags khi lưu combo**
+**Version:** 2.1 | **Ngày:** 24/06/2026 | **Sửa:** 13/07/2026 — C5.8 Wire Save: thay field Folder cũ bằng `WBP_FolderTreePicker` + `BTN_AddFolder` | 07/08/2026 — T3 Save As/Save Đè: nút `BTN_Overwrite` + `RefreshButtonStates()` + prefill | **Widget BP — dialog async nhập tên/folder/tags khi lưu combo, hỗ trợ ghi đè combo gốc**
 
 ## Mục đích
-Dialog nhập thông tin trước khi lưu combo. Thay hardcode "MyCombo" tạm (C3b). Async — đóng băng selection trước khi mở.
+Dialog nhập thông tin trước khi lưu combo. Thay hardcode "MyCombo" tạm (C3b). Async — đóng băng selection trước khi mở. Từ T3 (07/08): kiêm luôn UX Save As (lưu thành combo mới) / Save Đè (ghi đè combo gốc), 2 nút song song trong `HB_Buttons`.
 
 ## Expose on Spawn
 | Tên | Kiểu | Vai trò |
 |-----|------|---------|
 | TagVocabulary | Array String | Tags đã dùng → nguồn gợi ý (autocomplete defer) |
+| bOverwriteAllowed | Bool | ⚠ [Nguồn: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7b.4, ✓ as-built theo 7c — hạ tầng dựng trước phiên T3 07/08, CHƯA từng phân phối vào file này trước đợt merge này] Gate `BTN_Overwrite`: true → cho ghi đè |
+| OverwriteComboID | String | ⚠ nt — ComboID sẽ bị ghi đè nếu user bấm `BTN_Overwrite` |
+| OverwriteName | String | ⚠ nt — tên combo gốc, dùng dựng label `BTN_Overwrite` ở Event Construct |
+| DisabledReason | String | ⚠ nt — lý do `BTN_Overwrite` bị xám, set làm ToolTipText của `Border_OverwriteWrap` |
+| PrefillName | String | ⚠ nt — prefill `TextBox_ComboName` khi đang ở case ghi đè |
+| PrefillFolder | String | ⚠ nt — prefill folder, dùng ở `WBP_FurnitureInventory.OpenSaveComboDialog` (`Picker.ExpandToPath`/`SelectedPath`), KHÔNG set trực tiếp trong Construct |
+| PrefillDesc | String | ⚠ nt — prefill `TextBox_Description_MultiLine` |
+| PrefillTagsText | String | ⚠ nt — prefill `TextBox_Tags` |
 
 ## Class Variables
 | Tên | Kiểu | Vai trò |
@@ -46,26 +54,59 @@ CanvasPanel (root — Anchors Fill, Hit-Test Invisible để block click xuyên)
                 └── HB_Buttons
                     ├── Spacer_PushLeft (Fill)
                     ├── BTN_Cancel (text "Huỷ")
-                    └── BTN_Confirm (text "Lưu", disabled mặc định)
+                    ├── Border_OverwriteWrap ⚠ [Nguồn: 7b.4/7c, xem ghi chú Expose on Spawn] — bọc BTN_Overwrite, ToolTipText = DisabledReason
+                    │   └── BTN_Overwrite (text "Ghi đè "<OverwriteName>"", đặt bên TRÁI BTN_Confirm)
+                    └── BTN_Confirm (text "Lưu thành combo mới…", disabled mặc định)
 ```
 
 ## Event Construct
+**✓TEST 07/08/2026 (T3)** — dựng lại toàn bộ: bản Construct cũ (13/07) đã bị xóa mất trong quá
+trình làm việc trước phiên T3 mà không được ghi log; đoạn dưới đây là bản THẬT xác nhận qua
+K2Node export + test tay 07/08/2026, thay hoàn toàn 2 dòng cũ (`Set Is Enabled(BTN_Confirm,
+false)` đơn lẻ + bind rời).
 ```
-Set Is Enabled(BTN_Confirm, false)    ← tên rỗng → không confirm
-Bind OnTextChanged(TextBox_ComboName) → ValidateComboName
+Event Construct
+▶→ SetText(TextBox_ComboName, Conv_StringToText(PrefillName))
+▶→ SetText(TextBox_Description_MultiLine, Conv_StringToText(PrefillDesc))
+▶→ SetText(TextBox_Tags, Conv_StringToText(PrefillTagsText))
+▶→ SET Text(<TextBlock con của BTN_Overwrite>) =
+     Conv_StringToText(Append("Ghi đè \"", OverwriteName, "\""))
+▶→ RefreshButtonStates()
+▶→ Bind Event to OnTextChanged (Target=TextBox_ComboName) → Event=ValidateComboName
 ```
-> **13/07:** xoá đoạn cũ `CLEAR Options CMB_Folder` + `ForEach ExistingFolders → Add Option` — `CMB_Folder` không còn tồn tại. Folder data giờ nạp từ ngoài qua `Picker.SetFolders(Entries)` (gọi từ `WBP_FurnitureInventory.OpenSaveComboDialog`), không tự load trong Construct.
+> Folder prefill do `Picker` lo ở `WBP_FurnitureInventory.OpenSaveComboDialog` (Việc 5,
+> `Picker.SelectedPath` + `Picker.RefreshVisibleRows()`), KHÔNG set trong Construct.
+> Dòng `Bind OnTextChanged → ValidateComboName` là phần PHỤC HỒI — đã có từ v2.0 (24/06) nhưng
+> bị mất trong lúc sửa trước phiên T3, dựng lại đúng nguyên bản.
+> **13/07 (vẫn đúng, không đổi):** `CLEAR Options CMB_Folder` + `ForEach ExistingFolders → Add
+> Option` đã xóa từ trước — `CMB_Folder` không còn tồn tại. Folder data nạp từ ngoài qua
+> `Picker.SetFolders(Entries)`.
 
 ## Functions
 
-### ValidateComboName(Text : Text)
+### RefreshButtonStates() — MỚI 07/08/2026 (T3), nguồn DUY NHẤT quyết định trạng thái 2 nút
+**✓TEST 07/08/2026** — Local var: `bNameOK` (Bool)
 ```
-Text ●→ ToString ●→ IsEmpty
-Branch:
-  True  → Set Is Enabled(BTN_Confirm, false)
-  False → Set Is Enabled(BTN_Confirm, true)
-Return
+Entry
+▶→ TextBox_ComboName.Text ●→ Conv_TextToString ●→ IsEmpty ●→ Not_PreBool ●→ SET bNameOK
+▶→ Set Is Enabled(BTN_Confirm, bNameOK)
+▶→ BooleanAND(bNameOK, bOverwriteAllowed) ●→ Set Is Enabled(BTN_Overwrite, <kết quả AND>)
+▶→ Set Tool Tip Text(Border_OverwriteWrap, Conv_StringToText(DisabledReason))
+▶→ Return
 ```
+> Tên rỗng → **CẢ HAI** nút xám (không chỉ `BTN_Confirm` như thiết kế v2.0 cũ) — nếu chỉ gate
+> `BTN_Confirm`, `BTN_Overwrite` sống lúc tên rỗng → ghi metadata rỗng đè lên combo thật.
+> Ghi chú: `bNameOK` đọc lại qua Get riêng (không dùng Output_Get của node SET) — không phải bug,
+> chỉ là cách nối khác; pure Get luôn ra cùng giá trị vì không ai SET lại giữa 2 lần đọc.
+
+### ValidateComboName(Text : Text) — SỬA 07/08/2026 (T3), thay hoàn toàn thân hàm cũ
+**✓TEST 07/08/2026**
+```
+Entry.then ▶→ RefreshButtonStates(Target=self) ▶→ Return Node
+```
+> Pin `Text` (input) không nối vào đâu — cố ý, `RefreshButtonStates` tự đọc lại
+> `TextBox_ComboName.Text` bên trong nó. Luật 6B: 2 đường gọi (Event Construct và
+> OnTextChanged) nay dẫn cùng 1 cấu trúc, cho cùng kết quả.
 
 ### ParseTags(RawText : String) → Tags : Array String
 ```
@@ -93,7 +134,29 @@ Broadcast OnDialogCancelled
 Remove from Parent
 ```
 
+### BTN_Overwrite — OnClicked (MỚI 07/08/2026, T3)
+**✓TEST 07/08/2026** — T3 CHỈ Print, KHÔNG ghi file thật (mặt cắt của T4).
+```
+OnClicked
+▶→ Branch(bOverwriteAllowed)
+     True  ▶→ Print String: Concat("T3-OVERWRITE | id=", OverwriteComboID,
+                " | name=", Conv_TextToString(TextBox_ComboName.Text))
+              [EnabledState = DevelopmentOnly]
+     False ▶→ (bản COPY nguyên xi chuỗi hành vi của BTN_Confirm.OnClicked bên dưới:
+                SET TempName/TempDesc/TempTags từ 3 ô nhập → ParseTags →
+                SET TempFolder = Picker.SelectedPath →
+                Broadcast OnDialogConfirmed(TempName, TempFolder, TempDesc, TempTags) →
+                Remove from Parent)
+```
+> Nhánh `False` là **bản sao độc lập**, KHÔNG dùng chung hàm với `BTN_Confirm.OnClicked` (quyết
+> định 7c — không tách hàm dùng chung, không refactor, KP3). Ngữ nghĩa: sửa tên trong ô rồi bấm
+> **Ghi đè** = **đổi tên tại chỗ**, `comboId` GIỮ NGUYÊN — đúng mô hình Save của phần mềm desktop.
+> KHÔNG phải bug.
+> Chưa broadcast dispatcher riêng cho nhánh ghi đè thật (T4 sẽ mở mặt cắt này — xem
+> `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 4.1 và 7b.6).
+
 ### BTN_Confirm — OnClicked
+**Sửa 07/08/2026 (T3):** text đổi thành "Lưu thành combo mới…" (Designer), thân hàm KHÔNG đổi.
 ```
 Local: TempName (String), TempDesc (String), TempFolder (String), TempTags (Array String)
 GET Text(TextBox_ComboName) → ToString → SET TempName
@@ -104,16 +167,20 @@ Broadcast OnDialogConfirmed(TempName, TempFolder, TempDesc, TempTags)
 Remove from Parent
 ```
 
-`TagVocabulary`, field Name/Description/Tags, `ValidateComboName`, `ParseTags` — giữ nguyên.
+`TagVocabulary`, field Name/Description/Tags, `ParseTags` — giữ nguyên. `ValidateComboName` sửa
+07/08/2026 (T3, xem mục Functions ở trên).
 
 ## Event Destruct
 (Không có ref hard cần clear trực tiếp — R4 OK. Ref dialog giữ ở WBP_FurnitureInventory.SaveComboDialogRef, clear ở OnSaveComboDialogClosed.)
 
 ## Test PASS: S6a, S6c
 ## Test [SCOPE — không áp dụng]: S6b (context-menu rename không tồn tại theo thiết kế 2d)
+## Test PASS (07/08/2026, T3): 6/6 case (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục
+7c "TEST T3") + 2 câu hiểu bài PASS.
 
 ## Lịch sử cập nhật
 | Ngày | Version | Nội dung |
 |------|---------|----------|
 | 24/06/2026 | 1.0 | Tạo mới — C3b: dialog async lưu combo (ExistingFolders, TagVocabulary, bIsCreatingNewFolder, 2 dispatcher, ValidateComboName, ParseTags, BTN_NewFolder/Cancel/Confirm) |
 | 13/07/2026 | 2.0 | **C5.8 Wire Save.** Xoá hẳn: `CMB_Folder`, `BTN_NewFolder`, `TextBox_FolderPath`, `HB_Folder_Row`, var `bIsCreatingNewFolder`, pin `ExistingFolders` (Expose on Spawn), đoạn Event Construct cũ (CLEAR Options + ForEach ExistingFolders). Thêm: var `Picker : WBP_FolderTreePicker` (SizeBox ~180px, compact); `BTN_AddFolder` (text "+ Thư mục mới"); dispatcher `OnRequestCreateFolder(ParentPath)`; `BTN_AddFolder.OnClicked` broadcast `OnRequestCreateFolder(Picker.SelectedPath)`; `BTN_Confirm` đổi nhánh folder sang `GET Picker.SelectedPath`. `TagVocabulary`/field Name-Description-Tags/`ValidateComboName`/`ParseTags` giữ nguyên. Test PASS: S6a, S6c. S6b [SCOPE — không áp dụng]. |
+| 07/08/2026 | 2.1 | **T3 Save As/Save Đè — ĐÓNG.** Thêm 8 Expose on Spawn (`bOverwriteAllowed`/`OverwriteComboID`/`OverwriteName`/`DisabledReason`/`PrefillName`/`PrefillFolder`/`PrefillDesc`/`PrefillTagsText` — ⚠ hạ tầng dựng từ trước phiên T3 theo 7b.4/7c, lần đầu phân phối vào file này); `Border_OverwriteWrap`+`BTN_Overwrite` (Layout); `BTN_Confirm` đổi text → "Lưu thành combo mới…". Function mới `RefreshButtonStates()` (nguồn duy nhất quyết định 2 nút, cả 2 xám khi tên rỗng). `ValidateComboName` thay thân hoàn toàn → gọi `RefreshButtonStates`. `Event Construct` dựng lại toàn bộ (bản 13/07 bị mất không ghi log) — prefill 3 ô + label `BTN_Overwrite` + `RefreshButtonStates()` + bind `OnTextChanged`. `BTN_Overwrite.OnClicked` mới — Branch `bOverwriteAllowed`: True→Print debug (T4 mở dispatcher thật); False→bản copy độc lập luồng `BTN_Confirm` (Save As), KHÔNG dùng chung hàm (KP3). Đóng `Bug-SaveConfirm-EmptyName` (`Bugs/Open_Bugs.md`). Test PASS 6/6 case + 2 câu hiểu bài. Nguồn: command block 07/08/2026, K2Node export + test tay. |

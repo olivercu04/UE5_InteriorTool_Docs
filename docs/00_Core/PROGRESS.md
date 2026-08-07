@@ -3,6 +3,7 @@
 **Cập nhật:** 31/07/2026 — C9.0c (Migrate E_ReplaceTarget) HOÀN TẤT, tiền đề cho C9 | K1 (WBP_Toast) DONE | C6 (Favorite + Recent combo) CHÍNH THỨC DONE HOÀN TOÀN | P2 Studio Thumbnail Gate F DONE, P2 HOÀN TẤT VỀ TÍNH NĂNG (Gate A→F) | P1 Combo Thumbnail DONE về tính năng | C5.8 CHÍNH THỨC DONE (13/07) | C9 (Replace Combo) DONE (30/07) — chuyển sang Save As/Save đè
 **Cập nhật (tiếp) 02/08/2026:** Replace UX Fix (P0→P5) ĐÓNG HOÀN TOÀN (01-02/08) — 6 bug UX gốc trên C9 (#1/#3a/#3b/#4/#5/#6) rụng hết, đường ngược Luật 6A đóng đủ, dead code `MeshToReplace` xóa. Bug-fix round trên ô C9 đã tick — không đổi bar đếm Sprint 5 (16/22). Xem `01_Session_State.md`.
 **Cập nhật (tiếp) 02/08/2026:** Luật Q9 (S-Matrix Gate) thiết lập + 3 bug mới xác nhận bằng test tay (Bug-MaterialPrimaryOnly/Bug-PasteVerticalCollapse/Bug-StaleSurfaceType), cả 3 dời sau Gate 2 — KHÔNG đổi thứ tự ưu tiên (Save As/Save đè → C11 → C10 → Gate 2). Xem `01_Session_State.md`.
+**Cập nhật (tiếp) 07/08/2026:** Save As/Save đè T3 (`WBP_SaveComboDialog`) — ✅ DONE, test PASS 6/6. Đóng `Bug-SaveConfirm-EmptyName`. Bar Sprint 5 KHÔNG đổi (18/23, R-DOC-ATOMIC — tử số chỉ +1 khi T5 xong). Tiếp theo: T4. Xem `01_Session_State.md`.
 
 ---
 
@@ -21,7 +22,7 @@ Sprint 5 — Combo Mesh         ████████████████
                                (Replace Combo, 30/07)/P2 (Studio Thumbnail, 02/08)/P1 (Thumbnail
                                System C++, 02/08)
                                ⏳ CÒN LẠI (5): C3 (P4 LOCALAPPDATA chưa áp)/Xoay combo (P3)/C11
-                               (Export/Import)/C10 (Regression)/Save As-Save đè [~] (T1 done, T2-T5
+                               (Export/Import)/C10 (Regression)/Save As-Save đè [~] (T1-T3 done, T4-T5
                                còn — xem `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`)
                                [03/08 R-DOC-ATOMIC: Save As/Save đè là tính năng RIÊNG (execution
                                plan riêng, T1→T5 riêng) — thêm 1 ô mẫu số 22→23 (`[~]`, KHÔNG tick
@@ -377,7 +378,7 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 - [~] **Save As / Save đè combo** (T1-T5, xem `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`) — ô riêng trong mẫu số Sprint 5 (03/08, R-DOC-ATOMIC). Chỉ [x] khi T5 xong.
   - [x] T1 — `ResolveActiveComboForSave()` + `GetComboRootOfActor()` (`BP_FurnitureInputManager` v3.0). Test PASS 6/6. ✅ DONE (03/08/2026)
   - [x] T2 — Guard edit-scope cho re-route replace (`Bug-ReplaceInCombo-TabJump`). Test PASS 6/6. ✅ DONE (03/08/2026)
-  - [ ] T3 — 2 nút + trạng thái xám + tooltip (`WBP_SaveComboDialog`)
+  - [x] T3 — 2 nút + trạng thái xám + tooltip (`WBP_SaveComboDialog`). Test PASS 6/6. ✅ DONE (07/08/2026)
   - [ ] T4 — Ghi đè thật + xác nhận + thumbnail (C++ `ComboSerializer` + `BP_ComboManager`)
   - [ ] T5 — Regression + docs
 ──── **Giai đoạn 3: share** ────
@@ -440,3 +441,4 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 02/08/2026 (Lô D — CrossCheck follow-up) | **Đóng các mục từ CrossCheck_PreGate2 có nguồn thật.** Viết doc `ResolveSelectedComboRoot()` vào `BP_FurnitureInputManager.md` (K2Node export thật, cuhoang cung cấp — đóng MỤC 4 báo cáo). Ghi `[DOC-DRIFT]` `PrimarySelectedActor` vs `SelectedActors[0]` vào `DEVIATIONS.md` — chưa đóng, chờ task card Save As/Save đè, KHÔNG sửa `Plans/24-07-2026_C9_Execution_Plan.md` (đã đóng dấu as-built). Củng cố đóng MERGE_LOG Q3 (`FindGroupData` không Index) bằng nguồn độc lập thứ 2 + sửa thêm `BP_UndoManager.md` v1.13, `Blueprint_Logic_NodeFlow.md` v1.15 (cả 2 tự mâu thuẫn nội bộ, sót từ lần sửa trước). Không đụng: 3 mục [?] còn treo, MỤC 5 canonical lạc hậu, 3 open item C9 khác (RowNotFound/guard Length==0/`bIsReplaceMode` dòng 276) — cần K2Node export riêng. Chi tiết: `00_Core/MERGE_LOG.md`, `00_Core/DEVIATIONS.md`. |
 | 02/08/2026 (Lô E — ĐÓNG ĐỢT DỌN DOCS) | **Chốt Sprint 4 + tổng kết cả đợt (Lô A→E).** Đóng dấu thứ 3 `⚠️ [AS-BUILT TẠI THỜI ĐIỂM SPRINT 4]` cho `Sprints/Sprint4/Execution.md` + `Sprints/Sprint4/BugFix_Execution.md` — KHÔNG sửa chữ ký `FindGroupData` cũ bên trong (viết lại lịch sử = mất dấu vết quyết định gốc). Thêm bảng "3 LOẠI DẤU DOC" vào `MERGE_LOG.md` (phân biệt `[HISTORICAL]`/`[CHỨA AS-BUILT]`/`[AS-BUILT TẠI THỜI ĐIỂM X]`). Xác nhận `BP_FurnitureInputManager_MERGED_v1.9.md` **vẫn còn tồn tại** (đánh dấu xóa từ 17/06/2026, chưa ai xóa thật) — báo cáo, không tự xóa. Tạo `00_Core/DocCleanup_Summary_02aug2026.md` tổng kết toàn bộ: 4 luật mới (Q9/R-DOC-DONE/R-DOC-ATOMIC/R-DOC-ASBUILT), 3 loại dấu doc, danh sách còn treo (3 mục [?], MỤC 5 canonical lạc hậu ưu tiên `GetCombosDir`→C11, 3 open item C9, quyết định `ResolveSelectedComboRoot` chặn Save As/Save đè) — **không cái nào chặn Gate 2**. **Đợt dọn docs KẾT THÚC.** |
 | 02/08/2026 (Lô E, tiếp) | **`BP_FurnitureInputManager_MERGED_v1.9.md` — XÓA THẬT** (quyết định cuhoang, sau khi entry trên báo cáo file vẫn còn tồn tại). Bản backup v1.9 vs canonical v2.9 chênh 10 phiên bản — rủi ro đọc nhầm cao hơn giá trị lưu trữ, lịch sử đã có trong git. Đã kiểm + sửa mọi link trỏ tới file sang canonical (`BP_FurnitureInputManager.md`, `MERGE_LOG.md`, `00_INDEX.md`). Chi tiết: `MERGE_LOG.md` mục "File đã xóa". |
+| 07/08/2026 (T3 DONE) | **Save As/Save đè T3 (`WBP_SaveComboDialog`) — ✅ ĐÓNG.** Tick `[x]` sub-item T3 trong checklist Save As/Save đè. Bar Sprint 5 KHÔNG đổi (18/23 — R-DOC-ATOMIC, tử số item cha `[~]` chỉ +1 khi T5 xong). 4 việc chính (`RefreshButtonStates`/`ValidateComboName`/`Event Construct`/`BTN_Overwrite.OnClicked`, `WBP_SaveComboDialog` v2.1) + 1 việc phát sinh (Việc 5 — `Picker.SelectedPath`/`RefreshVisibleRows`, `WBP_FurnitureInventory` v3.21). Đóng `Bug-SaveConfirm-EmptyName`. Test PASS 6/6 case + 2 câu hiểu bài. ⚠️ Nhân tiện phát hiện + backfill hạ tầng 7b/7c (2 Function mới `GetComboViewByID`/`BuildSaveDialogPrefill`, 8 Expose-on-Spawn, `Border_OverwriteWrap`+`BTN_Overwrite`) CHƯA từng được phân phối vào doc canonical trước đợt này — xem cảnh báo mâu thuẫn trong `Widgets/WBP_FurnitureInventory.md` v3.21 + báo cáo merge 07/08/2026. Tiếp theo: **T4** (ghi đè thật). Chi tiết: `01_Session_State.md`, `Bugs/Open_Bugs.md`. |

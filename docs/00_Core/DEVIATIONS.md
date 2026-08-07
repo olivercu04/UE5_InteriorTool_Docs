@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 02/08/2026
+**Cập nhật:** 07/08/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1423,6 +1423,41 @@ hoặc tự tạo biến trùng vai (cùng loại drift với ca `ReplaceTarget`
 
 ---
 
+## [DOC-DEBT] BP_FurnitureInputManager.md nợ cập nhật ResolveActiveComboForSave trong CB_SaveCombo_Handler — 07/08/2026
+
+**Phát hiện:** merge command block T3 (07/08/2026) — đối chiếu `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`
+mục 7b.1 (chèn `ResolveActiveComboForSave()` đứng đầu nhánh `True` của guard `Length >= 2` trong
+`CB_SaveCombo_Handler`, wire 3 pin `ComboID`/`bCanOverwrite`/`ReasonText` xuống `OpenSaveComboDialog`)
+với canonical `Blueprints/BP_FurnitureInputManager.md` — node chèn này **CHƯA có trong doc**.
+
+Hệ quả: `WBP_FurnitureInventory.OpenSaveComboDialog` (v3.21, đã merge 07/08) nhận đủ 3 param mới
+`ActiveComboID`/`bCanOverwrite`/`ReasonText`, nhưng doc canonical không cho thấy caller nào cấp
+giá trị cho 3 param đó — call site còn thiếu trong tài liệu.
+
+**Cờ:** gộp vào T4 — task card T4 (`SaveComboFromSelection` ghi đè thật) đằng nào cũng phải đụng
+lại `CB_SaveCombo_Handler`/`BP_FurnitureInputManager.md`, cập nhật cùng lúc thay vì tách delta
+riêng.
+
+**Ceiling:** không chặn T3 (đã đóng, test PASS 6/6) — T3 test qua PIE thật nên node chèn này chắc
+chắn tồn tại trong project, chỉ là chưa được ghi vào canonical doc.
+**Trigger:** mở task card T4.
+
+---
+
+## [DOC-DEBT] BP_ComboItemView.Description — chưa xác nhận field đầy đủ — 07/08/2026
+
+**Phát hiện:** merge command block T3 (07/08/2026), mục 7b.2 Plan nhắc `BP_ComboItemView` có field
+`Description` (dùng bởi `BuildSaveDialogPrefill`) — chỉ thấy TÊN field được nhắc trong node flow
+của hàm khác, chưa có mục doc riêng xác nhận kiểu dữ liệu/nơi nối `LoadComboLibrary` cho field này
+(tương tự ca `GetGroupRoot` từng thiếu doc riêng, xem mục trên).
+
+**Ưu tiên:** Thấp nhất trong 3 mục nợ doc phát hiện đợt 07/08 — field nhỏ, không chặn T4.
+
+**Xử lý:** ghi vào doc-debt queue, gộp chung đợt dọn nợ doc định kỳ (kiểu Lô D/Lô E, xem các mục
+`[DOC-DEBT]` phía trên) — KHÔNG cần task riêng.
+
+---
+
 ## [ARCH-DEBT] AllComboViews_Combo sống ở widget — 04/08/2026
 
 **Bối cảnh:** lập kế hoạch T3 (Save As/Save đè), cần hàm tra `ComboID → BP_ComboItemView`.
@@ -1481,6 +1516,44 @@ cũng không có hàm nào nhận ComboID trả `FComboData`.
 
 **Ceiling:** C7 chưa thực thi — chưa gây lỗi. KHÔNG sửa file Plans (đã đóng dấu `[CHỨA AS-BUILT]`).
 **Upgrade trigger:** khi mở task card C7 — dùng cặp 2 hàm trên, không tìm `LoadCombo`.
+
+---
+
+## [BÀI HỌC] Phiên T3 Save As/Save Đè — 07/08/2026
+
+**Nguồn:** Command block cập nhật doc sau phiên T3 (07/08/2026), verify qua K2Node export + test
+tay 6/6 case trong phiên chat với Sonnet.
+
+- **Đừng giả định 1 đoạn Blueprint "đã as-built" chỉ vì Session_State ghi "đã hoàn thành" ở
+  mục lân cận.** Trong phiên này, `Event Construct` của `WBP_SaveComboDialog` bị hiểu nhầm là
+  "đã có sẵn phần prefill" — thực ra nó đã bị xóa trong 1 lần sửa trước đó không được ghi log.
+  Bài học: trước khi sửa/nối thêm vào 1 hàm, xác nhận trạng thái THẬT bằng cách xem trực tiếp
+  (K2Node export hoặc mô tả từ cuhoang), không suy diễn từ doc trạng thái tổng.
+
+- **Khi review K2Node export theo 1 câu hỏi cụ thể của cuhoang, phải đối chiếu TOÀN BỘ graph
+  với thiết kế gốc, không chỉ phần được hỏi tới.** Lần đầu review `Event Construct`, Sonnet chỉ
+  trace đúng 5 node mới được hỏi ("kiểm tra giúp tao") mà bỏ sót việc graph đã mất luôn dòng
+  `Bind OnTextChanged → ValidateComboName` — khiến bug thật (nút không phản ứng khi gõ chữ) lọt
+  qua 1 vòng kiểm tra. Cuhoang phải tự phát hiện lại. Bài học: review K2Node cần so sánh ngược
+  với bản thiết kế/doc trước đó theo TỪNG DÒNG, không chỉ khớp đúng phần được hỏi.
+
+- **Hàm dùng chung giữa 2 nơi gọi có yêu cầu khác nhau → chỉ nên làm phần chung, để phần khác
+  biệt cho caller tự quyết định.** `ExpandToPath` (dùng chung giữa Move và Save dialog) chỉ mở
+  cây, không tự chọn `SelectedPath`, vì Move và Save cần hành vi chọn-sẵn khác nhau. Đây là ví
+  dụ thực tế tốt cho nguyên tắc "hàm sự thật (mở đường) vs hàm chính sách (có chọn luôn không)"
+  đã dạy ở T1.
+
+- **Ra đề test case cần khớp đúng guard hệ thống đã có từ trước.** Case 5 lần đầu ra đề "chọn
+  1 món trong edit mode" bị chặn bởi guard `Length >= 2` có sẵn từ lâu trong
+  `CB_SaveCombo_Handler` — không liên quan gì T3, khiến test tưởng nhầm là bug mới. Bài học:
+  trước khi ra đề test 1 tính năng, kiểm tra lại các guard/limitation đã biết (`Open_Bugs.md`)
+  liên quan tới đúng luồng đang test, tránh lãng phí lượt test.
+
+- **Cách phối hợp tốt trong phiên này (giữ tiếp):** cuhoang chủ động đoán nguyên nhân bug trước
+  khi Sonnet trả lời (đúng luật mục 2 Custom Instructions) — cả 2 lần bug thật (bind mất,
+  Picker.SelectedPath) cuhoang đều đoán đúng hướng trước khi Sonnet xác nhận qua tài liệu. Duy
+  trì nhịp này ở các task sau: Sonnet đưa gợi ý hướng nghĩ thay vì đáp án thẳng, cuhoang đoán,
+  rồi mới đối chiếu bằng chứng.
 
 ---
 
@@ -1572,4 +1645,6 @@ cũng không có hàm nào nhận ComboID trả `FComboData`.
 | 02/08/2026 (DOC-DEBT P2) | Thêm section "[DOC-DEBT đã đóng] PROGRESS.md P2 self-contradiction — 02/08/2026": PROGRESS.md tự mâu thuẫn về trạng thái P2 (dòng checklist Gate D/sub-item vs dòng "P2 HOÀN TẤT VỀ TÍNH NĂNG" cùng file) — do checklist không diễn tả được "xong tính năng, treo nghiệm thu phụ". Fix: quyết định cuhoang P2=DONE + P1=DONE (cùng lý do), tách case Cao + G5 VRAM ra `Bugs/Open_Bugs.md`, xóa dòng mồ côi "CHƯA bắt đầu.", thiết lập luật mới `R-DOC-DONE` (`Rules/Execution_Discipline.md` v3.1). |
 | 02/08/2026 (DOC-DEBT C3) | Thêm section "[DOC-DEBT] C3 gộp 3 việc — 02/08/2026": ô checklist `C3` gộp 3 việc độc lập (Save dialog/móc capture thumbnail/P4 LOCALAPPDATA) — 2 xong 1 chưa, không diễn tả được bằng 1 ô. Quyết định cuhoang: KHÔNG tick, KHÔNG tách giữa sprint — chỉ sửa text mô tả rõ từng phần. Ceiling: text đủ rõ cho Sprint 5. Trigger: tách C3 thành ô riêng khi recount đầu Sprint 6. Thêm luật mới `R-DOC-ATOMIC` (`Rules/Execution_Discipline.md` v3.2). |
 | 02/08/2026 (DOC-DEBT AS-BUILT) | Thêm section "[DOC-DEBT] AS-BUILT lẫn trong Plans/Sprints — 02/08/2026": 6 file "Plan"/"Task Card" bị ghi thẳng kết quả thực thi thật (test PASS/K2Node export/changelog per-gate) vào thân, doc canonical `Blueprints/`/`Widgets/` có thể cũ hơn. Quyết định cuhoang: KHÔNG di chuyển/đổi tên — chỉ đóng dấu banner `📌 [CHỨA AS-BUILT]` (xem `MERGE_LOG.md`). Trigger: gom về canonical hoặc tách thư mục riêng sau Gate 2. Thêm luật mới `R-DOC-ASBUILT` (`Rules/Execution_Discipline.md` v3.3). |
+| 07/08/2026 (T3 DONE + bài học) | Thêm section "[BÀI HỌC] Phiên T3 Save As/Save Đè — 07/08/2026": 5 bài học phiên (không giả định as-built từ trạng thái tổng; review K2Node phải đối chiếu toàn graph, không chỉ phần được hỏi; hàm dùng chung chỉ nên chứa phần chung, phần khác biệt để caller quyết định — case `ExpandToPath`; ra đề test cần khớp guard hệ thống có sẵn — case guard `Length >= 2`; giữ nhịp cuhoang đoán trước Sonnet xác nhận). T3 ĐÓNG 6/6 case PASS — xem `01_Session_State.md`, `Widgets/WBP_SaveComboDialog.md` v2.1, `Bugs/Open_Bugs.md` (đóng `Bug-SaveConfirm-EmptyName`). |
+| 07/08/2026 (nợ doc, sau review) | Thêm 2 mục `[DOC-DEBT]` phát hiện lúc cuhoang review diff merge T3: (1) `BP_FurnitureInputManager.md` nợ cập nhật chèn `ResolveActiveComboForSave()` vào `CB_SaveCombo_Handler` — cờ "gộp vào T4"; (2) `BP_ComboItemView.Description` chỉ có tên trong doc, chưa xác nhận field đầy đủ — ưu tiên thấp nhất, gộp đợt dọn nợ doc định kỳ, không task riêng. |
 | 02/08/2026 (Lô D) | **Viết doc `ResolveSelectedComboRoot()` vào `BP_FurnitureInputManager.md`** (nguồn K2Node export thật cuhoang cung cấp — đóng MỤC 4 CrossCheck). Thêm section "[DOC-DRIFT] ResolveSelectedComboRoot — PrimarySelectedActor vs SelectedActors[0] — 02/08/2026": `Plans/24-07-2026_C9_Execution_Plan.md` §V7 ghi dùng `PrimarySelectedActor`, as-built thật dùng `SelectedActors[0]` — khác nhau khi selection multi. Chưa gây lỗi (C9 chỉ chạy selection 1 cụm) — ceiling giữ tới khi lên task card Save As/Save đè (phải xử lý selection mix). KHÔNG sửa file Plans (đã đóng dấu [CHỨA AS-BUILT]). Đóng thêm MERGE_LOG Q3 (`FindGroupData` không có Index) — sửa 3 file: `BP_FurnitureInputManager.md` v2.9, `BP_UndoManager.md` v1.13, `Blueprint_Logic_NodeFlow.md` v1.15 (đều tự mâu thuẫn nội bộ trước đó). |

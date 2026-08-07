@@ -36,6 +36,12 @@ OpenSaveComboDialog mở rộng + chèn ResolveActiveComboForSave. Còn lại: R
 ValidateComboName + Event Construct prefill + BTN_Overwrite.OnClicked (đều trong
 WBP_SaveComboDialog). Backlog mới: Feature-SaveInEditMode (Open_Bugs.md). Chi tiết kế hoạch:
 Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md mục 7c.
+**Cập nhật (tiếp) 07/08/2026 (T3 DONE):** T3 (`WBP_SaveComboDialog` Save As/Save Đè) — ĐÓNG,
+6/6 case test PASS + 2 câu hiểu bài PASS. 4 việc theo scope 7c + 1 việc phát sinh (Việc 5 —
+`Picker.SelectedPath` không tự set qua `ExpandToPath`, phải SET thủ công trong
+`OpenSaveComboDialog`). Đóng `Bug-SaveConfirm-EmptyName` (fix tự nhiên qua
+`RefreshButtonStates()` gọi ở Construct). Tiếp theo: **T4** (overwrite flow trong
+`SaveComboFromSelection`, xem mục 4.1 `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`).
 
 ---
 

@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.20 | **Cập nhật:** 04/08/2026 12:00 — Save As/Save đè T2 DONE: `OnMeshSelected` nhánh Replace đổi nguồn route từ `ResolveSelectedComboRoot()` sang `ShouldRouteReplaceToCombo(SelectedActor)` (đóng `Bug-ReplaceInCombo-TabJump`, mù edit-scope) — GIỮ NGUYÊN 2 node đích `StartReplaceComboMode`/`StartReplaceMode`. Test PASS 6/6. Xem `Blueprints/BP_FurnitureInputManager.md` v3.3.
+**Phiên bản:** 3.21 | **Cập nhật:** 07/08/2026 — Save As/Save đè T3 DONE: `OpenSaveComboDialog` mở rộng +3 param (`ActiveComboID`/`bCanOverwrite`/`ReasonText`) + 2 Function mới (`GetComboViewByID`, `BuildSaveDialogPrefill`) + Việc 5 (`Picker.SelectedPath`/`RefreshVisibleRows`). Test PASS 6/6. Xem `Widgets/WBP_SaveComboDialog.md` v2.1.
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -603,6 +603,62 @@ Completed → Return(TagsResult = LocalTags)
 
 ---
 
+## T3 — Save As/Save Đè — 2 Function mới (Sự thật vs Chính sách)
+
+⚠ [Nguồn: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7b.2/7b.3, ✓K2/✓ as-built theo
+7c — hạ tầng dựng TRƯỚC phiên T3 07/08/2026, lần đầu phân phối vào file canonical này qua đợt
+merge 07/08/2026. Đặt cạnh `GetExistingFolders`/`GetAllUsedTags` (cùng họ hàm đọc
+`AllComboViews_Combo`).]
+
+Tách đôi theo nguyên tắc T1 (`BP_FurnitureInputManager.ResolveActiveComboForSave`): **sự thật**
+tách khỏi **chính sách**.
+```
+GetComboViewByID        → SỰ THẬT    "combo này còn trong thư viện không, metadata là gì"
+BuildSaveDialogPrefill  → CHÍNH SÁCH "thế thì có cho ghi đè không, điền sẵn gì"
+```
+
+### GetComboViewByID(ComboID : String) → (View : BP_ComboItemView, bFound : Bool)
+**Local:** `Found_View` (BP_ComboItemView) · `Found_bOK` (Bool)
+```
+Entry ▶→ SET Found_bOK = false
+      ▶→ ForEachLoopWithBreak(AllComboViews_Combo)
+           Loop Body ▶→ Branch(Element.ComboID == ComboID)
+                          True  ▶→ SET Found_View = Element
+                                 ▶→ SET Found_bOK = true
+                                 ▶→ Break
+                          False ▶→ (trống)
+           Completed ▶→ Return(Found_View, Found_bOK)
+```
+> Pattern y hệt đoạn loop inline sẵn có trong `CB_MoveCombo` — không phải node lạ. KHÔNG
+> refactor `CB_MoveCombo` để gọi hàm này (KP3).
+
+### BuildSaveDialogPrefill(ComboID : String, bCanOverwrite : Bool, ReasonIn : String) → (PrefillName, PrefillFolder, PrefillDesc, PrefillTagsText : String, bOverwriteAllowed : Bool, ReasonOut : String)
+**Local:** `Pre_Name` · `Pre_Folder` · `Pre_Desc` · `Pre_TagsText` · `Pre_Reason` (String) ·
+`Pre_bAllow` (Bool) · `Pre_View` (BP_ComboItemView) · `Pre_bFound` (Bool)
+```
+Entry ▶→ SET Pre_Name = "" · Pre_Folder = "" · Pre_Desc = "" · Pre_TagsText = ""
+      ▶→ SET Pre_bAllow = false · SET Pre_Reason = ReasonIn        ← default TRƯỚC mọi Branch
+      ▶→ Branch(bCanOverwrite)
+           False ▶→ (trống — giữ default; lý do đã là ReasonIn nguyên văn)
+           True  ▶→ GetComboViewByID(ComboID) ─→ Pre_View, Pre_bFound
+                 ▶→ Branch(Pre_bFound)
+                      False ▶→ SET Pre_Reason =
+                               "Combo gốc không còn trong thư viện — chỉ lưu được thành combo mới"
+                      True  ▶→ SET Pre_bAllow = true
+                             ▶→ SET Pre_Reason = ""
+                             ▶→ SET Pre_Name     = Pre_View.ComboName
+                             ▶→ SET Pre_Folder   = Pre_View.FolderPath
+                             ▶→ SET Pre_Desc     = Pre_View.Description
+                             ▶→ Join(Pre_View.Tags, ", ") ─→ SET Pre_TagsText
+      (merge) ▶→ Return(Pre_Name, Pre_Folder, Pre_Desc, Pre_TagsText, Pre_bAllow, Pre_Reason)
+```
+> Lý do viết ở đây, không đẩy về `BP_FurnitureInputManager`: "combo còn trong thư viện không"
+> thuộc miền dữ liệu của widget (`AllComboViews_Combo`); InputManager không biết gì về thư viện.
+
+`BP_ComboItemView.Description : String` — field mới (Lô A, ⚠ cùng nguồn 7c như trên).
+
+---
+
 ## C4 — CTV_ComboCard + LoadComboLibrary
 
 ### Widget Variable (thêm vào designer)
@@ -653,17 +709,37 @@ SET ComboManagerRef = None
 
 ## C3b — Save Combo Dialog Flow
 
-### OpenSaveComboDialog(SelectedActors : Array BP_FurnitureActor, Center : Vector) — Custom Event
+### OpenSaveComboDialog(SelectedActors : Array BP_FurnitureActor, Center : Vector, ActiveComboID : String, bCanOverwrite : Bool, ReasonText : String) — Custom Event
+⚠ **Chữ ký mở rộng +3 param** (`ActiveComboID`/`bCanOverwrite`/`ReasonText`) — [Nguồn:
+`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7b.3, ✓ as-built theo 7c, hạ tầng dựng
+TRƯỚC phiên T3, lần đầu phân phối vào file canonical này 07/08/2026]. 3 param nhận từ
+`ResolveActiveComboForSave()` (`BP_FurnitureInputManager`) tại call site `CB_SaveCombo_Handler`
+— **việc chèn `ResolveActiveComboForSave()` vào `CB_SaveCombo_Handler` CHƯA được phân phối vào
+`BP_FurnitureInputManager.md`**, xem cảnh báo cuối file (báo cáo merge 07/08/2026).
 ```
 SET PendingSelectedActors = SelectedActors
 SET PendingCenter = Center
 GetAllUsedTags() → TempTags
-Create Widget(WBP_SaveComboDialog, TagVocabulary=TempTags) → SET SaveComboDialogRef
+▶→ BuildSaveDialogPrefill(ActiveComboID, bCanOverwrite, ReasonText)
+     ─→ PrefillName, PrefillFolder, PrefillDesc, PrefillTagsText, bOverwriteAllowed(=Pre_bAllow), ReasonOut
+▶→ Create Widget(WBP_SaveComboDialog,
+       TagVocabulary       = TempTags,
+       bOverwriteAllowed   = Pre_bAllow,
+       OverwriteComboID    = ActiveComboID,
+       OverwriteName       = PrefillName,
+       DisabledReason      = ReasonOut,
+       PrefillName         = PrefillName,
+       PrefillFolder       = PrefillFolder,
+       PrefillDesc         = PrefillDesc,
+       PrefillTagsText     = PrefillTagsText) → SET SaveComboDialogRef
 Branch(IsValid(SaveComboDialogRef))
   True →
     BuildComboFolderTree()
     BuildComboFolderTreeNodes("") → Entries
     SaveComboDialogRef.Picker.SetFolders(Entries)
+    SaveComboDialogRef.Picker.ExpandToPath(PrefillFolder)
+    SET SaveComboDialogRef.Picker.SelectedPath = PrefillFolder    ← MỚI 07/08/2026 (T3, Việc 5)
+    SaveComboDialogRef.Picker.RefreshVisibleRows()                ← MỚI 07/08/2026 (T3, Việc 5)
     SET SaveComboDialogRef.Picker.bShowCurrentTag = False
     Bind SaveComboDialogRef.OnRequestCreateFolder → HandleSaveDialogCreateFolder
     Bind SaveComboDialogRef.Picker.OnRequestCommitRename → HandleSavePickerRenameCommitted
@@ -674,6 +750,11 @@ Bind OnDialogCancelled(SaveComboDialogRef) → OnSaveComboDialogClosed
 Get Player Controller → Set Input Mode UI Only(InWidgetToFocus=SaveComboDialogRef)
 ```
 > **13/07 (C5.8 Wire Save):** xoá dòng cũ `GetExistingFolders() → SET TempFolders` (đã orphan sau khi pin `ExistingFolders` bị xoá khỏi `WBP_SaveComboDialog` Expose on Spawn) + bỏ arg `ExistingFolders=TempFolders` khỏi `Create Widget`. Thêm Branch wire `Picker`/bind 2 dispatcher mới của dialog, chèn NGAY SAU `SET SaveComboDialogRef`, TRƯỚC `AddToViewport`.
+> **✓TEST 07/08/2026 (T3, Việc 5 — MỚI, ground truth của đợt merge này):** `Picker.ExpandToPath`
+> (định nghĩa `WBP_FolderTreePicker.md`) chỉ ghi `ExpandedFolders` (mở cây), KHÔNG tự set
+> `SelectedPath` — thiết kế cố ý vì hàm dùng chung với `WBP_MoveToFolderDialog` (Move không được
+> tự chọn sẵn đích). Save cần chọn sẵn combo gốc nên phải `SET Picker.SelectedPath` + gọi
+> `RefreshVisibleRows()` thêm ở đây, ngay sau `ExpandToPath`.
 
 ### HandleSaveDialogCreateFolder(ParentPath : String) — Custom Event MỚI (13/07, C5.8 Wire Save)
 Bound từ `SaveComboDialogRef.OnRequestCreateFolder` trong `OpenSaveComboDialog`.
@@ -1793,3 +1874,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.19 | 02/08/2026 — Replace UX Fix P0→P5 HOÀN TẤT | Node-verified qua K2Node export thật (không suy từ doc cũ). `OnMeshSelected`: viết lại hoàn toàn nhánh REPLACE — thêm guard `IsValid(SelectedActor)` (P2, chặn Broadcast deselect rỗng từ `DeselectAll()`), thêm `ResolveSelectedComboRoot()` + route 2 chiều Mesh↔Combo qua `StartReplaceComboMode`/`StartReplaceMode` (P2, thay hẳn guard Bug A2 cũ `Branch(ReplaceTarget==Mesh)` — vá gốc bug #4 thay vì chặn triệu chứng); thêm `SetVisibility(CTV_FurnitureCard/CTV_ComboCard)` ở nhánh mesh cũ (P1.3, fix #5 card container). `OnSceneRestored`: +nhánh song song `Branch(IsReplaceModeActive())` (P4.3) — undo giữa Replace luôn thoát Replace hẳn (quyết định UX (a) cuhoang chốt). `BTN_Close`: +`SET ComboRootGroupIDToReplace=""` (P4.2, đủ 3 biến clear mọi đường thoát), −dòng `SET MeshToReplace=None` (P4.4, biến dead code đã xóa khỏi `BP_FurnitureInputManager`). Thêm cảnh báo Aliasing: `ReplaceTarget` tồn tại 2 bản riêng biệt trùng tên (`BP_FurnitureInputManager` vs `WBP_FurnitureInventory`, xác nhận qua MemberGuid) — không tự đồng bộ. `WBP_ComboCard.OnListItemObjectSet` (gate `BTN_ChangeCombo`, P3.1) — nội dung hiện có trong `WBP_ComboCard.md` v1.6 đã khớp as-built cuối, không cần sửa (xem ghi chú Claude Code). Nguồn: `01-08-2026_ReplaceUX_Fix_Execution_Plan.md`, delta 02/08/2026 (Sonnet). |
 | 3.20 | 04/08/2026 12:00 — Save As/Save đè T2 DONE | Đóng `Bug-ReplaceInCombo-TabJump` (gốc rễ: `ResolveSelectedComboRoot()` mù edit-scope). `OnMeshSelected` nhánh REPLACE: đổi ĐÚNG 1 node nguồn dữ liệu — `InputManagerRef.ResolveSelectedComboRoot()` → `InputManagerRef.ShouldRouteReplaceToCombo(SelectedActor)` (hàm mới, ✓K2 03/08, xem `BP_FurnitureInputManager.md` v3.3). GIỮ NGUYÊN 2 node đích `StartReplaceComboMode`/`StartReplaceMode` và mọi node sau chúng (KP3). `ResolveSelectedComboRoot()` KHÔNG bị sửa, vẫn dùng ở C9. Test PASS 6/6 case (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 6b.5) — case 4 (thoát edit → chọn cả cụm → Replace) xác nhận hành vi P2 (route Mesh↔Combo) không bị regress. |
 | 3.15 | 24/07/2026 — C9.0c HOÀN TẤT | Migrate `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`, None/Mesh/Combo) — migration xảy ra ngoài phiên Claude Code, doc trước đây không biết. Pure Function mới `IsReplaceModeActive() → Boolean` (bản riêng, song song với `BP_FurnitureInputManager`). `OnMeshSelected` nhánh Replace: Condition đổi sang `IsReplaceModeActive()` — bug fix (trước là literal EqualEqual đọc biến đã xóa, luôn sai). `EnterReplaceMode`: `SET ReplaceTarget=Mesh` (set cứng Mesh, Combo mode đi đường khác không qua hàm này). `ExitReplaceMode`: `SET ReplaceTarget=None` + THÊM `Regenerate All Entries(CTV_ComboCard)` (đường thoát duy nhất cho cả 2 mode). `BTN_Close` đưa vào doc lần đầu (chưa từng được ghi trước đây). Verify qua K2Node export thật, không suy đoán. Test regression 5/5 PASS. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.5, `Widgets/WBP_MeshControls.md`, `Widgets/WBP_DetailPopup.md`, `Widgets/WBP_FurnitureCard.md`, `Widgets/WBP_ComboCard.md`. |
+| 3.21 | 07/08/2026 — Save As/Save đè T3 DONE | **Phần đúng scope command block 07/08:** `OpenSaveComboDialog` — Việc 5 MỚI: sau `Picker.ExpandToPath(PrefillFolder)` thêm `SET Picker.SelectedPath = PrefillFolder` + `Picker.RefreshVisibleRows()` (`ExpandToPath` dùng chung với Move không tự set `SelectedPath`). **Phần backfill hạ tầng 7b/7c (⚠ chưa từng phân phối trước đây, nguồn `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7b.2/7b.3, ✓K2/✓as-built 05/08):** thêm mục "T3 — Save As/Save Đè — 2 Function mới" (`GetComboViewByID`, `BuildSaveDialogPrefill`); `OpenSaveComboDialog` mở rộng chữ ký +3 param (`ActiveComboID`/`bCanOverwrite`/`ReasonText`) + gọi `BuildSaveDialogPrefill` + `Create Widget` nối thêm 8 pin Expose-on-Spawn của `WBP_SaveComboDialog` v2.1; `BP_ComboItemView.Description` field mới. **CHƯA phân phối** (ngoài scope command block này): việc chèn `ResolveActiveComboForSave()` vào `CB_SaveCombo_Handler` (`BP_FurnitureInputManager`) — xem cảnh báo mục `OpenSaveComboDialog`. Test PASS 6/6 case + 2 câu hiểu bài (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7c). |
