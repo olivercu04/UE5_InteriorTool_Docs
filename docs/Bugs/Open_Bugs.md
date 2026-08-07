@@ -13,6 +13,8 @@ theo luật `R-DOC-DONE`: Task-P2-SweepCao (case Cao chưa test combo thật), T
 **Cập nhật (tiếp) 05/08/2026:** Thêm Feature-SaveInEditMode (backlog) — phát hiện lúc lập kế hoạch T3.
 **Cập nhật (tiếp) 07/08/2026 (T3 DONE):** Đóng `Bug-SaveConfirm-EmptyName` — fix tự nhiên qua
 `RefreshButtonStates()` (T3, `WBP_SaveComboDialog`).
+**Cập nhật (tiếp) 07/08/2026 (T4 task card):** Thêm `Task-T4.5-AutoGroupAfterOverwrite` (backlog,
+chưa mở) — phát hiện lúc lập kế hoạch T4, case S8 (Mix combo + mesh rời).
 
 ---
 
@@ -51,6 +53,7 @@ theo luật `R-DOC-DONE`: Task-P2-SweepCao (case Cao chưa test combo thật), T
 | Bug-RowName-MissingInClipboard | [CHƯA VERIFY] Nghi `S_ClipboardEntry` (Copy/Paste/Duplicate) cùng thiếu `RowName` như `S_FurniturePlacement` từng thiếu (đã fix 03/08) | 🟡 Trung bình (nếu đúng) | Chưa verify — xem mục chi tiết dưới |
 | Bug-RowNameLostOnUndo | ✅ FIXED (03/08) — `S_FurniturePlacement` thiếu field `RowName`, Undo respawn actor mất danh tính | — | Xem `Blueprints/BP_UndoManager.md` v1.15, mục chi tiết dưới |
 | Feature-SaveInEditMode | Save trong edit mode: 2 ý định (ghi đè A / tách sub-group thành combo mới) chưa tách bạch | 🟢 Thấp | Backlog sau Gate 2 |
+| Task-T4.5-AutoGroupAfterOverwrite | Sau Ghi đè S8 (Mix), mesh rời nuốt vào combo trên đĩa nhưng scene vẫn đứng rời — chưa tự gộp lại thành cụm chọn-1-lần | 🟡 Trung bình | Backlog, chưa mở — mở sau khi T4 PASS ổn định |
 
 ---
 
@@ -915,6 +918,38 @@ dùng) — dùng field này để biết đang ở nhánh nào của cây khi l�
 
 ### Trạng thái
 - **Backlog.** KHÔNG làm trong T3. Quyết định UX sau Gate 2.
+
+---
+
+## Task-T4.5-AutoGroupAfterOverwrite — Auto-group scene sau ghi đè S8 (Mix combo + mesh rời)
+
+**ID:** Task-T4.5-AutoGroupAfterOverwrite
+**Phát hiện:** 07/08/2026 (lập kế hoạch T4, `DELTA_07-08-2026_T4_Overwrite.md` Phần C)
+**Ưu tiên:** 🟡 Trung bình — KHÔNG chặn T5
+
+### Bối cảnh
+T4 (Ghi đè combo) case S8: user chọn 1 combo đã spawn + vài mesh rời trong scene → bấm Ghi đè →
+file combo trên đĩa nuốt HẾT mesh rời vào (khớp hành vi Save As, đã chốt trong task card 7d). Sau
+khi ghi đè xong, các actor mesh rời đó VẪN đứng RIÊNG trong scene — không tự gộp thành 1 cụm chọn
+được bằng 1 lần click, dù trên đĩa giờ chúng đã là 1 combo.
+
+### Nhu cầu
+Sau Ghi đè S8, gộp mesh rời + group combo sẵn có thành 1 cụm chọn-1-lần trong scene (khớp lại với
+trạng thái đã lưu trên đĩa).
+
+### Cạm bẫy (bắt buộc đọc trước khi làm)
+**KHÔNG được tạo group cha MỚI** — group cha mới sẽ không mang `SourceComboID` của combo gốc →
+lần Ghi đè kế tiếp không nhận diện được nữa (guard T1 `ResolveActiveComboForSave()` đọc
+`SourceComboID` từ group cha). Cách đúng: **ADD mesh rời vào group combo CÓ SẴN** (giữ nguyên
+`SourceComboID`), không tạo group mới bọc ngoài.
+
+### Trạng thái
+- **Backlog — CHƯA MỞ.** Không làm trong T4 (ngoài scope 7d — "KHÔNG: auto-group scene").
+- **Ceiling:** T4 dừng ở file-level là đủ dùng — box-select/Ctrl+click vẫn chọn được cả cụm bằng
+  1 thao tác thủ công, chỉ là không tự động.
+- **Trigger:** T4 PASS ổn định + cuhoang xác nhận multi-select lặp lại gây khó chịu thực tế → mở
+  task card T4.5 với S-Matrix riêng (đụng group+undo+selection — phạm vi rộng hơn T4, cần Q9 gate
+  riêng, không tái dùng Q9 của T4).
 
 ---
 

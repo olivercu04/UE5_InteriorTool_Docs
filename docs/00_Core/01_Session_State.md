@@ -42,6 +42,14 @@ Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md mục 7c.
 `OpenSaveComboDialog`). Đóng `Bug-SaveConfirm-EmptyName` (fix tự nhiên qua
 `RefreshButtonStates()` gọi ở Construct). Tiếp theo: **T4** (overwrite flow trong
 `SaveComboFromSelection`, xem mục 4.1 `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`).
+**Cập nhật (tiếp) 07/08/2026 (T4 task card):** T3 ĐÓNG PASS 6/6 (đã ghi ở trên). T4 đã phát hành
+task card (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7d), Q9 S-Matrix Gate đóng
+dấu — **CHƯA thực thi**. Chốt trong task card: S8 (Mix combo+mesh rời) → nút Ghi đè nuốt HẾT
+mesh rời vào combo, khớp hành vi Save As; toast "Đã ghi đè combo" khi ghi đè thành công;
+`InvalidateThumbnail` đặt VÔ ĐIỀU KIỆN ở Event Tick tail ngay trước Broadcast có sẵn (không phải
+trước Bước 6 — chờ re-capture async ~24 frame xong mới xóa cache, tránh lộ khe ảnh cũ). T4.5
+(auto-group scene sau ghi đè S8) tách backlog riêng, KHÔNG mở cùng T4 — xem `Bugs/Open_Bugs.md`.
+Priority queue xác nhận vẫn đúng: **Save As/Save đè → C11 → C10 → Gate 2** — không lệch.
 
 ---
 

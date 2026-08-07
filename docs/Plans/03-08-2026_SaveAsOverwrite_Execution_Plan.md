@@ -1,6 +1,6 @@
 # Kế hoạch Save As / Save đè combo — Execution Plan
 
-**Phiên bản:** 1.6 — 04/08/2026 (xem mục 9 — lịch sử cập nhật)
+**Phiên bản:** 1.7 — 07/08/2026 (xem mục 9 — lịch sử cập nhật)
 **Tác giả:** Opus (phiên lập kế hoạch 03/08/2026)
 **Sprint:** 5 (Combo Mesh) — hạng mục kế tiếp sau C9 Replace Combo
 **Vị trí trong hàng đợi:** **Save As/Save đè → C11 → C10 → Gate 2**
@@ -1152,6 +1152,118 @@ viết task card T4.
 
 ---
 
+## 7d. TASK CARD T4 — Overwrite Flow (Save Đè)
+
+> Nguồn: `DELTA_07-08-2026_T4_Overwrite.md` (Opus, 07/08/2026). **PLAN — chưa thực thi, chưa test.**
+
+**Người chạy:** Sonnet
+**Phạm vi:** `BP_ComboManager.SaveComboFromSelection` · `WBP_SaveComboDialog.BTN_Overwrite` · `WBP_FurnitureInventory` (handler mới)
+**KHÔNG:** viết C++ mới · đụng `CB_SaveCombo_Handler` · đụng luồng Save As (`BTN_Confirm`/`OnSaveComboConfirmed`) · auto-group scene (→ T4.5).
+**Bài học L:** L1 · L2 · L9 · KP3.
+
+### 7d.0 — T0 (verify TRƯỚC khi viết node)
+1. Find References `SaveComboFromSelection` → xác nhận chỉ `OnSaveComboConfirmed` gọi.
+2. Export Bước 6: path ghi = `GetCombosDir()/<SaveCombo_ComboID>.json` (không phải tên combo).
+3. Export Bước 7 Event Tick tail: khoanh đúng node Broadcast để chèn `InvalidateThumbnail` trước nó.
+4. Kiểm `SaveComboFromSelection` có gọi `AddRecentMesh` không (X2).
+
+### 7d.1 — Q9 S-MATRIX GATE
+
+**S-Scan**
+| ID | Trạng thái | Kết quả T4 |
+|---|---|---|
+| S0 | Không chọn gì | `N/A: nút Ghi đè xám (gate T1/T3)` |
+| S1 | 1 mesh rời | `N/A: cùng gate` |
+| S2 | N mesh rời | `N/A: cùng gate` |
+| S3 | 1 group thường | `N/A: SourceComboID=="" → gate chặn` |
+| S4 | 1 combo cả cụm | `⚠` ĐƯỜNG CHÍNH — ghi đè `<ComboID>.json` + re-capture PNG |
+| S5 | mesh trong group thường (edit) | `N/A: guard EditScope (T1)` |
+| S6 | mesh trong combo (edit) | `N/A: guard EditScope` — ca mất dữ liệu nguy hiểm nhất |
+| S7 | sub-group nested (edit) | `N/A: guard EditScope` |
+| S8 | Mix (combo + mesh rời) | `⚠` 1 combo root → nút sống → nuốt mesh rời vào combo (P.a) |
+| S9 | Selection do máy sinh | `⚠` có thể chứa `None` → an toàn nhờ `Cast` sẵn có Bước 5d |
+
+**X-Check (ô ⚠: S4, S8, S9)**
+| # | Hệ thống | Kết luận |
+|---|---|---|
+| X1 | Undo | KHÔNG CaptureSnapshot (save không đổi scene state) |
+| X2 | Persistence 4 kho | Kho 4 GHI (`.json` đè + `.png` re-capture). Kho 1/2/3 không đụng. T0 kiểm `AddRecentMesh` |
+| X3 | Inventory UI | `OnComboLibraryChanged` → card cùng `ComboID` cập nhật tại chỗ (không card rác) |
+| X4 | Selection sau action | Không SET `SelectedActors` sống; chỉ clear `PendingSelectedActors` |
+| X5 | Gizmo/Pivot | Không đụng |
+| X6 | Group data | Chỉ ĐỌC; `SourceComboID` giữ nguyên |
+| X7 | Toast | Có "Đã ghi đè combo" |
+| X8 | EditModeStack | Đọc gián tiếp qua gate T1 |
+| X9 | Material state | N/A |
+| X10 | Placement & Anchor | Chỉ ĐỌC relLoc/relRot; không snap/đổi anchor |
+
+Trục: B=gate qua T1 · D=ghi độc lập tab · C/E N/A.
+
+### 7d.2 — Việc 1: `SaveComboFromSelection` (+2 param, Branch 5a, InvalidateThumbnail ở Tick tail)
+`Q8: Custom Event — class var OK | không object access mới | L2: Branch 5a 2 nhánh merge về 5b ✓ | No latent ✓ | 6A: bOverwrite=false → Save As y nguyên ✓`
+```
+Signature thêm: bOverwrite : Bool (default false) · OverwriteComboID : String (default "")
+
+Bước 5a — thay SET đơn:
+  Branch(bOverwrite)
+    True  ▶→ SET SaveCombo_ComboID = OverwriteComboID
+    False ▶→ SET SaveCombo_ComboID = "combo_" + NewGuid()   ← node cũ y nguyên
+  (merge) ▶→ 5b như cũ
+
+Event Tick tail (Bước 7, sau capture, NGAY TRƯỚC Broadcast có sẵn — VÔ ĐIỀU KIỆN):
+  InvalidateThumbnail(SaveCombo_ComboID) ▶→ Broadcast OnComboLibraryChanged
+  → KHÔNG Branch bOverwrite. Save As = Map Remove no-op.
+  → Bỏ HẲN khỏi "Branch(bOverwrite)→InvalidateThumbnail trước Bước 6".
+```
+`FolderPath` nối sẵn Bước 5e — không thêm. `Items` build từ TOÀN BỘ `SelectedActors` → S8 tự nuốt mesh rời.
+
+### 7d.3 — Việc 2: `WBP_SaveComboDialog.BTN_Overwrite`
+`Q8: Event | L2: True kết bằng RemoveFromParent, hết dead-end Print ✓ | No latent ✓ | 6A: BTN_Cancel vẫn thoát ✓`
+```
+Dispatcher MỚI: OnDialogConfirmedOverwrite(ComboID, ComboName, FolderPath, Description : String, Tags : Array String)
+
+Branch(bOverwriteAllowed)
+  True  ▶→ CallDelegate OnDialogConfirmedOverwrite(
+              ComboID=OverwriteComboID, ComboName=Conv_TextToString(TextBox_ComboName.Text),
+              FolderPath=Picker.SelectedPath, Description=Conv_TextToString(TextBox_Description_MultiLine.Text),
+              Tags=ParseTags(Conv_TextToString(TextBox_Tags.Text)))
+           ▶→ RemoveFromParent
+  False ▶→ (giữ nguyên chuỗi Save As copy ở T3)
+Xóa Print "T3-OVERWRITE".
+```
+
+### 7d.4 — Việc 3: `WBP_FurnitureInventory` (bind + handler + toast)
+`Q8: Custom Event | IsValid theo pattern OnSaveComboDialogClosed | L2 | No latent | 6A: trả Input Mode Game+UI như Save As ✓`
+```
+Trong OpenSaveComboDialog, cạnh bind OnDialogConfirmed:
+  ▶→ Bind SaveComboDialogRef.OnDialogConfirmedOverwrite → HandleSaveComboOverwriteConfirmed
+
+Custom Event HandleSaveComboOverwriteConfirmed(ComboID, ComboName, FolderPath, Description, Tags):
+  ▶→ ComboManagerRef.SaveComboFromSelection(
+        SelectedActors=PendingSelectedActors, Center=PendingCenter,   ← ĐỌC TRƯỚC cleanup
+        ComboName, Description, FolderPath, Tags,
+        bOverwrite=true, OverwriteComboID=ComboID)
+  ▶→ ShowToast("Đã ghi đè combo")
+  ▶→ (đoạn dọn dẹp OnSaveComboDialogClosed sẵn có)
+```
+Dialog modal (Input Mode UI) → không undo/destroy giữa freeze và confirm → S9 an toàn.
+
+### 7d.5 — TEST (6 case)
+| # | Thao tác | Kỳ vọng |
+|---|---|---|
+| 1 | Spawn combo → chọn cả cụm → Save → sửa tên → Ghi đè | `.json` cùng `comboId`, tên/mô tả/tags mới |
+| 2 | Mở lại tab Combo | Card tên MỚI, không card rác |
+| 3 | Xem thumbnail | Ảnh chụp lại → verify InvalidateThumbnail ở Tick tail |
+| 4 | 2 mesh rời → "Save as" | Combo MỚI, `comboId` mới → không phá Save As |
+| 5 | Case 1 + đổi Folder → Ghi đè | Combo sang folder mới, cùng `comboId`, 1 file |
+| 6 (S8) | Spawn combo bàn → thêm 1 đèn rời → chọn cả 2 → Ghi đè | File combo gồm CẢ đèn (item +1); thumbnail có đèn; `comboId` không đổi |
+
+### 7d.6 — MỤC DẠY (hỏi SAU khi PASS 6/6)
+1. Vì sao `InvalidateThumbnail` phải ở Event Tick tail, không phải trước Bước 6? (gợi ý: capture async mấy frame)
+2. Ghi đè đổi `FolderPath` mà không sinh file mồ côi — vì sao? (gợi ý: file vật lý khóa theo cái gì?)
+
+---
+
 ## 8. COMMAND BLOCK — GIAO CLAUDE CODE
 
 ```
@@ -1293,3 +1405,4 @@ BÁO CÁO SAU KHI XONG
 | 1.4 | 04/08/2026 | Mục 6b.5 (test T2) case 6 — thêm banner `📌 [CHỨA AS-BUILT]`: bằng chứng Print thật (`RowName=CLAMP_table_karkas_005`, không còn `None`) sau Replace→Move→Undo→Replace lại, đến từ fix `RestoreSnapshot.RowName` (xem `Blueprints/BP_UndoManager.md` v1.14) — KHÔNG phải từ T0 của chính T2. **T2 vẫn CHƯA đóng** — 5/6 case + T0 (K2Node export `OnMeshSelected`) chưa có bằng chứng. Bug mới `Bug-RowName-MissingInClipboard` (chưa verify) ghi vào `Bugs/Open_Bugs.md`. |
 | 1.5 | 04/08/2026 | **T2 ĐÓNG (mục 6b).** 6/6 case test PASS, điền bảng kết quả thật. `ShouldRouteReplaceToCombo()` (✓K2 03/08) merge as-built vào `BP_FurnitureInputManager.md` v3.3; `OnMeshSelected` merge as-built vào `WBP_FurnitureInventory.md` v3.20 (đổi đúng 1 node nguồn, giữ nguyên 2 node đích). Đóng `Bug-ReplaceInCombo-TabJump` cho call site `OnMeshSelected`. ⚠️ **KHÔNG xác nhận được** claim "call site thứ 2 = `CB_Replace`" — section `CB_Replace` hiện tại không có node route-combo nào để thay, không có ground truth cho 1 thay đổi ở đó — ghi nhận mâu thuẫn ở cả `BP_FurnitureInputManager.md` v3.3 lẫn `Bugs/Open_Bugs.md`, không tự sửa. Mở task card T3 tiếp theo (đã phát hành từ trước, mục 7b). |
 | 1.6 | 04/08/2026 | **Đóng caveat v1.5 — `CB_Replace` re-export ✓K2 03/08/2026.** Amendment cuhoang: bản mô tả 24/07 cũ đọc lúc CHƯA re-export sau T2, không phải code thật thiếu nhánh route combo. `CB_Replace` merge as-built vào `BP_FurnitureInputManager.md` v3.4 — bản 24/07 đánh `[SUPERSEDED]` giữ lịch sử, không xóa. Xác nhận đủ 2 call site T2, test 2 trial chuột phải PASS 03/08. `Bugs/Open_Bugs.md` mục `Bug-ReplaceInCombo-TabJump`: gỡ caveat, đóng hoàn toàn. |
+| 1.7 | 07/08/2026 | Thêm 7d Task Card T4 — Overwrite Flow (Save Đè). Nguồn `DELTA_07-08-2026_T4_Overwrite.md` (Opus). Phạm vi: `BP_ComboManager.SaveComboFromSelection` (+2 param `bOverwrite`/`OverwriteComboID`, Branch tại Bước 5a, `InvalidateThumbnail` vô điều kiện ở Event Tick tail ngay trước Broadcast có sẵn — KHÔNG đặt trước Bước 6) · `WBP_SaveComboDialog.BTN_Overwrite` (dispatcher mới `OnDialogConfirmedOverwrite`) · `WBP_FurnitureInventory` (handler mới `HandleSaveComboOverwriteConfirmed` + toast). Q9 S-Scan+X-Check riêng cho T4 (không kế thừa T3) — bắt landmine S8 (Mix combo+mesh rời → nuốt hết vào combo, khớp Save As). 6 case test + mục DẠY. T4.5 (auto-group scene sau ghi đè S8) tách backlog riêng, KHÔNG làm trong T4. **CHƯA test — task card mới phát hành.** |
