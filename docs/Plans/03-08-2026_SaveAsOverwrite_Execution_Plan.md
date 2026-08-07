@@ -1,6 +1,6 @@
 # Kế hoạch Save As / Save đè combo — Execution Plan
 
-**Phiên bản:** 1.7 — 07/08/2026 (xem mục 9 — lịch sử cập nhật)
+**Phiên bản:** 1.8 — 07/08/2026 (xem mục 9 — lịch sử cập nhật)
 **Tác giả:** Opus (phiên lập kế hoạch 03/08/2026)
 **Sprint:** 5 (Combo Mesh) — hạng mục kế tiếp sau C9 Replace Combo
 **Vị trí trong hàng đợi:** **Save As/Save đè → C11 → C10 → Gate 2**
@@ -1264,6 +1264,111 @@ Dialog modal (Input Mode UI) → không undo/destroy giữa freeze và confirm �
 
 ---
 
+## 7e. TASK CARD T5 — Regression + Doc Closure (Save As / Save Đè)
+
+> Nguồn: Opus, 07/08/2026 08:44. **PLAN — chưa thực thi.**
+
+**Người chạy:** Sonnet + cuhoang (test tay trong editor)
+**Phạm vi:** KHÔNG viết node mới (regression + doc), NGOẠI TRỪ 2 fix nhỏ Khối D (D1 warning Tags, D2 Category hardcode) — cuhoang chốt fix trong T5.
+**Bài học L:** KP3 (phát hiện bug ngoài D1/D2 → dừng, ghi Open_Bugs, KHÔNG vá tại chỗ giữa regression).
+
+### 7e.0 — Nguyên tắc (giống REG C5.8)
+
+T5 chứng minh 3 điều mà test lẻ T1-T4 KHÔNG bắt được:
+1. **4 task khớp nhau thành 1 luồng** — resolve (T1) → route (T2) → dialog (T3) → ghi đè (T4) chạy liền mạch, không đứt ở ranh giới task.
+2. **Không phá đường Save As cũ** — combo đã lưu TRƯỚC T1-T4 vẫn load được; Save As vẫn sinh comboId mới.
+3. **Bảng S-Scan có kết quả thật cho từng ô** — kể cả ô `N/A` (test = đã chặn đúng).
+
+Nếu phát hiện bug (ngoài D1/D2 đã biết) → dừng, ghi Open_Bugs, quay về task tương ứng sửa. KHÔNG sửa tiện tay trong lúc REG.
+
+### 7e.1 — KHỐI A: Regression luồng chính (chạy liên tục 1 phiên PIE)
+
+Data thật: ≥8 combo có sẵn, ≥1 combo lưu từ TRƯỚC Sprint 5 (test tương thích ngược).
+
+| # | Thao tác | Kỳ vọng |
+|---|---|---|
+| A1 | Mở tool → tab Combo → load combo cũ (lưu trước T1-T4) | Hiện đúng, không lỗi parse, thumbnail đúng |
+| A2 | Spawn combo cũ → chọn cả cụm → Save → nút = "Lưu" (ghi đè), 4 field prefill | Đúng combo gốc |
+| A3 | Đổi tên + Ghi đè | `.json` cùng comboId, tên mới; tab Combo card đổi tên, không card rác |
+| A4 | 2 mesh rời → Save → "Lưu dưới dạng…" → đặt tên → Confirm | comboId **MỚI** (khác mọi ID cũ) |
+| A5 | Lặp A4 lần 2 (2 mesh rời khác) → Confirm | comboId **MỚI thứ 2**, khác A4 — chứng minh Save As luôn sinh ID mới |
+| A6 | Undo (Alt+Z) sau A3/A5 vài lần | Scene về đúng trạng thái, không Accessed None, Recent không nhiều |
+| A7 | Save/Load scene sau các thao tác trên | Combo trong scene giữ đúng SourceComboID |
+
+### 7e.2 — KHỐI B: Bảng S-Scan T3 — test thật từng ô (Q9 closure)
+
+Chạy lại 10 ô S0-S9 (định nghĩa 7b.6), điền kết quả THẬT. Ô `N/A` test = **đã chặn đúng**, không phải bỏ qua.
+
+| ID | Trạng thái | Kỳ vọng | Kết quả thật |
+|---|---|---|---|
+| S0 | Không chọn gì | Save Combo không mở dialog (guard ≥2) | (điền) |
+| S1 | 1 mesh rời | Cùng guard ≥2 chặn | (điền) |
+| S2 | N mesh rời | Dialog mở, Ghi đè xám "Chưa chọn combo nào…" | (điền) |
+| S3 | 1 group thường | Như S2 (SourceComboID rỗng) | (điền) |
+| S4 | 1 combo cả cụm | Ghi đè sống, prefill đúng | (điền) |
+| S5 | mesh trong group thường (edit) | Ghi đè xám, lý do edit | (điền) |
+| S6 | mesh trong combo (edit) | Ghi đè xám, lý do edit — ca nguy hiểm nhất | (điền) |
+| S7 | sub-group nested (edit) | Như S6 | (điền) |
+| S8 | Mix combo + mesh rời (1 root) | Ghi đè sống, nuốt mesh rời | (điền) |
+| S8b | Mix 2 combo root | Ghi đè xám "Đang chọn nhiều combo…" | (điền) |
+| S9 | Selection sau undo/spawn | Không Accessed None, resolve đúng | (điền) |
+| Q9-gap | Spawn combo → xóa combo đó trong thư viện → chọn cụm → Save | Ghi đè xám "Combo gốc không còn trong thư viện…" | (điền) |
+
+### 7e.3 — KHỐI C: Đóng Note-DuplicateComboID
+
+`Note-DuplicateComboID` (Open_Bugs, 🟢 Thấp) — bối cảnh: copy tay file .json đổi tên → comboId trong ruột không đổi. Plan gốc chốt: **Save As phải luôn sinh comboId mới**.
+
+- A4+A5 (Khối A) đã chứng minh Save As sinh ID mới → điều kiện đóng đã đạt về mặt luồng app.
+- Ghi vào Open_Bugs: chuyển `Note-DuplicateComboID` → **CLOSED (07/08)**, lý do: Save As (T4) luôn `NewGuid()` khi `bOverwrite=false`. Case copy tay ngoài app vẫn là hành vi ngoài luồng (không phải bug) — không cần thêm việc.
+
+### 7e.4 — KHỐI D: Dọn 2 nợ kỹ thuật (đã chốt fix trong T5 — cuhoang 07/08)
+
+**D1 — Compiler warning `Tags` bIsReference** (2 dispatcher):
+- `WBP_SaveComboDialog` → Variables → dispatcher `OnDialogConfirmed` VÀ `OnDialogConfirmedOverwrite` → param `Tags` → Details → **bỏ tick `Pass-by-Reference`**.
+- Compile lại → warning "No value will be returned by reference. Parameter 'Tags'" biến mất ở CẢ 2 nơi bind (`WBP_FurnitureInventory`) và 2 nơi CallDelegate (`WBP_SaveComboDialog`).
+- ⚠ Sau khi bỏ reference, kiểm lại wire `Tags` ở 4 node (2 CallDelegate + 2 Bind) còn nối đúng không — đổi kiểu param đôi khi rớt dây.
+
+**D2 — `Bug-ComboCategoryHardcode`**:
+- `BP_ComboManager.SaveComboFromSelection` → node `Make FComboData` (Bước tạo struct) → pin `Category` → **xoá chữ `MyCombo` trong ô DefaultValue, để rỗng**. Không đụng dây.
+- Verify: save 1 combo mới → mở `.json` → field `"category": ""`.
+
+Test lại sau D1+D2: chạy lại A3 (Ghi đè) + A4 (Save As) → cả 2 vẫn PASS, Tags vẫn ghi đúng vào `.json`.
+
+### 7e.5 — KHỐI E: Doc closure (R-DOC)
+
+| Việc | File | Luật |
+|---|---|---|
+| Tick `[x]` tính năng Save As/Save đè (mẫu số 22→23, giờ đủ điều kiện +1 tử số) | `PROGRESS.md` | R-DOC-DONE + R-DOC-COUNT |
+| Đánh dấu T5 DONE, priority queue → C11 | `01_Session_State.md` + `02_Current_Sprint.md` | R-DOC-ASBUILT |
+| Điền bảng S-Scan kết quả thật (7e.2) | `Sprints/Sprint5/Combo_Execution.md` mục Save As/Save đè | R-DOC-ASBUILT |
+| Đóng `Note-DuplicateComboID` | `Bugs/Open_Bugs.md` | — |
+| Đóng `Bug-ComboCategoryHardcode` (đã fix D2) | `Bugs/Open_Bugs.md` | — |
+| Ghi mọi deviation phát sinh T1→T5 chưa ghi | `DEVIATIONS.md` | — |
+| Xác nhận `[CEILING]` combo root vẫn treo, trigger = C10 (KHÔNG đóng ở T5) | `DEVIATIONS.md` | — |
+
+### 7e.6 — DEFINITION OF DONE
+
+```
+☐ Khối A (A1-A7) PASS — đặc biệt A4+A5 (Save As sinh ID mới) + A1 (combo cũ load được)
+☐ Khối B (S0-S9 + S8b + Q9-gap) PASS — mỗi ô có kết quả thật, ô N/A xác nhận chặn đúng
+☐ Khối C — Note-DuplicateComboID đóng
+☐ Khối D — D1 (warning Tags) + D2 (Category hardcode) đã fix, test lại A3+A4 PASS
+☐ Khối E — doc đóng, bar đếm lại theo checklist thật
+```
+
+### 7e.7 — MỤC DẠY (hỏi SAU khi Khối A+B PASS)
+
+1. Regression T5 test "combo cũ (lưu trước Sprint 5) vẫn load được" — vì sao đây là phép thử quan trọng NHẤT của cả đợt Save As/Save đè, hơn cả test ghi đè thành công? (gợi ý: 2 param mới `bOverwrite`/`OverwriteComboID` có default là gì, và điều đó bảo vệ ai?)
+2. Khối B bắt test cả ô `N/A` — nêu 1 tình huống cụ thể mà ô đánh `N/A: guard chặn` trong plan nhưng thực tế code KHÔNG chặn, và hậu quả nếu bỏ qua không test.
+
+---
+
+**Fail 3 lần cùng 1 khối → STOP, quay lại Opus.**
+
+Sau T5 PASS: **C11 (Export/Import) → C10 (Regression full) → Gate 2**.
+
+---
+
 ## 8. COMMAND BLOCK — GIAO CLAUDE CODE
 
 ```
@@ -1406,3 +1511,4 @@ BÁO CÁO SAU KHI XONG
 | 1.5 | 04/08/2026 | **T2 ĐÓNG (mục 6b).** 6/6 case test PASS, điền bảng kết quả thật. `ShouldRouteReplaceToCombo()` (✓K2 03/08) merge as-built vào `BP_FurnitureInputManager.md` v3.3; `OnMeshSelected` merge as-built vào `WBP_FurnitureInventory.md` v3.20 (đổi đúng 1 node nguồn, giữ nguyên 2 node đích). Đóng `Bug-ReplaceInCombo-TabJump` cho call site `OnMeshSelected`. ⚠️ **KHÔNG xác nhận được** claim "call site thứ 2 = `CB_Replace`" — section `CB_Replace` hiện tại không có node route-combo nào để thay, không có ground truth cho 1 thay đổi ở đó — ghi nhận mâu thuẫn ở cả `BP_FurnitureInputManager.md` v3.3 lẫn `Bugs/Open_Bugs.md`, không tự sửa. Mở task card T3 tiếp theo (đã phát hành từ trước, mục 7b). |
 | 1.6 | 04/08/2026 | **Đóng caveat v1.5 — `CB_Replace` re-export ✓K2 03/08/2026.** Amendment cuhoang: bản mô tả 24/07 cũ đọc lúc CHƯA re-export sau T2, không phải code thật thiếu nhánh route combo. `CB_Replace` merge as-built vào `BP_FurnitureInputManager.md` v3.4 — bản 24/07 đánh `[SUPERSEDED]` giữ lịch sử, không xóa. Xác nhận đủ 2 call site T2, test 2 trial chuột phải PASS 03/08. `Bugs/Open_Bugs.md` mục `Bug-ReplaceInCombo-TabJump`: gỡ caveat, đóng hoàn toàn. |
 | 1.7 | 07/08/2026 | Thêm 7d Task Card T4 — Overwrite Flow (Save Đè). Nguồn `DELTA_07-08-2026_T4_Overwrite.md` (Opus). Phạm vi: `BP_ComboManager.SaveComboFromSelection` (+2 param `bOverwrite`/`OverwriteComboID`, Branch tại Bước 5a, `InvalidateThumbnail` vô điều kiện ở Event Tick tail ngay trước Broadcast có sẵn — KHÔNG đặt trước Bước 6) · `WBP_SaveComboDialog.BTN_Overwrite` (dispatcher mới `OnDialogConfirmedOverwrite`) · `WBP_FurnitureInventory` (handler mới `HandleSaveComboOverwriteConfirmed` + toast). Q9 S-Scan+X-Check riêng cho T4 (không kế thừa T3) — bắt landmine S8 (Mix combo+mesh rời → nuốt hết vào combo, khớp Save As). 6 case test + mục DẠY. T4.5 (auto-group scene sau ghi đè S8) tách backlog riêng, KHÔNG làm trong T4. **CHƯA test — task card mới phát hành.** |
+| 1.8 | 07/08/2026 | Thêm 7e Task Card T5 — Regression + Doc Closure. Nguồn: Opus, 07/08/2026 08:44. Phạm vi: KHÔNG viết node mới (regression + doc), ngoại trừ 2 fix nhỏ đã chốt trong T5 — D1 (bỏ tick `Pass-by-Reference` cho param `Tags` trên 2 dispatcher, dọn compiler warning) + D2 (`Bug-ComboCategoryHardcode` — xoá DefaultValue `"MyCombo"` ở pin `Category` node `Make FComboData`). 5 khối: A (regression luồng chính 7 bước, nhấn A4+A5 Save As sinh ID mới + A1 combo cũ load được) · B (bảng S-Scan S0-S9 + S8b + Q9-gap, test thật từng ô kể cả `N/A`) · C (đóng `Note-DuplicateComboID`) · D (2 fix nợ kỹ thuật) · E (doc closure, tick bar Sprint 5 mẫu số 22→23 đủ điều kiện +1 tử số). `[CEILING]` combo root ("2 nơi cùng biết cách leo combo root") GIỮ NGUYÊN treo, trigger vẫn là C10 — KHÔNG đóng ở T5. **CHƯA thực thi — task card mới phát hành.** |

@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.21 | **Cập nhật:** 07/08/2026 — Save As/Save đè T3 DONE: `OpenSaveComboDialog` mở rộng +3 param (`ActiveComboID`/`bCanOverwrite`/`ReasonText`) + 2 Function mới (`GetComboViewByID`, `BuildSaveDialogPrefill`) + Việc 5 (`Picker.SelectedPath`/`RefreshVisibleRows`). Test PASS 6/6. Xem `Widgets/WBP_SaveComboDialog.md` v2.1.
+**Phiên bản:** 3.22 | **Cập nhật:** 07/08/2026 (15:40) — Save As/Save đè T4 DONE: bind dispatcher `OnDialogConfirmedOverwrite` + Custom Event mới `HandleSaveComboOverwriteConfirmed` (gọi `SaveComboFromSelection(bOverwrite=true,...)` + toast "Đã ghi đè combo"). Test PASS 6/6. Xem `Blueprints/BP_ComboManager.md` v1.16, `Widgets/WBP_SaveComboDialog.md` v2.2.
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -746,6 +746,7 @@ Branch(IsValid(SaveComboDialogRef))
   False → dead-end (guard có sẵn từ trước C5.8, không phải patch mới)
 Add to Viewport(SaveComboDialogRef, ZOrder=99)
 Bind OnDialogConfirmed(SaveComboDialogRef) → OnSaveComboConfirmed
+Bind OnDialogConfirmedOverwrite(SaveComboDialogRef) → HandleSaveComboOverwriteConfirmed   ← MỚI 07/08/2026 (T4)
 Bind OnDialogCancelled(SaveComboDialogRef) → OnSaveComboDialogClosed
 Get Player Controller → Set Input Mode UI Only(InWidgetToFocus=SaveComboDialogRef)
 ```
@@ -808,9 +809,25 @@ IsValid(ComboManagerRef):
 OnSaveComboDialogClosed    ← luôn đóng dialog, dù save fail
 ```
 
+### HandleSaveComboOverwriteConfirmed(ComboID, ComboName, FolderPath, Description : String, Tags : Array String) — Custom Event MỚI (07/08/2026, T4 DONE)
+**✓TEST 07/08/2026** — Bound từ `SaveComboDialogRef.OnDialogConfirmedOverwrite`.
+```
+▶→ ComboManagerRef.SaveComboFromSelection(
+      SelectedActors = GET PendingSelectedActors, Center = GET PendingCenter,   ← ĐỌC TRƯỚC cleanup
+      ComboName, Description, FolderPath, Tags,
+      bOverwrite = true, OverwriteComboID = ComboID)
+▶→ ShowToastMsg("Đã ghi đè combo")
+▶→ Call OnSaveComboDialogClosed(self)
+```
+> Đọc `PendingSelectedActors`/`PendingCenter` TRƯỚC khi gọi `OnSaveComboDialogClosed` — hàm đó
+> CLEAR cả 2 biến này (xem bên dưới). Dialog modal (Input Mode UI Only) → không có đường nào
+> Undo/Destroy actor xen giữa lúc freeze selection và lúc confirm → an toàn (S9, xem 7d.4).
+> Tái dùng đúng thứ tự dọn dẹp của `OnSaveComboConfirmed` (Save As) — KHÔNG viết cleanup riêng.
+
 ### OnSaveComboDialogClosed — Custom Event
 ```
-← Bound từ SaveComboDialogRef.OnDialogCancelled + gọi cuối OnSaveComboConfirmed
+← Bound từ SaveComboDialogRef.OnDialogCancelled + gọi cuối OnSaveComboConfirmed +
+  HandleSaveComboOverwriteConfirmed (T4)
 SET SaveComboDialogRef = None
 SET PendingSelectedActors = []     (Make Array rỗng)
 SET PendingCenter = (0, 0, 0)
@@ -1875,3 +1892,4 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.20 | 04/08/2026 12:00 — Save As/Save đè T2 DONE | Đóng `Bug-ReplaceInCombo-TabJump` (gốc rễ: `ResolveSelectedComboRoot()` mù edit-scope). `OnMeshSelected` nhánh REPLACE: đổi ĐÚNG 1 node nguồn dữ liệu — `InputManagerRef.ResolveSelectedComboRoot()` → `InputManagerRef.ShouldRouteReplaceToCombo(SelectedActor)` (hàm mới, ✓K2 03/08, xem `BP_FurnitureInputManager.md` v3.3). GIỮ NGUYÊN 2 node đích `StartReplaceComboMode`/`StartReplaceMode` và mọi node sau chúng (KP3). `ResolveSelectedComboRoot()` KHÔNG bị sửa, vẫn dùng ở C9. Test PASS 6/6 case (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 6b.5) — case 4 (thoát edit → chọn cả cụm → Replace) xác nhận hành vi P2 (route Mesh↔Combo) không bị regress. |
 | 3.15 | 24/07/2026 — C9.0c HOÀN TẤT | Migrate `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`, None/Mesh/Combo) — migration xảy ra ngoài phiên Claude Code, doc trước đây không biết. Pure Function mới `IsReplaceModeActive() → Boolean` (bản riêng, song song với `BP_FurnitureInputManager`). `OnMeshSelected` nhánh Replace: Condition đổi sang `IsReplaceModeActive()` — bug fix (trước là literal EqualEqual đọc biến đã xóa, luôn sai). `EnterReplaceMode`: `SET ReplaceTarget=Mesh` (set cứng Mesh, Combo mode đi đường khác không qua hàm này). `ExitReplaceMode`: `SET ReplaceTarget=None` + THÊM `Regenerate All Entries(CTV_ComboCard)` (đường thoát duy nhất cho cả 2 mode). `BTN_Close` đưa vào doc lần đầu (chưa từng được ghi trước đây). Verify qua K2Node export thật, không suy đoán. Test regression 5/5 PASS. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.5, `Widgets/WBP_MeshControls.md`, `Widgets/WBP_DetailPopup.md`, `Widgets/WBP_FurnitureCard.md`, `Widgets/WBP_ComboCard.md`. |
 | 3.21 | 07/08/2026 — Save As/Save đè T3 DONE | **Phần đúng scope command block 07/08:** `OpenSaveComboDialog` — Việc 5 MỚI: sau `Picker.ExpandToPath(PrefillFolder)` thêm `SET Picker.SelectedPath = PrefillFolder` + `Picker.RefreshVisibleRows()` (`ExpandToPath` dùng chung với Move không tự set `SelectedPath`). **Phần backfill hạ tầng 7b/7c (⚠ chưa từng phân phối trước đây, nguồn `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7b.2/7b.3, ✓K2/✓as-built 05/08):** thêm mục "T3 — Save As/Save Đè — 2 Function mới" (`GetComboViewByID`, `BuildSaveDialogPrefill`); `OpenSaveComboDialog` mở rộng chữ ký +3 param (`ActiveComboID`/`bCanOverwrite`/`ReasonText`) + gọi `BuildSaveDialogPrefill` + `Create Widget` nối thêm 8 pin Expose-on-Spawn của `WBP_SaveComboDialog` v2.1; `BP_ComboItemView.Description` field mới. **CHƯA phân phối** (ngoài scope command block này): việc chèn `ResolveActiveComboForSave()` vào `CB_SaveCombo_Handler` (`BP_FurnitureInputManager`) — xem cảnh báo mục `OpenSaveComboDialog`. Test PASS 6/6 case + 2 câu hiểu bài (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7c). |
+| 3.22 | 07/08/2026 (15:40) — Save As/Save đè T4 DONE | `OpenSaveComboDialog`: thêm `Bind SaveComboDialogRef.OnDialogConfirmedOverwrite → HandleSaveComboOverwriteConfirmed`, cạnh bind `OnDialogConfirmed` có sẵn. Custom Event mới `HandleSaveComboOverwriteConfirmed(ComboID, ComboName, FolderPath, Description, Tags)` — đọc `PendingSelectedActors`/`PendingCenter` TRƯỚC cleanup → `ComboManagerRef.SaveComboFromSelection(bOverwrite=true, OverwriteComboID=ComboID)` → `ShowToastMsg("Đã ghi đè combo")` → `OnSaveComboDialogClosed` (tái dùng nguyên vẹn, không viết cleanup riêng). `OnSaveComboDialogClosed` — cập nhật comment nguồn gọi (+ `HandleSaveComboOverwriteConfirmed`), thân hàm không đổi. Test PASS 6/6 case (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7d.5, bao gồm S8 mix combo+mesh rời) + 2 câu hiểu bài. Nguồn: `DELTA_07-08-2026_T4_Overwrite.md` (Opus). |

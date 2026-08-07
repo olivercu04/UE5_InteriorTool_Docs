@@ -50,6 +50,22 @@ mesh rời vào combo, khớp hành vi Save As; toast "Đã ghi đè combo" khi 
 trước Bước 6 — chờ re-capture async ~24 frame xong mới xóa cache, tránh lộ khe ảnh cũ). T4.5
 (auto-group scene sau ghi đè S8) tách backlog riêng, KHÔNG mở cùng T4 — xem `Bugs/Open_Bugs.md`.
 Priority queue xác nhận vẫn đúng: **Save As/Save đè → C11 → C10 → Gate 2** — không lệch.
+**Cập nhật (tiếp) 07/08/2026 (T4 DONE):** T4 (Overwrite Flow) — ĐÓNG, 6/6 case test PASS
++ 2 câu hiểu bài PASS. 3 Việc: (1) SaveComboFromSelection +2 param (bOverwrite/OverwriteComboID),
+Branch tại Bước 5a, InvalidateThumbnail vô điều kiện ở Event Tick tail (BP_ComboManager);
+(2) WBP_SaveComboDialog.BTN_Overwrite — dispatcher mới OnDialogConfirmedOverwrite thay Print tạm;
+(3) WBP_FurnitureInventory — bind dispatcher + Custom Event HandleSaveComboOverwriteConfirmed
+(SaveComboFromSelection → ShowToast → OnSaveComboDialogClosed, tái dùng đúng thứ tự OnSaveComboConfirmed).
+Case S8 (mix combo+mesh rời) xác nhận đúng: nuốt hết vào combo, khớp Save As. Test case 5
+(đổi Folder + Ghi đè) xác nhận KHÔNG sinh file mồ côi — path ghi chỉ phụ thuộc ComboID
+(GetCombosDir()/<ComboID>.json), không phụ thuộc FolderPath. Tiếp theo: **T5** (regression + doc close).
+**Cập nhật (tiếp) 07/08/2026 (T5 task card):** Opus phát hành task card T5 (Regression + Doc
+Closure), Plan mục 7e — CHƯA thực thi. Nội dung: Khối A (regression luồng 7 bước, nhấn A4+A5
+Save As sinh ID mới + A1 combo cũ load được), Khối B (bảng S-Scan S0-S9 test thật từng ô kể cả
+N/A), Khối C (đóng Note-DuplicateComboID), Khối D (fix 2 nợ kỹ thuật — cuhoang chốt fix trong T5:
+D1 warning Tags bIsReference trên 2 dispatcher, D2 Bug-ComboCategoryHardcode), Khối E (doc closure
++ tick bar Sprint 5 22→23). [CEILING] combo root GIỮ NGUYÊN treo, trigger vẫn là C10 — KHÔNG đóng
+ở T5. Sau T5: C11 → C10 → Gate 2.
 
 ---
 

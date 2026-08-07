@@ -1,5 +1,5 @@
 # WBP_SaveComboDialog — Dialog Lưu Combo
-**Version:** 2.1 | **Ngày:** 24/06/2026 | **Sửa:** 13/07/2026 — C5.8 Wire Save: thay field Folder cũ bằng `WBP_FolderTreePicker` + `BTN_AddFolder` | 07/08/2026 — T3 Save As/Save Đè: nút `BTN_Overwrite` + `RefreshButtonStates()` + prefill | **Widget BP — dialog async nhập tên/folder/tags khi lưu combo, hỗ trợ ghi đè combo gốc**
+**Version:** 2.2 | **Ngày:** 24/06/2026 | **Sửa:** 13/07/2026 — C5.8 Wire Save: thay field Folder cũ bằng `WBP_FolderTreePicker` + `BTN_AddFolder` | 07/08/2026 — T3 Save As/Save Đè: nút `BTN_Overwrite` + `RefreshButtonStates()` + prefill | 07/08/2026 (T4) — `BTN_Overwrite` broadcast dispatcher thật `OnDialogConfirmedOverwrite`, thay Print tạm | **Widget BP — dialog async nhập tên/folder/tags khi lưu combo, hỗ trợ ghi đè combo gốc**
 
 ## Mục đích
 Dialog nhập thông tin trước khi lưu combo. Thay hardcode "MyCombo" tạm (C3b). Async — đóng băng selection trước khi mở. Từ T3 (07/08): kiêm luôn UX Save As (lưu thành combo mới) / Save Đè (ghi đè combo gốc), 2 nút song song trong `HB_Buttons`.
@@ -24,6 +24,7 @@ Dialog nhập thông tin trước khi lưu combo. Thay hardcode "MyCombo" tạm 
 
 ## Event Dispatchers (public)
 - `OnDialogConfirmed(ComboName : String, FolderPath : String, Description : String, Tags : Array String)` — broadcast khi BTN_Confirm, trước Remove from Parent.
+- `OnDialogConfirmedOverwrite(ComboID : String, ComboName : String, FolderPath : String, Description : String, Tags : Array String)` — MỚI 07/08/2026 (T4) — broadcast khi `BTN_Overwrite` với `bOverwriteAllowed=true`, trước Remove from Parent.
 - `OnDialogCancelled()` — broadcast khi BTN_Cancel.
 - `OnRequestCreateFolder(ParentPath : String)` — MỚI 13/07 — broadcast khi BTN_AddFolder.OnClicked.
 
@@ -134,14 +135,19 @@ Broadcast OnDialogCancelled
 Remove from Parent
 ```
 
-### BTN_Overwrite — OnClicked (MỚI 07/08/2026, T3)
-**✓TEST 07/08/2026** — T3 CHỈ Print, KHÔNG ghi file thật (mặt cắt của T4).
+### BTN_Overwrite — OnClicked (MỚI 07/08/2026, T3 — SỬA 07/08/2026, T4 DONE)
+**✓TEST 07/08/2026 (T4)** — thay Print tạm (T3) bằng broadcast dispatcher thật.
 ```
 OnClicked
 ▶→ Branch(bOverwriteAllowed)
-     True  ▶→ Print String: Concat("T3-OVERWRITE | id=", OverwriteComboID,
-                " | name=", Conv_TextToString(TextBox_ComboName.Text))
-              [EnabledState = DevelopmentOnly]
+     True  ▶→ ParseTags(Conv_TextToString(TextBox_Tags.Text)) ●→ TempTags_Overwrite
+           ▶→ CallDelegate OnDialogConfirmedOverwrite(
+                 ComboID     = OverwriteComboID,
+                 ComboName   = Conv_TextToString(TextBox_ComboName.Text),
+                 FolderPath  = Picker.SelectedPath,
+                 Description = Conv_TextToString(TextBox_Description_MultiLine.Text),
+                 Tags        = TempTags_Overwrite)
+           ▶→ Remove from Parent
      False ▶→ (bản COPY nguyên xi chuỗi hành vi của BTN_Confirm.OnClicked bên dưới:
                 SET TempName/TempDesc/TempTags từ 3 ô nhập → ParseTags →
                 SET TempFolder = Picker.SelectedPath →
@@ -152,8 +158,11 @@ OnClicked
 > định 7c — không tách hàm dùng chung, không refactor, KP3). Ngữ nghĩa: sửa tên trong ô rồi bấm
 > **Ghi đè** = **đổi tên tại chỗ**, `comboId` GIỮ NGUYÊN — đúng mô hình Save của phần mềm desktop.
 > KHÔNG phải bug.
-> Chưa broadcast dispatcher riêng cho nhánh ghi đè thật (T4 sẽ mở mặt cắt này — xem
-> `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 4.1 và 7b.6).
+> **07/08/2026 (T4 DONE):** Print debug `"T3-OVERWRITE"` đã XÓA. Nhánh `True` giờ broadcast
+> `OnDialogConfirmedOverwrite` — `WBP_FurnitureInventory.HandleSaveComboOverwriteConfirmed` lắng
+> nghe và gọi `SaveComboFromSelection(bOverwrite=true, OverwriteComboID=ComboID)` thật. Xem
+> `Blueprints/BP_ComboManager.md` v1.16, `Widgets/WBP_FurnitureInventory.md` mục
+> `HandleSaveComboOverwriteConfirmed`.
 
 ### BTN_Confirm — OnClicked
 **Sửa 07/08/2026 (T3):** text đổi thành "Lưu thành combo mới…" (Designer), thân hàm KHÔNG đổi.
@@ -177,6 +186,8 @@ Remove from Parent
 ## Test [SCOPE — không áp dụng]: S6b (context-menu rename không tồn tại theo thiết kế 2d)
 ## Test PASS (07/08/2026, T3): 6/6 case (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục
 7c "TEST T3") + 2 câu hiểu bài PASS.
+## Test PASS (07/08/2026, T4): 6/6 case (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục
+7d.5) + 2 câu hiểu bài PASS.
 
 ## Lịch sử cập nhật
 | Ngày | Version | Nội dung |
@@ -184,3 +195,4 @@ Remove from Parent
 | 24/06/2026 | 1.0 | Tạo mới — C3b: dialog async lưu combo (ExistingFolders, TagVocabulary, bIsCreatingNewFolder, 2 dispatcher, ValidateComboName, ParseTags, BTN_NewFolder/Cancel/Confirm) |
 | 13/07/2026 | 2.0 | **C5.8 Wire Save.** Xoá hẳn: `CMB_Folder`, `BTN_NewFolder`, `TextBox_FolderPath`, `HB_Folder_Row`, var `bIsCreatingNewFolder`, pin `ExistingFolders` (Expose on Spawn), đoạn Event Construct cũ (CLEAR Options + ForEach ExistingFolders). Thêm: var `Picker : WBP_FolderTreePicker` (SizeBox ~180px, compact); `BTN_AddFolder` (text "+ Thư mục mới"); dispatcher `OnRequestCreateFolder(ParentPath)`; `BTN_AddFolder.OnClicked` broadcast `OnRequestCreateFolder(Picker.SelectedPath)`; `BTN_Confirm` đổi nhánh folder sang `GET Picker.SelectedPath`. `TagVocabulary`/field Name-Description-Tags/`ValidateComboName`/`ParseTags` giữ nguyên. Test PASS: S6a, S6c. S6b [SCOPE — không áp dụng]. |
 | 07/08/2026 | 2.1 | **T3 Save As/Save Đè — ĐÓNG.** Thêm 8 Expose on Spawn (`bOverwriteAllowed`/`OverwriteComboID`/`OverwriteName`/`DisabledReason`/`PrefillName`/`PrefillFolder`/`PrefillDesc`/`PrefillTagsText` — ⚠ hạ tầng dựng từ trước phiên T3 theo 7b.4/7c, lần đầu phân phối vào file này); `Border_OverwriteWrap`+`BTN_Overwrite` (Layout); `BTN_Confirm` đổi text → "Lưu thành combo mới…". Function mới `RefreshButtonStates()` (nguồn duy nhất quyết định 2 nút, cả 2 xám khi tên rỗng). `ValidateComboName` thay thân hoàn toàn → gọi `RefreshButtonStates`. `Event Construct` dựng lại toàn bộ (bản 13/07 bị mất không ghi log) — prefill 3 ô + label `BTN_Overwrite` + `RefreshButtonStates()` + bind `OnTextChanged`. `BTN_Overwrite.OnClicked` mới — Branch `bOverwriteAllowed`: True→Print debug (T4 mở dispatcher thật); False→bản copy độc lập luồng `BTN_Confirm` (Save As), KHÔNG dùng chung hàm (KP3). Đóng `Bug-SaveConfirm-EmptyName` (`Bugs/Open_Bugs.md`). Test PASS 6/6 case + 2 câu hiểu bài. Nguồn: command block 07/08/2026, K2Node export + test tay. |
+| 07/08/2026 (15:40) | 2.2 | **T4 Overwrite Flow — ĐÓNG.** Dispatcher mới `OnDialogConfirmedOverwrite(ComboID, ComboName, FolderPath, Description, Tags)`. `BTN_Overwrite.OnClicked` nhánh `True`: XÓA Print debug `"T3-OVERWRITE"`, thay bằng `ParseTags` + `CallDelegate OnDialogConfirmedOverwrite(...)` + `Remove from Parent` — cấu trúc nhánh `False` (Save As, KHÔNG dùng chung hàm với `BTN_Confirm`) giữ nguyên. Test PASS 6/6 case (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7d.5, bao gồm S8 mix combo+mesh rời) + 2 câu hiểu bài. Nguồn: `DELTA_07-08-2026_T4_Overwrite.md` (Opus). |
