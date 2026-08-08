@@ -66,7 +66,7 @@
 | [PROGRESS.md](PROGRESS.md) | Overview bar, Sprint timeline, Sprint 4 BugFix section |
 | [RAW_INVENTORY.md](RAW_INVENTORY.md) | Kiểm kê toàn bộ file import_raw/ |
 | [README.md](README.md) | Mô tả thư mục 00_Core/ |
-| [TARGET_STRUCTURE.md](TARGET_STRUCTURE.md) | Cấu trúc target của docs/ (schema chuẩn) |
+| [TARGET_STRUCTURE.md](TARGET_STRUCTURE.md) | Bản đồ 114 file của docs/, v2.0 07/08 |
 
 ---
 
