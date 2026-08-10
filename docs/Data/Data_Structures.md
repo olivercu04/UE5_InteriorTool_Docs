@@ -86,7 +86,7 @@ Dùng cho `WBP_FolderTreePicker`/`WBP_FolderPickerRow` (Move + Save dialog) — 
 | Name | FString | — | Tên combo user nhập |
 | Description | FString | — | |
 | Tags | TArray\<FString\> | [] | |
-| Category | FString | — | Hardcode "MyCombo" tạm ở Bước 5e (chưa có UI chọn category — Phase B) |
+| Category | FString | "" | Rỗng (fix 08/08/2026, `Bug-ComboCategoryHardcode`). Category thật nhập ở flow Publish — Phase B, chưa xây |
 | CreatedAt | FString | — | UTC Now → string, set ở Blueprint |
 | AppVersion | FString | — | "1.0.0" hardcode |
 | FolderPath | FString | — | Sprint 5 C3a/C5 — path folder chứa combo |
@@ -130,7 +130,7 @@ Dùng cho `WBP_FolderTreePicker`/`WBP_FolderPickerRow` (Move + Save dialog) — 
   "name": "Bàn học cho bé gái",
   "description": "",
   "tags": ["bàn học", "bé gái", "trẻ em"],
-  "category": "MyCombo",
+  "category": "",
   "createdAt": "Year=2026 Month=7 Day=13 Hour=7 Minute=41 Second=46 Millisecond=816",
   "appVersion": "1.0.0",
   "folderPath": "Phòng làm việc/bàn học",
@@ -155,6 +155,9 @@ Dùng cho `WBP_FolderTreePicker`/`WBP_FolderPickerRow` (Move + Save dialog) — 
 > **`createdAt`** — KHÔNG phải ISO8601 như đoán trước. Format thật là `FDateTime::ToString()` mặc định của UE (`Year=... Month=... Day=... Hour=... Minute=... Second=... Millisecond=...`) — literal string, không parse lại thành `FDateTime` ở đâu trong code hiện tại (chỉ hiển thị/lưu trữ).
 > `groups: []` + mọi `groupToken: ""` khi combo không có group con (item rời, chưa `Ctrl+G` trước khi save) — khớp Case B (ungrouped) trong `BP_ComboManager.F_RegisterComboGroups`.
 > File gốc cuhoang paste bị mojibake (UTF-8 hiển thị nhầm Latin-1) lúc copy — bản thân file trên đĩa đúng UTF-8 không BOM (`SaveStringToFile` dùng `ForceUTF8WithoutBOM`), không phải bug. Đã decode lại tiếng Việt đúng ở ví dụ trên.
+> `"category": ""` — cập nhật 08/08/2026 sau fix `Bug-ComboCategoryHardcode` (T5 D2). Combo lưu
+> TRƯỚC ngày này trong dữ liệu thật vẫn còn giá trị cũ `"MyCombo"` (không có migration script,
+> field chưa ai đọc nên không cần).
 
 ### Folders.json — manifest folder (registry, `ComboSerializer.cpp GetAllFolderPaths`/`CreateEmptyFolder`)
 ```json

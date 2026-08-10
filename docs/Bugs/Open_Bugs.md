@@ -15,6 +15,9 @@ theo luật `R-DOC-DONE`: Task-P2-SweepCao (case Cao chưa test combo thật), T
 `RefreshButtonStates()` (T3, `WBP_SaveComboDialog`).
 **Cập nhật (tiếp) 07/08/2026 (T4 task card):** Thêm `Task-T4.5-AutoGroupAfterOverwrite` (backlog,
 chưa mở) — phát hiện lúc lập kế hoạch T4, case S8 (Mix combo + mesh rời).
+**Cập nhật (tiếp) 08/08/2026 (T5 DONE):** Đóng `Note-DuplicateComboID` (xác nhận qua test A4+A5)
+và `Bug-ComboCategoryHardcode` (fix D2, verify `.json` ra `"category": ""`). Save As/Save đè
+(T1-T5) CHÍNH THỨC DONE.
 
 ---
 
@@ -37,7 +40,7 @@ chưa mở) — phát hiện lúc lập kế hoạch T4, case S8 (Mix combo + me
 | Feature-CanonicalStudioAngle | Thumbnail combo chụp theo góc user đặt+nhìn → không đồng bộ catalogue (sofa chữ U chụp trúng lưng, quạt chắn giữa). Cần "nắn về góc chuẩn" / user chọn mặt trước | 🟢 Thấp | Sprint 6 — Polish UX |
 | Bug-DomeCurvature-FootprintRong | ✅ FIXED (20/07) — dome custom (đồng nghiệp dựng) thay sphere engine, đáy phẳng bo cong bán kính ~500 unit | — | Test PASS combo Dẹt (thảm) + To (sofa 15 món, footprint lớn nhất từng có) trên dome mới. Xem DEVIATIONS mục "P2 — 20/07/2026 (Dome Custom)" |
 | Bug-CeilingGroundAlign | ✅ FIXED (20/07) — Function `ResolveThumbAlign` (Nấc 1) phân loại Floor/Ceiling/Wall/Other theo `PlacementSurfaceType`, thay công thức "neo xuống sàn" đơn nhất | — | Test 6/6 case PASS. Xem DEVIATIONS mục "P2 — 20/07/2026 (Nấc 1)" |
-| Note-DuplicateComboID | Copy tay file `.json` trong Explorer rồi đổi tên → field `comboId` bên trong KHÔNG tự đổi theo tên file → 2 file khác tên nhưng cùng ID logic (Favorite/Recent coi là 1 combo) | 🟢 Thấp | KHÔNG phải bug, không sửa bây giờ — backlog cho tính năng Save As/Save đè combo (chưa có plan) |
+| Note-DuplicateComboID | ✅ CLOSED (07/08→08/08) — Copy tay file `.json` đổi tên → comboId ruột không đổi theo | — | Save As (T4) luôn NewGuid — xác nhận qua T5 A4+A5. Xem mục chi tiết dưới |
 | DA-legacy-path (P-5) | [OPEN] StartReplaceMode nhánh DA legacy (RowName=="None") — chưa verify `DA_FurnitureItem.MeshFolderPath` có chứa `"Object_Model/"` giống `DT_FurnitureCatalog` không. Nếu khác format, `Split` trong `FilterByFolderPathWithUI` cắt sai → tree/chip sai khi Replace trên save cũ dùng DA path | 🟢 Thấp | **Gác lại 02/08** (Replace UX Fix P5.2) — thiếu file save cũ thật để test, KHÔNG code mù. Xem mục chi tiết dưới |
 | #3a (ComboReplace-Minimize) | ✅ FIXED (01/08) — combo-replace từ minimize: cửa sổ inventory không tự mở lại. `StartReplaceComboMode` thiếu bước un-minimize (nhánh mesh có qua `EnterReplaceMode→EnsureExpanded`, nhánh combo bỏ qua toàn bộ đường đó) | — | Fix: gọi `InventoryRef.EnsureExpanded()` trong `StartReplaceComboMode`. Test T3.3 PASS PIE. Xem `Blueprints/BP_FurnitureInputManager.md` v2.7 |
 | #3b (ComboReplace-ChiptagSync) | ✅ FIXED (01/08) — combo-replace: chiptag không rebuild + không highlight đúng (tree/card đúng combo nhưng chiptag vẫn Furniture) | — | Fix: gọi `RefreshChipBreadcrumb()` (hàm có sẵn) NGAY TRƯỚC `UpdateComboFolderHighlights()` trong `StartReplaceComboMode`. Test T1.1 PASS PIE. Xem `Blueprints/BP_FurnitureInputManager.md` v2.7, `DEVIATIONS.md` mục "Replace UX Fix — P1.2" |
@@ -49,7 +52,7 @@ chưa mở) — phát hiện lúc lập kế hoạch T4, case S8 (Mix combo + me
 | Bug-ReplaceInCombo-TabJump | ✅ ĐÃ SỬA (03/08) — đủ 2 call site (`OnMeshSelected` + `CB_Replace`) | — | `ShouldRouteReplaceToCombo()`, `BP_FurnitureInputManager.md` v3.3/v3.4. Test 6/6 PASS + 2 trial CB_Replace PASS |
 | B-EditStackLeak | [OPEN, DEFERRED] editStack rò rỉ vào snapshot ở thao tác không build selection (Deselect/Spawn) sau khi thoát edit mode — pre-existing từ v1.8/A12, KHÔNG do T2 | 🔴 Cao | Không sửa Sprint 5. Xem mục chi tiết dưới |
 | Bug-SaveComboSilentBlock | [OPEN] Save Combo với <2 món bị chặn im lặng — không toast/log/dialog | 🟢 Thấp | Phát hiện lúc lập kế hoạch T3 (04/08). Không chặn Gate 2. Xem mục chi tiết dưới |
-| Bug-ComboCategoryHardcode | [OPEN] Mọi combo lưu ra đều có `category="MyCombo"` (hardcode, đáng lẽ rỗng) | 🟢 Thấp | Phát hiện lúc verify Lô A (04/08). Không chặn Gate 2. Xem mục chi tiết dưới |
+| Bug-ComboCategoryHardcode | ✅ FIXED (08/08) — Mọi combo lưu ra đều có `category="MyCombo"` (hardcode, đáng lẽ rỗng) | — | Fix T5 D2 — xóa DefaultValue pin Category. Xem mục chi tiết dưới |
 | Bug-RowName-MissingInClipboard | [CHƯA VERIFY] Nghi `S_ClipboardEntry` (Copy/Paste/Duplicate) cùng thiếu `RowName` như `S_FurniturePlacement` từng thiếu (đã fix 03/08) | 🟡 Trung bình (nếu đúng) | Chưa verify — xem mục chi tiết dưới |
 | Bug-RowNameLostOnUndo | ✅ FIXED (03/08) — `S_FurniturePlacement` thiếu field `RowName`, Undo respawn actor mất danh tính | — | Xem `Blueprints/BP_UndoManager.md` v1.15, mục chi tiết dưới |
 | Feature-SaveInEditMode | Save trong edit mode: 2 ý định (ghi đè A / tách sub-group thành combo mới) chưa tách bạch | 🟢 Thấp | Backlog sau Gate 2 |
@@ -523,11 +526,11 @@ Mức ưu tiên giữ nguyên 🟢 Thấp / Sprint 6 — không đổi mức ưu
 
 ---
 
-## Note-DuplicateComboID — Copy tay file JSON → duplicate comboId
+## Note-DuplicateComboID — ✅ CLOSED (07/08/2026 → xác nhận qua T5 08/08/2026) — Copy tay file JSON → duplicate comboId
 
 **ID:** Note-DuplicateComboID
 **Phát hiện:** C6 testing, 22/07/2026
-**Ưu tiên:** 🟢 Thấp — KHÔNG phải bug, ghi nhận làm backlog.
+**Ưu tiên:** 🟢 Thấp — KHÔNG phải bug (đã đóng)
 
 ### Bối cảnh
 Test bằng cách copy tay file `.json` combo trong Windows Explorer rồi đổi tên file → nội dung
@@ -542,8 +545,10 @@ của tool) — không có bug logic cần fix ngay. Cần xử lý đúng lúc 
 - Save đè giữ nguyên `comboId` cũ.
 
 ### Trạng thái
-- **Backlog → ĐÃ CÓ PLAN 03/08/2026.** Save As sinh comboId mới, Save đè giữ nguyên — chốt tại
-  `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 2.4. Đóng khi T4 xong.
+- **CLOSED (07/08/2026 → xác nhận qua T5 08/08/2026).** Lý do: Save As (T4) luôn `NewGuid()` khi
+  `bOverwrite=false` — xác nhận qua test A4+A5 (T5 Khối A, 2 lần Save As liên tiếp ra 2 comboId
+  khác nhau). Case copy tay file `.json` ngoài app đổi tên (comboId ruột không đổi) vẫn là hành vi
+  ngoài luồng app, không phải bug — không cần thêm việc.
 
 ---
 
@@ -798,11 +803,11 @@ Nhánh False → `ShowToastMsg("Chọn ít nhất 2 món để lưu combo")` (WB
 
 ---
 
-## Bug-ComboCategoryHardcode — Mọi combo lưu ra đều có category="MyCombo"
+## Bug-ComboCategoryHardcode — ✅ FIXED (08/08/2026) — Mọi combo lưu ra đều có category="MyCombo"
 
 **ID:** Bug-ComboCategoryHardcode
 **Phát hiện:** 04/08/2026 (K2Node export `SaveComboFromSelection`, Lô A)
-**Ưu tiên:** 🟢 Thấp — KHÔNG chặn Gate 2
+**Ưu tiên:** 🟢 Thấp — KHÔNG chặn Gate 2 (đã fix)
 
 ### Triệu chứng
 Pin `Category` của node `Make FComboData` trong `SaveComboFromSelection` có
@@ -821,8 +826,10 @@ giá trị "MyCombo" thì sẽ HIỆN sai). Rác tích lũy: mỗi combo lưu th
 Xoá DefaultValue của pin `Category` (để rỗng). 1 thao tác, không đụng dây.
 
 ### Trạng thái
-- **Open.** Pre-existing, phát hiện lúc verify Lô A. KHÔNG sửa trong đợt này (ngoài phạm vi). Chờ
-  xếp lịch — nên gộp vào T4 hoặc C7.
+- **FIXED (08/08/2026, T5 Khối D2).** Đã xóa DefaultValue `"MyCombo"` ở pin `Category`, node
+  `Make FComboData` (`BP_ComboManager.SaveComboFromSelection`, Bước 5e). Verify: combo mới lưu ra
+  có `"category": ""` trong `.json`. Test lại A3 (Ghi đè) + A4 (Save As) sau fix vẫn PASS — không
+  phá luồng nào. Xem `Blueprints/BP_ComboManager.md` + `Data/Data_Structures.md` (đã cập nhật).
 
 ---
 
@@ -1011,3 +1018,5 @@ Cùng một loại lỗi: chọn sai điểm neo cho sự thật. Đề xuất: 
 | Bug-Maximize | BTN_Maximize không nhảy về góc trên-trái | Sprint D.T9 | Set Position thêm vào Slot VerticalBox_0. WBP_ResizeWindow v1.1 |
 | Bug-RowNameLostOnUndo | S_FurniturePlacement thiếu field RowName, Undo respawn actor mất danh tính | Sprint 5 (Save As/Save đè, diagnostic T2) | S_FurniturePlacement +RowName(Name); CaptureSnapshot Step 3 GET + RestoreSnapshot Step 4 SET. BP_UndoManager v1.15 |
 | Bug-SaveConfirm-EmptyName | BTN_Confirm Save dialog không disable khi tên combo trống nếu user chưa gõ gì | Sprint 5 (Save As/Save đè, T3) | Fix tự nhiên qua `RefreshButtonStates()` gọi trong Event Construct — không cần patch riêng. WBP_SaveComboDialog v2.1 |
+| Note-DuplicateComboID | Copy tay file `.json` đổi tên → comboId ruột không đổi theo | Sprint 5 (Save As/Save đè, T5, 08/08) | Save As (T4) luôn NewGuid khi bOverwrite=false — xác nhận qua test A4+A5 |
+| Bug-ComboCategoryHardcode | Mọi combo lưu ra đều có `category="MyCombo"` (hardcode) | Sprint 5 (Save As/Save đè, T5 D2, 08/08) | Xóa DefaultValue pin Category, node Make FComboData. BP_ComboManager.SaveComboFromSelection |

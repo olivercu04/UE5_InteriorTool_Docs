@@ -12,6 +12,12 @@ việc cần tách trong đợt này. Thêm entry backlog `Task-T4.5-AutoGroupAf
 **Cập nhật (tiếp) 07/08/2026 (T4 DONE, 15:40):** Save As/Save đè T4 (Overwrite Flow) — ✅ ĐÓNG,
 test PASS 6/6. Tick `[x]` sub-item T4. Bar Sprint 5 KHÔNG đổi (18/23, R-DOC-ATOMIC — tử số item
 cha `[~]` chỉ +1 khi T5 xong). Tiếp theo: T5 (regression + docs closure). Xem `01_Session_State.md`.
+**Cập nhật (tiếp) 08/08/2026 (T5 DONE — Sprint 5 bar 19/23):** Save As/Save đè (T1-T5) — ✅ ĐÓNG
+HOÀN TOÀN. Tick `[x]` sub-item T5, tick `[x]` item cha "Save As/Save đè" (đủ điều kiện +1 tử số
+theo R-DOC-ATOMIC — trước đó `[~]`). Bar Sprint 5: 18/23 → **19/23**. D1 (Khối D task T5) đóng
+dạng N/A — giới hạn engine (Set of String không toggle được Pass-by-Reference), ghi chi tiết
+DEVIATIONS.md. D2 (`Bug-ComboCategoryHardcode`) fix xong — xem Open_Bugs.md. Tiếp theo: C11
+(Export/Import combo). Xem `01_Session_State.md`.
 
 ---
 
@@ -24,14 +30,13 @@ Sprint 3 — Group cơ bản       ███████████████
 Sprint 4 — Edit + Nested      ████████████████ 8/8  SHIPPED ✅  (+5 bug fix thêm)
 Gate 1                        ████████████████ 3/3  DONE ✅ (16/06)
 Sprint D — Data Layer v2      ████████████████ 9/9  DONE ✅ (17/06)
-Sprint 5 — Combo Mesh         ██████████████████░░░░  18/23 task
+Sprint 5 — Combo Mesh         ███████████████████░░░  19/23 task
                                ✅ DONE: T1/T2 core/C0/C1/C2/C3a/C3b/Fix K3/C4/C5 (Folder Management
                                đầy đủ)/C6/Delete Combo/Field Kích thước Card/WBP_Toast (K1)/C8/C9
                                (Replace Combo, 30/07)/P2 (Studio Thumbnail, 02/08)/P1 (Thumbnail
-                               System C++, 02/08)
-                               ⏳ CÒN LẠI (5): C3 (P4 LOCALAPPDATA chưa áp)/Xoay combo (P3)/C11
-                               (Export/Import)/C10 (Regression)/Save As-Save đè [~] (T1-T4 done, T5
-                               còn — xem `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`)
+                               System C++, 02/08)/Save As/Save đè (T1-T5, 08/08)
+                               ⏳ CÒN LẠI (4): C3 (P4 LOCALAPPDATA chưa áp)/Xoay combo (P3)/C11
+                               (Export/Import)/C10 (Regression)
                                [03/08 R-DOC-ATOMIC: Save As/Save đè là tính năng RIÊNG (execution
                                plan riêng, T1→T5 riêng) — thêm 1 ô mẫu số 22→23 (`[~]`, KHÔNG tick
                                khống thành DONE). Tử số KHÔNG +1 máy móc — chỉ [x] khi T5 (regression
@@ -50,10 +55,13 @@ Sprint 5 — Combo Mesh         ████████████████
                                (Thumbnail System C++) tick DONE 17/22→18/22 — G5 VRAM regression
                                tách bug riêng cùng file mục "Task-P1-VRAMRegression". Luật mới
                                `R-DOC-DONE`: xem `Rules/Execution_Discipline.md`.]
+                               [08/08 R-DOC-ATOMIC đóng: Save As/Save đè T5 PASS toàn bộ (Khối
+                               A+B+C+D+E) → item cha `[~]` đủ điều kiện tick `[x]`, tử số +1
+                               (18→19). Xem `01_Session_State.md` 08/08/2026.]
 Sprint 6 — Polish UX          ░░░░░░░░░░░░░░░  0/15 task (+C7, dời từ Sprint 5 31/07)
 Sprint 7 — Material v1.2      ░░░░░░░░░        0/9  task
 
-TỔNG: 72/103 task
+TỔNG: 73/103 task
 ```
 
 ---
@@ -383,12 +391,12 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 - [x] **C8** — Drag-drop + surface-snap ✅ **MERGED vào C4** (24/06/2026)
 - [ ] **Xoay combo (P3)** — verify gizmo group xoay cả cụm; tùy chọn xoay-lúc-kéo (R/scroll)
 - [x] **C9** — Replace combo (+ verify K2 EMS SourceComboID + CalculateCenter chung + auto-rollback spawn-fail) — ✅ DONE (30/07/2026). Xem `01_Session_State.md` mục C9.
-- [~] **Save As / Save đè combo** (T1-T5, xem `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`) — ô riêng trong mẫu số Sprint 5 (03/08, R-DOC-ATOMIC). Chỉ [x] khi T5 xong.
+- [x] **Save As / Save đè combo** (T1-T5, xem `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`) — ✅ ĐÓNG HOÀN TOÀN (08/08/2026, R-DOC-ATOMIC — T5 xong nên tử số +1, đủ điều kiện tick).
   - [x] T1 — `ResolveActiveComboForSave()` + `GetComboRootOfActor()` (`BP_FurnitureInputManager` v3.0). Test PASS 6/6. ✅ DONE (03/08/2026)
   - [x] T2 — Guard edit-scope cho re-route replace (`Bug-ReplaceInCombo-TabJump`). Test PASS 6/6. ✅ DONE (03/08/2026)
   - [x] T3 — 2 nút + trạng thái xám + tooltip (`WBP_SaveComboDialog`). Test PASS 6/6. ✅ DONE (07/08/2026)
   - [x] T4 — Ghi đè thật + xác nhận + thumbnail (`BP_ComboManager.SaveComboFromSelection` +2 param). Test PASS 6/6. ✅ DONE (07/08/2026)
-  - [ ] T5 — Regression + docs
+  - [x] T5 — Regression + docs. Khối A (7 bước) + Khối B (S-Scan 12/12 ô) PASS toàn bộ. Khối D: D1 N/A (giới hạn engine), D2 fix xong. ✅ DONE (08/08/2026)
 ──── **Giai đoạn 3: share** ────
 - [ ] **C11** — Export/Import cả 2 hướng (K5): file-save dialog TRƯỚC, fallback thư mục cố định
 - [ ] **C10** — Regression (K4 nested-3 / P5-liên quan / VRAM stat rhi) + Docs
@@ -452,3 +460,4 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 07/08/2026 (T3 DONE) | **Save As/Save đè T3 (`WBP_SaveComboDialog`) — ✅ ĐÓNG.** Tick `[x]` sub-item T3 trong checklist Save As/Save đè. Bar Sprint 5 KHÔNG đổi (18/23 — R-DOC-ATOMIC, tử số item cha `[~]` chỉ +1 khi T5 xong). 4 việc chính (`RefreshButtonStates`/`ValidateComboName`/`Event Construct`/`BTN_Overwrite.OnClicked`, `WBP_SaveComboDialog` v2.1) + 1 việc phát sinh (Việc 5 — `Picker.SelectedPath`/`RefreshVisibleRows`, `WBP_FurnitureInventory` v3.21). Đóng `Bug-SaveConfirm-EmptyName`. Test PASS 6/6 case + 2 câu hiểu bài. ⚠️ Nhân tiện phát hiện + backfill hạ tầng 7b/7c (2 Function mới `GetComboViewByID`/`BuildSaveDialogPrefill`, 8 Expose-on-Spawn, `Border_OverwriteWrap`+`BTN_Overwrite`) CHƯA từng được phân phối vào doc canonical trước đợt này — xem cảnh báo mâu thuẫn trong `Widgets/WBP_FurnitureInventory.md` v3.21 + báo cáo merge 07/08/2026. Tiếp theo: **T4** (ghi đè thật). Chi tiết: `01_Session_State.md`, `Bugs/Open_Bugs.md`. |
 | 07/08/2026 (T4 task card) | **Save As/Save đè T4 — task card phát hành, CHƯA thực thi.** Nguồn `DELTA_07-08-2026_T4_Overwrite.md` (Opus) → `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7d (v1.6→1.7). Phạm vi: `BP_ComboManager.SaveComboFromSelection` (+2 param, Branch Bước 5a) · `WBP_SaveComboDialog.BTN_Overwrite` (dispatcher `OnDialogConfirmedOverwrite`) · `WBP_FurnitureInventory` (handler `HandleSaveComboOverwriteConfirmed` + toast). Q9 S-Scan+X-Check riêng cho T4 (không kế thừa T3) — bắt landmine S8 (Mix → nuốt hết mesh rời vào combo). RECOUNT R-DOC-COUNT: bar Sprint 5 vẫn đúng `18/23` (T4 chưa tick vì chưa thực thi). Thêm backlog `Task-T4.5-AutoGroupAfterOverwrite` (`Bugs/Open_Bugs.md`, chưa mở, không tính mẫu số). KHÔNG đụng `DEVIATIONS.md` (chưa có lệch thực thi — quyết định kiến trúc đã nằm sẵn trong task card 7d). Chi tiết: `01_Session_State.md`, `02_Current_Sprint.md`. |
 | 07/08/2026 (T4 DONE) | **Save As/Save đè T4 (Overwrite Flow) — ✅ ĐÓNG.** Tick `[x]` sub-item T4. 3 Việc: `BP_ComboManager.SaveComboFromSelection` (+2 param, Branch 5a, `InvalidateThumbnail` Tick tail vô điều kiện) · `WBP_SaveComboDialog.BTN_Overwrite` (dispatcher `OnDialogConfirmedOverwrite`) · `WBP_FurnitureInventory` (`HandleSaveComboOverwriteConfirmed` + toast "Đã ghi đè combo"). Test PASS 6/6 case (bao gồm S8 mix combo+mesh rời) + 2 câu hiểu bài. Tiếp theo: T5. Chi tiết: `01_Session_State.md`. |
+| 08/08/2026 (T5 DONE) | **Save As/Save đè T5 (Regression + Doc Closure) — ✅ ĐÓNG. Tính năng Save As/Save đè (T1-T5) CHÍNH THỨC DONE HOÀN TOÀN.** Tick `[x]` sub-item T5 + item cha (R-DOC-ATOMIC, tử số +1: 18→19). Khối A (regression 7 bước A1-A7) PASS toàn bộ — A1 xác nhận combo lưu trước Sprint 5 vẫn load được, A4+A5 xác nhận Save As luôn sinh `comboId` mới. Khối B (S-Scan S0-S9 + S8b + Q9-gap) PASS 12/12 ô đúng kỳ vọng — Q9 S-Matrix Gate cho tính năng này chính thức đóng. Khối C: đóng `Note-DuplicateComboID`. Khối D: D1 (bỏ Pass-by-Reference param `Tags`) **N/A — giới hạn engine** (`Tags` là Set of String, Blueprint khóa cứng không toggle được, không phải lỗi thao tác), ghi `DEVIATIONS.md`; D2 (`Bug-ComboCategoryHardcode`) FIX xong, verify `.json` ra `"category": ""`. `[CEILING]` combo root ("2 nơi cùng biết cách leo combo root") GIỮ NGUYÊN treo, trigger vẫn là C10. Tiếp theo: **C11** (Export/Import combo). Chi tiết: `01_Session_State.md`, `Sprints/Sprint5/Combo_Execution.md`, `Bugs/Open_Bugs.md`. |

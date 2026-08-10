@@ -986,6 +986,33 @@ mục 6.5. Node flow đầy đủ: `Blueprints/BP_FurnitureInputManager.md` (`Ge
 
 ---
 
+### T5 — S-Scan Regression (08/08/2026, task card 7e.2) — 12/12 ô PASS
+
+📌 [CHỨA AS-BUILT] — bảng dưới là kết quả test tay thật (cuhoang, trong editor), không phải kế
+hoạch. Nguồn: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7e.2.
+
+| ID | Trạng thái | Kỳ vọng | Kết quả thật |
+|---|---|---|---|
+| S0 | Không chọn gì | Save Combo không mở dialog (guard ≥2) | PASS — khớp kỳ vọng |
+| S1 | 1 mesh rời | Cùng guard ≥2 chặn | PASS — khớp kỳ vọng |
+| S2 | N mesh rời | Dialog mở, Ghi đè xám "Chưa chọn combo nào…" | PASS — khớp kỳ vọng |
+| S3 | 1 group thường | Như S2 (SourceComboID rỗng) | PASS — khớp kỳ vọng |
+| S4 | 1 combo cả cụm | Ghi đè sống, prefill đúng | PASS — khớp kỳ vọng |
+| S5 | mesh trong group thường (edit) | Ghi đè xám, lý do edit | PASS — khớp kỳ vọng |
+| S6 | mesh trong combo (edit) | Ghi đè xám, lý do edit | PASS — khớp kỳ vọng |
+| S7 | sub-group nested (edit) | Như S6 | PASS — khớp kỳ vọng |
+| S8 | Mix combo + mesh rời (1 root) | Ghi đè sống, nuốt mesh rời | PASS — khớp kỳ vọng |
+| S8b | Mix 2 combo root | Ghi đè xám "Đang chọn nhiều combo…" | PASS — khớp kỳ vọng |
+| S9 | Selection sau undo/spawn | Không Accessed None, resolve đúng | PASS — khớp kỳ vọng |
+| Q9-gap | Combo bị xóa khỏi thư viện, chọn cụm → Save | Ghi đè xám "Combo gốc không còn..." | PASS — khớp kỳ vọng |
+
+Regression Khối A (A1-A7): PASS toàn bộ, xem `01_Session_State.md` 08/08/2026 để tóm tắt.
+Q9 S-Matrix Gate cho tính năng Save As/Save đè: **CHÍNH THỨC ĐÓNG** — không còn ô treo.
+
+**Trạng thái:** ✅ PASS 12/12 — T5 ĐÓNG. Save As/Save đè (T1→T5) CHÍNH THỨC DONE. Tiếp theo: **C11**.
+
+---
+
 ### C11 — Export / Import combo (chia sẻ thủ công) — CẢ 2 hướng
 **Mục tiêu:** Share nhóm KHÔNG cần server — export file JSON gửi đi (Zalo/USB/Drive), import vào thư viện máy khác.
 **⚠️ Thứ tự thực thi:** C9 → **C11** → C10. C11 là feature mới nên phải chạy TRƯỚC C10 để regression test bao luôn.

@@ -1,5 +1,5 @@
 # BP_ComboManager — Blueprint Logic
-**Version:** 1.16 | **Ngày:** 07/08/2026 15:40 | **T4 DONE (Save As/Save Đè — Overwrite Flow):** `SaveComboFromSelection` +2 param (`bOverwrite`/`OverwriteComboID`), Branch tại Bước 5a, `InvalidateThumbnail` vô điều kiện ở Event Tick tail. Test PASS 6/6
+**Version:** 1.17 | **Ngày:** 08/08/2026 | **T5 D2 (`Bug-ComboCategoryHardcode` fix):** `SaveComboFromSelection` Bước 5e — xóa DefaultValue `"MyCombo"` ở pin `Category`, để rỗng. Test PASS
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
@@ -358,7 +358,8 @@ nhánh Branch, thay vì 1 node đơn). Mọi thứ phía sau khóa theo biến n
 - Name ← param ComboName
 - Description ← param Description
 - Tags ← param Tags (Array\<String\>)
-- Category = "MyCombo" (hardcode tạm — Phase B)
+- Category = "" (rỗng — fix 08/08/2026 D2, xem changelog. Category thật nhập ở flow Publish
+  Phase B, chưa xây)
 - CreatedAt ← UTC Now → Convert Date Time To String
 - AppVersion = "1.0.0"
 - FolderPath ← param FolderPath
@@ -811,3 +812,4 @@ không giật thêm dù RT giờ 2048²).
 | 30/07/2026 | 1.14 | **C9.b/C9.c DONE (delta "C9 Replace: Folder Highlight + Chip Fix & C9.b–C9.f").** `SpawnComboByID` +param `SnapshotLabel` (qua node `Select`, Custom Event input không có Default Value); Sub-step A reset `Cmb_LastSpawnSucceeded=False` đầu tiên (bắt buộc — 2 đường thoát sớm không chạy tới Sub-step D); Sub-step D SET cờ ở cả 2 nhánh. Custom Event mới `ReplaceCombo(RootGroupID, NewComboID)` — destroy cụm cũ (`DestroyComboCluster`) → spawn cụm mới tại `Cmb_ReplaceAnchor` → rollback qua `UndoManagerRef.RestoreCurrentSnapshot()` nếu fail. 3 class var mới: `Cmb_LastSpawnSucceeded`, `Cmb_ReplaceAnchor`, `Cmb_ReplaceActors` (CLEAR đầu event + End Play, R4). **Deviation:** đổi tên `Cmb_ReplaceCenter`→`Cmb_ReplaceAnchor` + `CalculateCenter`→`CalculateComboAnchor` so với `docs/Plans/24-07-2026_C9_Execution_Plan.md` §6 — fix bug anchor-vs-center mismatch. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` (`DestroyComboCluster`), `Blueprints/BP_UndoManager.md` (`RestoreCurrentSnapshot`), `DEVIATIONS.md`. |
 | 04/08/2026 15:20 | 1.15 | **Lô A — Verify đường ghi combo (T0 của T4, Save As/Save đè).** `SaveComboFromSelection` re-export K2Node — Bước 1-8 khớp doc cũ 1:1 (không mâu thuẫn), bổ sung **Bước 0** chưa từng ghi (6 param nhồi vào class var ngay Entry, mọi bước sau đọc class var chứ không đọc lại pin param). Xác nhận Bước 5a (`NewGuid()` vô điều kiện, `SaveCombo_ComboID` set đúng 1 chỗ) và Bước 7 (Broadcast `OnComboLibraryChanged` CHỈ ở nhánh `bSaveOK=False`; nhánh True broadcast qua Event Tick tail, không đổi so với doc 1.10). Nguồn: `DELTA_04-08-2026_LoA_SaveCombo_Verify.md`. Xem thêm `Bugs/Open_Bugs.md` mục `Bug-ComboCategoryHardcode` (Category hardcode "MyCombo" — đã ghi nhận từ v1.4, nay lên bug tracking chính thức) + `DEVIATIONS.md` mục "[AS-BUILT] Broadcast OnComboLibraryChanged..." và "[DOC-DRIFT] Plan C7 dựa vào LoadCombo...". |
 | 07/08/2026 15:40 | 1.16 | **T4 DONE — Overwrite Flow (Save As/Save đè).** `SaveComboFromSelection` +2 param `bOverwrite : Bool` (default false) / `OverwriteComboID : String` (default ""). Bước 5a: thay `SET SaveCombo_ComboID = "combo_"+NewGuid()` đơn lẻ bằng `Branch(bOverwrite)` — True→`SET SaveCombo_ComboID = OverwriteComboID`, False→node cũ giữ nguyên (Save As không đổi hành vi, verify qua test case 4). Event Tick tail: chèn `InvalidateThumbnail(SaveCombo_ComboID)` NGAY TRƯỚC `Broadcast OnComboLibraryChanged` có sẵn, chạy VÔ ĐIỀU KIỆN (không Branch theo `bOverwrite` — Save As = no-op vô hại). `FolderPath` (Bước 5e) không đổi — luôn ghi từ param, path vật lý luôn khóa theo `ComboID` (`GetCombosDir()/<ComboID>.json`) nên đổi Folder lúc Ghi đè không sinh file mồ côi (verify qua test case 5). Test PASS 6/6 case (bao gồm S8 — mix combo+mesh rời, nuốt hết vào combo khớp Save As) + 2 câu hiểu bài. Nguồn: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7d. |
+| 08/08/2026 | 1.17 | T5 D2 (`Bug-ComboCategoryHardcode` fix): xóa DefaultValue `"MyCombo"` ở pin `Category`, node `Make FComboData` (Bước 5e) — để rỗng. Verify `.json` ra `"category": ""`. Test lại A3+A4 PASS. Nguồn: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7e.4 (D2). |

@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 07/08/2026
+**Cập nhật:** 08/08/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1557,6 +1557,25 @@ tay 6/6 case trong phiên chat với Sonnet.
 
 ---
 
+## [DEVIATION] T5 D1 — Pass-by-Reference `Tags` không toggle được (08/08/2026)
+
+Task card T5 (7e.4, Khối D) yêu cầu bỏ tick Pass-by-Reference cho param `Tags` trên 2 dispatcher
+(`OnDialogConfirmed`, `OnDialogConfirmedOverwrite`, `WBP_SaveComboDialog`) để dọn compiler
+warning. Thực tế trong UE5 Editor: checkbox Pass-by-Reference bị khóa (không sáng, không ấn được)
+vì `Tags` là kiểu **Set of String** — Array/Set/Map làm param của Function/Event Dispatcher trong
+Blueprint VM luôn bắt buộc truyền by-reference, không có đường value-copy. Đây là giới hạn engine,
+không phải lỗi giả định của task card hay thao tác sai của cuhoang.
+
+**Quyết định:** đóng D1 dạng N/A, KHÔNG đổi kiểu `Tags` để lách (đổi kiểu = surgical change vượt
+phạm vi T5, có thể ảnh hưởng call site khác — không làm khi chưa có yêu cầu riêng). Warning
+compiler "No value will be returned by reference. Parameter 'Tags'" giữ nguyên, chấp nhận không
+xử lý.
+
+**Ceiling:** chấp nhận warning tồn tại vĩnh viễn trừ khi có lý do kỹ thuật mới xuất hiện.
+**Trigger:** không có — không phải nợ kỹ thuật cần trigger, là giới hạn cấu trúc cố định.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -1648,3 +1667,4 @@ tay 6/6 case trong phiên chat với Sonnet.
 | 07/08/2026 (T3 DONE + bài học) | Thêm section "[BÀI HỌC] Phiên T3 Save As/Save Đè — 07/08/2026": 5 bài học phiên (không giả định as-built từ trạng thái tổng; review K2Node phải đối chiếu toàn graph, không chỉ phần được hỏi; hàm dùng chung chỉ nên chứa phần chung, phần khác biệt để caller quyết định — case `ExpandToPath`; ra đề test cần khớp guard hệ thống có sẵn — case guard `Length >= 2`; giữ nhịp cuhoang đoán trước Sonnet xác nhận). T3 ĐÓNG 6/6 case PASS — xem `01_Session_State.md`, `Widgets/WBP_SaveComboDialog.md` v2.1, `Bugs/Open_Bugs.md` (đóng `Bug-SaveConfirm-EmptyName`). |
 | 07/08/2026 (nợ doc, sau review) | Thêm 2 mục `[DOC-DEBT]` phát hiện lúc cuhoang review diff merge T3: (1) `BP_FurnitureInputManager.md` nợ cập nhật chèn `ResolveActiveComboForSave()` vào `CB_SaveCombo_Handler` — cờ "gộp vào T4"; (2) `BP_ComboItemView.Description` chỉ có tên trong doc, chưa xác nhận field đầy đủ — ưu tiên thấp nhất, gộp đợt dọn nợ doc định kỳ, không task riêng. |
 | 02/08/2026 (Lô D) | **Viết doc `ResolveSelectedComboRoot()` vào `BP_FurnitureInputManager.md`** (nguồn K2Node export thật cuhoang cung cấp — đóng MỤC 4 CrossCheck). Thêm section "[DOC-DRIFT] ResolveSelectedComboRoot — PrimarySelectedActor vs SelectedActors[0] — 02/08/2026": `Plans/24-07-2026_C9_Execution_Plan.md` §V7 ghi dùng `PrimarySelectedActor`, as-built thật dùng `SelectedActors[0]` — khác nhau khi selection multi. Chưa gây lỗi (C9 chỉ chạy selection 1 cụm) — ceiling giữ tới khi lên task card Save As/Save đè (phải xử lý selection mix). KHÔNG sửa file Plans (đã đóng dấu [CHỨA AS-BUILT]). Đóng thêm MERGE_LOG Q3 (`FindGroupData` không có Index) — sửa 3 file: `BP_FurnitureInputManager.md` v2.9, `BP_UndoManager.md` v1.13, `Blueprint_Logic_NodeFlow.md` v1.15 (đều tự mâu thuẫn nội bộ trước đó). |
+| 08/08/2026 (T5 DONE) | Thêm section "[DEVIATION] T5 D1 — Pass-by-Reference `Tags` không toggle được — 08/08/2026": task card T5 (7e.4) yêu cầu bỏ tick Pass-by-Reference cho param `Tags` (2 dispatcher `WBP_SaveComboDialog`) để dọn compiler warning — thực tế checkbox bị khóa cứng vì `Tags` là Set of String (giới hạn Blueprint VM, không phải lỗi task card/thao tác). Đóng D1 dạng N/A, giữ nguyên warning, KHÔNG đổi kiểu `Tags` (tránh surgical change vượt phạm vi T5). Ceiling: chấp nhận vĩnh viễn. Trigger: không có. Save As/Save đè (T1-T5) CHÍNH THỨC DONE — `[CEILING]` "2 nơi cùng biết cách leo combo root" (03/08/2026) VẪN TREO, trigger vẫn là C10, KHÔNG đóng ở T5. Xem `01_Session_State.md`, `PROGRESS.md`. |

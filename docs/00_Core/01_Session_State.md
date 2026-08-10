@@ -66,6 +66,17 @@ N/A), Khối C (đóng Note-DuplicateComboID), Khối D (fix 2 nợ kỹ thuật
 D1 warning Tags bIsReference trên 2 dispatcher, D2 Bug-ComboCategoryHardcode), Khối E (doc closure
 + tick bar Sprint 5 22→23). [CEILING] combo root GIỮ NGUYÊN treo, trigger vẫn là C10 — KHÔNG đóng
 ở T5. Sau T5: C11 → C10 → Gate 2.
+**Cập nhật (tiếp) 08/08/2026 (T5 DONE — Save As/Save đè CHÍNH THỨC DONE):** T5 (Regression + Doc
+Closure) — ĐÓNG. Khối A (7 bước) PASS toàn bộ, đặc biệt A1 (combo lưu trước Sprint 5 vẫn load
+được) + A4/A5 (Save As luôn sinh comboId mới). Khối B (S-Scan S0-S9 + S8b + Q9-gap) PASS 12/12 ô
+đúng kỳ vọng. Khối C: đóng `Note-DuplicateComboID`. Khối D: D1 (bỏ Pass-by-Reference param `Tags`)
+**KHÔNG thực thi được — giới hạn engine** (`Tags` là Set of String, Blueprint khóa cứng
+Pass-by-Reference cho container type, không toggle được) — đóng dưới dạng N/A, xem DEVIATIONS.md.
+D2 (xóa hardcode Category="MyCombo") — FIX xong, verify `.json` ra `"category": ""`, test lại
+A3+A4 vẫn PASS. **Save As/Save đè (T1→T5) CHÍNH THỨC DONE.** Bar Sprint 5: 18/23 → 19/23.
+`[CEILING]` combo root ("2 nơi cùng biết cách leo combo root") GIỮ NGUYÊN treo, trigger vẫn là
+C10 — KHÔNG đóng ở T5. Priority queue tiếp theo: **C11 (Export/Import combo) → C10 (Regression
+tổng Sprint 5) → Gate 2**.
 
 ---
 
