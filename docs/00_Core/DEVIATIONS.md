@@ -1590,6 +1590,7 @@ quyết định 23/06 chưa từng được áp vào code thật.
 chưa merge") — nay xác nhận: **chưa từng merge**.
 → `Post_C5_Execution_Plan_v1.md` mục G1.5.1 (P4): cập nhật trỏ "đã làm ở P4-early", KHÔNG lặp lại
 nội dung swap/migrate ở Gate 1.5.
+→ **ÁP DỤNG THÀNH CÔNG 10/08/2026 — verify PASS.**
 
 ---
 
@@ -1616,6 +1617,49 @@ Import quét TOÀN BỘ `Exports/*.combojson`, nhập hết trong 1 lần bấm,
 bấm nút Nhập nhiều lần liên tiếp.
 **Kèm QĐ4:** `.combojson` CHỈ là định dạng file export/chia sẻ — Import luôn ghi ra chuẩn
 `<NewID>.json` vào `CombosDir`, KHÔNG bao giờ ghi `.combojson` vào đó (thư viện chỉ scan `*.json`).
+
+---
+
+## [C11.2 — BUG THIẾT KẾ, phát hiện lúc test 10/08/2026]
+
+**Triệu chứng:** sau khi chuột phải combo card → Xuất file → toast hiện đúng, nhưng
+camera/viewport KHÔNG điều khiển được nữa (chỉ thao tác được trong furniture inventory UI).
+
+**Nguyên nhân:** `OnComboCardRightClicked` mở menu bằng `Set Input Mode UI Only` (khóa input cho
+camera). `CB_ExportCombo` là ĐIỂM CUỐI chuỗi (không mở dialog tiếp theo như `CB_MoveCombo`) nhưng
+thiếu bước trả lại `Set Input Mode Game and UI` → input bị khóa vĩnh viễn sau Export.
+
+**Nguồn lỗi:** task card C11.2 gốc (`DELTA_10-08-2026_C11_P4early.md` mục 3) viết thiếu bước này.
+
+**Fix:** thêm `GetPlayerController → Set Input Mode Game and UI` ngay sau `SET LibraryMenuRef =
+None`, trước `Branch(bExported)`. Copy nguyên cụm từ `HandleMoveComboConfirmed` (pattern có sẵn).
+
+**Bài học (luật 6A áp dụng cụ thể):** mọi Custom Event mở `Set Input Mode UI Only` phải tự kiểm —
+nếu nó là ĐIỂM CUỐI chuỗi (không mở tiếp dialog/widget nào khác để tự trả sau), nó phải TỰ trả
+lại input mode ngay trong chính nó, không được ỷ lại nhánh khác.
+
+**Test lại sau fix:** PASS — camera điều khiển lại được ngay sau Export.
+
+---
+
+## [C11.3 — bài học kỹ thuật, 10/08/2026]
+
+`CallDelegate` lên dispatcher của 1 Blueprint KHÁC (ở đây: `BP_ComboManager.OnComboLibraryChanged`,
+gọi từ `WBP_FurnitureInventory`) bắt buộc `Target` phải trỏ đúng instance của Blueprint sở hữu
+dispatcher đó (`ComboManagerRef`) — `self` KHÔNG dùng được vì `self` là blueprint đang đứng
+(`WBP_FurnitureInventory`), không phải chủ nhân dispatcher. Lỗi compile rõ ràng, dễ fix nếu biết
+đọc: *"This blueprint (self) is not a BP_ComboManager_C, therefore 'Target' must have a
+connection."*
+
+---
+
+## [QĐ UX C11.3 — chốt 10/08/2026]
+
+Import combo dùng NÚT RIÊNG (`BTN_ImportCombo`), KHÔNG gắn vào context menu combo card (khác
+Export). Lý do: Import không thao tác lên 1 combo cụ thể nào (nạp combo MỚI vào thư viện) — gắn
+vào menu chuột-phải-trên-1-combo sẽ sai ngữ cảnh (user chuột phải lên combo X nhưng hành động
+không liên quan gì tới X). Cân nhắc thêm: dựng context-menu-vùng-trống (hướng b) bị loại vì cần
+cơ chế hit-test mới hoàn toàn, tăng rủi ro không cần thiết so với mục tiêu đóng gói sớm.
 
 ---
 
@@ -1712,3 +1756,5 @@ bấm nút Nhập nhiều lần liên tiếp.
 | 02/08/2026 (Lô D) | **Viết doc `ResolveSelectedComboRoot()` vào `BP_FurnitureInputManager.md`** (nguồn K2Node export thật cuhoang cung cấp — đóng MỤC 4 CrossCheck). Thêm section "[DOC-DRIFT] ResolveSelectedComboRoot — PrimarySelectedActor vs SelectedActors[0] — 02/08/2026": `Plans/24-07-2026_C9_Execution_Plan.md` §V7 ghi dùng `PrimarySelectedActor`, as-built thật dùng `SelectedActors[0]` — khác nhau khi selection multi. Chưa gây lỗi (C9 chỉ chạy selection 1 cụm) — ceiling giữ tới khi lên task card Save As/Save đè (phải xử lý selection mix). KHÔNG sửa file Plans (đã đóng dấu [CHỨA AS-BUILT]). Đóng thêm MERGE_LOG Q3 (`FindGroupData` không có Index) — sửa 3 file: `BP_FurnitureInputManager.md` v2.9, `BP_UndoManager.md` v1.13, `Blueprint_Logic_NodeFlow.md` v1.15 (đều tự mâu thuẫn nội bộ trước đó). |
 | 08/08/2026 (T5 DONE) | Thêm section "[DEVIATION] T5 D1 — Pass-by-Reference `Tags` không toggle được — 08/08/2026": task card T5 (7e.4) yêu cầu bỏ tick Pass-by-Reference cho param `Tags` (2 dispatcher `WBP_SaveComboDialog`) để dọn compiler warning — thực tế checkbox bị khóa cứng vì `Tags` là Set of String (giới hạn Blueprint VM, không phải lỗi task card/thao tác). Đóng D1 dạng N/A, giữ nguyên warning, KHÔNG đổi kiểu `Tags` (tránh surgical change vượt phạm vi T5). Ceiling: chấp nhận vĩnh viễn. Trigger: không có. Save As/Save đè (T1-T5) CHÍNH THỨC DONE — `[CEILING]` "2 nơi cùng biết cách leo combo root" (03/08/2026) VẪN TREO, trigger vẫn là C10, KHÔNG đóng ở T5. Xem `01_Session_State.md`, `PROGRESS.md`. |
 | 10/08/2026 (C11 + P4-early plan) | Thêm 3 section từ `Plans/DELTA_10-08-2026_C11_P4early.md`: "[LÔ B — ĐÓNG]" (`GetCombosDir()` thật = `ProjectSavedDir/Combos`, P4 23/06 chưa từng merge — resolve note nghi vấn 14/07 trong `Data/Data_Structures.md`); "[QĐ2] Cắt file dialog khỏi C11 v1" (`IDesktopPlatform` editor-only — rủi ro packaged, dùng thư mục `Exports/` cố định thay dialog, backlog sau Gate 2); "[QĐ3] Import v1 = quét thư mục" (nhập ALL `.combojson`, move thành công sang `Imported/`, kèm QĐ4 `.combojson` chỉ là file export, không ghi vào `CombosDir`). Patch `Plans/Post_C5_Execution_Plan_v1.md` mục C11 (9 điểm) + G1.5.1 (P4 trỏ sang P4-early). **CHƯA thực thi** — chỉ lập kế hoạch. |
+| 10/08/2026 (C11.1+C11.2 DONE) | Xác nhận `[LÔ B — ĐÓNG]` "ÁP DỤNG THÀNH CÔNG — verify PASS" (P4-early xong phiên trước). Thêm section "[C11.2 — BUG THIẾT KẾ]": `CB_ExportCombo` thiếu bước trả `Set Input Mode Game and UI` (task card gốc viết thiếu) → camera bị khóa vĩnh viễn sau Export — fix bằng cách copy pattern từ `HandleMoveComboConfirmed`. Bài học: mọi Custom Event mở `UI Only` mà là ĐIỂM CUỐI chuỗi phải TỰ trả input mode, không ỷ lại nhánh khác. Kèm sửa `Widgets/WBP_FurnitureInventory.md` v3.23 — DOC-DRIFT `OnComboCardRightClicked` (`MovingComboID` sai, đúng là `LibMenu.TargetComboID`) + `CB_ExportCombo` mới. Test PASS 3/3. |
+| 10/08/2026 (C11 ĐÓNG HOÀN TOÀN) | Thêm section "[C11.3 — bài học kỹ thuật]": `CallDelegate` lên dispatcher Blueprint khác (`BP_ComboManager.OnComboLibraryChanged`) bắt buộc `Target=ComboManagerRef`, KHÔNG phải `self` — lỗi compile rõ ràng nếu sai. Thêm section "[QĐ UX C11.3]": Import dùng nút riêng `BTN_ImportCombo`, KHÔNG gắn context menu combo card (sai ngữ cảnh — Import không thao tác lên 1 combo cụ thể). `Widgets/WBP_FurnitureInventory.md` v3.25 — `CB_ImportCombo` mới, test PASS 4/4. **C11 (Export/Import combo) ĐÓNG HOÀN TOÀN.** Tiếp theo: C10 (Regression full) → Gate 1.5 (Packaged Smoke) → Gate 2. |

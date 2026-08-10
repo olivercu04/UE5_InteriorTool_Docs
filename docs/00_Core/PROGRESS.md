@@ -18,6 +18,27 @@ theo R-DOC-ATOMIC — trước đó `[~]`). Bar Sprint 5: 18/23 → **19/23**. D
 dạng N/A — giới hạn engine (Set of String không toggle được Pass-by-Reference), ghi chi tiết
 DEVIATIONS.md. D2 (`Bug-ComboCategoryHardcode`) fix xong — xem Open_Bugs.md. Tiếp theo: C11
 (Export/Import combo). Xem `01_Session_State.md`.
+**Cập nhật (tiếp) 10/08/2026 (P4-early DONE):** `GetCombosDir()` đổi sang `%LOCALAPPDATA%/
+InteriorFOFFTool/Combos` (P4, dời sớm trước C11). Migrate tay từ `Saved/Combos/*` thành công.
+Verify 3/3 ô PASS. Tiếp theo: C11 (Export/Import). Nguồn: `DELTA_10-08-2026_C11_P4early.md`.
+**Cập nhật (tiếp) 10/08/2026 (C11.1+C11.2 DONE):** `ComboSerializer` thêm 4 hàm
+(`GetExportsDir`/`ExportCombo`/`ImportCombo`/`ImportAllFromExportsDir`), build success.
+`CB_ExportCombo` (context menu combo card, item mới "📤 Xuất file…") — 3/3 test PASS: file
+`.combojson` ra đúng `Exports/`, tên tiếng Việt giữ nguyên, thumbnailBase64 nhúng đúng. Bug Input
+Mode phát hiện+fix lúc test (xem `DEVIATIONS.md`). Doc-drift `OnComboCardRightClicked`
+(`MovingComboID` không tồn tại — SỬA thành `LibMenu.TargetComboID`) đã patch. Còn treo: C11.3
+Import — quyết định UX (quét thư mục tự động vs dialog chọn file) chưa chốt, bàn tiếp phiên sau
+với Opus. Nguồn: session 10/08/2026.
+**Cập nhật (tiếp) 10/08/2026 (C11 DONE HOÀN TOÀN):** Export/Import combo qua thư mục `Exports/`
+(P4-early áp trước, combo sống qua update app đóng gói). C++ +4 hàm
+(`GetExportsDir`/`ExportCombo`/`ImportCombo`/`ImportAllFromExportsDir`). Export: context menu
+ComboCard "📤 Xuất file…", 3/3 test PASS. Import: nút `BTN_ImportCombo` riêng (không context
+menu — sai ngữ cảnh), 4/4 test PASS. 2 bug phát hiện+fix lúc test: (1) thiếu `Set Input Mode
+Game and UI` ở `CB_ExportCombo` — camera bị khóa sau export; (2) `CallDelegate` Target phải là
+`ComboManagerRef` không phải `self`. Doc-drift `CB_MoveCombo`/`OnComboCardRightClicked` cũng
+được sửa trong phiên này (`MovingComboID` xác nhận vị trí SET đúng). Tiếp theo: C10 (Regression
+full Sprint 5) → Gate 1.5 (Packaged Smoke). Nguồn: session 10/08/2026,
+`DELTA_10-08-2026_C11_P4early.md` + patch UX Import.
 
 ---
 

@@ -1,6 +1,6 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.22 | **Cập nhật:** 07/08/2026 (15:40) — Save As/Save đè T4 DONE: bind dispatcher `OnDialogConfirmedOverwrite` + Custom Event mới `HandleSaveComboOverwriteConfirmed` (gọi `SaveComboFromSelection(bOverwrite=true,...)` + toast "Đã ghi đè combo"). Test PASS 6/6. Xem `Blueprints/BP_ComboManager.md` v1.16, `Widgets/WBP_SaveComboDialog.md` v2.2.
+**Phiên bản:** 3.25 | **Cập nhật:** 10/08/2026 — C11.3 (Import combo) DONE: Custom Event mới `CB_ImportCombo` (bound `BTN_ImportCombo.OnClicked`) — quét `Exports/`, nhập ALL, `CallDelegate ComboManagerRef.OnComboLibraryChanged` (Target PHẢI là `ComboManagerRef`, không phải `self`). Test PASS 4/4. **C11 (Export/Import combo) ĐÓNG HOÀN TOÀN.**
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
 > tính năng active-folder highlight (xem chi tiết node flow mục dưới).
@@ -1398,46 +1398,109 @@ Gọi từ `WBP_ComboCard.On Mouse Button Down` khi RMB.
 GET LibraryMenuRef → IsValid → LibraryMenuRef.Hide
 [merge] → SET LibraryMenuRef = None
 
-SET MovingComboID = ComboID   ← lưu trước khi tạo menu
-
 Create Widget(WBP_LibraryContextMenu) → LibMenu
 SET LibMenu.MenuMode = "Combo"
+SET LibMenu.TargetComboID = ComboID   ← [SỬA 10/08] thay cho "SET MovingComboID = ComboID" cũ
+                                          (đã SAI, không tồn tại trong code thật — xem ghi chú)
 LibMenu.AddMenuItem("📁 Chuyển vào folder…", "") → Item1 → Bind Item1.OnItemClicked → CB_MoveCombo
+LibMenu.AddMenuItem("📤 Xuất file…", "") → Item2 → Bind Item2.OnItemClicked → CB_ExportCombo   [MỚI — C11.2]
 SET LibraryMenuRef = LibMenu
 Get Player Controller → Set Input Mode UI Only
 LibMenu.ShowAt(Get Mouse Position on Viewport)
 ```
+> ⚠️ **DOC-DRIFT FIX (10/08/2026):** bản trước ghi "SET MovingComboID = ComboID" — xác nhận
+> SAI qua K2Node export thật. ComboID lưu vào `LibMenu.TargetComboID` (field của widget menu),
+> không qua biến `MovingComboID` (biến đó chỉ `CB_MoveCombo` dùng, đọc lại từ chính
+> `LibraryMenuRef` khi cần — không phải biến trung gian ComboID chung). Nguồn: cuhoang paste
+> K2Node export, đối chiếu Claude (Sonnet) 10/08/2026.
 
 ### CB_MoveCombo — Custom Event (bound từ Item1.OnItemClicked trong OnComboCardRightClicked) [C5.5]
+**✓K2 10/08/2026** — sửa lại theo K2Node export thật (xem ghi chú xác nhận dưới).
 ```
-GET LibraryMenuRef → IsValid → LibraryMenuRef.Hide
-[merge] → SET LibraryMenuRef = None
+GET LibraryMenuRef → IsValid →
+LibraryMenuRef.Hide
+SET MovingComboID = LibraryMenuRef.TargetComboID   ← [XÁC NHẬN 10/08] SET này nằm Ở ĐÂY,
+                                                       KHÔNG ở OnComboCardRightClicked (doc cũ
+                                                       ghi sai vị trí — xem ghi chú dưới)
 
 // Guard: dialog đã mở → không mở chồng
-GET MoveComboDialogRef → IsValid → [dead-end]
-IsValid False →
+Branch(IsValid MoveComboDialogRef):
+  True  → RemoveFromParent(MoveComboDialogRef) → SET MoveComboDialogRef = None → [merge]
+  False → [merge]
 
 // Tìm FolderPath hiện tại của combo này
-SET MovingComboCurrentFolder = ""
+BuildComboFolderTreeNodes(ExcludePath="") → Entries
 ForEachLoopWithBreak(AllComboViews_Combo):
-  Body → GET element.ComboID
-          Branch(element.ComboID == MovingComboID):
-            True  → SET MovingComboCurrentFolder = element.FolderPath → Break
-            False → [dead-end]
+  Body → IsValid(item):
+           True  → Branch(item.ComboID == LibraryMenuRef.TargetComboID):
+                      True  → SET MovingComboCurrentFolder = item.FolderPath → Break
+                      False → [dead-end, next iteration]
+           False → [dead-end, next iteration]
 Completed →
-
-// Build list (không loại gì — combo không có con)
-BuildComboFolderTreeNodes("") → Entries   ← [BUG-FIX 13/07] call site thật đã fix về hàm này, thay BuildMoveFolderTargetList; ExcludePath="" = không loại folder nào
-
-// Tạo dialog
 Create Widget(WBP_MoveToFolderDialog) → Dialog
-Dialog.InitPicker(Entries, MovingComboCurrentFolder, True)   ← 13/07: thay PopulateRows(Dialog, Entries)
-Bind Dialog.OnMoveFolderConfirmed → HandleMoveComboConfirmed
 SET MoveComboDialogRef = Dialog
+Dialog.InitPicker(Entries, MovingComboCurrentFolder, bInShowTag=True)
+Bind Dialog.OnMoveFolderConfirmed → HandleMoveComboConfirmed
 Dialog.AddToViewport
-Get Player Controller → Set Input Mode UI Only
+Get Player Controller → Set Input Mode Game and UI Ex (InWidgetToFocus = Dialog)
 ```
 > **QUY TẮC (từ bài học Sprint 1):** `ForEachLoopWithBreak` — code chạy 1 lần sau vòng lặp PHẢI nối `Completed`, KHÔNG `Loop Body`.
+
+> ⚠️ **XÁC NHẬN 10/08/2026 (giải quyết mâu thuẫn Claude Code tự phát hiện ở lượt merge trước):**
+> `MovingComboID` **KHÔNG chết** — vẫn được SET, nhưng vị trí đúng là **đầu `CB_MoveCombo`**
+> (đọc từ `LibraryMenuRef.TargetComboID`), không phải trong `OnComboCardRightClicked` như bản
+> doc trước 10/08 ghi. `OnComboCardRightClicked` chỉ SET `LibMenu.TargetComboID`, không đụng
+> `MovingComboID`. Loop tìm folder hiện tại (bên trong `CB_MoveCombo`) đọc lại
+> `LibraryMenuRef.TargetComboID` trực tiếp (không qua `MovingComboID`) để so sánh — 2 nguồn
+> đọc cùng giá trị nhưng qua 2 đường khác nhau, không phải bug, chỉ là cách viết.
+> `HandleMoveComboConfirmed` (event riêng, chạy sau khi dialog xác nhận) đọc lại biến class
+> `MovingComboID` để gọi `UpdateComboFolder` + dựng thông báo lỗi — đây là lý do `MovingComboID`
+> phải là biến CLASS (sống qua nhiều event), không phải biến cục bộ.
+> Nguồn: K2Node export CB_MoveCombo, cuhoang paste 10/08/2026, đối chiếu Claude (Sonnet).
+
+### CB_ExportCombo — Custom Event [C11.2] (bound từ Item2.OnItemClicked trong OnComboCardRightClicked)
+```
+GET LibraryMenuRef → IsValid →
+LibraryMenuRef.Hide
+→ UComboSerializer::ExportCombo(ComboID = LibraryMenuRef.TargetComboID) ●→ OutExportedPath, Return(bExported)
+→ SET LibraryMenuRef = None
+→ Get Player Controller → Set Input Mode Game and UI ← [BUG FIX 10/08, xem DEVIATIONS]
+→ Branch(bExported):
+    True → ShowToastMsg("Đã xuất: " + OutExportedPath)
+    False → ShowToastMsg("Xuất thất bại")
+False → [dead-end]
+```
+> Không cần biến tạm lưu ComboID — đọc thẳng `LibraryMenuRef.TargetComboID` vào pin `ExportCombo`,
+> dùng ngay lập tức trong cùng event, không cần nhớ lại ở event khác (khác `CB_MoveCombo`, vốn cần
+> giữ ComboID qua tới `HandleMoveComboConfirmed` chạy sau khi dialog đóng).
+> Test PASS 3/3 case (export ra file đúng path + tên tiếng Việt giữ nguyên (M7) + thumbnailBase64
+> nhúng đúng khi combo có .png + export 2 lần đè file cũ, không lỗi). Nguồn:
+> `DELTA_10-08-2026_C11_P4early.md` + test tay 10/08/2026.
+
+### CB_ImportCombo — Custom Event [C11.3] (bound từ BTN_ImportCombo.OnClicked)
+> Quyết định UX (10/08): Import KHÔNG dùng context menu combo card (sai ngữ cảnh — Import
+> không thao tác lên combo cụ thể nào). Dùng NÚT RIÊNG (`BTN_ImportCombo`), pattern gọn như
+> Export (không IsValid guard nào cần — không object nào cần kiểm; không Set Input Mode nào
+> cần trả — nút bấm thường không mở UI Only nào để phải trả lại).
+```
+CB_ImportCombo:
+▶→ ImportAllFromExportsDir ●→ OutImported, OutFailed
+▶→ Branch(OutImported > 0):
+     True  ▶→ CallDelegate ComboManagerRef.OnComboLibraryChanged
+           ▶→ RefreshComboFolderUI()
+           ▶→ Branch(OutFailed > 0):
+                True  ▶→ ShowToastMsg("Đã nhập " + IntToString(OutImported) + " combo (" + IntToString(OutFailed) + " lỗi)")
+                False ▶→ ShowToastMsg("Đã nhập " + IntToString(OutImported) + " combo")
+     False ▶→ Branch(OutFailed > 0):
+                True  ▶→ ShowToastMsg("File combo không hợp lệ")
+                False ▶→ ShowToastMsg("Không có file .combojson trong thư mục Exports")
+```
+> `Target` của `CallDelegate` PHẢI là `ComboManagerRef` (biến class, kiểu `BP_ComboManager`) —
+> KHÔNG phải `self`. `self` ở `WBP_FurnitureInventory` không phải `BP_ComboManager`, gây lỗi
+> compile "Target must have a connection". Bài học ghi vào `DEVIATIONS.md`.
+> Test PASS 4/4 case (10/08/2026): (1) xóa combo → Nhập lại → quay về ID mới; (2) file gốc
+> dọn sang `Exports/Imported/`; (3) Nhập file đã tồn tại combo cùng nội dung → 2 combo ID khác
+> nhau; (4) file rác (.txt đổi .combojson) → toast lỗi, không crash, file rác KHÔNG bị move.
 
 ### HandleMoveComboConfirmed(TargetParentPath : String) — Custom Event [C5.5]
 Bound từ `WBP_MoveToFolderDialog.OnMoveFolderConfirmed` trong `CB_MoveCombo`.
@@ -1893,3 +1956,6 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.15 | 24/07/2026 — C9.0c HOÀN TẤT | Migrate `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`, None/Mesh/Combo) — migration xảy ra ngoài phiên Claude Code, doc trước đây không biết. Pure Function mới `IsReplaceModeActive() → Boolean` (bản riêng, song song với `BP_FurnitureInputManager`). `OnMeshSelected` nhánh Replace: Condition đổi sang `IsReplaceModeActive()` — bug fix (trước là literal EqualEqual đọc biến đã xóa, luôn sai). `EnterReplaceMode`: `SET ReplaceTarget=Mesh` (set cứng Mesh, Combo mode đi đường khác không qua hàm này). `ExitReplaceMode`: `SET ReplaceTarget=None` + THÊM `Regenerate All Entries(CTV_ComboCard)` (đường thoát duy nhất cho cả 2 mode). `BTN_Close` đưa vào doc lần đầu (chưa từng được ghi trước đây). Verify qua K2Node export thật, không suy đoán. Test regression 5/5 PASS. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.5, `Widgets/WBP_MeshControls.md`, `Widgets/WBP_DetailPopup.md`, `Widgets/WBP_FurnitureCard.md`, `Widgets/WBP_ComboCard.md`. |
 | 3.21 | 07/08/2026 — Save As/Save đè T3 DONE | **Phần đúng scope command block 07/08:** `OpenSaveComboDialog` — Việc 5 MỚI: sau `Picker.ExpandToPath(PrefillFolder)` thêm `SET Picker.SelectedPath = PrefillFolder` + `Picker.RefreshVisibleRows()` (`ExpandToPath` dùng chung với Move không tự set `SelectedPath`). **Phần backfill hạ tầng 7b/7c (⚠ chưa từng phân phối trước đây, nguồn `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7b.2/7b.3, ✓K2/✓as-built 05/08):** thêm mục "T3 — Save As/Save Đè — 2 Function mới" (`GetComboViewByID`, `BuildSaveDialogPrefill`); `OpenSaveComboDialog` mở rộng chữ ký +3 param (`ActiveComboID`/`bCanOverwrite`/`ReasonText`) + gọi `BuildSaveDialogPrefill` + `Create Widget` nối thêm 8 pin Expose-on-Spawn của `WBP_SaveComboDialog` v2.1; `BP_ComboItemView.Description` field mới. **CHƯA phân phối** (ngoài scope command block này): việc chèn `ResolveActiveComboForSave()` vào `CB_SaveCombo_Handler` (`BP_FurnitureInputManager`) — xem cảnh báo mục `OpenSaveComboDialog`. Test PASS 6/6 case + 2 câu hiểu bài (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7c). |
 | 3.22 | 07/08/2026 (15:40) — Save As/Save đè T4 DONE | `OpenSaveComboDialog`: thêm `Bind SaveComboDialogRef.OnDialogConfirmedOverwrite → HandleSaveComboOverwriteConfirmed`, cạnh bind `OnDialogConfirmed` có sẵn. Custom Event mới `HandleSaveComboOverwriteConfirmed(ComboID, ComboName, FolderPath, Description, Tags)` — đọc `PendingSelectedActors`/`PendingCenter` TRƯỚC cleanup → `ComboManagerRef.SaveComboFromSelection(bOverwrite=true, OverwriteComboID=ComboID)` → `ShowToastMsg("Đã ghi đè combo")` → `OnSaveComboDialogClosed` (tái dùng nguyên vẹn, không viết cleanup riêng). `OnSaveComboDialogClosed` — cập nhật comment nguồn gọi (+ `HandleSaveComboOverwriteConfirmed`), thân hàm không đổi. Test PASS 6/6 case (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7d.5, bao gồm S8 mix combo+mesh rời) + 2 câu hiểu bài. Nguồn: `DELTA_07-08-2026_T4_Overwrite.md` (Opus). |
+| 3.23 | 10/08/2026 — C11.2 (Export combo) DONE + DOC-DRIFT FIX | **DOC-DRIFT:** `OnComboCardRightClicked` — bản trước ghi `SET MovingComboID = ComboID`, xác nhận SAI qua K2Node export thật (10/08); code thật ghi thẳng `LibMenu.TargetComboID = ComboID`, không qua `MovingComboID`. **MỚI:** `LibMenu.AddMenuItem("📤 Xuất file…")` → `Item2` → bind `CB_ExportCombo`. Custom Event mới `CB_ExportCombo` — `LibraryMenuRef.Hide` → `UComboSerializer::ExportCombo(LibraryMenuRef.TargetComboID)` → toast kết quả; KHÔNG cần biến tạm lưu ComboID (đọc thẳng `TargetComboID`, dùng ngay trong cùng event — khác `CB_MoveCombo` cần giữ qua tới dialog đóng). Test PASS 3/3 case (path đúng, tên tiếng Việt giữ nguyên M7, thumbnailBase64 nhúng đúng). Kèm bug fix Input Mode phát hiện lúc test — xem `DEVIATIONS.md` mục "[C11.2 — BUG THIẾT KẾ]". Nguồn: `Plans/DELTA_10-08-2026_C11_P4early.md` + test tay 10/08/2026. |
+| 3.24 | 10/08/2026 — `CB_MoveCombo` re-export ✓K2, đóng mâu thuẫn `MovingComboID` | Mâu thuẫn tự phát hiện ở v3.23 (`CB_MoveCombo` đọc `MovingComboID` nhưng không nơi nào SET) nay đóng: K2Node export thật xác nhận `SET MovingComboID = LibraryMenuRef.TargetComboID` nằm Ở ĐẦU `CB_MoveCombo`, KHÔNG phải trong `OnComboCardRightClicked` như doc trước 10/08 từng ghi nhầm vị trí. Sửa thêm theo export thật: guard dialog đã mở đổi từ dead-end sang `RemoveFromParent` + `SET MoveComboDialogRef = None` trước khi mở dialog mới; loop tìm folder thêm `IsValid(item)` guard + so sánh trực tiếp `LibraryMenuRef.TargetComboID` (không qua `MovingComboID`); `BuildComboFolderTreeNodes` gọi qua named param `ExcludePath=""`; `Dialog.InitPicker` dùng named param `bInShowTag=True`; cuối hàm đổi `Set Input Mode UI Only` → `Set Input Mode Game and UI Ex (InWidgetToFocus=Dialog)`. `HandleMoveComboConfirmed` không đổi — vẫn đọc `MovingComboID` (nay đã có nguồn SET hợp lệ). Nguồn: K2Node export `CB_MoveCombo`, cuhoang paste 10/08/2026. |
+| 3.25 | 10/08/2026 — C11.3 (Import combo) DONE, C11 ĐÓNG HOÀN TOÀN | Custom Event mới `CB_ImportCombo` (bound `BTN_ImportCombo.OnClicked`) — quyết định UX: nút riêng, KHÔNG gắn context menu combo card (Import không thao tác lên 1 combo cụ thể, sai ngữ cảnh nếu gắn menu chuột-phải-trên-combo). Gọi `ImportAllFromExportsDir` → `OutImported`/`OutFailed` → nếu có combo mới: `CallDelegate ComboManagerRef.OnComboLibraryChanged` (⚠ Target PHẢI là `ComboManagerRef`, KHÔNG phải `self` — lỗi compile "Target must have a connection" nếu để `self`, xem `DEVIATIONS.md`) + `RefreshComboFolderUI()` + toast theo 4 nhánh (có lỗi/không lỗi × có nhập được/không). Test PASS 4/4 case (xóa+nhập lại ID mới, file dọn sang `Imported/`, nhập trùng nội dung → 2 ID khác nhau, file rác → toast lỗi không crash không move). Nguồn: session 10/08/2026. |
