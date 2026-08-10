@@ -49,6 +49,16 @@ Replace→Move→Undo→Replace). Bug mới `Bugs/Open_Bugs.md` mục `Bug-RowNa
 v1.3→v1.4: banner `📌 [CHỨA AS-BUILT]` cho case 6 mục 6b.5 — **T2 vẫn CHƯA đóng** (chỉ 1/6 case +
 không có T0 của chính T2).
 **Cập nhật (tiếp) 04/08/2026 (c, Lô A):** merge delta `DELTA_04-08-2026_LoA_SaveCombo_Verify.md` (as-built, T0 của T4). `Blueprints/BP_ComboManager.md` v1.14→v1.15: `SaveComboFromSelection` re-export ✓K2 04/08 — additive (thêm Bước 0 param→class var + xác nhận Bước 5a/7), KHÔNG đổi hệ đánh số "Bước N" (tránh gãy cross-reference nhiều nơi trong file). `Data/ComboSerializer_Reference.md`: ✓SOURCE 04/08 xác nhận đúng 13 hàm public `UComboSerializer`, ghi nhận `LoadCombo` không tồn tại. `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` v1.2→v1.3: thêm mục 4.1 (quyết định kiến trúc T4 — Branch tại điểm sinh ComboID, chưa thực thi). 2 entry mới `Bugs/Open_Bugs.md` (`Bug-ComboCategoryHardcode`) + 2 entry `DEVIATIONS.md` (`[AS-BUILT] Broadcast OnComboLibraryChanged...`, `[DOC-DRIFT] Plan C7 dựa vào LoadCombo...`). `DocCleanup_Summary_02aug2026.md`: thêm mục 4.5 (xếp ưu tiên Lô B/C/D). KHÔNG đụng `02_Current_Sprint.md`/`PROGRESS.md` (delta không chứa kết quả thực thi task).
+**Cập nhật (tiếp) 10/08/2026:** thêm `Plans/DELTA_10-08-2026_C11_P4early.md` — delta lập kế hoạch
+C11 (Export/Import combo) + chèn task mới P4-early (dời `GetCombosDir()` sang `%LOCALAPPDATA%`,
+làm TRƯỚC C11 để combo sống qua update app đóng gói). File đang chạy, CHƯA có as-built — không
+đóng dấu banner nào. Ground truth C++: `ComboSerializer.cpp` (cuhoang gửi 10/08) — xác nhận Lô B
+(`GetCombosDir()` thật = `ProjectSavedDir/Combos`, P4 23/06 CHƯA TỪNG merge). Patch 9 điểm áp vào
+`Plans/Post_C5_Execution_Plan_v1.md` mục C11 (cắt file dialog QĐ2, import quét-thư-mục QĐ3,
+`.combojson` chỉ là file export QĐ4, JSON object-level cho thumbnail, PNG binary I/O, ID format
+Digits, Q9 miễn, field ID `[VERIFY]` trong `ComboTypes.h`). 3 entry `DEVIATIONS.md`. Đích tương
+lai (khi P4-early + C11 chạy xong): `Data/ComboSerializer_Reference.md`, `Blueprints/BP_ComboManager.md`
+(nếu C11 có BP context menu/nút mới), `Widgets/WBP_FurnitureInventory.md` (BTN_ImportCombo).
 
 ---
 

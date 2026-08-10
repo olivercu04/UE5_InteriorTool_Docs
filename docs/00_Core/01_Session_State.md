@@ -77,6 +77,15 @@ A3+A4 vẫn PASS. **Save As/Save đè (T1→T5) CHÍNH THỨC DONE.** Bar Sprint
 `[CEILING]` combo root ("2 nơi cùng biết cách leo combo root") GIỮ NGUYÊN treo, trigger vẫn là
 C10 — KHÔNG đóng ở T5. Priority queue tiếp theo: **C11 (Export/Import combo) → C10 (Regression
 tổng Sprint 5) → Gate 2**.
+**Cập nhật (tiếp) 10/08/2026 (C11 + P4-early lập kế hoạch):** C11 lập kế hoạch xong; chèn task
+mới **P4-early** (dời P4 lên trước C11, thay vì đợi tới Gate 1.5 như plan gốc). Thứ tự mới:
+**P4-early → C11 → C10 → Gate 2**. Ground truth `ComboSerializer.cpp` (cuhoang gửi 10/08) xác
+nhận `GetCombosDir()` thật vẫn là `ProjectSavedDir/Combos` — P4 (chốt 23/06) CHƯA TỪNG merge.
+Cắt file dialog khỏi C11 v1 (QĐ2 — `IDesktopPlatform` editor-only, rủi ro packaged; dialog dời
+backlog sau Gate 2). Import model đổi sang quét-thư-mục (QĐ3 — nhập ALL `*.combojson` trong
+`Exports/`, move thành công sang `Exports/Imported/`, chống nhập trùng). `.combojson` chỉ là
+định dạng file export, KHÔNG bao giờ ghi vào `CombosDir` (QĐ4). **CHƯA thực thi cả 2 task**
+(P4-early lẫn C11) — chỉ mới lập kế hoạch. Nguồn: `Plans/DELTA_10-08-2026_C11_P4early.md`.
 
 ---
 

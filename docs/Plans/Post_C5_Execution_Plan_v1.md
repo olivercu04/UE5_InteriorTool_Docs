@@ -1,5 +1,5 @@
 # Post-C5 Execution Plan — K1 → Gate 1.5
-**Version:** 1.0 | **Cập nhật:** 05/07/2026
+**Version:** 1.1 | **Cập nhật:** 10/08/2026 — patch mục C11 (9 điểm, `DELTA_10-08-2026_C11_P4early.md`): cắt file dialog, import quét-thư-mục `Exports/`, `.combojson` chỉ là file export, JSON object-level cho thumbnail, PNG binary I/O, ID format Digits, Q9 miễn, `[VERIFY]` field ID. G1.5.1 (P4) trỏ sang task P4-early (đã dời lên trước C11), không lặp lại nội dung swap.
 **Phạm vi:** chuỗi chốt 03/07 sau khi C5 DONE: **K1 Toast → K3 bAddToRecent → P1 Thumbnail (plan riêng, chỉ ghi interface) → C9 Replace → C6 Fav/Recent → C7 DetailPopup → C11 Export/Import → C10 Regression → Gate 1.5 Packaged Smoke (+quyết P4)**.
 **Thực thi:** Sonnet step-by-step. Mỗi gate test-and-confirm, PASS mới sang gate sau.
 **Nguồn quyết định gốc:** DEVIATIONS 23/06 (K1/K3/K5/P4), Combo_Execution.md (C9/C11 mấu chốt), Open_Bugs.md (K3).
@@ -345,77 +345,128 @@ Border (nền, ~360×460)
 ---
 
 # ═══════════════════════════════════════════════
-# C11 — EXPORT / IMPORT (K5 — cả 2 hướng graceful, nhúng thumbnail base64)
+# C11 — EXPORT / IMPORT (K5 — quét thư mục, nhúng thumbnail base64)
 # ═══════════════════════════════════════════════
 
-**Mục tiêu:** share combo KHÔNG cần server. Export = 1 file `.combojson` tự chứa (JSON combo + thumbnail base64). Import = validate → ComboID MỚI → vào thư viện.
-**Luật kiến trúc (mục 6 Instructions):** gộp nhiều nguồn (JSON + PNG) = **1 hàm C++ mỗi chiều** trong ComboSerializer — BP không tự tổng hợp.
+> **PATCH 10/08/2026** (`Plans/DELTA_10-08-2026_C11_P4early.md` mục 2, 9 điểm) — thay toàn bộ nội
+> dung C11 bên dưới. Bản dialog-based cũ (SaveFileDialog/OpenFileDialog) đã CẮT (QĐ2). Ground
+> truth C++: `ComboSerializer.cpp` (cuhoang gửi 10/08). **THỰC THI SAU khi P4-early PASS** (xem
+> mục G1.5.1 — P4 đã dời lên trước C11, không còn ở Gate 1.5).
 
-## C11.1 — C++ (2 hàm + helper)
-### ExportCombo
+**Mục tiêu:** share combo KHÔNG cần server. Export = 1 file `.combojson` tự chứa (JSON combo +
+thumbnail base64) ghi vào thư mục `Exports/`. Import = quét TOÀN BỘ `Exports/*.combojson` →
+ComboID MỚI mỗi file → vào thư viện → move file nguồn sang `Exports/Imported/` (chống nhập trùng
+khi bấm lại).
+**Luật kiến trúc (mục 6 Instructions):** gộp nhiều nguồn (JSON + PNG) = **1 hàm C++ mỗi chiều**
+trong ComboSerializer — BP không tự tổng hợp.
+**`.combojson` CHỈ là định dạng file export/chia sẻ** (QĐ4) — KHÔNG bao giờ ghi `.combojson` vào
+`CombosDir` (thư viện chỉ scan `*.json`). Import luôn ghi ra `<NewID>.json` chuẩn.
+**Q9 MIỄN** — C11 là library op (đọc/ghi file trên đĩa qua ComboID), KHÔNG đụng `SelectedActors`
+→ chỉ chạy X-Check (không cần bảng S-Scan).
+
+## C11.1 — C++ (3 hàm + helper, THÊM vào ComboSerializer — KP3: không đụng hàm cũ)
+
+Include thêm: `#include "Misc/Base64.h"` · `#include "Dom/JsonObject.h"`.
+
+### GetExportsDir (helper)
 ```cpp
-bool UComboSerializer::ExportCombo(const FString& ComboID, const FString& DestFilePath)
-// 1. Load <ComboID>.json → FComboData (fail → false)
-// 2. Đọc <ComboID>.png nếu có → FBase64::Encode → gắn field "thumbnailBase64" vào JSON object xuất
-//    (field CHỈ tồn tại trong file export — FComboData KHÔNG thêm UPROPERTY này, tránh phình schema local)
-// 3. SaveStringToFile(DestFilePath, ForceUTF8WithoutBOM)   ← M7: tiếng Việt
+// GetCombosDir() / ".." / "Exports"  (anh em của Combos, cùng gốc %LOCALAPPDATA%/InteriorFOFFTool
+// sau khi P4-early áp) — FPaths::CollapseRelativeDirectories + MakeDirectory(true)
 ```
-### ImportCombo
+
+### ExportCombo — build JSON **object-level** (KHÔNG tái dùng `ComboToJson()`)
+```cpp
+bool UComboSerializer::ExportCombo(const FString& ComboID, FString& OutExportedPath)
+// 1. Load <ComboID>.json → JsonObjectStringToUStruct → FComboData (fail → false)
+// 2. UStructToJsonObject(FComboData) → TSharedPtr<FJsonObject> Obj
+//    ⚠ PHẢI object-level: ComboToJson() dùng UStructToJsonObjectString — KHÔNG cho phép thêm field
+//    ngoài struct. thumbnailBase64 KHÔNG phải UPROPERTY của FComboData (tránh phình schema local).
+// 3. Đọc <ComboID>.png bằng FFileHelper::LoadFileToArray (BINARY — KHÔNG SaveStringToFile/
+//    LoadStringFromFile cho .png) → FBase64::Encode → Obj->SetStringField("thumbnailBase64", ...)
+//    (không có .png → bỏ qua field, export vẫn chạy — xem test case 7)
+// 4. Serialize Obj → OutStr → sanitize Combo.Name làm tên file (thay ký tự \/:*?"<>| bằng "_")
+// 5. OutExportedPath = GetExportsDir() / (SafeName + ".combojson")
+// 6. SaveStringToFile(OutStr, OutExportedPath, ForceUTF8WithoutBOM)   ← M7: tiếng Việt
+```
+### ImportCombo(Src, OutNewComboID, OutError) — worker 1 file (nội bộ, không phải entry chính)
 ```cpp
 bool UComboSerializer::ImportCombo(const FString& SrcFilePath, FString& OutNewComboID, FString& OutError)
-// 1. LoadFileToString → parse JSON (fail → OutError="parse", false — M14 KHÔNG crash)
-// 2. JsonObjectStringToUStruct → FComboData validate (fail → false)
-// 3. SINH ComboID MỚI: "combo_" + FGuid::NewGuid() → ghi đè field (KHÔNG đè combo cũ; import 2 lần = 2 combo)
-// 4. Tách "thumbnailBase64" nếu có → FBase64::Decode → ghi <NewComboID>.png
-// 5. Ghi <NewComboID>.json vào CombosDir → OutNewComboID → true
+// 1. LoadFileToString(Raw) (fail → OutError="read", false)
+// 2. JsonObjectStringToUStruct(Raw) → FComboData validate — converter TỰ bỏ field lạ
+//    "thumbnailBase64" (fail → OutError="parse", false — M14 KHÔNG crash)
+// 3. SINH ComboID MỚI: "combo_" + FGuid::NewGuid().ToString(EGuidFormats::Digits)   ← ⑦ 32 hex
+//    liền, khớp format combo_F8F7... hiện có — KHÔNG dùng format có dấu gạch ngang mặc định
+// 4. [VERIFY] SET field ID đúng tên — xem cảnh báo ⑨ dưới, mở ComboTypes.h TRƯỚC khi code
+// 5. UStructToJsonObjectString(Combo) → SaveStringToFile(<NewComboID>.json vào CombosDir,
+//    ForceUTF8WithoutBOM)
+// 6. Parse LẠI Raw (lớp riêng, dùng FJsonSerializer::Deserialize) → TryGetStringField
+//    "thumbnailBase64" → FBase64::Decode → FFileHelper::SaveArrayToFile(<NewComboID>.png)
+//    ← BINARY write, KHÔNG SaveStringToFile
 ```
-### GetExportsDir (helper cho fallback)
+### ImportAllFromExportsDir(OutImported, OutFailed) — entry chính (QĐ3, thay picker)
 ```cpp
-// <CombosDir>/../Exports  (cùng gốc với Combos) — MakeDirectory(true)
+void UComboSerializer::ImportAllFromExportsDir(int32& OutImported, int32& OutFailed)
+// 1. IFileManager::FindFiles quét GetExportsDir()/*.combojson
+// 2. ForEach file → gọi ImportCombo() worker ở trên
+//    True  → MakeDirectory(Exports/Imported) → Move file sang đó (bấm lại KHÔNG dup) → ++OutImported
+//    False → ++OutFailed, GIỮ NGUYÊN file (không move) — user còn thấy để tự sửa/xóa
 ```
-Compile plugin. Lỗi → dán nguyên error, không đoán quá 3 lần (M12).
+Khai UFUNCTION `BlueprintCallable` cho cả 3 hàm mới (+ `ImportCombo`) trong `.h`. Compile. Lỗi →
+dán nguyên error, không đoán quá 3 lần (M12).
 
-## C11.2 — Export flow (BP)
-Entry: context menu ComboCard thêm item "📤 Xuất file…" (Item3, pattern chuẩn) → `CB_ExportCombo`:
+⚠️ **[VERIFY] Field ID `[?]`** (⑨): JSON key thật là `comboId` (camelCase, xác nhận từ file `.json`
+thật) → field C++ tương ứng trong `FComboData` **CÓ THỂ** là `ComboId` (không phải `ComboID` như
+suy đoán tự nhiên theo quy ước Hungarian). Sonnet PHẢI mở `ComboTypes.h` xác nhận tên field đúng
+TRƯỚC khi viết dòng `Combo.XXX = OutNewComboID` trong `ImportCombo` — không đoán mù, không "cho
+khớp".
+
+## C11.2 — Export flow (BP) — context menu ComboCard
 ```
-Q8: Custom Event | cache ComboID trước Hide | L2: 3 nhánh (dialog OK / dialog không có / export fail) đều ra toast | latent none | 6A: export không đổi state gì — an toàn
+Q8: Custom Event | IsValid ComboID (cache trước Hide menu) | L2: 2 nhánh bExported đều ra toast | no latent (C++ sync) | 6A: export không đổi state library — không cần reverse
 ```
 ```
-CB_ExportCombo:
-  ▶→ cache ExportComboID → Hide menu → None
-  // HƯỚNG 1: file-save dialog
-  ▶→ [VERIFY] node dialog khả dụng runtime: thử C++ IDesktopPlatform::SaveFileDialog (module DesktopPlatform — hoạt động packaged Windows) HOẶC plugin sẵn có. Bọc thành hàm C++ OpenSaveFileDialog(DefaultName) → Path, bOK nếu dùng IDesktopPlatform.
-  ▶→ Branch(bDialogAvailable AND bOK)
-       True  ▶→ ExportCombo(ExportComboID, Path) → bExported
-       False ▶→ // HƯỚNG 2: fallback tự động — KHÔNG hỏi user
-              ▶→ DestPath = GetExportsDir() / (ComboName_sanitized + ".combojson")
-              ▶→ ExportCombo(ExportComboID, DestPath) → bExported
+CB_ExportCombo (context menu item "📤 Xuất file…"):
+  ▶→ SET SaveCombo_ExportID = card ComboID  (cache trước khi đóng menu)
+  ▶→ Hide context menu
+  ▶→ ExportCombo(SaveCombo_ExportID) ──→ OutExportedPath, Return(bExported)
   ▶→ Branch(bExported)
-       True  ▶→ ShowToast("Đã xuất: " + path dùng thực tế)
+       True  ▶→ ShowToast("Đã xuất: " + OutExportedPath)
        False ▶→ ShowToast("Xuất thất bại")
 ```
-Ghi DEVIATIONS hướng nào thực sự chạy (quyết định K5).
+Không còn nhánh dialog (QĐ2) — Export LUÔN ghi vào `Exports/`, không hỏi user.
 
-## C11.3 — Import flow (BP)
-Entry: nút `BTN_ImportCombo` cạnh khu tab Combo (hoặc đầu cột tree dưới nút "+" — cuhoang chọn vị trí, logic không đổi):
+## C11.3 — Import flow (BP) — nút `BTN_ImportCombo` cạnh tab Combo
 ```
-▶→ Open-file dialog (cùng cơ chế hướng 1; không có dialog → toast "Đặt file vào <ExportsDir> rồi bấm lại" + quét file mới nhất trong ExportsDir làm fallback)
-▶→ ImportCombo(Path) ●→ NewComboID, Error, bOK
-▶→ Branch(bOK)
-     True  ▶→ Broadcast OnComboLibraryChanged   ← tab tự refresh (bind sẵn từ C4)
-            ▶→ ShowToast("Đã nhập combo")
-     False ▶→ ShowToast("File combo không hợp lệ")   ← M14, không crash
+Q8: Custom Event | (không object ref cần guard) | L2: 2 nhánh count đều ra toast, success nhánh Broadcast | no latent | 6A: import thêm combo — reverse = xóa combo (flow xóa đã có), không cần undo riêng
 ```
+```
+CB_ImportCombo (BTN_ImportCombo.OnClicked):
+  ▶→ ImportAllFromExportsDir ──→ OutImported, OutFailed
+  ▶→ Branch(OutImported > 0)
+       True  ▶→ Broadcast OnComboLibraryChanged   (tab tự refresh — bind sẵn từ C4)
+              ▶→ ShowToast("Đã nhập " + OutImported + " combo" + (OutFailed>0 ? " (" + OutFailed + " lỗi)" : ""))
+       False ▶→ Branch(OutFailed > 0)
+                  True  ▶→ ShowToast("File combo không hợp lệ")   (M14)
+                  False ▶→ ShowToast("Không có file .combojson trong thư mục Nhập: " + GetExportsDir())
+```
+Không còn nhánh dialog/fallback "quét file mới nhất" (QĐ2/QĐ3) — Import LUÔN nhập TẤT CẢ file
+`.combojson` đang có trong `Exports/`.
 
 ## TEST C11 (6 case)
-1. Export combo A → file xuất hiện (dialog hoặc ExportsDir), mở bằng Notepad thấy thumbnailBase64.
-2. Xóa A khỏi thư viện (xóa file tay) → import file export → A quay lại, ComboID MỚI, thumbnail .png tái tạo, card có ảnh.
-3. Import CÙNG file 2 lần → 2 combo, ID khác nhau.
-4. Import file rác (.txt đổi đuôi) → toast lỗi, không crash, thư viện không đổi.
-5. Combo tên tiếng Việt có dấu → export/import tên không vỡ (M7).
-6. Import combo chứa RowName không có trong catalog máy này → import OK; spawn → skip + toast (M11) — giới hạn "cùng asset pool" ghi vào doc.
+1. Export combo A → file `.combojson` xuất hiện trong `Exports/` → mở Notepad thấy `thumbnailBase64`.
+2. Xóa A khỏi thư viện (xóa `.json` tay) → bấm Nhập → A quay lại, ComboID MỚI, `.png` tái tạo, card
+   có ảnh, file nguồn move sang `Exports/Imported/`.
+3. Export A 2 lần rồi Nhập (drop lại file lần 2 vào Exports) → 2 combo, ID khác nhau.
+4. Bỏ file rác (`.txt` đổi đuôi `.combojson`) vào Exports → Nhập → toast lỗi, KHÔNG crash, thư
+   viện không đổi, file rác KHÔNG bị move (còn ở Exports).
+5. Combo tên tiếng Việt có dấu → export/import tên không vỡ (M7); file `.combojson` giữ dấu.
+6. Import combo chứa RowName không có trong catalog máy này → import OK; spawn → skip mesh thiếu +
+   toast (M11) — giới hạn "cùng asset pool" ghi vào doc.
 
-→ **Làm xong báo tao + 6 case.**
+→ **Làm xong báo tao + bảng 6 case.**
+> Bản task card đầy đủ hơn (7 case, thêm case export-khi-thiếu-thumbnail) nằm ở
+> `Plans/DELTA_10-08-2026_C11_P4early.md` mục 3 — dùng bản đó khi Sonnet thực thi thật; 6 case ở
+> đây là baseline tối thiểu của Post_C5, KHÔNG mâu thuẫn, chỉ ít hơn 1 case.
 
 ---
 
@@ -464,23 +515,19 @@ Session_State + PROGRESS (Sprint 5 DONE, đếm task cuối) · DEVIATIONS (VRAM
 
 **Mục tiêu:** lần đầu chạy tool NGOÀI editor — bắt mìn deploy sớm trước khi Sprint 7 chồng thêm. Không thêm feature nào ở gate này.
 
-## G1.5.1 — Quyết + áp P4 (LÀM TRƯỚC khi package)
-0. **[VERIFY A3]** đọc `GetCombosDir()` hiện tại trong ComboSerializer.cpp. Đã LOCALAPPDATA → skip sang G1.5.2.
-1. Dán thay:
-```cpp
-FString UComboSerializer::GetCombosDir()
-{
-    // P4 (23/06): combo phải sống qua update app — ProjectSaved bị xóa khi rebuild packaged
-    FString Base = FPlatformMisc::GetEnvironmentVariable(TEXT("LOCALAPPDATA"));
-    if (Base.IsEmpty()) { Base = FPaths::ProjectSavedDir(); }   // fallback — báo cuhoang nếu rơi vào đây
-    FString Dir = Base / TEXT("InteriorFOFFTool") / TEXT("Combos");
-    IFileManager::Get().MakeDirectory(*Dir, true);
-    return Dir;
-}
-```
-`#include "HAL/PlatformMisc.h"` nếu thiếu. Exports dir (C11) tự theo vì tính từ CombosDir.
-2. **Migrate tay 1 lần:** copy toàn bộ `<Project>/Saved/Combos/*` (json + png + Folders.json) → `%LOCALAPPDATA%\InteriorFOFFTool\Combos\`.
-3. Test trong editor: tab Combo hiện đủ combo cũ + folder cũ + thumbnail (đường mới đọc đúng).
+## G1.5.1 — Quyết + áp P4 — ✅ ĐÃ LÀM Ở P4-early (10/08/2026), KHÔNG LÀM LẠI Ở ĐÂY
+
+> **PATCH 10/08/2026** (`Plans/DELTA_10-08-2026_C11_P4early.md` mục 0/1) — Lô B đã đóng: ground
+> truth `ComboSerializer.cpp` (cuhoang gửi 10/08) xác nhận `GetCombosDir()` thật vẫn là
+> `ProjectSavedDir/Combos` — P4 (chốt 23/06) **CHƯA TỪNG merge** (không phải bị revert). Quyết
+> định Opus: dời việc áp P4 lên **task P4-early**, chạy **TRƯỚC C11** (không đợi tới Gate 1.5) —
+> lý do: test đường path LOCALAPPDATA đúng 1 lần (qua C11 + C10), tránh làm 2 lần ở 2 gate khác
+> nhau. Nội dung swap `GetCombosDir()` + migrate tay + verify — xem
+> `Plans/DELTA_10-08-2026_C11_P4early.md` mục 1 (task card P4-early đầy đủ).
+
+Khi tới Gate 1.5 thật: chỉ cần xác nhận P4-early đã PASS trước đó (3 bước verify trong task card
+P4-early), **KHÔNG lặp lại** bước swap/migrate. Nếu vì lý do nào đó P4-early chưa chạy tới lúc
+này → dừng, quay lại `Plans/DELTA_10-08-2026_C11_P4early.md` mục 1 trước khi tiếp tục G1.5.2.
 
 ## G1.5.2 — Chuẩn bị build
 - `bDebugMode = False` mọi manager (Print gate tắt — KHÔNG xóa node).

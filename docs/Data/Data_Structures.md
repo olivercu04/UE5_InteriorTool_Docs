@@ -117,7 +117,13 @@ Dùng cho `WBP_FolderTreePicker`/`WBP_FolderPickerRow` (Move + Save dialog) — 
 
 ⚠️ **Dependency Sprint 5 ↔ Sprint 7 (vẫn treo, chưa làm):** `FComboItemData` **CHƯA có field `MaterialParams`** (Color/Roughness JSON cho Sprint 7 v1.2) — chỉ có `MaterialOverrides` (RowName). Nếu Sprint 7 cần persist material params qua combo save/load → phải thêm field mới vào `ComboTypes.h` (đụng schema, cần bump `Version`), KHÔNG tự có sẵn như plan gốc (23/06) từng giả định.
 
-⚠️ **[PHÁT HIỆN 14/07/2026 — cần cuhoang xác nhận]** `GetCombosDir()` thật trong `ComboSerializer.cpp` trả về `FPaths::ProjectSavedDir() / "Combos"` (= `<ProjectRoot>/Saved/Combos/`) — **KHÁC** quyết định P4 đã ghi trong `DEVIATIONS.md` 23/06/2026 ("đổi sang `FPlatformProcess::UserSettingsDir()/InteriorFOFFTool/Combos`, tức `%LOCALAPPDATA%`"). Khớp với đường dẫn thật quan sát được (`Saved/Combos/Folders.json`). Không rõ P4 bị revert hay chưa từng merge — DEVIATIONS.md giữ nguyên bản ghi lịch sử (không sửa), chỉ note ở đây là hiện trạng code THẬT khác quyết định đã chốt.
+✅ **[RESOLVED 10/08/2026]** `GetCombosDir()` — nghi vấn 14/07 đã đóng. Ground truth
+`ComboSerializer.cpp` (cuhoang gửi 10/08) xác nhận thân hàm thật vẫn là
+`return FPaths::ProjectSavedDir() / TEXT("Combos");` (= `<ProjectRoot>/Saved/Combos/`) — **P4
+(chốt 23/06/2026, đổi sang `%LOCALAPPDATA%/InteriorFOFFTool/Combos`) CHƯA TỪNG MERGE**, không
+phải bị revert. Áp qua task **P4-early** (10/08/2026, chạy TRƯỚC C11) — xem
+`Plans/DELTA_10-08-2026_C11_P4early.md` mục 1 + `00_Core/DEVIATIONS.md` mục "[LÔ B — ĐÓNG
+10/08/2026] GetCombosDir()".
 
 ### Combo JSON — ví dụ thật (đối chiếu 1 file `.json` thật cuhoang paste 14/07/2026, `Saved/Combos/combo_....json`)
 

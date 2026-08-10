@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 08/08/2026
+**Cập nhật:** 10/08/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1576,6 +1576,49 @@ xử lý.
 
 ---
 
+## [LÔ B — ĐÓNG 10/08/2026] GetCombosDir()
+
+Ground truth (`ComboSerializer.cpp` cuhoang gửi 10/08): thân hàm thật là
+`return FPaths::ProjectSavedDir() / TEXT("Combos");`
+
+→ P4 (LOCALAPPDATA, chốt 23/06/2026) **CHƯA TỪNG MERGE** — không phải bị revert, đơn giản là
+quyết định 23/06 chưa từng được áp vào code thật.
+→ Áp qua task **P4-early** (10/08/2026) — dời lên chạy TRƯỚC C11, không đợi Gate 1.5 như plan gốc
+`Post_C5_Execution_Plan_v1.md` từng ghi (lý do QĐ1: `Plans/DELTA_10-08-2026_C11_P4early.md` mục 0
+— tránh test đường path LOCALAPPDATA 2 lần ở 2 gate khác nhau).
+→ Resolve note nghi vấn 14/07/2026 trong `Data/Data_Structures.md` (ghi "chưa rõ P4 revert hay
+chưa merge") — nay xác nhận: **chưa từng merge**.
+→ `Post_C5_Execution_Plan_v1.md` mục G1.5.1 (P4): cập nhật trỏ "đã làm ở P4-early", KHÔNG lặp lại
+nội dung swap/migrate ở Gate 1.5.
+
+---
+
+## [QĐ2 — 10/08/2026] Cắt file dialog khỏi C11 v1
+
+`IDesktopPlatform` (SaveFileDialog/OpenFileDialog) là module **editor-only** — chạy được trong
+editor nhưng rủi ro rỗng/crash khi chạy packaged (cùng loại rủi ro với mìn Streamline/NVIDIA đã
+biết ở Gate 1.5). Đi ngược mục tiêu đóng gói app của đợt này.
+
+**Quyết định:** Export/Import v1 dùng thư mục cố định `Exports/` (cạnh `Combos/`, qua
+`IFileManager` thuần — chắc chắn sống packaged), không hỏi user chọn nơi lưu/mở.
+**Ceiling:** UX kém hơn dialog thật (user phải tự mở Explorer để lấy file export/thả file import
+vào đúng thư mục).
+**Trigger:** dialog "user tự chọn nơi lưu/mở" → backlog, mở lại SAU Gate 2 (đóng gói ổn định rồi
+mới thêm rủi ro editor-only module).
+
+---
+
+## [QĐ3 — 10/08/2026] Import v1 = quét thư mục, nhập ALL, move theo lô
+
+Thay cho model "chọn 1 file qua dialog" trong `Post_C5_Execution_Plan_v1.md` bản gốc (05/07/2026):
+Import quét TOÀN BỘ `Exports/*.combojson`, nhập hết trong 1 lần bấm, move file thành công sang
+`Exports/Imported/` (file lỗi GIỮ NGUYÊN ở `Exports/` để user tự xử lý) — chống nhập trùng khi
+bấm nút Nhập nhiều lần liên tiếp.
+**Kèm QĐ4:** `.combojson` CHỈ là định dạng file export/chia sẻ — Import luôn ghi ra chuẩn
+`<NewID>.json` vào `CombosDir`, KHÔNG bao giờ ghi `.combojson` vào đó (thư viện chỉ scan `*.json`).
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -1668,3 +1711,4 @@ xử lý.
 | 07/08/2026 (nợ doc, sau review) | Thêm 2 mục `[DOC-DEBT]` phát hiện lúc cuhoang review diff merge T3: (1) `BP_FurnitureInputManager.md` nợ cập nhật chèn `ResolveActiveComboForSave()` vào `CB_SaveCombo_Handler` — cờ "gộp vào T4"; (2) `BP_ComboItemView.Description` chỉ có tên trong doc, chưa xác nhận field đầy đủ — ưu tiên thấp nhất, gộp đợt dọn nợ doc định kỳ, không task riêng. |
 | 02/08/2026 (Lô D) | **Viết doc `ResolveSelectedComboRoot()` vào `BP_FurnitureInputManager.md`** (nguồn K2Node export thật cuhoang cung cấp — đóng MỤC 4 CrossCheck). Thêm section "[DOC-DRIFT] ResolveSelectedComboRoot — PrimarySelectedActor vs SelectedActors[0] — 02/08/2026": `Plans/24-07-2026_C9_Execution_Plan.md` §V7 ghi dùng `PrimarySelectedActor`, as-built thật dùng `SelectedActors[0]` — khác nhau khi selection multi. Chưa gây lỗi (C9 chỉ chạy selection 1 cụm) — ceiling giữ tới khi lên task card Save As/Save đè (phải xử lý selection mix). KHÔNG sửa file Plans (đã đóng dấu [CHỨA AS-BUILT]). Đóng thêm MERGE_LOG Q3 (`FindGroupData` không có Index) — sửa 3 file: `BP_FurnitureInputManager.md` v2.9, `BP_UndoManager.md` v1.13, `Blueprint_Logic_NodeFlow.md` v1.15 (đều tự mâu thuẫn nội bộ trước đó). |
 | 08/08/2026 (T5 DONE) | Thêm section "[DEVIATION] T5 D1 — Pass-by-Reference `Tags` không toggle được — 08/08/2026": task card T5 (7e.4) yêu cầu bỏ tick Pass-by-Reference cho param `Tags` (2 dispatcher `WBP_SaveComboDialog`) để dọn compiler warning — thực tế checkbox bị khóa cứng vì `Tags` là Set of String (giới hạn Blueprint VM, không phải lỗi task card/thao tác). Đóng D1 dạng N/A, giữ nguyên warning, KHÔNG đổi kiểu `Tags` (tránh surgical change vượt phạm vi T5). Ceiling: chấp nhận vĩnh viễn. Trigger: không có. Save As/Save đè (T1-T5) CHÍNH THỨC DONE — `[CEILING]` "2 nơi cùng biết cách leo combo root" (03/08/2026) VẪN TREO, trigger vẫn là C10, KHÔNG đóng ở T5. Xem `01_Session_State.md`, `PROGRESS.md`. |
+| 10/08/2026 (C11 + P4-early plan) | Thêm 3 section từ `Plans/DELTA_10-08-2026_C11_P4early.md`: "[LÔ B — ĐÓNG]" (`GetCombosDir()` thật = `ProjectSavedDir/Combos`, P4 23/06 chưa từng merge — resolve note nghi vấn 14/07 trong `Data/Data_Structures.md`); "[QĐ2] Cắt file dialog khỏi C11 v1" (`IDesktopPlatform` editor-only — rủi ro packaged, dùng thư mục `Exports/` cố định thay dialog, backlog sau Gate 2); "[QĐ3] Import v1 = quét thư mục" (nhập ALL `.combojson`, move thành công sang `Imported/`, kèm QĐ4 `.combojson` chỉ là file export, không ghi vào `CombosDir`). Patch `Plans/Post_C5_Execution_Plan_v1.md` mục C11 (9 điểm) + G1.5.1 (P4 trỏ sang P4-early). **CHƯA thực thi** — chỉ lập kế hoạch. |
