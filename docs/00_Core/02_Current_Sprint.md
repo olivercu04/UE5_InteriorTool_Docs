@@ -1,20 +1,12 @@
-# Current Sprint — Sprint 5: Combo Mesh (C11 Export/Import + P4-early)
-**Cập nhật:** 10/08/2026 — Save As/Save đè (T1-T5) DONE 08/08/2026, P4-early DONE, C11 DONE
-(chi tiết → `PROGRESS.md`). Tiếp theo: **C10 (Regression full)**.
+# Current Sprint — Sprint 5 ĐÃ ĐÓNG (14/08/2026) → chuẩn bị Sprint 6
 
----
-
-## Đang chạy: P4-early → C11 (Export/Import combo)
-
-Nguồn duy nhất: `Plans/DELTA_10-08-2026_C11_P4early.md` (task card đầy đủ) +
-`Plans/Post_C5_Execution_Plan_v1.md` mục C11/G1.5.1 (đã patch 10/08).
-
-| # | Nhiệm vụ | Đụng gì | Định nghĩa XONG | Trạng thái |
-|---|---|---|---|---|
-| **P4-early** | Dời `GetCombosDir()` sang `%LOCALAPPDATA%/InteriorFOFFTool/Combos` (combo sống qua update app đóng gói) | `ComboSerializer.cpp` — CHỈ thân hàm `GetCombosDir()` | Migrate tay xong, tab Combo hiện đủ combo/folder/thumbnail cũ qua đường mới | ✅ DONE (verify PASS 3/3 ô: số lượng combo, folder tree, thumbnail) |
-| **C11** | Export/Import combo qua thư mục `Exports/` (quét-thư-mục, KHÔNG dialog) | `ComboSerializer.cpp` (+3 hàm mới) + BP context menu ComboCard + `BTN_ImportCombo` | 6/7 test case PASS (xem task card) | ✅ DONE 10/08/2026 — C11.1 (C++, 4 hàm) + C11.2 (Export, 3/3 test) + C11.3 (Import, 4/4 test) đều PASS. Export/Import combo qua thư mục `Exports/` (quét-thư-mục, không dialog — QĐ2/QĐ3). Tiếp theo: **C10 (Regression full)**. |
-
-Thứ tự: **P4-early → C11 → C10 (Regression full) → Gate 2 (packaged build)**.
+Sprint 5 (Combo Mesh) chính thức DONE. Việc tiếp theo, THEO THỨ TỰ:
+1. Fix Bug-ComboRoot-MixedLooseGroup (xem Open_Bugs.md) — ưu tiên đầu Sprint 6, chạm
+   kiến trúc combo, nên đóng trước khi thêm feature mới.
+2. Gate 1.5 — Packaged Smoke Test (xem Plans/Post_C5_Execution_Plan_v1.md mục Gate 1.5).
+3. Sprint 6 (Polish UX) — bao gồm Feature-CanonicalStudioAngle, và fix
+   Bug-ThumbnailMaterialOverride-Ignored (cùng đợt vì chung pipeline P2).
+Nguồn: 01_Session_State.md changelog 14/08/2026.
 
 ---
 

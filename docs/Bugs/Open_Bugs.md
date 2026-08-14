@@ -18,6 +18,10 @@ chưa mở) — phát hiện lúc lập kế hoạch T4, case S8 (Mix combo + me
 **Cập nhật (tiếp) 08/08/2026 (T5 DONE):** Đóng `Note-DuplicateComboID` (xác nhận qua test A4+A5)
 và `Bug-ComboCategoryHardcode` (fix D2, verify `.json` ra `"category": ""`). Save As/Save đè
 (T1-T5) CHÍNH THỨC DONE.
+**Cập nhật (tiếp) 14/08/2026 (C10 DONE):** Thêm 3 bug mới phát hiện lúc C10 (Regression tổng
+Sprint 5): Bug-ThumbnailMaterialOverride-Ignored, Bug-ComboSpawnLabel-MixedLooseGroup,
+Bug-ComboRoot-MixedLooseGroup (đóng `[CEILING]` "2 nơi cùng biết cách leo combo root" treo từ
+T5). Xem `01_Session_State.md`.
 
 ---
 
@@ -57,6 +61,9 @@ và `Bug-ComboCategoryHardcode` (fix D2, verify `.json` ra `"category": ""`). Sa
 | Bug-RowNameLostOnUndo | ✅ FIXED (03/08) — `S_FurniturePlacement` thiếu field `RowName`, Undo respawn actor mất danh tính | — | Xem `Blueprints/BP_UndoManager.md` v1.15, mục chi tiết dưới |
 | Feature-SaveInEditMode | Save trong edit mode: 2 ý định (ghi đè A / tách sub-group thành combo mới) chưa tách bạch | 🟢 Thấp | Backlog sau Gate 2 |
 | Task-T4.5-AutoGroupAfterOverwrite | Sau Ghi đè S8 (Mix), mesh rời nuốt vào combo trên đĩa nhưng scene vẫn đứng rời — chưa tự gộp lại thành cụm chọn-1-lần | 🟡 Trung bình | Backlog, chưa mở — mở sau khi T4 PASS ổn định |
+| Bug-ThumbnailMaterialOverride-Ignored | [OPEN] Thumbnail combo bỏ qua MaterialOverrides đã áp trên actor gốc lúc save — chụp mesh material mặc định | 🟡 Trung bình | Phát hiện C10 (14/08). Xem mục chi tiết dưới |
+| Bug-ComboSpawnLabel-MixedLooseGroup | [OPEN] Info bar hiện "N vật thể" (raw count) thay vì "📦 [Tên] (N)" sau spawn combo trộn nested-group + đồ rời top-level | 🟡 Trung bình | Phát hiện C10 (14/08). Xem mục chi tiết dưới |
+| Bug-ComboRoot-MixedLooseGroup | [OPEN, ĐÓNG CEILING treo] F_RegisterComboGroups Case B không tạo wrapper group cho đồ rời top-level khi combo có nested group thật | 🔴 Cao | Phát hiện C10 (14/08) — ƯU TIÊN FIX ĐẦU SPRINT 6. Xem mục chi tiết dưới |
 
 ---
 
@@ -957,6 +964,75 @@ lần Ghi đè kế tiếp không nhận diện được nữa (guard T1 `Resolv
 - **Trigger:** T4 PASS ổn định + cuhoang xác nhận multi-select lặp lại gây khó chịu thực tế → mở
   task card T4.5 với S-Matrix riêng (đụng group+undo+selection — phạm vi rộng hơn T4, cần Q9 gate
   riêng, không tái dùng Q9 của T4).
+
+---
+
+## Bug-ThumbnailMaterialOverride-Ignored — Thumbnail combo bỏ qua MaterialOverrides
+
+**ID:** Bug-ThumbnailMaterialOverride-Ignored
+**Phát hiện:** C10 Regression tổng Sprint 5, 14/08/2026
+**Ưu tiên:** 🟡 Trung bình
+
+### Triệu chứng
+Thumbnail combo bỏ qua MaterialOverrides đã áp trên actor gốc lúc save — chụp mesh material
+mặc định thay vì material đã đổi.
+
+### Nghi vấn
+`Cmb_StudioClones` (P2) không áp lại MaterialOverrides trước `SceneCapture2D`.
+
+### Trạng thái
+- **Open.** Phát hiện lúc C10, chưa điều tra sâu. Xem `01_Session_State.md` 14/08/2026.
+
+---
+
+## Bug-ComboSpawnLabel-MixedLooseGroup — Info bar hiện raw count thay vì label combo
+
+**ID:** Bug-ComboSpawnLabel-MixedLooseGroup
+**Phát hiện:** C10 Regression tổng Sprint 5, 14/08/2026
+**Ưu tiên:** 🟡 Trung bình
+
+### Triệu chứng
+Info bar hiện "N vật thể" (raw count) thay vì "📦 [Tên] (N)" sau spawn combo có TRỘN
+nested-group + đồ rời top-level.
+
+### Root cause
+`GetSelectionUnitLabel` chỉ đọc `Primary.GroupID`, Primary có thể rơi vào đồ rời (không có
+GroupID hợp lệ) — cùng gốc với `Bug-ComboRoot-MixedLooseGroup` bên dưới.
+
+### Trạng thái
+- **Open.** Phát hiện lúc C10. Xem `01_Session_State.md` 14/08/2026.
+
+---
+
+## Bug-ComboRoot-MixedLooseGroup — [ĐÓNG CEILING đã treo] Gốc rễ chung: thiếu wrapper group cho đồ rời top-level
+
+**ID:** Bug-ComboRoot-MixedLooseGroup
+**Phát hiện:** C10 Regression tổng Sprint 5, 14/08/2026
+**Ưu tiên:** 🔴 Cao — chạm kiến trúc combo, ưu tiên fix đầu Sprint 6
+
+### Triệu chứng
+Gốc rễ chung của `Bug-ComboSpawnLabel-MixedLooseGroup` và lỗi route Replace sai sang mesh-flow
+khi Primary là đồ rời.
+
+### Root cause
+`F_RegisterComboGroups` Case B không tạo wrapper group cho đồ rời top-level khi combo CÓ nested
+group thật → đồ rời mang GroupID "ma" (ParentGroupGUID chưa đăng ký) hoặc GroupID rỗng.
+
+### Hệ quả lan
+- Label sai (`Bug-ComboSpawnLabel-MixedLooseGroup`).
+- Replace route sai sang mesh-flow khi Primary là đồ rời.
+
+### Ý nghĩa
+Đây CHÍNH LÀ trigger đóng `[CEILING]` "2 nơi cùng biết cách leo combo root" đã treo từ T5
+(08/08/2026) — nay đã lộ rõ nguyên nhân.
+
+### Fix đề xuất (chưa làm)
+`SaveComboFromSelection` LUÔN tạo 1 wrapper root group bọc toàn bộ selection, bất kể có group
+con hay không.
+
+### Trạng thái
+- **Open — ƯU TIÊN FIX ĐẦU SPRINT 6, trước khi làm việc khác** (bug chạm kiến trúc combo). Xem
+  `01_Session_State.md` 14/08/2026, `02_Current_Sprint.md`.
 
 ---
 

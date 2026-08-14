@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 10/08/2026
+**Cập nhật:** 14/08/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1663,6 +1663,19 @@ cơ chế hit-test mới hoàn toàn, tăng rủi ro không cần thiết so v�
 
 ---
 
+## SPRINT 5 — 14/08/2026 — C10 Regression tổng: T6/Copy-Paste đóng
+
+[C10 — 14/08/2026] T6 (Pivot rotation combo) — ĐÓNG, xác nhận THỪA
+Lý do: BP_PivotActor (T15, Compose Transforms) đã xử lý move/rotate/scale cả nhóm quanh
+pivot — combo kế thừa miễn phí vì chỉ là group + actor thường. Test 4/4 PASS (orbit đúng,
+rotation cộng dồn đúng thứ tự CombineRotators, Undo đúng). KHÔNG viết thêm code.
+
+[C10 — 14/08/2026] Copy/Paste cụm mất group — xác nhận known limitation
+Clipboard không lưu GroupID → paste rã rời thành actor riêng. Giữ backlog v1.1, không sửa
+trong Sprint 5.
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
@@ -1758,3 +1771,4 @@ cơ chế hit-test mới hoàn toàn, tăng rủi ro không cần thiết so v�
 | 10/08/2026 (C11 + P4-early plan) | Thêm 3 section từ `Plans/DELTA_10-08-2026_C11_P4early.md`: "[LÔ B — ĐÓNG]" (`GetCombosDir()` thật = `ProjectSavedDir/Combos`, P4 23/06 chưa từng merge — resolve note nghi vấn 14/07 trong `Data/Data_Structures.md`); "[QĐ2] Cắt file dialog khỏi C11 v1" (`IDesktopPlatform` editor-only — rủi ro packaged, dùng thư mục `Exports/` cố định thay dialog, backlog sau Gate 2); "[QĐ3] Import v1 = quét thư mục" (nhập ALL `.combojson`, move thành công sang `Imported/`, kèm QĐ4 `.combojson` chỉ là file export, không ghi vào `CombosDir`). Patch `Plans/Post_C5_Execution_Plan_v1.md` mục C11 (9 điểm) + G1.5.1 (P4 trỏ sang P4-early). **CHƯA thực thi** — chỉ lập kế hoạch. |
 | 10/08/2026 (C11.1+C11.2 DONE) | Xác nhận `[LÔ B — ĐÓNG]` "ÁP DỤNG THÀNH CÔNG — verify PASS" (P4-early xong phiên trước). Thêm section "[C11.2 — BUG THIẾT KẾ]": `CB_ExportCombo` thiếu bước trả `Set Input Mode Game and UI` (task card gốc viết thiếu) → camera bị khóa vĩnh viễn sau Export — fix bằng cách copy pattern từ `HandleMoveComboConfirmed`. Bài học: mọi Custom Event mở `UI Only` mà là ĐIỂM CUỐI chuỗi phải TỰ trả input mode, không ỷ lại nhánh khác. Kèm sửa `Widgets/WBP_FurnitureInventory.md` v3.23 — DOC-DRIFT `OnComboCardRightClicked` (`MovingComboID` sai, đúng là `LibMenu.TargetComboID`) + `CB_ExportCombo` mới. Test PASS 3/3. |
 | 10/08/2026 (C11 ĐÓNG HOÀN TOÀN) | Thêm section "[C11.3 — bài học kỹ thuật]": `CallDelegate` lên dispatcher Blueprint khác (`BP_ComboManager.OnComboLibraryChanged`) bắt buộc `Target=ComboManagerRef`, KHÔNG phải `self` — lỗi compile rõ ràng nếu sai. Thêm section "[QĐ UX C11.3]": Import dùng nút riêng `BTN_ImportCombo`, KHÔNG gắn context menu combo card (sai ngữ cảnh — Import không thao tác lên 1 combo cụ thể). `Widgets/WBP_FurnitureInventory.md` v3.25 — `CB_ImportCombo` mới, test PASS 4/4. **C11 (Export/Import combo) ĐÓNG HOÀN TOÀN.** Tiếp theo: C10 (Regression full) → Gate 1.5 (Packaged Smoke) → Gate 2. |
+| 14/08/2026 (C10 DONE) | Thêm section "SPRINT 5 — 14/08/2026 — C10 Regression tổng: T6/Copy-Paste đóng": T6 (Pivot rotation combo) ĐÓNG xác nhận THỪA (BP_PivotActor/T15 đã cân, test 4/4 PASS, không viết thêm code); Copy/Paste cụm mất group xác nhận known limitation, giữ backlog v1.1. C10 hoàn tất 3 khối (A/B/C) — **SPRINT 5 CHÍNH THỨC DONE**. 3 bug mới ghi `Bugs/Open_Bugs.md` (Bug-ThumbnailMaterialOverride-Ignored, Bug-ComboSpawnLabel-MixedLooseGroup, Bug-ComboRoot-MixedLooseGroup — đóng `[CEILING]` "2 nơi cùng biết cách leo combo root" treo từ 03/08). Xem `01_Session_State.md`. |

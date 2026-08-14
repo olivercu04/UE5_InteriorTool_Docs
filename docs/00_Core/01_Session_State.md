@@ -1,10 +1,7 @@
 # Session State
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 03/08/2026 — **Replace UX Fix (P0→P5) ĐÓNG HOÀN TOÀN** — 6 bug gốc (#1/#3a/#3b/#4/#5/#6)
-rụng hết, đường ngược (Luật 6A) đóng đủ, dead code `MeshToReplace` xóa — tiếp theo
-**Save As/Save đè (mới) → C11 → C10 → Gate 2**. C9 (Replace Combo, tính năng thật) HOÀN TẤT 30/07
-(5/5 test regression PASS, 6/6 file compile sạch). K1 (WBP_Toast) DONE (5/5 test PASS). C6 (Favorite + Recent combo) CHÍNH THỨC DONE HOÀN TOÀN (C6.1-C6.4 + K3 + 2 bug fix). C7 dời hẳn Sprint 6 (thay bằng field kích thước trên Combo Card, DONE). Field Kích thước Card + Delete Combo (5/5 test) + Dimension Fix đều DONE. **P2 (Studio Thumbnail) DONE về tính năng (Gate A→F)** — Gate F nối Save flow thật + fix framing rotation-invariant. Backlog: VRAM regression (SSAA 2048² chưa đo) + Feature-CanonicalStudioAngle (Sprint 6). Debug phím U đã xóa. **P1 Combo Thumbnail DONE về tính năng** (G0→G4, G5 VRAM deferred) | C5.8 (Folder Tree Picker Unify) CHÍNH THỨC DONE (13/07) | WBP_FurnitureInventory v3.11
+**Phiên bản:** 14/08/2026 — Sprint 5 CHÍNH THỨC ĐÓNG (C10 DONE)
 **Cập nhật (tiếp) 02/08/2026:** Luật **Q9 (S-Matrix Gate)** thiết lập — xem `Rules/AI_Implementation_Rules.md` v2.14. 3 bug xác nhận bằng test tay (Bug-MaterialPrimaryOnly, Bug-PasteVerticalCollapse, Bug-StaleSurfaceType) — xem `Bugs/Open_Bugs.md`. Cả 3 dời sau Gate 2, **KHÔNG đổi thứ tự ưu tiên hiện tại: Save As/Save đè → C11 → C10 → Gate 2.**
 **Cập nhật (tiếp) 03/08/2026:** Save As/Save đè — LẬP KẾ HOẠCH XONG (khung 5 task), task card T1 đã phát hành.
 Kế hoạch đầy đủ: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`.
@@ -77,6 +74,41 @@ A3+A4 vẫn PASS. **Save As/Save đè (T1→T5) CHÍNH THỨC DONE.** Bar Sprint
 `[CEILING]` combo root ("2 nơi cùng biết cách leo combo root") GIỮ NGUYÊN treo, trigger vẫn là
 C10 — KHÔNG đóng ở T5. Priority queue tiếp theo: **C11 (Export/Import combo) → C10 (Regression
 tổng Sprint 5) → Gate 2**.
+**Cập nhật (tiếp) 14/08/2026 (C10 DONE — Sprint 5 CHÍNH THỨC ĐÓNG):**
+C10 (Regression tổng Sprint 5) hoàn tất cả 3 khối. Khối A (15 bước) chạy 1 phiên PIE liên
+tục — 12/15 PASS thuần, 3 PASS có điều kiện (bug ghi Open_Bugs, không chặn luồng). Khối B
+(3 nợ verify) chốt: T6 (pivot rotation) xác nhận THỪA — BP_PivotActor/T15 đã cân, đóng
+không viết thêm code; Copy/Paste mất group — xác nhận known limitation, giữ backlog v1.1;
+Scene save persistence — PASS trùng bước 10 Khối A. Khối C: docs đóng (file này).
+
+3 bug MỚI phát hiện, ghi Bugs/Open_Bugs.md:
+- Bug-ThumbnailMaterialOverride-Ignored: thumbnail combo bỏ qua MaterialOverrides đã áp
+  trên actor gốc lúc save — chụp mesh material mặc định. Nghi vấn: Cmb_StudioClones (P2)
+  không áp lại MaterialOverrides trước SceneCapture2D.
+- Bug-ComboSpawnLabel-MixedLooseGroup: info bar hiện "N vật thể" (raw count) thay vì
+  "📦 [Tên] (N)" sau spawn combo có TRỘN nested-group + đồ rời top-level — do
+  GetSelectionUnitLabel chỉ đọc Primary.GroupID, Primary có thể rơi vào đồ rời.
+- Bug-ComboRoot-MixedLooseGroup [ĐÓNG CEILING đã treo]: gốc rễ chung của 2 bug trên —
+  F_RegisterComboGroups Case B không tạo wrapper group cho đồ rời top-level khi combo
+  CÓ nested group thật → đồ rời mang GroupID "ma" (ParentGroupGUID chưa đăng ký) hoặc
+  GroupID rỗng. Hệ quả lan: label sai (trên) + Replace route sai sang mesh-flow khi
+  Primary là đồ rời. Đây CHÍNH LÀ trigger đóng [CEILING] "2 nơi cùng biết cách leo combo
+  root" đã treo từ T5 (08/08) — nay đã lộ rõ nguyên nhân. Đề xuất fix gốc: SaveComboFromSelection
+  LUÔN tạo 1 wrapper root group bọc toàn bộ selection, bất kể có group con hay không.
+  ƯU TIÊN FIX ĐẦU SPRINT 6, trước khi làm việc khác (vì bug chạm kiến trúc combo).
+
+K4 (Nested group cap) — chốt hành vi xác nhận: CREATE GROUP không giới hạn cấp; EDIT MODE
+cứng giới hạn 3 cấp (TryEnterEditFromSelection). Cấp 4+ tạo được nhưng không edit trực
+tiếp được. Hành vi CHẤP NHẬN ĐƯỢC v1, không phải bug.
+
+VRAM: dao động 6.4-7.6GB trong suốt C10, không tăng đơn hướng (không leak mới), nhưng
+đã sát ngưỡng budget ~7.26GB đã biết trước — không phát hiện mới, chỉ ghi số.
+
+Bar Sprint 5: 19/23 → 22/23 (C10 + C11 + P4-early tính vào). Còn lại: P3 (Xoay combo) —
+đã DEFER sau Gate 1.5 từ trước (giả định A1, Post_C5 plan), KHÔNG chặn Sprint 5 đóng.
+
+**SPRINT 5 — CHÍNH THỨC DONE.** Tiếp theo: đầu Sprint 6 ưu tiên fix
+Bug-ComboRoot-MixedLooseGroup TRƯỚC khi làm Polish UX, sau đó → Gate 1.5 (Packaged Smoke).
 **Cập nhật (tiếp) 10/08/2026 (C11 + P4-early lập kế hoạch):** C11 lập kế hoạch xong; chèn task
 mới **P4-early** (dời P4 lên trước C11, thay vì đợi tới Gate 1.5 như plan gốc). Thứ tự mới:
 **P4-early → C11 → C10 → Gate 2**. Ground truth `ComboSerializer.cpp` (cuhoang gửi 10/08) xác
