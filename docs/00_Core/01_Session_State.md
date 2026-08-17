@@ -12,8 +12,8 @@
 [VỊ TRÍ — Gate 1.5, hướng 17/08: decouple + migrate]
 ✓ FIX-1 corrupt 179 file    ✓ FIX-2 RuntimeTransformer
 ✓ cook 1126 → 729 lỗi (tool cuong/ = 0 lỗi, 729 = 100% rác master)
-░ Phase A — audit dây Cast To Foff_GameInstance    ← việc đang dở
-☐ Phase B — cắt dây (inventory ref → SceneManager, input, pawn)
+▓ Phase A — audit XONG: dry-run + RefViewer, 40 folder qua đúng 3 cửa (A xác nhận)
+░ Phase B — cắt 3 dây (Pawn→Input→Inventory), test PIE từng dây  ← ĐANG
 ☐ Phase C — migrate clean project + package + smoke 10 dòng
 
 [ĐÍCH]
@@ -159,6 +159,12 @@ project UE5.5.4 sạch rồi package — task nhiều ngày, không phải vá v
 test PIE từng dây → Phase C migrate + package). Tiếp theo: **Phase A audit** — mở `WBP_MeshControls`
 + `BP_FurnitureInputManager`, liệt kê mọi `Cast To Foff_GameInstance`. ⚠️ Claude Code không có
 ground truth Blueprint graph — Phase A cần cuhoang thực hiện trong Editor, không thể audit thay.
+**Cập nhật (tiếp) 17/08/2026 (Phase A DONE):** Gate 1.5 Phase A xong bằng bằng chứng.
+Migrate dry-run + Reference Viewer 3 điểm → 40 folder master bị kéo qua ĐÚNG 3 cửa
+(Foff_GameInstance/PC/Pawn), content tool cuong/ không tự dính rác (giả thuyết A xác nhận).
+Plan cập nhật v1.1: bỏ BPI_FurnitureHost (cắt kiểu tool-tự-lo, option b), thêm C2.5 copy
+Config .ini (GizmoTrace/CustomDepth/EMS), thứ tự cắt Pawn→Input→Inventory. Tiếp theo: Phase B
+dây Pawn (rẻ nhất) với Sonnet, test PIE từng dây trong project hiện tại trước khi migrate.
 
 ---
 

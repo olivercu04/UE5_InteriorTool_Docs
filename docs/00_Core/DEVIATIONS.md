@@ -1708,6 +1708,15 @@ migrate — không còn là task vài giờ. Kế hoạch đầy đủ:
 **ceiling:** N/A — đây là đổi hướng kiến trúc, không phải shortcut tạm.
 **trigger:** N/A.
 
+[EVIDENCE] Migrate dry-run xác nhận coupling qua đúng 3 cửa — 17/08/2026
+Migrate dry-run trên cuong/ + DatabaseProjectMaster kéo theo ~40 folder master (00_Procedural,
+KitchenPro, ThinhDoor, ELECTRONICS, UltraDynamicSky, Datasmith, Characters...). Reference Viewer
+3 điểm (asset cuong/, BP_FurnitureInputManager, Level BP) xác nhận: content tool KHÔNG tự
+hard-ref rác — 40 folder bị lôi qua đúng 3 coupling point (Foff_GameInstance / BP_FoffPlayerController
+/ BP_ArchvizPCG_Camera). Giả thuyết A (bịt 3 cửa = sạch 40 folder) xác nhận.
+ceiling: đo trên bản copy hiện tại — chưa xác nhận master gốc có thêm cửa thứ 4 lúc integrate.
+trigger: nếu sau khi cắt 3 dây mà Migrate report VẪN còn asset master → còn cửa ẩn, quay lại audit.
+
 ---
 
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
