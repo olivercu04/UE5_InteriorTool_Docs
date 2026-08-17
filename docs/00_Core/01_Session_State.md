@@ -1,4 +1,25 @@
 # Session State
+
+## 🗺 BẢN ĐỒ (17/08/2026 — cập nhật mỗi lần đổi trạng thái)
+
+[TOÀN CẢNH — ~65% đường tới Gate 2]
+▓ Sprint 1-3 select/group   ▓ Sprint 4 Edit Mode   ▓ Gate 1
+▓ Material v1.1             ▓ Sprint D Data v2     ▓ Sprint 5 Combo (C0-C11)
+░ GATE 1.5 Packaged Smoke                          ← MÀY Ở ĐÂY
+☐ Sprint 7 Material v1.2 → ☐ Sprint 6 Polish → ◆ GATE 2 = bản packaged THẬT
+  (sau Gate 2: Backend B0→B5 — cloud, chợ combo)
+
+[VỊ TRÍ — Gate 1.5, hướng 17/08: decouple + migrate]
+✓ FIX-1 corrupt 179 file    ✓ FIX-2 RuntimeTransformer
+✓ cook 1126 → 729 lỗi (tool cuong/ = 0 lỗi, 729 = 100% rác master)
+░ Phase A — audit dây Cast To Foff_GameInstance    ← việc đang dở
+☐ Phase B — cắt dây (inventory ref → SceneManager, input, pawn)
+☐ Phase C — migrate clean project + package + smoke 10 dòng
+
+[ĐÍCH]
+Gate 2 = tool chạy NGOÀI editor, qua 10 dòng smoke + 4 mìn deploy
+Ước thô: T10–T11/2026 (±1 tháng) — số chỉnh mỗi tuần, đừng tin cứng
+
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
 **Phiên bản:** 14/08/2026 — Sprint 5 CHÍNH THỨC ĐÓNG (C10 DONE)
