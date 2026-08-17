@@ -118,6 +118,26 @@ backlog sau Gate 2). Import model đổi sang quét-thư-mục (QĐ3 — nhập 
 `Exports/`, move thành công sang `Exports/Imported/`, chống nhập trùng). `.combojson` chỉ là
 định dạng file export, KHÔNG bao giờ ghi vào `CombosDir` (QĐ4). **CHƯA thực thi cả 2 task**
 (P4-early lẫn C11) — chỉ mới lập kế hoạch. Nguồn: `Plans/DELTA_10-08-2026_C11_P4early.md`.
+**Cập nhật (tiếp) 17/08/2026 (Gate 1.5 — chuyển hướng Interface Decoupling + Migrate):** Gate 1.5
+(Packaged Smoke) đổi hướng. Đã làm chưa doc trước đó: map `L_ToolSmokeTest`, GameMode global
+(`BP_FoffPlayerController` + `Foff_GameInstance`), Level BP chain 13 mắt xích, nút
+`Btn_OpenInventory`, gỡ Print BetterDebug khỏi `BP_ArchvizPCG_Camera`, packaging config (map list
++ Additional Dirs + Cook everything=untick). **FIX-1** (179 file corrupt magic-header trong
+KitchenPro/Plus_Development/Datasmith, KHÔNG file nào của tool) — quarantine ra
+`I:\_FoffCorruptQuarantine\`. **FIX-2** (blocker chính — `RuntimeTransformer` không package do
+`.uplugin` khai `EngineVersion: 4.27.0` + `Installed: true` → PluginManager bỏ qua lúc packaged) —
+fix `.uplugin` + rebuild, cuong/ error = 0. Cook: 1126 → 729 lỗi, **tool sạch hoàn toàn**, 729 còn
+lại 100% content master (BetterDebug đã disable, KitchenPro cabinet BP, EUW editor-only bị force-cook).
+**Blocker gốc:** `Foff_GameInstance` nằm trong `/Game/00_Procedural_LightingManager/` (master),
+ref chằng chịt — cook `L_ToolSmokeTest` kéo cả mạng nhện master theo vì tool cast thẳng 3 điểm
+chung (`Foff_GameInstance`, `BP_FoffPlayerController`, `BP_ArchvizPCG_Camera`). Vá trong master
+không khả thi (sửa file shared đồng nghiệp). **Quyết định kiến trúc:** cắt 3 dây coupling
+(Inventory ref / 7 Enhanced Input / Camera-Pawn) qua Blueprint Interface, sau đó migrate tool sang
+project UE5.5.4 sạch rồi package — task nhiều ngày, không phải vá vài giờ. Kế hoạch đầy đủ:
+`Plans/17-08-2026_Gate1.5_InterfaceDecoupling_Migrate_Plan_v1.md` (Phase A audit → Phase B cắt dây,
+test PIE từng dây → Phase C migrate + package). Tiếp theo: **Phase A audit** — mở `WBP_MeshControls`
++ `BP_FurnitureInputManager`, liệt kê mọi `Cast To Foff_GameInstance`. ⚠️ Claude Code không có
+ground truth Blueprint graph — Phase A cần cuhoang thực hiện trong Editor, không thể audit thay.
 
 ---
 

@@ -39,6 +39,15 @@ Game and UI` ở `CB_ExportCombo` — camera bị khóa sau export; (2) `CallDel
 được sửa trong phiên này (`MovingComboID` xác nhận vị trí SET đúng). Tiếp theo: C10 (Regression
 full Sprint 5) → Gate 1.5 (Packaged Smoke). Nguồn: session 10/08/2026,
 `DELTA_10-08-2026_C11_P4early.md` + patch UX Import.
+**Cập nhật (tiếp) 17/08/2026 (Gate 1.5 — 2 blocker packaging bắt xong):** Cook `L_ToolSmokeTest`:
+**1126 → 729 lỗi, tool sạch hoàn toàn** (cuong/ error = 0), 729 còn lại 100% content master.
+2 mìn bắt được: **FIX-1** (179 file corrupt magic-header trong KitchenPro/Plus_Development/
+Datasmith — quarantine `I:\_FoffCorruptQuarantine\`, KHÔNG file nào của tool). **FIX-2**
+(`RuntimeTransformer` không package do `.uplugin` khai `EngineVersion: 4.27.0` + `Installed: true`
+→ PluginManager bỏ qua bản packaged — sửa `.uplugin` + rebuild, verify PIE gizmo chạy). Blocker
+còn lại: `Foff_GameInstance` (master) dính chặt qua 3 dây cast (Inventory/Input/Camera-Pawn) →
+đổi hướng sang Interface Decoupling + migrate project sạch (task nhiều ngày). Xem
+`01_Session_State.md` + `Plans/17-08-2026_Gate1.5_InterfaceDecoupling_Migrate_Plan_v1.md`.
 
 ---
 

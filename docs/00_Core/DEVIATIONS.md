@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 14/08/2026
+**Cập nhật:** 17/08/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1673,6 +1673,40 @@ rotation cộng dồn đúng thứ tự CombineRotators, Undo đúng). KHÔNG vi
 [C10 — 14/08/2026] Copy/Paste cụm mất group — xác nhận known limitation
 Clipboard không lưu GroupID → paste rã rời thành actor riêng. Giữ backlog v1.1, không sửa
 trong Sprint 5.
+
+---
+
+## GATE 1.5 — 17/08/2026 — Packaging blockers + đổi hướng Interface Decoupling
+
+[SCOPE] 179 file corrupt (magic-header/name-table hỏng) quarantine — 17/08/2026
+Vị trí: `KitchenPro/Presets`, `KitchenPro/Thumnail`, `KitchenPro/VicLevel`, `Plus_Development`,
+`Datasmith`. KHÔNG file nào của tool. Nguyên nhân: copy snapshot 22/04 qua USB dở dang. Xử lý:
+quarantine ra `I:\_FoffCorruptQuarantine\` (giữ cấu trúc, hoàn tác được), không xóa.
+**ceiling:** chỉ xác nhận ảnh hưởng bản copy cục bộ đang dùng để package thử — chưa xác nhận
+master gốc trên server/source-of-truth có sạch hay không.
+**trigger:** lúc integrate/merge với master thật (không phải bản copy) → phải scan lại magic-header
+trước khi tin master sạch, vì corrupt có thể tồn tại ở cả bản gốc.
+
+[NODE] RuntimeTransformer `.uplugin` sửa để package được — 17/08/2026
+`.uplugin` khai `"EngineVersion": "4.27.0"` + `"Installed": true` → PluginManager bản packaged bỏ
+qua plugin (editor vẫn nạp bình thường nên không lộ). Fix: bỏ `EngineVersion`, `Installed → false`,
+bỏ `WhitelistPlatforms`, xóa `Binaries/`+`Intermediate/`, rebuild. Kết quả: 8 file `.cpp` plugin
+compile Win64 + link vào `.exe`, cuong/ error = 0, verify PIE gizmo chạy.
+**ceiling:** bản `.uplugin` đã sửa CHỈ dùng cho nhánh package/migrate này.
+**trigger:** ĐỪNG mang bản `.uplugin` đã sửa này về merge master nếu master dùng bản gốc khác —
+xác nhận với đồng nghiệp trước khi merge ngược plugin này.
+
+[SCOPE] Gate 1.5 đổi hướng: Interface Decoupling + Migrate project sạch — 17/08/2026
+Lý do: `Foff_GameInstance` (master, `/Game/00_Procedural_LightingManager/`) dính chặt mạng nhện
+ref master — cook `L_ToolSmokeTest` kéo cả master theo qua 3 điểm cast thẳng
+(`Foff_GameInstance`/`BP_FoffPlayerController`/`BP_ArchvizPCG_Camera`) → 729 lỗi content master,
+không thể vá trong master (file shared đồng nghiệp). Quyết định: cắt 3 dây coupling qua Blueprint
+Interface (`BPI_FurnitureHost` — Inventory ref / 7 Enhanced Input / Camera-Pawn), sau đó migrate
+tool sang project UE5.5.4 sạch rồi package. Gate 1.5 gốc (smoke test nhanh) nhập luôn vào việc
+migrate — không còn là task vài giờ. Kế hoạch đầy đủ:
+`Plans/17-08-2026_Gate1.5_InterfaceDecoupling_Migrate_Plan_v1.md`.
+**ceiling:** N/A — đây là đổi hướng kiến trúc, không phải shortcut tạm.
+**trigger:** N/A.
 
 ---
 
