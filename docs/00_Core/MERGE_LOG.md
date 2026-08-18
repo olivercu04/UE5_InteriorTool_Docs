@@ -59,6 +59,14 @@ làm TRƯỚC C11 để combo sống qua update app đóng gói). File đang ch�
 Digits, Q9 miễn, field ID `[VERIFY]` trong `ComboTypes.h`). 3 entry `DEVIATIONS.md`. Đích tương
 lai (khi P4-early + C11 chạy xong): `Data/ComboSerializer_Reference.md`, `Blueprints/BP_ComboManager.md`
 (nếu C11 có BP context menu/nút mới), `Widgets/WBP_FurnitureInventory.md` (BTN_ImportCombo).
+**Cập nhật (tiếp) 18/08/2026:** thêm `Plans/18-08-2026_Gate1.5_PhaseC_C1-C3_CouplingFixes_Delta.md` —
+delta Gate 1.5 Phase C (C1-C3 DONE) + 7 coupling-point fix phát sinh ngoài audit gốc Phase A
+(2 asset thiếu, 2 node cast chết, 2 plugin Marketplace thiếu, 1 ceiling SaveGameMenu, kèm 1 bài
+học quy trình Force Delete vs Rename). File đang chạy, CHƯA có as-built cho canonical
+`Blueprints/`/`Widgets/` (fix mô tả ở dạng node flow trong DEVIATIONS.md, chưa merge ngược vào
+doc canonical từng file — vd `BP_UndoManager.md` Step 4, `WBP_FurnitureInventory.md` BTN_Close).
+Không đóng dấu banner nào. Đích tương lai (khi C4/C5 xong + as-built merge ngược): `Blueprints/
+BP_UndoManager.md`, `Widgets/WBP_FurnitureInventory.md`, `Blueprints/BP_ComboManager.md`.
 
 ---
 

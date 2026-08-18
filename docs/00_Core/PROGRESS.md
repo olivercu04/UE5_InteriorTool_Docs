@@ -48,6 +48,9 @@ Datasmith — quarantine `I:\_FoffCorruptQuarantine\`, KHÔNG file nào của to
 còn lại: `Foff_GameInstance` (master) dính chặt qua 3 dây cast (Inventory/Input/Camera-Pawn) →
 đổi hướng sang Interface Decoupling + migrate project sạch (task nhiều ngày). Xem
 `01_Session_State.md` + `Plans/17-08-2026_Gate1.5_InterfaceDecoupling_Migrate_Plan_v1.md`.
+Gate 1.5 — Phase B: 4/4 dây cắt xong (Pawn/Input/Inventory/Toast), test PIE PASS.
+Gate 1.5 — Phase C: C1-C3 DONE. 7 coupling-point phát sinh, đã fix hết (xem DEVIATIONS).
+                     PIE verify: 0 lỗi compile trong cuong/. C4 đang chạy.
 
 ---
 

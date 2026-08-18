@@ -9,12 +9,15 @@
 ☐ Sprint 7 Material v1.2 → ☐ Sprint 6 Polish → ◆ GATE 2 = bản packaged THẬT
   (sau Gate 2: Backend B0→B5 — cloud, chợ combo)
 
-[VỊ TRÍ — Gate 1.5, hướng 17/08: decouple + migrate]
+[VỊ TRÍ — Gate 1.5, hướng 18/08: C3 xong, sang C4]
 ✓ FIX-1 corrupt 179 file    ✓ FIX-2 RuntimeTransformer
 ✓ cook 1126 → 729 lỗi (tool cuong/ = 0 lỗi, 729 = 100% rác master)
-▓ Phase A — audit XONG: dry-run + RefViewer, 40 folder qua đúng 3 cửa (A xác nhận)
-░ Phase B — cắt 3 dây (Pawn→Input→Inventory), test PIE từng dây  ← ĐANG
-☐ Phase C — migrate clean project + package + smoke 10 dòng
+✓ Phase A — audit XONG: dry-run + RefViewer, 40 folder qua đúng 3 cửa
+✓ Phase B — cắt 4 dây (không phải 3: Pawn/Input/Inventory/Toast) — test PIE PASS cả 4
+✓ Phase C.C1-C3 — clean project + 2 plugin C++ + config + Migrate + 7 coupling-point fix
+  (PIE xác nhận: chỉ EMS_Character + SaveGameMenu còn lỗi, cả 2 thuộc plugin, ceiling accepted)
+▓ Phase C.C4 — dựng host tối giản (PC kế thừa EMS_PC, Pawn, Level BP 13 mắt xích)  ← ĐANG
+☐ Phase C.C5 — Package Development + smoke test
 
 [ĐÍCH]
 Gate 2 = tool chạy NGOÀI editor, qua 10 dòng smoke + 4 mìn deploy
@@ -22,7 +25,7 @@ Gate 2 = tool chạy NGOÀI editor, qua 10 dòng smoke + 4 mìn deploy
 
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 14/08/2026 — Sprint 5 CHÍNH THỨC ĐÓNG (C10 DONE)
+**Phiên bản:** 18/08/2026 — Gate 1.5 Phase C.C1-C3 DONE, sang C4
 **Cập nhật (tiếp) 02/08/2026:** Luật **Q9 (S-Matrix Gate)** thiết lập — xem `Rules/AI_Implementation_Rules.md` v2.14. 3 bug xác nhận bằng test tay (Bug-MaterialPrimaryOnly, Bug-PasteVerticalCollapse, Bug-StaleSurfaceType) — xem `Bugs/Open_Bugs.md`. Cả 3 dời sau Gate 2, **KHÔNG đổi thứ tự ưu tiên hiện tại: Save As/Save đè → C11 → C10 → Gate 2.**
 **Cập nhật (tiếp) 03/08/2026:** Save As/Save đè — LẬP KẾ HOẠCH XONG (khung 5 task), task card T1 đã phát hành.
 Kế hoạch đầy đủ: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`.
@@ -165,6 +168,22 @@ Migrate dry-run + Reference Viewer 3 điểm → 40 folder master bị kéo qua 
 Plan cập nhật v1.1: bỏ BPI_FurnitureHost (cắt kiểu tool-tự-lo, option b), thêm C2.5 copy
 Config .ini (GizmoTrace/CustomDepth/EMS), thứ tự cắt Pawn→Input→Inventory. Tiếp theo: Phase B
 dây Pawn (rẻ nhất) với Sonnet, test PIE từng dây trong project hiện tại trước khi migrate.
+**Cập nhật (tiếp) 18/08/2026 (Gate 1.5 — Phase C.C1-C3 DONE):** Phase B đóng với 4 dây (Toast lộ
+ra ngoài audit gốc, cắt cùng đợt). Phase C: C1 (project sạch) → C2 (2 plugin C++ + 5 plugin phụ) →
+C2.5 (config GizmoTrace + CustomDepth) → C3 (Migrate `cuong/` + `DatabaseProjectMaster/Material+Model`,
+bỏ tick folder ngoài) hoàn thành. Trong lúc verify (Output Log + compile từng file + PIE thật) phát
+hiện 7 coupling-point ngoài audit gốc: 2 asset thiếu (Roboto font, SaveGameMenu dependency — fix
+bằng migrate bổ sung 2 folder), 2 node cast chết (`BTN_Close` dây Remove Input, `BP_UndoManager`
+lớp cast dư thừa — cả 2 xoá, khớp kiến trúc đã tài liệu hoá), 2 plugin Marketplace thiếu
+(`BlueprintSearchBar`, `Enhanced Blueprint String` — enable + restart), 1 ceiling chấp nhận
+(`SaveGameMenu` plugin demo, tool không dùng đường đó). 1 sự cố quy trình (Force Delete thay Rename,
+làm vỡ 6 reference tạm thời) tự khôi phục qua Migrate lại + compile — bài học: Rename giữ redirector,
+Force Delete thì không. Xác nhận cuối bằng PIE thật: chỉ `EMS_Character` + `SaveGameMenu` (cả 2
+thuộc plugin EMS demo, ceiling đã ghi) còn compile-fail — mọi Blueprint `cuong/` sạch. Chi tiết đầy
+đủ 7 fix: `Plans/18-08-2026_Gate1.5_PhaseC_C1-C3_CouplingFixes_Delta.md`. Tiếp theo: **C4** — dựng
+host tối giản, quyết định kỹ thuật: PlayerController kế thừa `EMS_PC` (không phải PlayerController
+trơn) để nhánh Save thật của `SaveGameMenu` tự pass, dù tool không dùng đường đó — làm đúng luôn
+đỡ nợ sau.
 
 ---
 

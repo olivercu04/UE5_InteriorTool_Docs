@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 17/08/2026
+**Cập nhật:** 18/08/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1716,6 +1716,74 @@ hard-ref rác — 40 folder bị lôi qua đúng 3 coupling point (Foff_GameInst
 / BP_ArchvizPCG_Camera). Giả thuyết A (bịt 3 cửa = sạch 40 folder) xác nhận.
 ceiling: đo trên bản copy hiện tại — chưa xác nhận master gốc có thêm cửa thứ 4 lúc integrate.
 trigger: nếu sau khi cắt 3 dây mà Migrate report VẪN còn asset master → còn cửa ẩn, quay lại audit.
+
+## GATE 1.5 — 18/08/2026 — Phase C.C1-C3: 7 coupling-point fix
+
+### 1. [SCOPE] Migrate C3 — bỏ tick folder ngoài phạm vi tool
+Migrate `cuong/` + `DatabaseProjectMaster/Material` + `Model` — bỏ tick các folder khác (~40 folder
+đã biết từ Phase A dry-run, vd `00_Procedural`, `KitchenPro`...). Đây là DATA REFERENCE thật
+(Material/Model trong `DatabaseProjectMaster` trỏ texture chung thư viện công ty), không phải
+coupling logic cần cắt.
+**Ceiling:** vài material lẻ vỡ texture — không tránh được, không ảnh hưởng UI/UX.
+**Trigger:** cần asset cụ thể từ folder đã bỏ → migrate tay riêng khi phát sinh nhu cầu.
+**Danh sách folder đã bỏ tick:** `[CẦN CUHOANG ĐIỀN — chưa ghi lại lúc bấm Migrate]`
+
+### 2. [BUG-FIX] `WBP_FurnitureInventory.BTN_Close` — nhánh Remove Input Mapping chết
+`BTN_Close.OnClicked` có nhánh cuối `Get Player Controller → Cast BP_FoffPlayerController →
+RemoveFurnitureInput()`. Đây là phần "Remove" của dây Input (đã cắt ở B2), Phase A2 chỉ audit
+nhánh "Add" nên sót nhánh này. Đối chiếu quyết định B2 đã chốt (InputManager tự Add
+`LM_FurnitureInput` ở BeginPlay, **permanent**) — standalone không có khái niệm thoát furniture
+mode, nhánh Remove là dead logic. Đã xoá 3 node (`Get Player Controller` → `Cast` → `RemoveFurnitureInput`),
+`SetVisibility(Collapsed)` là node cuối cùng của chain.
+**Ceiling:** N/A — dọn code chết, không đổi hành vi.
+**Trigger:** N/A.
+
+### 3. [SCOPE] Cửa coupling thứ 6 — plugin `BlueprintSearchBar`
+`WBP_FurnitureInventory.SearchBar_FurnitureItem` là instance của `USearchBar` (module
+`BLUEPRINTSEARCHBAR_API`, Rohan Singh, MIT, Engine/Marketplace-level) — không nằm trong 5 plugin
+đã enable ở C2. Thiếu plugin → UE compile-fail lần đầu → tự strip component khỏi Widget Tree, lưu
+trạng thái mất xuống đĩa (không tự phục hồi khi thêm dependency sau).
+**Fix:** Enable plugin `Blueprint Search Bar` ở Plugins list + restart Editor.
+**Ceiling:** N/A — plugin Engine-level, không cần copy file.
+**Trigger:** nếu widget khác cũng "biến mất" kiểu này → nghi plugin thiếu trước, không nghi font/style.
+
+### 4. [SCOPE] Cửa coupling thứ 7 — plugin `Enhanced Blueprint String`
+`BP_ComboManager` dùng hàm `ConvertDateTimeToString` từ module `enhanced_string`
+(`Uenhanced_stringBPLibrary`, Ryckbosch Arthur, v1.3.1, Engine-level Marketplace).
+**Fix:** Enable plugin `Enhanced Blueprint String` + restart, giống mục 3.
+**Ceiling:** N/A.
+**Trigger:** N/A.
+
+### 5. [BUG-FIX] `BP_UndoManager.CaptureSnapshot` — cast `BP_FoffPlayerController` dư thừa
+Step 4 của `CaptureSnapshot` có 1 lớp bọc `Get Player Controller → Cast BP_FoffPlayerController`
+đứng trước `Get All Actors Of Class(BP_FurnitureInputManager)` — không nằm trong kiến trúc đã tài
+liệu hoá (`BP_UndoManager.md` ghi rõ: "KHÔNG dùng Get Player Controller → Cast BP_FoffPlayerController").
+Cast luôn fail (class chết) nên luôn skip qua nhánh CastFailed tới đúng nhánh `Get All Actors Of
+Class(BP_FurnitureInputManager)` — không đổi hành vi runtime khi xoá. Xác nhận Find References
+trong file này không còn chỗ nào dùng biến cast output trước khi xoá.
+Đã xoá 4 node (`Get Player Controller` → `Cast` → `SET "As BP Foff Player Controller"` → Knot),
+nối lại `SET SelectedMeshIndex = -1 → then` thẳng vào `Get All Actors Of Class(BP_FurnitureInputManager)`.
+**Ceiling:** N/A — dọn code chết.
+**Trigger:** N/A.
+
+### 6. [CEILING] `SaveGameMenu.SaveGameMenu` (plugin EMS demo UI) — không sửa
+Custom Event "Save Game" có nhánh fallback cast `EMS_PC` → (fail) → cast `BP_FoffPlayerController`
+(class chết, lỗi). Xác nhận qua `BP_FurnitureSceneManager.md`: tool KHÔNG dùng đường này — Save/Load
+thật gọi thẳng API EMS (`Save Game Actors` / `Load Game Actors` Level Only), Event Tick chỉ bind
+`OnLoadButtonClicked` để nghe nút Load, không đụng Custom Event "Save Game" của widget này.
+**Ceiling:** nhánh cast vẫn lỗi nếu ai đó bấm thẳng nút Save trên UI riêng của `SaveGameMenu` — tool
+không expose đường này.
+**Trigger:** nếu sau này có tính năng dùng UI `SaveGameMenu` trực tiếp, quay lại xử lý.
+
+### 7. [CORRECTION] Force Delete `WBP_FurnitureInventory` làm vỡ 6 reference
+Xoá file lỗi bằng Force Delete (không phải Rename) rồi Migrate lại từ gốc để phục hồi component
+`SearchBar_FurnitureItem` bị mất. Force Delete không tạo redirector — Migrate tạo class mới, GUID
+khác — 6 file tham chiếu cũ (`BP_FurnitureInputManager`, `BP_FurnitureSceneManager`, `WBP_ComboCard`,
+`WBP_FurnitureCard`, `WBP_MaterialCard`, `WBP_MeshControls`) trỏ vào class chết (`DEADCLASS`).
+Khôi phục bằng cách compile lại từng file — path đúng nên biên dịch resolve lại được, không mất dữ liệu.
+**Ceiling:** bài học quy trình, không phải bug hệ thống.
+**Trigger:** trước khi Force Delete bất kỳ asset nào có ≥1 reference, cân nhắc Rename trước để giữ
+redirector — chỉ Force Delete khi chắc chắn 0 reference (Find References xác nhận trước).
 
 ---
 
