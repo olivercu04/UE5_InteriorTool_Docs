@@ -178,6 +178,37 @@ dần khi kiến thức đó tự nhiên xuất hiện lại, không dồn 1 bu�
 
 ---
 
+## Điều chỉnh quy trình — 20/08/2026 (debug lạc hướng — engine incident)
+
+Bối cảnh: phiên debug sự cố engine binary, Claude lạc hướng 3 lần liên tiếp trước khi
+tìm đúng gốc — dựng chuỗi giả thuyết (Sequence corrupt → rớt dây → CategoryList rỗng),
+mỗi lần cuhoang verify lại lật. Nguyên nhân lạc: Claude suy diễn tiếp khi bằng chứng
+chưa khớp, thay vì dừng xác minh mình đang đứng ở đâu.
+
+Bài học rút ra (áp dụng từ đây):
+
+1. **F10 mà thấy mâu thuẫn → HỎI NGAY "đang đứng ở Blueprint nào", không suy diễn tiếp.**
+   Điểm mù lớn nhất phiên này: Claude đọc "Create Widget WBP_FurnitureInventory" trong lúc
+   cuhoang F10, không nhận ra cuhoang đang ở graph WBP_MeshControls (caller), chứ không phải
+   WBP_FurnitureInventory. Lỡ mất mấy lượt vì tự quy 2 graph làm 1. Một Event Construct
+   KHÔNG THỂ tự Create Widget chính nó — chi tiết mâu thuẫn kiểu này là tín hiệu "đang soi
+   nhầm file", phải hỏi thẳng.
+
+2. **Lỗi lan nhiều nơi + compile xanh + vô lý → nghi ENGINE/môi trường TRƯỚC graph.**
+   Claude bám giả thuyết "graph corruption" quá lâu. Đúng ra: khi lỗi không tập trung 1 file
+   và không có Error cụ thể, khả năng môi trường (engine binary, plugin, registry) cao hơn
+   lỗi logic. Verify engine là phép thử rẻ nên làm sớm.
+
+3. **Luật Mất Phương Hướng đã cứu (giữ tiếp):** tới lần lạc thứ 3 Claude tuyên bố "tao đang
+   mất phương hướng", quay về gốc (vấn đề gốc / bằng chứng chắc / cái chưa biết) — đó là
+   thời điểm bắt đầu đi đúng. Xác nhận cơ chế này hiệu quả, không bỏ.
+
+4. **cuhoang đẩy nhịp đúng (ghi nhận):** khi Claude hỏi lại mấy thứ cơ bản đã confirm
+   ("đã Play lại chưa"), cuhoang phản hồi thẳng → Claude bỏ ngay, không lặp. Giữ nhịp
+   ngang hàng này: cuhoang chắc chỗ nào thì Claude tin, không hỏi thừa để "phòng xa".
+
+---
+
 ## Tính năng tiếp theo cần học
 
 - [ ] **C++ Subsystem** — AssetService trong Refactor Phase B

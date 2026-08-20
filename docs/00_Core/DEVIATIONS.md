@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 18/08/2026
+**Cập nhật:** 20/08/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1784,6 +1784,48 @@ Khôi phục bằng cách compile lại từng file — path đúng nên biên d
 **Ceiling:** bài học quy trình, không phải bug hệ thống.
 **Trigger:** trước khi Force Delete bất kỳ asset nào có ≥1 reference, cân nhắc Rename trước để giữ
 redirector — chỉ Force Delete khi chắc chắn 0 reference (Find References xác nhận trước).
+
+## GATE 1.5 — 20/08/2026 — C4 + C5 hoàn thành + sự cố engine binary
+
+### [INCIDENT] Engine binary hỏng do sửa code nguyên bản UE — 20/08/2026
+
+**Phát hiện:** 20/08/2026. Cold boot mở lại standalone project (sau C4) → PIE:
+`WBP_FurnitureInventory` không hiện folder tree ở CẢ Furniture lẫn Combo, breadcrumb trống,
+`BP_ComboManager` không hoạt động. Item grid Furniture (DT_FurnitureCatalog) vẫn load OK.
+
+**Triệu chứng gây nhiễu (vì sao khó chẩn đoán):**
+- Compile báo **XANH hoàn toàn**, không Error.
+- Dây exec nhìn bằng mắt **đều nối đúng**.
+- F10 trace: exec vào `Event Construct` (in được "CONSTRUCT FIRED") nhưng chết giữa chừng —
+  tới `ForEachLoop(CategoryList)` rồi nhảy thẳng về caller (`WBP_MeshControls`), KHÔNG chảy
+  qua `Sequence → BuildFolderTree`. Dây "vẽ có" nhưng exec không đi qua.
+- 2 warning "pruned" cùng họ ở `BP_ComboManager.SpawnComboByID` (Get Data Table Row) và
+  `BP_FurnitureInputManager` (Cast to BP_FurnitureActor) — cross-blueprint call bị đánh dấu.
+- Lỗi lan NHIỀU Blueprint cùng lúc, không tập trung 1 file.
+
+**Nguyên nhân gốc:** code nguyên bản UE5.5.4 đã bị sửa trước đó → engine binary hỏng. KHÔNG
+phải lỗi logic Blueprint, KHÔNG phải ghost-wire do cold-boot-save (giả thuyết ban đầu — SAI).
+
+**Fix:** Verify UE5.5.4 trên Epic Games Launcher (ghi đè lại file engine gốc) → mọi thứ về
+bình thường, không mất dữ liệu Blueprint nào.
+
+**Ceiling:** KHÔNG mang bản engine đã sửa sang máy khác / không commit engine binary. Nếu cần
+tính năng phải sửa engine → dùng engine source build riêng, không sửa bản launcher.
+**Trigger (dấu hiệu nhận diện lần sau):** lỗi lan nhiều Blueprint + compile xanh + hành vi vô
+lý (exec chết không rõ lý do) → **NGHI ENGINE/BINARY TRƯỚC, không đào graph trước**. Verify
+engine là phép thử rẻ, làm sớm.
+
+### [PROCESS] Không có git / không có backup — suýt mất graph — 20/08/2026
+
+**Bối cảnh:** trong lúc chẩn đoán sự cố engine trên, có thời điểm nghi "graph nhiễm diện rộng,
+phải restore bản tối qua". Kiểm tra: **không git, không backup** → không có đường lui. May mắn
+nguyên nhân là engine (Verify được), không phải graph — nếu là graph hỏng thật thì đã phải dựng
+lại tay từ doc.
+
+**Ceiling:** bài học quy trình, không phải bug hệ thống.
+**Trigger:** bật git (hoặc backup thủ công có ngày) cho `I:\FurnitureTool_Standalone\` TRƯỚC
+mọi phiên sửa lớn. Tối thiểu: commit/copy trước khi package hoặc trước khi đụng nhiều Blueprint
+cùng lúc. Chi phí 2 phút, chống mất nhiều giờ.
 
 ---
 

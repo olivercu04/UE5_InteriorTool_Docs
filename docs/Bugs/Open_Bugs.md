@@ -1077,6 +1077,20 @@ Cùng một loại lỗi: chọn sai điểm neo cho sự thật. Đề xuất: 
 
 ---
 
+### [TIỀM ẨN] then_5 Event Construct — race condition ComboManagerRef (20/08/2026)
+Nhánh False của IfThenElse(GetAllActorsOfClass(BP_ComboManager) Length>0) là dead-end.
+Nếu WBP_FurnitureInventory.Construct chạy trước khi BP_ComboManager spawn xong →
+ComboManagerRef không set → LoadComboLibrary không chạy → combo rỗng IM LẶNG.
+Hiện chưa xảy ra (8/8 actor xác nhận có mặt sau Play). Trigger fix: nếu combo thỉnh thoảng
+rỗng lúc mở panel → thêm retry/delay hoặc đảo thứ tự spawn.
+
+### [OBSERVATION] CategoryList chưa từng được SET (20/08/2026)
+Class var CategoryList (WBP_FurnitureInventory) rỗng vĩnh viễn → ForEachLoop đầu Event
+Construct chạy 0 lần. KHÔNG gây lỗi hiện tại (loop rỗng không chặn Completed). Ghi lại phòng
+khi cần dựng nút category động — lúc đó phải bổ sung nguồn nạp CategoryList.
+
+---
+
 ## Closed Bugs (reference nhanh)
 
 | # | Bug | Sprint | Fix |

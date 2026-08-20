@@ -5,19 +5,21 @@
 [TOÀN CẢNH — ~65% đường tới Gate 2]
 ▓ Sprint 1-3 select/group   ▓ Sprint 4 Edit Mode   ▓ Gate 1
 ▓ Material v1.1             ▓ Sprint D Data v2     ▓ Sprint 5 Combo (C0-C11)
-░ GATE 1.5 Packaged Smoke                          ← MÀY Ở ĐÂY
-☐ Sprint 7 Material v1.2 → ☐ Sprint 6 Polish → ◆ GATE 2 = bản packaged THẬT
+▓ GATE 1.5 Packaged Smoke (Development) — DONE 20/08
+☐ Sprint 7 Material v1.2 → ☐ Sprint 6 Polish → ◆ GATE 2 = bản packaged THẬT  ← MÀY Ở ĐÂY
   (sau Gate 2: Backend B0→B5 — cloud, chợ combo)
 
-[VỊ TRÍ — Gate 1.5, hướng 18/08: C3 xong, sang C4]
+[VỊ TRÍ — Gate 1.5 ĐÓNG 20/08, sang hướng Gate 2]
 ✓ FIX-1 corrupt 179 file    ✓ FIX-2 RuntimeTransformer
 ✓ cook 1126 → 729 lỗi (tool cuong/ = 0 lỗi, 729 = 100% rác master)
 ✓ Phase A — audit XONG: dry-run + RefViewer, 40 folder qua đúng 3 cửa
-✓ Phase B — cắt 4 dây (không phải 3: Pawn/Input/Inventory/Toast) — test PIE PASS cả 4
+✓ Phase B — cắt 4 dây (Pawn/Input/Inventory/Toast) — test PIE PASS cả 4
 ✓ Phase C.C1-C3 — clean project + 2 plugin C++ + config + Migrate + 7 coupling-point fix
-  (PIE xác nhận: chỉ EMS_Character + SaveGameMenu còn lỗi, cả 2 thuộc plugin, ceiling accepted)
-▓ Phase C.C4 — dựng host tối giản (PC kế thừa EMS_PC, Pawn, Level BP 13 mắt xích)  ← ĐANG
-☐ Phase C.C5 — Package Development + smoke test
+✓ Phase C.C4 — host tối giản (BP_StandaloneToolPC kế thừa EMS_PC, BP_StandaloneGameMode,
+  BP_ArchvizPCG_Camera + 4 deps, axis mappings tay, cắt interact-on-click + HUD MovementSpeed)
+✓ Phase C.C5 — Package DEVELOPMENT + smoke: .exe chạy máy sạch (không cài UE). Còn lỗi runtime.
+✓ GizmoTrace — test PASS sau Verify engine (không cần đối chiếu master)
+⚠ Sự cố engine binary giữa phiên (sửa code gốc UE → hỏng → Verify Epic fix) — xem DEVIATIONS
 
 [ĐÍCH]
 Gate 2 = tool chạy NGOÀI editor, qua 10 dòng smoke + 4 mìn deploy
@@ -25,7 +27,7 @@ Gate 2 = tool chạy NGOÀI editor, qua 10 dòng smoke + 4 mìn deploy
 
 **Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
 > Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 18/08/2026 — Gate 1.5 Phase C.C1-C3 DONE, sang C4
+**Phiên bản:** 20/08/2026 — Gate 1.5 C4+C5 DONE (packaged Development smoke PASS), Gate 1.5 ĐÓNG
 **Cập nhật (tiếp) 02/08/2026:** Luật **Q9 (S-Matrix Gate)** thiết lập — xem `Rules/AI_Implementation_Rules.md` v2.14. 3 bug xác nhận bằng test tay (Bug-MaterialPrimaryOnly, Bug-PasteVerticalCollapse, Bug-StaleSurfaceType) — xem `Bugs/Open_Bugs.md`. Cả 3 dời sau Gate 2, **KHÔNG đổi thứ tự ưu tiên hiện tại: Save As/Save đè → C11 → C10 → Gate 2.**
 **Cập nhật (tiếp) 03/08/2026:** Save As/Save đè — LẬP KẾ HOẠCH XONG (khung 5 task), task card T1 đã phát hành.
 Kế hoạch đầy đủ: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`.
@@ -184,6 +186,16 @@ thuộc plugin EMS demo, ceiling đã ghi) còn compile-fail — mọi Blueprint
 host tối giản, quyết định kỹ thuật: PlayerController kế thừa `EMS_PC` (không phải PlayerController
 trơn) để nhánh Save thật của `SaveGameMenu` tự pass, dù tool không dùng đường đó — làm đúng luôn
 đỡ nợ sau.
+**Cập nhật (tiếp) 20/08/2026 (Gate 1.5 — C4 + C5 DONE, Gate 1.5 ĐÓNG):**
+C4 hoàn thành: host standalone tối giản (BP_StandaloneToolPC kế thừa EMS_PC,
+BP_StandaloneGameMode, World Settings override L_ToolSmokeTest, migrate BP_ArchvizPCG_Camera
++ 4 dependency, chép tay Axis Mappings, cắt interact-on-click + HUD MovementSpeedMessage —
+xem DEVIATIONS). C5 hoàn thành: package Development thành công, .exe chạy trên máy không cài
+Unreal, còn lỗi runtime khi dùng (chưa fix). GizmoTrace test PASS sau khi Verify engine.
+⚠️ Giữa phiên gặp sự cố engine binary (đã sửa code nguyên bản UE5.5.4 → binary hỏng → tree
+WBP_FurnitureInventory trống + BP_ComboManager chết, compile vẫn xanh) — fix bằng Verify trên
+Epic Games Launcher. LƯU Ý: đây KHÔNG phải Gate 2. Gate 2 = bản Shipping thật + 10 dòng smoke
++ 4 mìn deploy, vẫn phía trước. Chi tiết: Plans/20-08-2026_Gate1.5_C4C5_Complete_EngineIncident_Delta.md.
 
 ---
 

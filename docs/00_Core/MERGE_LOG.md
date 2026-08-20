@@ -67,6 +67,16 @@ học quy trình Force Delete vs Rename). File đang chạy, CHƯA có as-built 
 doc canonical từng file — vd `BP_UndoManager.md` Step 4, `WBP_FurnitureInventory.md` BTN_Close).
 Không đóng dấu banner nào. Đích tương lai (khi C4/C5 xong + as-built merge ngược): `Blueprints/
 BP_UndoManager.md`, `Widgets/WBP_FurnitureInventory.md`, `Blueprints/BP_ComboManager.md`.
+**Cập nhật (tiếp) 20/08/2026:** thêm `Plans/20-08-2026_Gate1.5_C4C5_Complete_EngineIncident_Delta.md` —
+delta Gate 1.5 Phase C4+C5 DONE, Gate 1.5 CHÍNH THỨC ĐÓNG (packaged Development, KHÔNG phải
+Shipping/Gate 2). Sự cố engine binary giữa phiên (sửa code gốc UE5.5.4 → hỏng → Verify Epic fix)
++ bài học no-git/no-backup — cả 2 merge vào `DEVIATIONS.md`. Bài học phối hợp debug lạc hướng
+merge vào `Rules/Learning_System.md`. 2 rủi ro tiềm ẩn (race condition ComboManagerRef,
+CategoryList chưa SET) merge vào `Bugs/Open_Bugs.md`. **KHÔNG merge** PHẦN 5 (as-built
+`PopulateTreeColumn`/`Event Construct`) — delta trỏ sai file (`Blueprints/Blueprint_Logic_
+NodeFlow.md`), nội dung khớp nguyên văn thật ra nằm ở `Widgets/WBP_FurnitureInventory.md`
+dòng 247-256/264-265 — cuhoang xác nhận BỎ QUA, chờ delta đính chính sau. Không đóng dấu
+banner nào cho file delta.
 
 ---
 

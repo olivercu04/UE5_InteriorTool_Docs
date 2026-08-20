@@ -51,6 +51,12 @@ còn lại: `Foff_GameInstance` (master) dính chặt qua 3 dây cast (Inventory
 Gate 1.5 — Phase B: 4/4 dây cắt xong (Pawn/Input/Inventory/Toast), test PIE PASS.
 Gate 1.5 — Phase C: C1-C3 DONE. 7 coupling-point phát sinh, đã fix hết (xem DEVIATIONS).
                      PIE verify: 0 lỗi compile trong cuong/. C4 đang chạy.
+Gate 1.5 — Phase C.C4: host standalone tối giản DONE (BP_StandaloneToolPC/GameMode,
+                       ArchvizPCG_Camera + 4 deps, axis mappings tay). Xem DEVIATIONS.
+Gate 1.5 — Phase C.C5: package DEVELOPMENT thành công, .exe chạy máy sạch (không cài UE).
+                       Còn lỗi runtime packaged (chưa fix, dời đợt sau).
+Gate 1.5 — ĐÓNG 20/08/2026. ⚠️ Development build, KHÔNG phải Gate 2 (Shipping).
+Gate 1.5 — Sự cố engine binary giữa phiên (sửa code gốc UE → Verify Epic fix). Xem DEVIATIONS.
 
 ---
 
