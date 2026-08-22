@@ -1,719 +1,89 @@
 # Session State
+> RAM của project. Chỉ trả lời "ĐANG đứng đâu", KHÔNG phải "đã đi qua đâu".
+> Lịch sử → Git / PROGRESS.md / DEVIATIONS.md. KHÔNG thêm chronology/changelog vào đây.
+> Cập nhật khi trạng thái đổi. Giữ ~50-100 dòng. Cái gì đã có nơi khác sở hữu → cắt, không copy.
 
-## 🗺 BẢN ĐỒ (17/08/2026 — cập nhật mỗi lần đổi trạng thái)
-
-[TOÀN CẢNH — ~65% đường tới Gate 2]
-▓ Sprint 1-3 select/group   ▓ Sprint 4 Edit Mode   ▓ Gate 1
-▓ Material v1.1             ▓ Sprint D Data v2     ▓ Sprint 5 Combo (C0-C11)
-▓ GATE 1.5 Packaged Smoke (Development) — DONE 20/08
-☐ Sprint 7 Material v1.2 → ☐ Sprint 6 Polish → ◆ GATE 2 = bản packaged THẬT  ← MÀY Ở ĐÂY
-  (sau Gate 2: Backend B0→B5 — cloud, chợ combo)
-
-[VỊ TRÍ — Gate 1.5 ĐÓNG 20/08, sang hướng Gate 2]
-✓ FIX-1 corrupt 179 file    ✓ FIX-2 RuntimeTransformer
-✓ cook 1126 → 729 lỗi (tool cuong/ = 0 lỗi, 729 = 100% rác master)
-✓ Phase A — audit XONG: dry-run + RefViewer, 40 folder qua đúng 3 cửa
-✓ Phase B — cắt 4 dây (Pawn/Input/Inventory/Toast) — test PIE PASS cả 4
-✓ Phase C.C1-C3 — clean project + 2 plugin C++ + config + Migrate + 7 coupling-point fix
-✓ Phase C.C4 — host tối giản (BP_StandaloneToolPC kế thừa EMS_PC, BP_StandaloneGameMode,
-  BP_ArchvizPCG_Camera + 4 deps, axis mappings tay, cắt interact-on-click + HUD MovementSpeed)
-✓ Phase C.C5 — Package DEVELOPMENT + smoke: .exe chạy máy sạch (không cài UE). Còn lỗi runtime.
-✓ GizmoTrace — test PASS sau Verify engine (không cần đối chiếu master)
-⚠ Sự cố engine binary giữa phiên (sửa code gốc UE → hỏng → Verify Epic fix) — xem DEVIATIONS
-
-[ĐÍCH]
-Gate 2 = tool chạy NGOÀI editor, qua 10 dòng smoke + 4 mìn deploy
-Ước thô: T10–T11/2026 (±1 tháng) — số chỉnh mỗi tuần, đừng tin cứng
-
-**Nguồn:** `import_raw/Session_State_15jun2026.md` (bản mới nhất — 15/06/2026 20:30 ICT)
-> Session_State.md (12/06/2026) là bản cũ hơn — đã merged vào đây.
-**Phiên bản:** 20/08/2026 — Gate 1.5 C4+C5 DONE (packaged Development smoke PASS), Gate 1.5 ĐÓNG
-**Cập nhật (tiếp) 02/08/2026:** Luật **Q9 (S-Matrix Gate)** thiết lập — xem `Rules/AI_Implementation_Rules.md` v2.14. 3 bug xác nhận bằng test tay (Bug-MaterialPrimaryOnly, Bug-PasteVerticalCollapse, Bug-StaleSurfaceType) — xem `Bugs/Open_Bugs.md`. Cả 3 dời sau Gate 2, **KHÔNG đổi thứ tự ưu tiên hiện tại: Save As/Save đè → C11 → C10 → Gate 2.**
-**Cập nhật (tiếp) 03/08/2026:** Save As/Save đè — LẬP KẾ HOẠCH XONG (khung 5 task), task card T1 đã phát hành.
-Kế hoạch đầy đủ: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`.
-UX chốt: 2 nút trong WBP_SaveComboDialog (Ghi đè / Lưu thành combo mới), nút Ghi đè xám khi
-0 hoặc ≥2 combo root, hoặc đang trong edit mode. Test lớp dữ liệu 03/08 PASS: GroupID sống
-sót qua Replace kể cả group lồng 3 tầng → Save đè không cần thiết kế đặc biệt.
-Bug UX 'replace trong combo → inventory nhảy tab Combo' GỘP vào đợt này làm T2.
-Tiếp theo: T1 (2 Function mới trong BP_FurnitureInputManager).
-**Cập nhật (tiếp) 03/08/2026 (T1 DONE):** T1 (`GetComboRootOfActor` + `ResolveActiveComboForSave`,
-`BP_FurnitureInputManager` v3.0) — ĐÓNG, test PASS 6/6. Priority queue giữ nguyên: Save As/Save đè
-(T1 done) → T2 (UI trigger tại `CB_SaveCombo_Handler`/`OnMeshSelected`) → T3 (WBP_SaveComboDialog +
-Toast lý do) → T4 (C++ ghi file, gộp combo logic) → T5 (regression 15-step) → C11 → C10 → Gate 2.
-Mở task card **T2** tiếp theo. Ghi chú: `[CEILING]` "2 nơi cùng biết cách leo combo root"
-(`ResolveSelectedComboRoot` C9 chưa đấu lại vào `GetComboRootOfActor`) — vẫn treo tới C10, xem
-`DEVIATIONS.md`.
-**Cập nhật (tiếp) 03/08/2026 (T2 DONE):** T2 (`ShouldRouteReplaceToCombo()`,
-`BP_FurnitureInputManager` v3.3) — ĐÓNG, 6/6 case test PASS + 2 câu hiểu bài PASS. Đóng
-`Bug-ReplaceInCombo-TabJump` (gốc rễ: `ResolveSelectedComboRoot()` mù edit-scope) tại call site
-`OnMeshSelected`. Kèm fix phụ trợ `Bug-RowNameLostOnUndo` (`S_FurniturePlacement` thiếu field
-`RowName` — `BP_UndoManager` v1.15) phát hiện lúc verify case 6. ⚠️ Claim "call site thứ 2 =
-`CB_Replace`" KHÔNG xác nhận được — section `CB_Replace` hiện tại không có node route-combo nào
-để thay, ghi nhận mâu thuẫn, không tự sửa. Tiếp theo: **T3** (`WBP_SaveComboDialog`, task card đã
-phát hành 04/08, mục 7b của Plan).
-**Cập nhật (tiếp) 05/08/2026:** T3 (Save As/Save đè) — SCOPE THU GỌN sau phân tích luồng người
-dùng. Bỏ nhánh cảnh báo Edit Mode 3 nút + bIsEditGroup + dispatcher OnRequestExitEditAndSave.
-Ngữ nghĩa chốt: bOverwriteAllowed=false (mọi lý do) → Save rơi về Save As, không đặc biệt hóa
-edit mode. Đã xong: 2 Function mới + BP_ComboItemView.Description + 8 Expose-on-Spawn +
-OpenSaveComboDialog mở rộng + chèn ResolveActiveComboForSave. Còn lại: RefreshButtonStates +
-ValidateComboName + Event Construct prefill + BTN_Overwrite.OnClicked (đều trong
-WBP_SaveComboDialog). Backlog mới: Feature-SaveInEditMode (Open_Bugs.md). Chi tiết kế hoạch:
-Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md mục 7c.
-**Cập nhật (tiếp) 07/08/2026 (T3 DONE):** T3 (`WBP_SaveComboDialog` Save As/Save Đè) — ĐÓNG,
-6/6 case test PASS + 2 câu hiểu bài PASS. 4 việc theo scope 7c + 1 việc phát sinh (Việc 5 —
-`Picker.SelectedPath` không tự set qua `ExpandToPath`, phải SET thủ công trong
-`OpenSaveComboDialog`). Đóng `Bug-SaveConfirm-EmptyName` (fix tự nhiên qua
-`RefreshButtonStates()` gọi ở Construct). Tiếp theo: **T4** (overwrite flow trong
-`SaveComboFromSelection`, xem mục 4.1 `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md`).
-**Cập nhật (tiếp) 07/08/2026 (T4 task card):** T3 ĐÓNG PASS 6/6 (đã ghi ở trên). T4 đã phát hành
-task card (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7d), Q9 S-Matrix Gate đóng
-dấu — **CHƯA thực thi**. Chốt trong task card: S8 (Mix combo+mesh rời) → nút Ghi đè nuốt HẾT
-mesh rời vào combo, khớp hành vi Save As; toast "Đã ghi đè combo" khi ghi đè thành công;
-`InvalidateThumbnail` đặt VÔ ĐIỀU KIỆN ở Event Tick tail ngay trước Broadcast có sẵn (không phải
-trước Bước 6 — chờ re-capture async ~24 frame xong mới xóa cache, tránh lộ khe ảnh cũ). T4.5
-(auto-group scene sau ghi đè S8) tách backlog riêng, KHÔNG mở cùng T4 — xem `Bugs/Open_Bugs.md`.
-Priority queue xác nhận vẫn đúng: **Save As/Save đè → C11 → C10 → Gate 2** — không lệch.
-**Cập nhật (tiếp) 07/08/2026 (T4 DONE):** T4 (Overwrite Flow) — ĐÓNG, 6/6 case test PASS
-+ 2 câu hiểu bài PASS. 3 Việc: (1) SaveComboFromSelection +2 param (bOverwrite/OverwriteComboID),
-Branch tại Bước 5a, InvalidateThumbnail vô điều kiện ở Event Tick tail (BP_ComboManager);
-(2) WBP_SaveComboDialog.BTN_Overwrite — dispatcher mới OnDialogConfirmedOverwrite thay Print tạm;
-(3) WBP_FurnitureInventory — bind dispatcher + Custom Event HandleSaveComboOverwriteConfirmed
-(SaveComboFromSelection → ShowToast → OnSaveComboDialogClosed, tái dùng đúng thứ tự OnSaveComboConfirmed).
-Case S8 (mix combo+mesh rời) xác nhận đúng: nuốt hết vào combo, khớp Save As. Test case 5
-(đổi Folder + Ghi đè) xác nhận KHÔNG sinh file mồ côi — path ghi chỉ phụ thuộc ComboID
-(GetCombosDir()/<ComboID>.json), không phụ thuộc FolderPath. Tiếp theo: **T5** (regression + doc close).
-**Cập nhật (tiếp) 07/08/2026 (T5 task card):** Opus phát hành task card T5 (Regression + Doc
-Closure), Plan mục 7e — CHƯA thực thi. Nội dung: Khối A (regression luồng 7 bước, nhấn A4+A5
-Save As sinh ID mới + A1 combo cũ load được), Khối B (bảng S-Scan S0-S9 test thật từng ô kể cả
-N/A), Khối C (đóng Note-DuplicateComboID), Khối D (fix 2 nợ kỹ thuật — cuhoang chốt fix trong T5:
-D1 warning Tags bIsReference trên 2 dispatcher, D2 Bug-ComboCategoryHardcode), Khối E (doc closure
-+ tick bar Sprint 5 22→23). [CEILING] combo root GIỮ NGUYÊN treo, trigger vẫn là C10 — KHÔNG đóng
-ở T5. Sau T5: C11 → C10 → Gate 2.
-**Cập nhật (tiếp) 08/08/2026 (T5 DONE — Save As/Save đè CHÍNH THỨC DONE):** T5 (Regression + Doc
-Closure) — ĐÓNG. Khối A (7 bước) PASS toàn bộ, đặc biệt A1 (combo lưu trước Sprint 5 vẫn load
-được) + A4/A5 (Save As luôn sinh comboId mới). Khối B (S-Scan S0-S9 + S8b + Q9-gap) PASS 12/12 ô
-đúng kỳ vọng. Khối C: đóng `Note-DuplicateComboID`. Khối D: D1 (bỏ Pass-by-Reference param `Tags`)
-**KHÔNG thực thi được — giới hạn engine** (`Tags` là Set of String, Blueprint khóa cứng
-Pass-by-Reference cho container type, không toggle được) — đóng dưới dạng N/A, xem DEVIATIONS.md.
-D2 (xóa hardcode Category="MyCombo") — FIX xong, verify `.json` ra `"category": ""`, test lại
-A3+A4 vẫn PASS. **Save As/Save đè (T1→T5) CHÍNH THỨC DONE.** Bar Sprint 5: 18/23 → 19/23.
-`[CEILING]` combo root ("2 nơi cùng biết cách leo combo root") GIỮ NGUYÊN treo, trigger vẫn là
-C10 — KHÔNG đóng ở T5. Priority queue tiếp theo: **C11 (Export/Import combo) → C10 (Regression
-tổng Sprint 5) → Gate 2**.
-**Cập nhật (tiếp) 14/08/2026 (C10 DONE — Sprint 5 CHÍNH THỨC ĐÓNG):**
-C10 (Regression tổng Sprint 5) hoàn tất cả 3 khối. Khối A (15 bước) chạy 1 phiên PIE liên
-tục — 12/15 PASS thuần, 3 PASS có điều kiện (bug ghi Open_Bugs, không chặn luồng). Khối B
-(3 nợ verify) chốt: T6 (pivot rotation) xác nhận THỪA — BP_PivotActor/T15 đã cân, đóng
-không viết thêm code; Copy/Paste mất group — xác nhận known limitation, giữ backlog v1.1;
-Scene save persistence — PASS trùng bước 10 Khối A. Khối C: docs đóng (file này).
-
-3 bug MỚI phát hiện, ghi Bugs/Open_Bugs.md:
-- Bug-ThumbnailMaterialOverride-Ignored: thumbnail combo bỏ qua MaterialOverrides đã áp
-  trên actor gốc lúc save — chụp mesh material mặc định. Nghi vấn: Cmb_StudioClones (P2)
-  không áp lại MaterialOverrides trước SceneCapture2D.
-- Bug-ComboSpawnLabel-MixedLooseGroup: info bar hiện "N vật thể" (raw count) thay vì
-  "📦 [Tên] (N)" sau spawn combo có TRỘN nested-group + đồ rời top-level — do
-  GetSelectionUnitLabel chỉ đọc Primary.GroupID, Primary có thể rơi vào đồ rời.
-- Bug-ComboRoot-MixedLooseGroup [ĐÓNG CEILING đã treo]: gốc rễ chung của 2 bug trên —
-  F_RegisterComboGroups Case B không tạo wrapper group cho đồ rời top-level khi combo
-  CÓ nested group thật → đồ rời mang GroupID "ma" (ParentGroupGUID chưa đăng ký) hoặc
-  GroupID rỗng. Hệ quả lan: label sai (trên) + Replace route sai sang mesh-flow khi
-  Primary là đồ rời. Đây CHÍNH LÀ trigger đóng [CEILING] "2 nơi cùng biết cách leo combo
-  root" đã treo từ T5 (08/08) — nay đã lộ rõ nguyên nhân. Đề xuất fix gốc: SaveComboFromSelection
-  LUÔN tạo 1 wrapper root group bọc toàn bộ selection, bất kể có group con hay không.
-  ƯU TIÊN FIX ĐẦU SPRINT 6, trước khi làm việc khác (vì bug chạm kiến trúc combo).
-
-K4 (Nested group cap) — chốt hành vi xác nhận: CREATE GROUP không giới hạn cấp; EDIT MODE
-cứng giới hạn 3 cấp (TryEnterEditFromSelection). Cấp 4+ tạo được nhưng không edit trực
-tiếp được. Hành vi CHẤP NHẬN ĐƯỢC v1, không phải bug.
-
-VRAM: dao động 6.4-7.6GB trong suốt C10, không tăng đơn hướng (không leak mới), nhưng
-đã sát ngưỡng budget ~7.26GB đã biết trước — không phát hiện mới, chỉ ghi số.
-
-Bar Sprint 5: 19/23 → 22/23 (C10 + C11 + P4-early tính vào). Còn lại: P3 (Xoay combo) —
-đã DEFER sau Gate 1.5 từ trước (giả định A1, Post_C5 plan), KHÔNG chặn Sprint 5 đóng.
-
-**SPRINT 5 — CHÍNH THỨC DONE.** Tiếp theo: đầu Sprint 6 ưu tiên fix
-Bug-ComboRoot-MixedLooseGroup TRƯỚC khi làm Polish UX, sau đó → Gate 1.5 (Packaged Smoke).
-**Cập nhật (tiếp) 10/08/2026 (C11 + P4-early lập kế hoạch):** C11 lập kế hoạch xong; chèn task
-mới **P4-early** (dời P4 lên trước C11, thay vì đợi tới Gate 1.5 như plan gốc). Thứ tự mới:
-**P4-early → C11 → C10 → Gate 2**. Ground truth `ComboSerializer.cpp` (cuhoang gửi 10/08) xác
-nhận `GetCombosDir()` thật vẫn là `ProjectSavedDir/Combos` — P4 (chốt 23/06) CHƯA TỪNG merge.
-Cắt file dialog khỏi C11 v1 (QĐ2 — `IDesktopPlatform` editor-only, rủi ro packaged; dialog dời
-backlog sau Gate 2). Import model đổi sang quét-thư-mục (QĐ3 — nhập ALL `*.combojson` trong
-`Exports/`, move thành công sang `Exports/Imported/`, chống nhập trùng). `.combojson` chỉ là
-định dạng file export, KHÔNG bao giờ ghi vào `CombosDir` (QĐ4). **CHƯA thực thi cả 2 task**
-(P4-early lẫn C11) — chỉ mới lập kế hoạch. Nguồn: `Plans/DELTA_10-08-2026_C11_P4early.md`.
-**Cập nhật (tiếp) 17/08/2026 (Gate 1.5 — chuyển hướng Interface Decoupling + Migrate):** Gate 1.5
-(Packaged Smoke) đổi hướng. Đã làm chưa doc trước đó: map `L_ToolSmokeTest`, GameMode global
-(`BP_FoffPlayerController` + `Foff_GameInstance`), Level BP chain 13 mắt xích, nút
-`Btn_OpenInventory`, gỡ Print BetterDebug khỏi `BP_ArchvizPCG_Camera`, packaging config (map list
-+ Additional Dirs + Cook everything=untick). **FIX-1** (179 file corrupt magic-header trong
-KitchenPro/Plus_Development/Datasmith, KHÔNG file nào của tool) — quarantine ra
-`I:\_FoffCorruptQuarantine\`. **FIX-2** (blocker chính — `RuntimeTransformer` không package do
-`.uplugin` khai `EngineVersion: 4.27.0` + `Installed: true` → PluginManager bỏ qua lúc packaged) —
-fix `.uplugin` + rebuild, cuong/ error = 0. Cook: 1126 → 729 lỗi, **tool sạch hoàn toàn**, 729 còn
-lại 100% content master (BetterDebug đã disable, KitchenPro cabinet BP, EUW editor-only bị force-cook).
-**Blocker gốc:** `Foff_GameInstance` nằm trong `/Game/00_Procedural_LightingManager/` (master),
-ref chằng chịt — cook `L_ToolSmokeTest` kéo cả mạng nhện master theo vì tool cast thẳng 3 điểm
-chung (`Foff_GameInstance`, `BP_FoffPlayerController`, `BP_ArchvizPCG_Camera`). Vá trong master
-không khả thi (sửa file shared đồng nghiệp). **Quyết định kiến trúc:** cắt 3 dây coupling
-(Inventory ref / 7 Enhanced Input / Camera-Pawn) qua Blueprint Interface, sau đó migrate tool sang
-project UE5.5.4 sạch rồi package — task nhiều ngày, không phải vá vài giờ. Kế hoạch đầy đủ:
-`Plans/17-08-2026_Gate1.5_InterfaceDecoupling_Migrate_Plan_v1.md` (Phase A audit → Phase B cắt dây,
-test PIE từng dây → Phase C migrate + package). Tiếp theo: **Phase A audit** — mở `WBP_MeshControls`
-+ `BP_FurnitureInputManager`, liệt kê mọi `Cast To Foff_GameInstance`. ⚠️ Claude Code không có
-ground truth Blueprint graph — Phase A cần cuhoang thực hiện trong Editor, không thể audit thay.
-**Cập nhật (tiếp) 17/08/2026 (Phase A DONE):** Gate 1.5 Phase A xong bằng bằng chứng.
-Migrate dry-run + Reference Viewer 3 điểm → 40 folder master bị kéo qua ĐÚNG 3 cửa
-(Foff_GameInstance/PC/Pawn), content tool cuong/ không tự dính rác (giả thuyết A xác nhận).
-Plan cập nhật v1.1: bỏ BPI_FurnitureHost (cắt kiểu tool-tự-lo, option b), thêm C2.5 copy
-Config .ini (GizmoTrace/CustomDepth/EMS), thứ tự cắt Pawn→Input→Inventory. Tiếp theo: Phase B
-dây Pawn (rẻ nhất) với Sonnet, test PIE từng dây trong project hiện tại trước khi migrate.
-**Cập nhật (tiếp) 18/08/2026 (Gate 1.5 — Phase C.C1-C3 DONE):** Phase B đóng với 4 dây (Toast lộ
-ra ngoài audit gốc, cắt cùng đợt). Phase C: C1 (project sạch) → C2 (2 plugin C++ + 5 plugin phụ) →
-C2.5 (config GizmoTrace + CustomDepth) → C3 (Migrate `cuong/` + `DatabaseProjectMaster/Material+Model`,
-bỏ tick folder ngoài) hoàn thành. Trong lúc verify (Output Log + compile từng file + PIE thật) phát
-hiện 7 coupling-point ngoài audit gốc: 2 asset thiếu (Roboto font, SaveGameMenu dependency — fix
-bằng migrate bổ sung 2 folder), 2 node cast chết (`BTN_Close` dây Remove Input, `BP_UndoManager`
-lớp cast dư thừa — cả 2 xoá, khớp kiến trúc đã tài liệu hoá), 2 plugin Marketplace thiếu
-(`BlueprintSearchBar`, `Enhanced Blueprint String` — enable + restart), 1 ceiling chấp nhận
-(`SaveGameMenu` plugin demo, tool không dùng đường đó). 1 sự cố quy trình (Force Delete thay Rename,
-làm vỡ 6 reference tạm thời) tự khôi phục qua Migrate lại + compile — bài học: Rename giữ redirector,
-Force Delete thì không. Xác nhận cuối bằng PIE thật: chỉ `EMS_Character` + `SaveGameMenu` (cả 2
-thuộc plugin EMS demo, ceiling đã ghi) còn compile-fail — mọi Blueprint `cuong/` sạch. Chi tiết đầy
-đủ 7 fix: `Plans/18-08-2026_Gate1.5_PhaseC_C1-C3_CouplingFixes_Delta.md`. Tiếp theo: **C4** — dựng
-host tối giản, quyết định kỹ thuật: PlayerController kế thừa `EMS_PC` (không phải PlayerController
-trơn) để nhánh Save thật của `SaveGameMenu` tự pass, dù tool không dùng đường đó — làm đúng luôn
-đỡ nợ sau.
-**Cập nhật (tiếp) 20/08/2026 (Gate 1.5 — C4 + C5 DONE, Gate 1.5 ĐÓNG):**
-C4 hoàn thành: host standalone tối giản (BP_StandaloneToolPC kế thừa EMS_PC,
-BP_StandaloneGameMode, World Settings override L_ToolSmokeTest, migrate BP_ArchvizPCG_Camera
-+ 4 dependency, chép tay Axis Mappings, cắt interact-on-click + HUD MovementSpeedMessage —
-xem DEVIATIONS). C5 hoàn thành: package Development thành công, .exe chạy trên máy không cài
-Unreal, còn lỗi runtime khi dùng (chưa fix). GizmoTrace test PASS sau khi Verify engine.
-⚠️ Giữa phiên gặp sự cố engine binary (đã sửa code nguyên bản UE5.5.4 → binary hỏng → tree
-WBP_FurnitureInventory trống + BP_ComboManager chết, compile vẫn xanh) — fix bằng Verify trên
-Epic Games Launcher. LƯU Ý: đây KHÔNG phải Gate 2. Gate 2 = bản Shipping thật + 10 dòng smoke
-+ 4 mìn deploy, vẫn phía trước. Chi tiết: Plans/20-08-2026_Gate1.5_C4C5_Complete_EngineIncident_Delta.md.
+**Last verified:** 20/08/2026 (Gate 1.5 C4+C5 DONE, packaged Development smoke PASS)
 
 ---
 
-## TRẠNG THÁI HIỆN TẠI
+## Đang ở đâu
 
-**Sprint D — HOÀN THÀNH ✅ (17/06/2026) + TreeNode/Chip Highlight ✅ (18/06/2026)**
-**Sprint 5 — Combo Mesh 🔄 IN PROGRESS (21/06/2026)**
-
-### Sprint 5 — Combo Library (21/06/2026 EOD)
-
-| Task | Nội dung | Status |
-|---|---|---|
-| T1 | C++ structs FComboData/FComboGroupData/FComboItemData + ComboSerializer — schema v1, round-trip JSON PASS | ✅ DONE |
-| T2 | BP_ComboManager tách riêng, SaveComboFromSelection, CB_SaveCombo context menu | ✅ DONE |
-| T3 | BP_ComboItemView, LoadComboLibrary, bind OnComboLibraryChanged | ✅ DONE |
-| C1 | FComboData.FolderPath (C++), FindMaterialRowNameByPath (C++), S_GroupData.SourceComboID (BP), FavoriteComboIDs/RecentComboIDs (UserPrefs) | ✅ DONE |
-| C0 | SaveComboFromSelection nested — LCA (CalculateLCAList_Combo + GetGroupsInHierarchy) + MaterialOverrides → RowName | ✅ DONE (22/06) — 3 case A/B/C PASS + RowName fallback (đồ cũ parse MeshPath) |
-| C2 | SpawnComboByID — Guard, F_LoadComboData, F_BuildTokenGUIDMap, F_RegisterComboGroups, F_ApplyMaterialOverrides, 4 sub-steps | ✅ DONE (22/06) — 7/7 PASS |
-| C3a | Data layer: AuthorID+Visibility (C++), BP_ComboItemView.FolderPath, LoadComboLibrary wire FolderPath, SaveComboFromSelection mở rộng (FolderPath+Tags+AppVersion), GetExistingFolders+GetAllUsedTags (WBP_FurnitureInventory) | ✅ DONE (23/06) |
-| C3b | WBP_SaveComboDialog: Expose on Spawn (ExistingFolders, TagVocabulary), bIsCreatingNewFolder, dispatcher OnDialogConfirmed/OnDialogCancelled, ValidateComboName, ParseTags, BTN_NewFolder toggle. CB_SaveCombo → OpenSaveComboDialog (inventory đóng băng selection + Set Input Mode UI). OnSaveComboConfirmed → SaveComboFromSelection → OnSaveComboDialogClosed (trả Game+UI). | ✅ DONE (24/06) |
-| C4 | WBP_ComboCard + BP_DragDropOperation_ComboCard + BP_ComboGhostActor v1.1 + M_ComboGhost + CalculateComboAnchor + WBP_DragOverlay v1.8 (ghost offset Approach B FIXED) + CTV_ComboCard (19 combo PASS). | ✅ 100% DONE (25/06) |
-| C8 | Drag-drop + surface-snap → **MERGED vào C4** | ✅ MERGED (24/06) |
-| C5.1 | C++ 3 helper folder: UpdateComboFolder / RenameFolderPrefix / ClearFolderPrefix (ComboSerializer). Test PASS: UpdateComboFolder→true, Rename→1, Clear→1. JSON folderPath đổi đúng, tiếng Việt OK. | ✅ DONE (25/06) |
-| C5.0 | Folder tree + filter browse: BuildComboFolderTree, PopulateComboTreeColumn (2 cấp + D9 guard), FilterComboByFolder, OnComboTreeNodeClicked (branch IndentLevel), OnComboChipTagClicked, OnComboTreeNodeRightClicked → WBP_LibraryContextMenu. WBP_TreeNode v1.2 (OnNodeRightClicked + On Mouse Button Down). Test end-to-end PASS 26/06. | ✅ DONE (26/06) |
-| C5.2 | Inline rename folder: WBP_EditableLabel v1.0 (component Overlay+validate+EnterEditMode+ExitEditMode+OnEditBoxCommitted). WBP_TreeNode v1.3 (EditableLabel_Name + OnNodeRenameCommitted + EnterRenameMode). WBP_FurnitureInventory v3.3 (3 helpers ParentOf/LastSegmentOf/GetSiblingFolderNames; OnRequestRenameFolder implement; OnRenameFolderCommitted; CB_RenameFolder; 3 class vars). BUG FIX: RefreshComboFolderUI +PopulateComboTreeColumn (C5.0 thiếu nối). 6 test PASS. | ✅ DONE (27/06/2026) |
-| C5.4 | Move Folder: S_FolderTargetEntry struct mới (Path/DisplayLabel/IndentLevel). WBP_MoveFolderRow (Horizontal Box + Spacer_Indent + Button_Row; SetRow/SetHighlight/OnRowClicked). WBP_MoveToFolderDialog (Canvas + Border_Dim full-screen + Border_Content; PopulateRows/HandleRowSelected; dispatcher OnMoveFolderConfirmed). WBP_FurnitureInventory v3.4: MovingFolderPath class var; CollectFolderTargets đệ quy + loại MovingPath+con cháu; BuildMoveFolderTargetList (wrap + entry "(Gốc)"); OnRequestMoveFolder implement; CB_MoveFolderClick implement; HandleMoveFolderConfirmed NEW (tính NewFullPrefix, guard no-op, cập nhật CurrentComboFolderPath, RenameFolderPrefix+RefreshComboFolderUI). BUG FIX D-C5.4-1 (Array_Append ngược) + D-C5.4-2 (dead-end nhánh True). | ✅ DONE (30/06/2026) |
-| Issue 2 | Chip highlight on selection (combo side): UpdateComboFolderHighlights() NEW trong WBP_FurnitureInventory v3.5 — mirror UpdateFolderHighlights dùng CurrentComboFolderPath. Inline check (fp==Current OR Current StartsWith fp+"/") cho TreeNode + ChipTag. | ✅ DONE (01/07/2026 — trước session Move Combo) |
-| C5.5 | Move Combo: WBP_ComboCard v1.1 (+InventoryRef lazy-init + On Mouse Button Down RMB→OnComboCardRightClicked). WBP_FurnitureInventory v3.5: 3 class var (MoveComboDialogRef/MovingComboID/MovingComboCurrentFolder); OnComboCardRightClicked NEW (tạo context menu Combo mode); CB_MoveCombo NEW (guard stacking + ForEachLoopWithBreak tìm folder hiện tại + tạo WBP_MoveToFolderDialog + bind HandleMoveComboConfirmed); HandleMoveComboConfirmed NEW (close dialog + guard no-op + UpdateComboFolder C++ + RefreshComboFolderUI). BUG FIX 4.1 (delimiter ",") + 4.2 (bỏ Map_Contains) + 4.3 (+UpdateComboFolderHighlights). | ✅ DONE (01/07/2026) |
-| NF | New Folder — context menu part: C++ `GetEmptyFoldersFilePath`→`Folders.json` + `GetAllFolderPaths` tự ghi bổ sung folder path (kể cả cấp cha) — test PASS 6/6. `BuildComboFolderTree` đổi nguồn sang `GetAllFolderPaths` (1 nguồn duy nhất) — test PASS 4/4. WBP_FurnitureInventory v3.6: `GetChildFolderNames`/`GetUniqueNewFolderName`/`GetNewFolderParent` (helpers) + `OnRequestNewFolder` + `CB_CreateNewFolder` (menu item đầu chuỗi "Create New Folder", tạo CÙNG CẤP node bị right-click, tự vào rename mode qua `OnRequestRenameFolder`). Test PASS 9/9. | ✅ DONE (04/07/2026) |
-| NF.G3 | Nút "+" đầu cột tree: `PopulateComboTreeColumn` +PlusNode (sentinel `__NEWFOLDER__`, đầu tiên) + `OnComboTreeNodeClicked` +guard đầu tiên → `OnRequestNewFolder(GetNewFolderParent())`. Không hàm mới — tái dùng NF context-menu (04/07). Test PASS 5/5. | ✅ DONE (06/07/2026) |
-| C5.6 | Xóa folder: `WBP_ConfirmDialog` mới (generic Yes/No, dùng lại được). WBP_FurnitureInventory v3.7: class var `PendingDeleteFolderPath`; `OnRequestDeleteFolder` implement; `HandleDeleteFolderConfirmed` NEW (ClearFolderPrefix C++ + navigate); `CB_DeleteFolderClick` implement. Deviation D-C5.6-1 (nhảy về folder CHA thay vì `__ALL__`). Test PASS 6/6. | ✅ DONE (06/07/2026) |
-| C5.7a | ChipTag right-click → context menu: WBP_ChipTag v1.2 (+dispatcher `OnChipRightClicked` + On Mouse Button Down override) bind → `OnComboTreeNodeRightClicked` (tái dùng, không logic mới). Test PASS 3/4 (rename từ chip = C5.7b, chưa làm). **Phát sinh:** `RebuildChipRowForPath` + `RefreshChipBreadcrumb` (gộp code ChipRow trùng lặp + fix chip area không tự refresh sau Move/Xóa/Rename) — 3 bug fix kèm theo. | ✅ DONE (06/07/2026) |
-| C5.7b | Inline rename chip (WBP_EditableLabel embed) + fallback OnRequestRenameFolder tree→chip. BUG FIX CB_CreateNewFolder (dead SET node) + CB_RenameFolder (thiếu SET None). Test PASS full case. | ✅ DONE (06/07/2026) |
-
-**C5 — FOLDER MANAGEMENT: TOÀN BỘ HOÀN TẤT.**
-
-**C0:** 3 case A/B/C PASS (22/06). RowName fallback (đồ cũ parse MeshPath) xác nhận OK.
-**C2:** 7/7 PASS (22/06). Group nesting: Case A (no groups→wrapper) / Case B (has groups→no wrapper, root nhận SourceComboID).
-**Pending T2:** WBP_SaveComboDialog (dialog nhập tên) — dời sau T5, không chặn spawn
-**Ghi chú kiến trúc:** BP_ComboManager đã spawn trong Level BP; InputManager guard (≥2 đồ, tính Center) → gọi ComboManager qua param (SelectedActors, Center, ComboName, Description)
-
----
-
-### Sprint 4 Bug Fix (F1–F4 + A12) — ĐẦY ĐỦ PASS
-
-| Fix | Nội dung | Status |
-|---|---|---|
-| F1 | Info bar hiển thị đúng unit name (GetSelectionUnitLabel) | ✅ PASS |
-| F2 | Group name counter monotonic (GroupNameCounter → BP_GroupsContainer) | ✅ PASS |
-| F3 | CreateGroup bottom-up nesting (ComputeSelectionUnits + rewrite) | ✅ PASS |
-| F4 | Spawn auto-join edit scope (SpawnFurnitureCopy + DragOverlay On Drop) | ✅ PASS |
-| A12 | Edit mode bar ẩn sau Undo (EditModeStack vào snapshot V=4) | ✅ PASS |
-
-**Full test suite (30+ cases + Regression S1-S3) — ALL PASS ✅**
-
-### Bugs đã giải quyết trong session này
-- B3 (gizmo ẩn sau undo trong edit mode): xác nhận **pre-existing**, không phải regression Sprint 4. Ghi nhận known issue.
-- A12 root cause: EditModeStack là runtime state, không nằm trong snapshot → undo không khôi phục edit state → fix bằng cách đưa EditModeStack vào S_SceneSnapshot (Version=4).
-
----
-
-## BUG CÒN MỞ
-
-| # | Bug | Ưu tiên | Xử lý |
-|---|---|---|---|
-| B1 | ✅ FIXED (16/06) — bIsRestoring guard + spawn merge | — | Đã đóng Gate 1, xem BP_UndoManager.md v1.9-1.10 |
-| B-gizmo | Gizmo ẩn sau undo trong edit mode (pre-existing) | 🟢 Thấp | Known issue, chưa có timeline |
-| B-folder | ✅ FIXED (17/06, D.T6) — Replace folder sai khi group nhiều mesh | — | OnMeshSelected RowName→DT, fallback DAPath save cũ |
-| B-stale-popup | ✅ FIXED (17/06, D.T6) — Popup hiển thị đồ cũ | — | UpdateDetailPopup bound OnSelectionChanged |
-| B-ghost-offset | ✅ FIXED (25/06) — Approach B: On Drag Over set ghost = HitLocation+(0,0,GhostExtentZ); On Drop trừ GhostExtentZ. BP_ComboGhostActor v1.1, WBP_DragOverlay v1.8. | — | Đã đóng. |
-| B-C5-card | ✅ FIXED (26/06) — Card render PASS sau khi fix Set List Items + verify Entry Widget Class = WBP_ComboCard. | — | Đã đóng. |
-| Bug-Pagination | ✅ FIXED (17/06, D.T9) — Furniture pagination dừng sớm 1 trang | — | Int to Float trước Ceil ở Next-page check |
-| Bug-Maximize | ✅ FIXED (17/06, D.T9) — BTN_Maximize không nhảy về góc trên-trái | — | Set Position thêm vào Slot VerticalBox_0 |
-| Fix-5.2-async | ✅ FIXED (19/06) — aliasing shared latent khi spawn nhiều actor dồn | — | LoadMeshAsync/LoadMaterialsAsync đặt trong BP_FurnitureActor thay InputManager; NewActorCopy → local var |
-
----
-
-## ĐÃ HOÀN THÀNH
-
-- Change Material v1.1 (20/05/2026)
-- UX Phase 2.1: Gizmo, Nudge, Copy/Paste, Recent/Favorite
-- Resize Window 8 hướng
-- Sprint 1 — Multi-select (15/15) ✅
-- Sprint 2 — Box+Context Menu (9/9) ✅
-- Sprint 3 — Group cơ bản (12/12 + 10 bug fix) ✅
-- Sprint 4 — Edit Mode + Nested Group (T1-T8 + 2 bug fix) ✅
-- **Sprint 4 Bug Fix Session (F1-F4 + A12, 15/06/2026) ✅**
-- **Gate 1 (G1.1-G1.3, 16/06/2026) ✅**
-- **Sprint D — Data Layer v2 (D.T1-D.T9, 17/06/2026) ✅**
-- **TreeNode/Chip active-folder highlight (18/06/2026, tính năng bổ sung) ✅**
-- **Sprint 5 T1+T2+T3+C1 (21/06/2026) ✅** — ComboTypes C++, ComboSerializer, BP_ComboItemView, LoadComboLibrary, FolderPath, FindMaterialRowNameByPath, SourceComboID, Favorite/RecentComboIDs
-- P2 Gate A (Studio Thumbnail vertical slice): Việc 1-4 DONE, TEST PASS 6/7 case (case 7 — tắt PIE giữa Delay — dời kiểm tra sang Gate F). Chi tiết: P2_StudioThumbnail_Execution.md.
-
-### VRAM Fixes (19/06/2026)
-- Giai đoạn 1: Xác nhận card là RTX 3060 8GB (không phải 12GB). Budget UE = 7.26GB. Workaround: dùng Standalone Game (Alt+P) thay PIE cho session dài — mỗi lần tắt OS reclaim VRAM sạch 100%. Peak VRAM lúc chạy = 7.2/8.0GB, không cộng dồn qua nhiều lần launch. ✅ PASS
-- Fix 5.3: Material dedup trong ApplyMaterial (WBP_FurnitureInventory). Branch Is Valid Index + Equal String trước khi gọi LoadAndApplyMaterial — nếu material đã áp đúng slot thì bỏ qua, không fire Async Load lại. ✅ PASS
-- Việc 1: Add Recent Mesh trong SpawnFurnitureCopy đổi nguồn parse từ DAPath (rỗng với đồ Sprint D) sang MeshPath — parse theo '/' lấy phần cuối, tách '.' lấy index 0 = RowName. ✅ PASS
-- Fix 5.2: Async Load mesh + material trong SpawnFurnitureCopy. Chuyển từ Load Asset Blocking sang Custom Event LoadMeshAsync + LoadMaterialsAsync đặt TRONG BP_FurnitureActor (không phải InputManager). Mỗi actor tự load asset của chính nó — tránh aliasing shared class var/latent context khi nhiều actor spawn dồn. NewActorCopy đổi từ class var → local var trong SpawnFurnitureCopy. ✅ PASS
-
----
-
-## KIẾN TRÚC HIỆN TẠI
-
-**BP_FurnitureInputManager v2.1** — SpawnFurnitureCopy async load (LoadMeshAsync/LoadMaterialsAsync); NewActorCopy local var; Add Recent Mesh parse MeshPath
-**BP_UndoManager v1.10** — bIsRestoring guard + SpawnFurnitureCopy merge
-**BP_FurnitureActor v1.2** — RowName : Name (SaveGame), GroupID confirmed SaveGame
-**WBP_DetailPopup v1.2** — InitPopup(RowName), RowData : S_FurnitureData
-**WBP_MeshControls v1.7** — BTN_Info RowName, UpdateDetailPopup bound OnSelectionChanged
-**WBP_FurnitureCard v1.0** — TẠO MỚI, CardRowName, BP_FurnitureItemView, DT lookup
-**WBP_DragOverlay_FurnitureCard v1.6** — PendingRowName, F_ExecuteReplace RowData
-**WBP_FurnitureInventory v2.5** — OnCardInfoClicked(RowName), OnMeshSelected RowName branch
-**FilterByCategory_Logic v1.3** — Recent/Favorite DT direct (bỏ inner loop AllFurnitureItems)
-**FilterBySearch_Logic v1.3** — FilterFurnitureRows + AllFilteredFurnitureRows → DisplayPage
-**WBP_FurnitureInventory v2.6** — IsPathActive (Pure) + UpdateFolderHighlights + Fix Bug-Pagination
-**WBP_TreeNode v1.1** — RefreshDisplay + bIsActive param → SetBackgroundColor
-**WBP_ChipTag v1.1** — SetHighlight(bIsActive) custom event → SetBackgroundColor
-**WBP_ResizeWindow v1.1** — Fix Bug-Maximize: Set Position thêm vào Slot VerticalBox_0
-**BP_ComboManager v1.5** — SaveComboFromSelection (LCA path) + SpawnComboByID + CalculateComboBoundingExtent; spawn trong Level BP. [C0 ✅ + C2 ✅ + C4 ✅ (22-24/06)]
-**BP_FurnitureInputManager v2.3** — CalculateComboAnchor (center-bottom sàn / center-top trần); CB_SaveCombo_Handler đổi từ CalculateCenter → CalculateComboAnchor
-**BP_ComboItemView v1.1** — BoundingBoxExtent : Vector (C4)
-**WBP_DragOverlay_FurnitureCard v1.7** — PreviewActorRef → Actor; On Drag Over Cast branch; On Drop combo = GetActorLocation(PreviewActorRef) → SpawnComboByID (không trace)
-**WBP_FurnitureInventory v2.9** — CTV_ComboCard (TileView Collapsed); LoadComboLibrary + CTV wiring (24/06)
-**WBP_ComboCard v1.1** — TẠO MỚI (24/06): OnListItemObjectSet, OnDragDetected → spawn BP_ComboGhostActor + BP_DragDropOperation_ComboCard. v1.1 (01/07): +InventoryRef (WBP_FurnitureInventory, lazy-init từ GameInstance.FurnitureInventoryRef trong OnListItemObjectSet); +On Mouse Button Down override (RMB → InventoryRef.OnComboCardRightClicked(ComboID) → return Handled; LMB → return Unhandled không phá drag-drop)
-**BP_DragDropOperation_ComboCard** — TẠO MỚI (24/06): ComboID : String, ComboExtent : Vector
-**BP_ComboGhostActor v1.1** — GhostExtentZ var; InitGhost lưu GhostExtentZ; ghost offset FIXED (Approach B, 25/06)
-**M_ComboGhost** — TẠO MỚI (24/06): Translucent Unlit xanh trong
-**WBP_DragOverlay_FurnitureCard v1.8** — On Drag Over: CastFailed→Cast ComboGhost→+GhostExtentZ; On Drop combo: −GhostExtentZ
-**WBP_FurnitureInventory v3.0** — E_InventoryMode +Combo; C5.0 folder tree 6 functions; BTN_Tab_Combo
-**WBP_FurnitureInventory v3.2** — C5.0 DONE: PopulateComboTreeColumn 2-cấp+D9 guard, OnComboTreeNodeClicked rewrite, OnComboChipTagClicked (params mới), OnComboTreeNodeRightClicked NEW, 3 stubs (C5.2/C5.4/C5.5)
-**WBP_TreeNode v1.2** — OnNodeRightClicked dispatcher + On Mouse Button Down override (Handled/Unhandled)
-**WBP_LibraryContextMenu v1.0** — TẠO MỚI (26/06): clone WBP_ContextMenu; 3 vars + 4 dispatchers; Btn_Background Z-order fix (index 0)
-**WBP_EditableLabel v1.0** — TẠO MỚI (27/06): component inline rename. Overlay TextBlock_Label+EditBox+Border_Error. ValidateName (empty/slash/dupe). EnterEditMode+Delay(0.0). ExitEditMode guard bIsEditing. OnEditBoxCommitted Switch.Selection pin critical.
-**WBP_TreeNode v1.3** — C5.2: TextBlock_71→EditableLabel_Name; OnNodeRenameCommitted dispatcher; EnterRenameMode; HandleLabelCommitted relay; RefreshDisplay SetText→SetLabel. Additive.
-**WBP_FurnitureInventory v3.3** — C5.2: 3 helpers (ParentOf/LastSegmentOf/GetSiblingFolderNames); OnRequestRenameFolder implement; OnRenameFolderCommitted; CB_RenameFolder; class vars RenameTargetNode/NewFullPrefix/LibraryMenuRef. PopulateComboTreeColumn: bind OnNodeRenameCommitted. BUG FIX: RefreshComboFolderUI +PopulateComboTreeColumn.
-**S_FolderTargetEntry** — TẠO MỚI struct: Path (String), DisplayLabel (String), IndentLevel (Integer). Dùng cho list chọn folder đích.
-**WBP_MoveFolderRow** — TẠO MỚI (30/06): Horizontal Box [Spacer_Indent + Button_Row[TextBlock_Row]]. SetRow(Path, DisplayLabel, Indent) — indent = Indent×20px. SetHighlight(bSelected). Dispatcher OnRowClicked(TargetPath).
-**WBP_MoveToFolderDialog** — TẠO MỚI (30/06): Canvas [Border_Dim full-screen + Border_Content center ~420×480 → Vertical Box[Title + ScrollBox_FolderList + Cancel/Confirm]]. PopulateRows(Entries) đổ WBP_MoveFolderRow vào ScrollBox. Chọn 1 dòng → highlight + enable Confirm. Dispatcher OnMoveFolderConfirmed(TargetParentPath). BTN_Cancel tự trả Input Mode Game+UI.
-**WBP_FurnitureInventory v3.4** — class var mới: MovingFolderPath (String). Function mới: CollectFolderTargets(ParentPath, IndentLevel, MovingPath) — đệ quy, trả Array<S_FolderTargetEntry>, loại MovingPath + con cháu. BuildMoveFolderTargetList(MovingPath) — wrap CollectFolderTargets + thêm entry "(Gốc)" đầu list. OnRequestMoveFolder(FolderPath) — implement (đã STUB từ C5.0): build list → mở dialog → bind OnMoveFolderConfirmed → HandleMoveFolderConfirmed. CB_MoveFolderClick — implement (đã STUB): Hide menu → OnRequestMoveFolder. HandleMoveFolderConfirmed(TargetParentPath) — NEW: tính NewFullPrefix (tái dùng var có sẵn từ C5.2) → guard no-op → cập nhật CurrentComboFolderPath (2 nhánh: match đúng path / là con của path) → RenameFolderPrefix (C++) → RefreshComboFolderUI.
-**WBP_FurnitureInventory v3.5** — 3 class var mới: MoveComboDialogRef/MovingComboID/MovingComboCurrentFolder. UpdateComboFolderHighlights() NEW (Issue 2). OnComboCardRightClicked(ComboID) NEW. CB_MoveCombo NEW. HandleMoveComboConfirmed(TargetParentPath) NEW: close dialog + guard no-op + UpdateComboFolder C++ + RefreshComboFolderUI. BUG FIX 4.1 (delimiter) + 4.2 (Map_Contains) + 4.3 (UpdateComboFolderHighlights call in RefreshComboFolderUI).
-**WBP_FurnitureInventory v3.6** — NF context-menu: `GetChildFolderNames`/`GetUniqueNewFolderName`/`GetNewFolderParent` (Pure helpers); `OnRequestNewFolder(ParentPath)` NEW (GetUniqueNewFolderName → CreateEmptyFolder C++ → RefreshComboFolderUI → OnRequestRenameFolder, tái dùng rename phase C5.2); `CB_CreateNewFolder` NEW (cache TargetFolderPath trước Hide, ParentOf → OnRequestNewFolder); `OnComboTreeNodeRightClicked` thêm menu item "Create New Folder" đầu chuỗi. KHÔNG CaptureSnapshot, KHÔNG navigate (NF-C3).
-**WBP_FurnitureInventory v3.7** (06/07) — NF.G3: `PopulateComboTreeColumn` +PlusNode (sentinel `__NEWFOLDER__`); `OnComboTreeNodeClicked` +guard đầu. C5.6: class var `PendingDeleteFolderPath`; `OnRequestDeleteFolder` implement + `HandleDeleteFolderConfirmed` NEW + `CB_DeleteFolderClick` implement (Deviation D-C5.6-1: nhảy về cha thay vì `__ALL__`). C5.7a: bind `WBP_ChipTag.OnChipRightClicked` → `OnComboTreeNodeRightClicked`. Refactor: `RebuildChipRowForPath` + `RefreshChipBreadcrumb` (hàm mới, gộp code ChipRow trùng lặp + fix chip area không tự refresh) — `RefreshComboFolderUI` gọi `RefreshChipBreadcrumb` sau `UpdateComboFolderHighlights` cả 3 nhánh.
-**WBP_FurnitureInventory v3.8** (06/07 tối) — C5.7b: class var `RenameTargetChip`; `OnRequestRenameFolder` mở rộng fallback tree→chip (double-break qua Completed loop lồng khi không tìm thấy TreeNode khớp); `RebuildChipRowForPath` +bind `OnChipRenameCommitted`→`OnRenameFolderCommitted`. BUG FIX `CB_CreateNewFolder` (node SET thừa đè cache → luôn tạo root); BUG FIX `CB_RenameFolder` (thiếu SET LibraryMenuRef=None cuối chuỗi). **C5 HOÀN TẤT.**
-**WBP_ChipTag v1.2** (06/07) — TẠO MỚI dispatcher `OnChipRightClicked(FolderPath)` + override `On Mouse Button Down` (pattern WBP_TreeNode, nhánh False trả Unhandled vì root là Horizontal Box).
-**WBP_ChipTag v1.3** (06/07 tối) — `EditLabel_ChipTag` (WBP_EditableLabel) thay `TextBlock_ChipTag`; `EnterRenameMode`/`HandleLabelCommitted` NEW; dispatcher `OnChipRenameCommitted`.
-**WBP_ConfirmDialog** — TẠO MỚI (06/07): dialog xác nhận generic (Yes/No), Expose on Spawn Message/ConfirmLabel, dispatcher OnConfirmed. Dùng đầu tiên cho C5.6 Xóa folder.
-**S_GroupData** — ✅ field `SourceComboID : String` (default "") đã thêm (C1 DONE). Group cha cụm combo = ComboID gốc; group user tạo tay = "". Đã add vào snapshot capture/restore.
-**C++ FurnitureToolkit** — FComboData.FolderPath (field mới), FindMaterialRowNameByPath (function mới). Compile xanh. Full rebuild (Binaries/Intermediate xóa + rebuild) ✅
-**BP_FurnitureInputManager** — SpawnFurnitureCopy +param bAddToRecent : Bool = True (default, Branch bọc khối AddRecentMesh trong Sequence.Then_2, dead-end hợp lệ)
-**BP_ComboManager** — SpawnComboForThumbnail(ComboID, DeltaYaw=0) Custom Event MỚI (P2 Gate A): guard Cmb_bThumbBusy → F_LoadComboData → ForEach Items → SpawnFurnitureCopy (bAutoSelect=False, bAddToRecent=False) → strip tag "FurnitureSpawned" → GroupID="" → Cmb_StudioClones. Biến mới: Cmb_StudioClones, Cmb_bThumbBusy, Cmb_StudioAnchor, Cmb_StudioFloor, Cmb_CaptureHandle (P1, tái dùng).
-Cmb_ThumbMinZ (Gate A) đã XÓA 20/07/2026 — dead sau khi thay align inline bằng Function
-ResolveThumbAlign. Xem DEVIATIONS mục "P2 — 20/07/2026 (Nấc 1)".
-**BP_ComboManager** — chuỗi debug phím U (Input Event, gate bDebugMode + bDebugTestThumb ở BeginPlay EnableInput): SpawnComboForThumbnail → Delay(3.0, tạm — xem DEVIATIONS) → ground-align (ForEach tính Cmb_ThumbMinZ qua Get Actor Bounds, DeltaZ = Cmb_StudioAnchor.Z − Cmb_ThumbMinZ, ForEach Add Actor World Offset) → BeginComboCapture → Delay(3.0) → FinishComboCapture → ForEach Destroy → Clear.
-**BeginPlay BP_ComboManager** — Spawn sàn tạm (StaticMeshActor, mesh Plane, scale 50×50×1, location=Cmb_StudioAnchor) chạy VÔ ĐIỀU KIỆN (KHÔNG nằm trong Branch bDebugTestThumb — quyết định 17/07, tránh coupling ẩn với ground-align).
-**BP_ComboManager** — Gate B (dome, thay sàn plane Gate A): BeginPlay spawn `/Engine/BasicShapes/Sphere` R=`Cmb_StudioDomeRadius` (2000.0), Location Z = Cmb_StudioAnchor.Z + R, Scale = R/50 cả 3 trục (1 phép chia qua Make Vector). Material `M_StudioBackdrop` (Lit/Two-Sided/Roughness 0.9, màu CHƯA chốt — dời đợt tối ưu cuối). **Cast Shadow = False** trên dome (quyết định kiến trúc quan trọng nhất Gate B — dome chỉ nhận bóng, không chặn sáng đèn ngoài bán kính R). Receive Shadow giữ nguyên.
-**BP_ComboManager** — Gate C: Function mới `SpawnStudioLight(AngleOffsetDeg, Intensity) → RectLight` (Q8 đầy đủ, Return Node cả 2 nhánh) — RotateAngleAxis((1500,0,1500), AngleOffsetDeg, Z-up) làm LightOffset, WorldLoc = Cmb_StudioAnchor + LightOffset, spawn RectLight Mobility=Movable (bắt buộc — Stationary phụ thuộc Lightmass bake, Remote Studio runtime chưa bake), FindLookAtRotation về anchor, Source Width/Height=150, Attenuation Radius=8000. Gọi 2 lần ở BeginPlay: `SpawnStudioLight(45.0, 5000000.0)` → Cmb_StudioKeyLight, `SpawnStudioLight(-45.0, 1666667.0)` → Cmb_StudioFillLight. Biến mới: Cmb_StudioDomeRadius (Float, 2000.0), Cmb_StudioKeyLight/Cmb_StudioFillLight (RectLight ref). Biến đã xoá (refactor thành Local trong function): KeyOffset, FillOffset.
-**BP_ComboManager** — chuỗi debug phím U cập nhật Gate C: `Begin Combo Capture` tick `bUseFixedAngle=True`, `FixedAngle=(Pitch=-15, Yaw=0, Roll=0)` (trước đó bị bỏ sót); thêm `IsValid(Cmb_CaptureHandle)` guard ngay sau Begin (False → Print + SET Cmb_bThumbBusy=False, tránh kẹt "Thumb busy" vĩnh viễn); Manual EV100 set qua `Get Post Process Settings` (đọc struct hiện có từ Capture Component) → `Set members in Post Process Settings` (chỉ Metering Mode + Exposure Compensation) → `Set Post Process Settings` — KHÔNG dùng `Make Post Process Settings` (sẽ ghi đè mất 2 field Lumen override C++ đã set).
-
-**BP_ComboManager — Gate D Nấc 1 (20/07/2026):** Function mới `ResolveThumbAlign(Clones) →
-DeltaZ, Category` (Enum `E_ThumbAlignCategory`: Floor/Ceiling/Wall/Other) thay khối align inline
-cũ trong chuỗi phím U. Phân loại theo `PlacementSurfaceType` (type Name) của từng clone:
-- ≥1 item Floor VÀ (không có Wall HOẶC FloorMinZ < WallMinZ) → Category=Floor, neo theo MinZ
-  riêng nhóm Floor (item Wall/Ceiling trong cùng combo giữ nguyên offset tương đối).
-- Có Wall VÀ FloorMinZ ≥ WallMinZ (đồ Floor "tựa" trên vật Wall, vd bàn thờ) → Category=Wall.
-- Không Floor, có Ceiling (không Wall) → Category=Ceiling.
-- Không Floor, có Wall (không Ceiling) → Category=Wall.
-- Còn lại → Category=Other.
-Nhóm non-Floor (Ceiling/Wall/Other): DeltaZ = AnchorZ − AllMinZ + 10 (margin cố định, đáy combo
-nổi TRÊN mặt dome, không center vào Anchor.Z — tránh chìm dome với combo extent lớn, phát hiện
-qua test combo bàn thờ Z-extent=43.8). Switch on E_ThumbAlignCategory sau khi áp DeltaZ hiện là
-STUB — cả 4 pin (Floor/Ceiling/Wall/Other) gộp chung vào BeginComboCapture, chưa tách camera/đèn
-riêng (Nấc 2, backlog). Node flow đầy đủ: xem `Blueprints/BP_ComboManager.md` mục
-ResolveThumbAlign. Test 6/6 case PASS (Floor thuần, Ceiling thuần, bàn thờ Wall+Floor lẫn, Mixed
-sofa+quạt trần, combo cũ thiếu field surfaceType, Undo/Recent/EMS). Chi tiết đầy đủ + 3 lệch:
-`DEVIATIONS.md` mục "P2 — 20/07/2026 (Nấc 1)".
-
-**Snapshot version history:**
-- V1: single select (legacy)
-- V2: multi-select (Sprint 1)
-- V3: Groups (Sprint 3)
-- V4: Groups + EditModeStackSnapshot (Sprint 4 Bug Fix, 15/06/2026)
-
----
-
-## TIẾP THEO
-
-**ĐẦU SESSION MỚI — Ưu tiên (backlog C5, thứ tự đã chốt 30/06/2026 — cập nhật 06/07):**
-1. ✅ **Issue 2 — Chip highlight on selection**: `UpdateComboFolderHighlights()` — DONE (01/07, trước session Move Combo).
-2. ✅ **Move Combo** (right-click `WBP_ComboCard`): tái dùng `WBP_MoveToFolderDialog`, gọi `UpdateComboFolder(ComboID, path)` C++. WBP_ComboCard v1.1 + WBP_FurnitureInventory v3.5. DONE (01/07).
-3. ✅ **Tạo folder mới — context menu part** (NF.G0/G1 + helpers + `OnRequestNewFolder`/`CB_CreateNewFolder`): tạo CÙNG CẤP node bị right-click, tên mặc định "New Folder" (auto hậu tố trùng), tự vào inline rename mode (tái dùng C5.2). WBP_FurnitureInventory v3.6. DONE (04/07). Deviation: UX đổi từ dialog (plan gốc NF.G2-G5) sang inline — xem DEVIATIONS.md 04/07.
-4. ✅ **Nút "+" đầu cột tree** (NF.G3) — DONE (06/07): sentinel node `__NEWFOLDER__` trong `PopulateComboTreeColumn`, guard đầu `OnComboTreeNodeClicked` → `GetNewFolderParent` → `OnRequestNewFolder`. Khác context-menu: tạo TRONG folder đang xem (không phải cùng cấp node bị click).
-5. ✅ **Xóa folder** (C5.6) — DONE (06/07): `WBP_ConfirmDialog` mới (generic Yes/No) + `HandleDeleteFolderConfirmed` (gọi `ClearFolderPrefix` C++ đã có từ C5.1). Deviation D-C5.6-1: nhảy về folder CHA thay vì `__ALL__`.
-6. ✅ **ChipTag right-click + rename (C5.7)** — C5.7a DONE (06/07, right-click + context menu, tái dùng `OnComboTreeNodeRightClicked`). C5.7b DONE (06/07, inline rename trong chip, nhúng `WBP_EditableLabel` + fallback `OnRequestRenameFolder` tree→chip). **C5 — FOLDER MANAGEMENT: TOÀN BỘ HOÀN TẤT.**
-
-→ **REG (regression 12 bước)** → C5 chốt sổ hoàn toàn → **C5.8 (Folder Tree Picker Unify)** → C6/C7 (defer) hoặc WBP_Toast → C9.
-
-**C5.8 — Folder Tree Picker Unify** ✅ DONE (13/07/2026, REG PASS). Gộp lõi data+component cho `WBP_MoveToFolderDialog` + `WBP_SaveComboDialog` (tree picker có guide line/search/inline-create, thay `WBP_MoveFolderRow` + folder-field cũ của Save). Chi tiết đầy đủ + Task Card: `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md`.
-- ✅ **Task Card #1 (Data Layer)** — DONE (08/07): rename `S_FolderTargetEntry`→`S_FolderTreeNode` (+4 field mới); `CollectFolderTargets`→`BuildFolderTreeRecursive` (đệ quy, depth guard=12) + hàm mới `GetFilteredChildren`; wrapper `BuildComboFolderTreeNodes(ExcludePath)` (tên đổi khác plan gốc — trùng tên hàm cũ Material/Furniture catalog). Test Print PASS (8 combo, nested 3 tầng, tiếng Việt). WBP_FurnitureInventory v3.9.
-- ✅ **Task Card #2 (UI component, 2a→2d rename host) + Wire Move + Wire Save** — DONE (13/07): build + test node-level xong, trả nợ test toàn bộ (M1-M6, S6a-c, 0.3, Phần 2 test 1-2). WBP_FurnitureInventory v3.11.
-- ✅ **REG (Khối A/B/C/D)** — PASS (13/07/2026): A1-A7, B1-B4, C1 SKIP (rủi ro thấp)/C2-C5, D5 comprehension check. 2 bug mới ghi `Bugs/Open_Bugs.md` (ngoài scope C5.8): Bug-SaveConfirm-EmptyName, Bug-MoveFolder-Collision. Chi tiết: `PROGRESS.md`, `DEVIATIONS.md` 13/07/2026 (REG).
-
-### P1 — Combo Thumbnail (Thumbnail System C++)
-
-Gate G0-R: DONE (14/07/2026) — one-shot capture (G0 gốc) bị loại bỏ do ảnh xám phẳng (Lumen/TAA chưa hội tụ). Đổi kiến trúc sang Begin/Finish + Delay latent (xem `DEVIATIONS.md` [ARCH] 14/07/2026). Test debug bằng phím T trong `BP_ComboManager`, Delay warm-up thử 0.5s (chưa đủ, còn tối) → 3s/6s/10s (đẹp, khác biệt không đáng kể). Chốt tạm 3.0s cho gate này — số chính xác dời sang G4 (lúc wire thật vào UX Save Combo, đánh giá bằng cảm giác thật thay vì đoán).
-
-Gate G1: DONE (14/07/2026) — `LoadComboThumbnail` thân hàm đầy đủ (đọc PNG từ đĩa → `IImageWrapper` `SetCompressed` → `GetRaw` BGRA8 → optional `FImageUtils::ImageResize` xuống `MaxSize` → `UTexture2D::CreateTransient` + memcpy vào Mip 0). Build PASS, test phím Y độc lập (tách khỏi phím T capture) → "G1 Load OK, size=256" đúng kỳ vọng.
-
-Thêm dependency module `ImageCore` vào `FurnitureToolkit.Build.cs` (cần cho `FImageUtils::ImageResize`) + include mới trong `ComboThumbnail.cpp`: `"Engine/Texture2D.h"`, `"ImageUtils.h"`.
-
-2 điểm đã quan sát, KHÔNG phải bug, xử ở gate sau:
-- Ảnh hơi sharpen quá đà / chưa mịn — nghi do capture ở resolution native, không qua TSR như viewport chính. Xử ở G2 (tinh chỉnh PostProcessSettings) cùng lúc chỉnh khung hình.
-- Góc chụp hiện là "camera lúc bấm nút", chưa auto-fit theo bounding box combo — đúng dự kiến G0, G2 mới thay bằng FitRatio.
-
-Gate G2: DONE (15/07/2026) — auto-fit khung hình theo bounding box combo (FitRatio) + ẩn
-gizmo/outline lúc capture. BeginComboCapture/FinishComboCapture đổi signature: Begin thêm
-FitRatio/bIsolateCombo/bUseFixedAngle/FixedAngle; Finish thêm param ComboActors (cần để khôi
-phục Custom Depth đúng actor đã tắt ở Begin — không track state qua static function, đưa lại
-CÙNG mảng ComboActors ở cả 2 lần gọi). Vị trí camera phụ giờ tính từ Center - Dir*Distance
-(bounding box + FitRatio=0.85), không còn đúng vị trí camera thật như G0-R.
-
-Ẩn gizmo: dùng Get All Actors Of Class(BaseGizmo) — class chung của RuntimeTransformer cho
-cả 3 loại gizmo (Translation/Rotation/Scale), KHÔNG dùng BP_TransformerPawn/GizmoController.
-TargetActor (dự kiến ban đầu) không ổn định lúc đứng yên — bỏ.
-
-[DEFERRED] Exposure bug: ảnh capture tối hơn viewport thật ở cảnh có vùng sáng mạnh trong
-khung (nghi ngược sáng/backlit). Đã thử 2 lần Auto-exposure Min/Max lock (1 lần cũ ghi
-14/07, 1 lần lặp lại 15/07) — CẢ 2 ĐỀU FAIL, không dùng hướng này nữa. Cần Fable review kiến
-trúc — việc đưa lên Fable dời sang session khác, không chặn G3/G4.
-
-Gate G3: DONE (15/07/2026) — cache Cmb_ThumbnailCache : Map<String,Texture2D> trong
-BP_ComboManager. GetComboThumbnail/InvalidateThumbnail + EndPlay Map Clear (R4). 4 node Map
-Find/Add/Remove/Clear đã dùng thật, PASS test — chuyển vào bảng node chính thức
-(AI_Implementation_Rules.md, xóa khỏi "Nodes chờ xác nhận").
-
-🔴 BUG NGHIÊM TRỌNG phát hiện + fix trong G3: GetComboThumbnail (Function, có Return Value)
-thiếu Return Node ở nhánh False của IfThenElse kiểm IsValid(LoadedTex) — khi LoadComboThumbnail
-fail (file chưa tồn tại), hàm KHÔNG chạm Return Node nào → Blueprint runtime TÁI SỬ DỤNG giá
-trị output CÒN SÓT LẠI từ lần gọi TRƯỚC (không tự động None như tưởng). Hậu quả: mọi combo
-CHƯA CÓ thumbnail đều hiện NHẦM ảnh của combo có thumbnail load thành công gần nhất trong
-cùng vòng lặp LoadComboLibrary. Fix: thêm Return Node tường minh ở nhánh False, Texture2D để
-trống (None). BÀI HỌC: mọi Function có Return Value phải kiểm 100% exec path chạm Return Node
-— "dead-end vô hại" KHÔNG áp dụng cho Function có return type, chỉ áp dụng cho Event/side-effect
-thuần. Thêm rule này vào AI_Implementation_Rules.md L-series.
-
-Gate G4: DONE (15/07/2026) — nối capture vào SaveComboFromSelection (Bước 7, đúng placeholder
-có sẵn từ doc cũ), hiển thị thumbnail trong WBP_ComboCard + WBP_FurnitureInventory.
-
-🔴 2 bug dead-end khác phát hiện + fix trong lúc nối Bước 7 (SaveComboFromSelection):
-- IfThenElse kiểm Pivot found (Length>0 GetAllActorsWithTag) — nhánh False (KHÔNG có Pivot,
-  TRƯỜNG HỢP PHỔ BIẾN NHẤT vì Pivot chỉ tồn tại lúc multi-select) dead-end thật → combo save
-  im lặng KHÔNG capture, KHÔNG hiện trong inventory. Fix: nối thẳng vào Array_Add.
-- IfThenElse kiểm bSaveOK (SaveStringToFile) — nhánh False (ghi JSON fail) dead-end thật →
-  Broadcast OnComboLibraryChanged không chạy dù JSON fail thì vẫn nên broadcast bình thường
-  (đúng thiết kế gốc). Fix: nối thẳng vào Call Delegate.
-
-✅ Bug dead-end ComboManagerRef: FIXED (15/07/2026, thực hiện trực tiếp trong UE5 Editor,
-ngoài phiên Claude Code này) — WBP_FurnitureInventory.LoadComboLibrary, IfThenElse kiểm
-IsValid(ComboManagerRef), nhánh False nối vào Array_Add (bỏ qua bước gán Thumbnail) thay vì
-dead-end. Không còn rủi ro combo bị rớt khỏi AllComboViews_Combo khi ComboManagerRef invalid.
-
-✅ Debug chain phím T/Y: ĐÃ DỌN (15/07/2026, ngoài phiên Claude Code này) — theo điều kiện
-PASS G4 đã ghi trong plan gốc.
-
-Field ThumbnailPath (String) trong BP_ComboItemView — XÁC NHẬN dead field, không dùng ở đâu
-trong BP_ComboManager. Giữ nguyên (KP3, dọn sau).
-
-Delete combo: XÁC NHẬN CHƯA TỪNG IMPLEMENT. Note cũ ghi nhầm "C8 = delete combo" — thực ra
-C8 = "Drag-drop + surface-snap", đã MERGED vào C4 (24/06). Tính năng xóa combo (BTN_DeleteCombo
-có sẵn trong layout WBP_ComboCard từ C4 nhưng chưa bind handler) là task RIÊNG, chưa làm.
-
-Test G4: case 1,2,3,5,6 PASS (case 4 xóa combo N/A — chưa có tính năng). Bug cross-combo
-thumbnail phát hiện qua case thao tác folder (move combo) — đã fix (xem G3 bug ở trên).
-
-Gate G5: DEFERRED (15/07/2026) — thử đo bằng stat rhi (lỗi thao tác console, không ra kết
-quả) rồi MemReport -full (ra kết quả nhưng nhiễu nặng: baseline sau khi camera quét toàn
-scene nội thất đầy đủ của đồng nghiệp làm VRAM tăng ~1421MB giữa 2 mốc đo do texture streaming
-theo tầm nhìn camera, KHÔNG TÁCH ĐƯỢC phần đóng góp riêng của combo thumbnail). Cách đo "đứng
-yên camera, không di chuyển" cho số liệu sạch nhưng xung đột với luồng tạo combo thật (phải
-chọn đồ + xoay góc chụp tự nhiên). Quyết định: NỢ G5, cần nghĩ lại phương pháp đo (cân nhắc
-RenderDoc/Nsight thay vì so sánh MemReport thô — xem docs/Bugs/Bug_GPU_VRAM_Crash.md mục
-"Tools chuyên nghiệp") trước khi thử lại. KHÔNG CHẶN tiến độ — P1 coi như DONE về tính năng
-(G0→G4 hoàn chỉnh, test PASS).
-
-Lưu ý phụ: trong lúc thử stat rhi, gặp crash D3D12 PageFault 1 lần (Local Used 6517MB/Budget
-7262MB) — KHỚP đúng bug đã biết Bug_GPU_VRAM_Crash.md (PIE tích lũy VRAM qua nhiều lần
-Play/Stop liên tiếp trong cùng session Editor), KHÔNG liên quan riêng combo thumbnail.
-
-### P2 (Studio Thumbnail) — DONE về tính năng (Gate A→F, 21/07/2026)
-
-Plan v1.0 tại `Plans/P2_StudioThumbnail_Execution.md`.
-
-- **Gate A/B/C/D:** DONE (clone pipeline, dome, lighting isolation, noise/SSAA N=24, rim light,
-  source size). Bug-DomeCurvature (dome cong nuốt chân đồ footprint rộng) + Bug-CeilingGroundAlign
-  (combo Cao chôn sàn) — cả 2 đã FIXED 20/07/2026 (dome custom + Nấc 1 `ResolveThumbAlign`). Gate
-  D sweep: 4/5 loại PASS chính thức (Nhỏ/To/Dẹt/Tường), 1/5 (Cao) PASS sơ bộ bằng stack dựng
-  tay — CHỜ combo kệ/tủ cao thật để đóng hẳn (Lựa chọn B, không chặn việc khác).
-- **Gate E (DOF):** merged trong chuỗi capture (AutoExposureBias 6.0, Fstop 1.0, FocalDistance
-  xấp xỉ qua Vector Distance).
-- **Gate F:** DONE — nối Studio pipeline vào `SaveComboFromSelection` thật (Custom Event mới
-  `BeginThumbnailCapture`); hướng xoay đúng (bearing camera→combo, `Cmb_StudioCamYaw`/
-  `Cmb_PendingUserCamYaw`); Broadcast dời sang Event Tick tail; ảnh 1024² mịn N=24 (hết bug
-  2048² thô); fix framing Radius rotation-invariant (~20%→~3-6%); debug phím U đã xóa.
-- **Backlog (defer, KHÔNG chặn):** VRAM regression stat rhi cho buffer SSAA 2048² (chưa đo lần
-  nào); double-save <4s fallback + undo/EMS/Recent sạch sau save thật (chưa test riêng);
-  Feature-CanonicalStudioAngle (góc chụp thấy mặt/lưng — Sprint 6 Polish UX, xem
-  `Bugs/Open_Bugs.md`); case Cao (Ceiling) PASS sơ bộ Lựa chọn B — KHÔNG ghi "100% full PASS".
-
-Chi tiết bug/quyết định kiến trúc từng gate: Gate A/B/C xem `DEVIATIONS.md` mục
-"P2 — 17/07/2026 (cuối phiên)"; Gate D prerequisite lighting isolation: mục "P2 — 18/07/2026";
-noise/aliasing: mục "SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix"; Rim Light/VRAM/dome
-curvature/Ceiling ground-align: mục "P2 — 20/07/2026" (+ Nấc 1 / Dome Custom / Sweep 5 Loại);
-Gate E: mục "P2 — 20/07/2026 (Gate E)"; Gate F: mục "P2 — 21/07/2026 — Gate F". `Bugs/Open_Bugs.md`
-cho trạng thái bug đóng/mở đầy đủ.
-
-**Thứ tự ưu tiên (30/07/2026 — C9 DONE, bỏ khỏi chuỗi):**
-```
-Save As / Save đè (feature mới) → C11 (Export/Import) → C10 (Regression) → Gate 2
-```
-Delete Combo + K1 (Toast) + C9.0c (migrate hạ tầng `E_ReplaceTarget`) + C9 (Replace Combo, tính
-năng thật) đều đã DONE (không còn nằm trong hàng đợi). Save As/Save đè tái dùng hàm
-`ResolveSelectedComboRoot()` viết trong C9.
-
-**C9.0c (Migrate `E_ReplaceTarget`) — HOÀN TẤT (24/07/2026), 5/5 test regression PASS, 6/6 file
-compile sạch.** Migrate `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`:
-None/Mesh/Combo) trên cả `BP_FurnitureInputManager` và `WBP_FurnitureInventory` — xảy ra ngoài
-phiên Claude Code, các delta ngày 24/07 chỉ ghi nhận lại qua đối chiếu K2Node export thật (Ctrl+A
-→ Ctrl+C → paste, không suy đoán qua ảnh chụp). Pure Function mới `IsReplaceModeActive()` (2 bản
-riêng, cùng logic). 3 bug fix: `CB_Replace` (Branch dư literal=true chặn đường tới
-`StartReplaceMode`), `WBP_DetailPopup.BTN_ChangeMesh` (SET nhầm biến `MeshToReplace` số ít/dead
-thay vì `MeshesToReplace` mảng — refactor luôn, gọi thẳng `StartReplaceMode` thay vì tự
-SET/mở/filter inventory trùng lặp logic), `WBP_FurnitureCard.Get_Button_ChangeMesh_Visibility`
-(Property Binding getter riêng biệt, chưa từng document, đọc biến `bIsReplaceMode` đã xóa → luôn
-Hidden vĩnh viễn). Dọn dead code: xóa hàm `Get_Button_ChangeMesh_Visibility` duplicate trên
-`WBP_ComboCard` (widget này không có `Button_ChangeMesh`). 2 Quan sát ghi nhận trong
-`StartReplaceMode` (RowNotFound dead-end + guard Length==0 không còn tồn tại trong export) —
-chưa quyết định fix, ngoài scope C9.0c. Chi tiết đầy đủ: `Blueprints/BP_FurnitureInputManager.md`
-v2.5, `Widgets/WBP_FurnitureInventory.md` v3.15, `Widgets/WBP_MeshControls.md` v1.8,
-`Widgets/WBP_DetailPopup.md` v1.3, `Widgets/WBP_FurnitureCard.md` v1.1, `Widgets/WBP_ComboCard.md`
-v1.5, `Sprints/Sprint2/ContextMenu_Prep.md` v1.2, `Blueprints/Blueprint_Logic_NodeFlow.md` v1.13.
-
-**K1 (WBP_Toast) — DONE (23/07/2026), 5/5 test PASS.** Widget mới `WBP_Toast` (`ShowToast`/
-`HideToast`, timer tự ẩn ~2.5s) + `Foff_GameInstance.ToastRef` (global access, set ở
-`WBP_FOFF_ToolDemo` Event Construct) + `WBP_FurnitureInventory.ShowToastMsg` (helper, fallback
-Print nếu ToastRef chưa set). 6 chỗ Print→Toast: `CreateNewFolderFlow`, `HandleDeleteFolderConfirmed`,
-`HandleMoveComboConfirmed`, `HandleDeleteComboConfirmed` (×2 nhánh, gỡ 2 dòng `[TẠM 22/07]`),
-`SpawnComboByID` Sub-step C (Row Not Found — MỚI, trước đây dead-end trần trụi, không phải "Print
-skip" như doc cũ ghi). **Đính chính as-built quan trọng:** `OnRequestNewFolder` KHÔNG chứa logic
-trực tiếp — thực tế chỉ gọi Function riêng `CreateNewFolderFlow` (doc cũ mô tả sai, đã viết lại
-đúng kiến trúc). 2 annotation `[gate bDebugMode]` sai/lỗi thời cũng đã sửa (gate thật là
-`EnabledState=Development Only`). Chi tiết: `Widgets/WBP_Toast.md` (mới),
-`Widgets/WBP_FurnitureInventory.md` v3.14, `Blueprints/BP_ComboManager.md` v1.13,
-`Planning/Architecture_Overview.md` v1.2 (`ToastRef` shared code).
-
-**Field Kích thước Combo Card — DONE (22/07/2026).** Nguồn `BoundingBoxExtent` (có sẵn từ C4,
-công thức tính vừa sửa — xem "Dimension Fix" dưới). `L=Extent.X×2/100, W=Extent.Y×2/100,
-H=Extent.Z×2/100` (mét), `S=L×W` (diện tích sàn). Format `"{L}×{W}×{H} m — {S} m²"` (1 chữ số
-thập phân). `WBP_ComboCard` v1.3: `TextBlock_Dimensions` trong `VB_Info` dưới `TextBlock_Badge`;
-`OnListItemObjectSet` SET text theo công thức trên, nối cuối nhánh SET
-`TextBlock_ComboName`/`TextBlock_Badge` hiện có. Node `To Text (Float)` mới confirm — xem
-`AI_Implementation_Rules.md`. Test PASS. Combo BoundingBoxExtent=(0,0,0) (data cũ/lỗi) hiện
-"0,0×0,0×0,0 m — 0,0 m²" — không phải bug, chấp nhận được.
-
-**Delete Combo — DONE (22/07/2026), 5/5 test PASS.** `WBP_ComboCard.BTN_DeleteCombo` bind →
-`WBP_FurnitureInventory.RequestDeleteCombo`/`HandleDeleteComboConfirmed` (mirror
-`OnRequestDeleteFolder`/`HandleDeleteFolderConfirmed`, Luật 6B) — xóa file `.json`+PNG, gỡ khỏi
-Favorite, `RemoveRecentCombo` (function mới `BP_FurnitureUserPrefsManager`), Broadcast
-`OnComboLibraryChanged`. `Print String` tạm ban đầu nay đã thay bằng `ShowToastMsg` thật
-(K1 DONE 23/07/2026 — xem mục K1 ở trên).
-
-**Dimension Fix — `CalculateComboBoundingExtent` (`BP_ComboManager`) — DONE (22/07/2026).** Đổi
-`Get Actor Bounds` (World AABB, phồng khi actor tự xoay tại chỗ) → `Get Local Bounds`×Scale+
-Location. Giới hạn còn lại: cả đội hình combo xoay lệch trục vẫn phồng theo World AABB — merge
-vào backlog `Feature-CanonicalStudioAngle` (Sprint 6, cần field `ReferenceYaw` mới dùng chung
-cho cả thumbnail góc chụp lẫn Card dimension — xem `Bugs/Open_Bugs.md`). Combo lưu trước
-22/07/2026 giữ số cũ, không migrate hàng loạt.
-
-Chi tiết đầy đủ Save As/Save đè (khung sơ bộ, UX CHƯA CHỐT): `Sprints/Sprint5/Combo_Execution.md`
-mục "C9.5 — Save As / Save đè combo".
-
-### Replace UX Fix (P0→P5) — ✅ ĐÓNG 02/08/2026
-
-| Phase | Trạng thái |
+| | |
 |---|---|
-| P0 Verify | ✅ DONE 5/5 |
-| P1.2 (#3b chiptag) | ✅ DONE |
-| P1.3 (#5 card container) | ✅ DONE |
-| P2 (#4 re-route mesh↔combo) | ✅ DONE |
-| P3.1 (#1 gate BTN_ChangeCombo) | ✅ DONE |
-| P3.2 (#3a minimize) | ✅ DONE |
-| P4 (đường ngược + dead code) | ✅ DONE |
-| P5.1 (#2 chỉ báo Replace mode) | ⏩ DỜI Sprint 6 (gộp Polish UX) |
-| P5.2 (P-5 DA legacy) | ⏸️ GÁC (thiếu file save cũ để test) |
+| **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
+| **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
+| **Current Task** | Chưa bắt đầu Sprint 7. Việc mở màn: rà lại plan Sprint 7 (G0 kiểm kê) trước khi code |
+| **Task Source** | `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` |
+| **Next** | G0 (kiểm kê C++ chỉ-đọc: vật liệu nào chỉnh param được) → G1+ |
+| **Blockers** | Không |
 
-**Quyết định Opus #1 bị huỷ:** không tạo `CreateComboChipTagsForPath` mới — P1.2 dùng
-`RebuildChipRowForPath`/`RefreshChipBreadcrumb` có sẵn, đủ dùng.
-
-Chi tiết đầy đủ node flow: `Widgets/WBP_FurnitureInventory.md` v3.19 (`OnMeshSelected`,
-`OnSceneRestored`, `BTN_Close`), `Blueprints/BP_FurnitureInputManager.md` v2.8 (`StartReplaceComboMode`,
-xóa `MeshToReplace`). Bug/deviation đầy đủ: `DEVIATIONS.md` mục "Replace UX Fix — P0→P5 HOÀN TẤT
-— 02/08/2026", `Bugs/Open_Bugs.md`.
-
-**Tiếp theo (theo priority queue cũ):** Save As/Save đè → C11 → C10 → Gate 2.
-
-### C6 (Favorite + Recent combo) — CHÍNH THỨC DONE HOÀN TOÀN (22/07/2026)
-
-Cả 4 phần (C6.1 API, C6.2 nút tim, C6.3 hook Recent, C6.4 tab hiển thị) + K3 (bAddToRecent, xem
-mục K3 trên) + 2 bug fix dưới đây đều đã test PASS, bao gồm persist qua tắt/mở PIE. Node flow
-chi tiết C6.1-C6.4 KHÔNG có trong phiên phân phối này (thực hiện trực tiếp trong UE5 Editor,
-ngoài phiên Claude Code) — chỉ 2 bug fix bên dưới có node flow đầy đủ.
-
-**Bug fix 1 — `AddRecentCombo` dead-end (SaveUserPrefs không chạy khi < 48 combo):**
-`Call SaveUserPrefs` nằm trong nhánh `True` của `Branch(Array Length(RecentComboIDs) > 48)`
-(bước trim cap) — nhánh `False` (< 48 combo, mọi test thực tế) không nối gì, dead-end. RAM luôn
-đúng (Print tối 21/07 ra count tăng dần đúng) nhưng chỉ ghi xuống đĩa khi Recent vượt 48 phần
-tử. Fix: rút `SaveUserPrefs` ra khỏi nhánh `True`, merge cả 2 nhánh cùng trỏ vào. Ghi chú phụ:
-cap thật = **48**, không phải 20 như `UX_Phase2_Plan.md` ghi trước đây (sai lệch tài liệu, không
-phải bug). Test PASS: spawn combo → tắt PIE → mở lại → Recent giữ đúng combo mới. Node flow đầy
-đủ: `Blueprints/BP_FurnitureUserPrefsManager.md`.
-
-**Bug fix 2 — Recent hiển thị (fix tối 21/07, xác nhận lại sáng 22/07):** `FilterByCategory`
-nhánh Combo/Recent đổi `ClearListItems + ForEach + AddItem` (loop, chỉ hiện 1 card) →
-`Set List Items(CTV_ComboCard, OrderedViews)` (batch 1 lần, giống Favorite/All). Nguyên nhân:
-gọi `AddItem` nhiều lần liên tiếp trong TileView không refresh đúng từng lần — bài học tổng
-quát đã ghi vào skill `ue5-blueprint-rules` **L12** (21/07).
-
-**Ghi nhận, KHÔNG phải bug (backlog):** copy tay file `.json` trong Explorer rồi đổi tên — field
-`comboId` bên trong KHÔNG tự đổi theo tên file → 2 file khác tên nhưng cùng ID logic →
-Favorite/Recent (và mọi thứ định danh theo ComboID) coi 2 combo là 1. Không sửa bây giờ — xử lý
-khi làm tính năng Save As/Save đè (Save As phải sinh `comboId` MỚI). Xem `Bugs/Open_Bugs.md`
-mục "Note-DuplicateComboID".
-
-**Roadmap v3.3 (chia 3 giai đoạn — scope phình to sau 23/06):**
-```
-Gate 1 (fix B1 bIsRestoring + hợp nhất spawn)   ✅ DONE (16/06)
-Sprint D (D.T1-D.T9, Furniture Data Layer v2)    ✅ DONE (17/06)
-TreeNode/Chip active-folder highlight            ✅ DONE (18/06, bổ sung)
-Sprint 5 — COMBO LIBRARY ĐẦY ĐỦ 🔄 IN PROGRESS (21/06, v2.0)
-  ⚠️ 23/06: P1+P2+P3 làm scope phình → chia 3 giai đoạn. Deadline 25/06 chỉ xong G1.
-  ✅ T1 — C++ ComboTypes + ComboSerializer (schema v1, round-trip PASS)
-  ✅ T2 core — SaveComboFromSelection + CB_SaveCombo (hệ thống cơ bản)
-  ✅ C0 — 3 case A/B/C PASS + RowName fallback (22/06)
-  ✅ C1 — FolderPath C++, FindMaterialRowNameByPath C++, SourceComboID BP, Fav/Recent prefs
-  ✅ C2 — SpawnComboByID 7/7 PASS (22/06)
-  ✅ K3 — SpawnFurnitureCopy bAddToRecent param — DONE (21/07), 2 call site pin False
-──── Giai đoạn 1 (~25/06) ────
-  ⏳ C3 — Save dialog + P4 (GetCombosDir→LOCALAPPDATA) + capture thumbnail sau save
-  🔄 Thumbnail System C++ (P1) — ĐANG LÀM: Gate G0-R ✅ DONE (14/07, xem mục P1 trên), G1-G5 còn lại
-  ✅ C4 — WBP_ComboCard (thumbnail thật, badge ×N) — DONE (25/06)
-  ✅ C5 — Folder Management đầy đủ (browse/tree/move/rename/xóa/chip) — TOÀN BỘ HOÀN TẤT (06/07)
-  ✅ C5.8 — Folder Tree Picker Unify (Move Dialog + Save Dialog) — DONE (13/07/2026, REG PASS), xem C5.8_FolderTreePicker_Unify_Plan.md
-  ✅ C6 — Favorite + Recent combo — DONE (22/07/2026), xem mục C6 bên dưới
-  ⏳ C7 — WBP_ComboDetailPopup (thumbnail thật)
-──── Giai đoạn 2 ────
-  ✅ WBP_Toast (K1) — DONE (23/07/2026), xem mục K1 bên dưới
-  ✅ C8 — Drag-drop + surface-snap kiểu khối (P2) — DONE, MERGED vào C4 (24/06/2026)
-  ⏳ Xoay combo (P3) — verify gizmo group + tùy chọn xoay-lúc-kéo
-  ⏳ C9 — Replace (+ verify K2 + CalculateCenter chung + auto-rollback)
-──── Giai đoạn 3 ────
-  ⏳ C11 — Export/Import cả 2 hướng (K5)
-  ⏳ C10 — Regression (K4/P5-liên quan/VRAM) + Docs
-→ Sprint 7 Material v1.2 (P5 material name-based — mở màn)
-→ Sprint 6 Polish
-→ Gate 2 (first packaged build)
-```
+Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
+(sau Gate 2: Backend B0→B5 — cloud, chợ combo)
 
 ---
 
-## NGUYÊN TẮC ĐỌC DOC ĐẦU SESSION
+## Active bugs relevant now
+> Chỉ bug đang CHẶN việc hiện tại. Danh sách đầy đủ → `Bugs/Open_Bugs.md`.
 
-1. Đọc `01_Session_State.md` TRƯỚC
-2. Gate 1 → đọc `02_Current_Sprint.md` + `Rules/AI_Implementation_Rules.md`
-3. Sprint D → đọc `02_Current_Sprint.md` phần Sprint D
-4. Flow chi tiết → `Blueprints/BP_FurnitureInputManager.md` v2.1 + `Blueprints/BP_UndoManager.md` v1.10
-5. Flow Sprint 1-3 → `Blueprints/Blueprint_Logic_NodeFlow.md`
+- **Bug-MaterialPrimaryOnly** 🟡 — CHẶN THẲNG Sprint 7: đổi vật liệu khi chọn cả cụm combo chỉ áp
+  cho 1 mesh (Primary), không toast. Vá thật = chính phần multi-apply (E1) của Sprint 7 Material
+  Edit — fix TRONG Sprint 7, không làm lẻ. `Bugs/Open_Bugs.md`.
+- **Bug-ComboRoot-MixedLooseGroup** 🔴 — chặn ĐẦU SPRINT 6 (không phải Sprint 7). Chạm kiến trúc
+  combo: `SaveComboFromSelection` nên LUÔN tạo 1 wrapper root group. Ghi ở đây để không quên khi
+  Sprint 7 xong chuyển sang Sprint 6. `Bugs/Open_Bugs.md`.
 
 ---
 
-## Lịch sử cập nhật
+## Active ceilings / constraints
+> Shortcut có chủ ý còn hiệu lực + điều kiện buộc refactor. Đầy đủ → `DEVIATIONS.md`.
 
-| Ngày | Nội dung |
-|------|----------|
-| 21/06/2026 | Sprint 5 T1+T2 DONE (sáng). |
-| 21/06/2026 EOD | Sprint 5 T3+C1 DONE. C0 impl xong chưa test (LCA nested + MaterialOverrides). BP_ComboManager → v1.1 (GetPathToRoot_Combo, FindLCA_TwoGroups_Combo, CalculateLCAList_Combo, LeafGroupIDs/LCARoots/MaterialOverrides_SaveCombo). C++ FurnitureToolkit: FComboData.FolderPath + FindMaterialRowNameByPath. Full rebuild xanh. TIẾP THEO: test C0 (3 case) → C2 SpawnComboByID. |
-| 22/06/2026 | C0 DONE — 3 case A/B/C PASS. RowName fallback (đồ cũ parse MeshPath) xác nhận OK. BP_ComboManager → v1.2 (thêm ItemRowName_SaveCombo). TIẾP THEO: C2 SpawnComboByID. |
-| 22/06/2026 | C2 SpawnComboByID DONE — 7/7 PASS. BP_ComboManager → v1.3 (5 class var mới, 4 functions: F_LoadComboData/F_BuildTokenGUIDMap/F_RegisterComboGroups/F_ApplyMaterialOverrides, Custom Event SpawnComboByID 4 sub-steps). Group nesting fix: Case A (no groups→wrapper) / Case B (has groups→no wrapper). TIẾP THEO: C3 WBP_SaveComboDialog. |
-| 23/06/2026 | Chốt 11 quyết định + 3 điều chỉnh (Sprint5_Plan_v1.1): P1 thumbnail C++ thật, P2 surface-snap khối, P3 xoay combo, P4 lưu LOCALAPPDATA, P5 dời Sprint7, K1 WBP_Toast, K3 bAddToRecent (planned), K5 export cả 2 hướng. Scope phình to → chia 3 giai đoạn. Roadmap v3.3. Việc kế = C3. |
-| 24/06/2026 | C3b ✅ DONE (WBP_SaveComboDialog + OpenSaveComboDialog flow). C4 ⏳ 80%: WBP_ComboCard + BP_DragDropOperation_ComboCard + BP_ComboGhostActor + M_ComboGhost; CalculateComboAnchor (InputManager v2.3); CTV_ComboCard (Inventory v2.9) — 19 combo PASS. C8 ✅ MERGED vào C4. BUG OPEN: B-ghost-offset (đáy cube chìm sàn, Z=50 chưa fix). |
-| 25/06/2026 | B-ghost-offset ✅ FIXED (Approach B, BP_ComboGhostActor v1.1, DragOverlay v1.8). C4/C8 ✅ 100% DONE. C5.1 ✅ DONE: 3 C++ folder helpers (ComboSerializer). C5.0 ⏳ ~90%: tree PASS, card render BUG OPEN (B-C5-card). |
-| 26/06/2026 | C5.0 ✅ DONE: B-C5-card FIXED, tree 2 cấp + D9 guard, OnComboChipTagClicked, OnComboTreeNodeRightClicked, 3 stubs. WBP_LibraryContextMenu v1.0 ✅: clone ContextMenu, Btn_Background Z-order (D12), test PASS. WBP_TreeNode v1.2: OnNodeRightClicked dispatcher + On Mouse Button Down. WBP_FurnitureInventory v3.2. TIẾP THEO: C5.2 Rename folder. |
-| 30/06/2026 | C5.4 ✅ DONE — Move Folder: S_FolderTargetEntry struct mới. WBP_MoveFolderRow v1.0 (Spacer_Indent indent ảo, SetRow/SetHighlight/OnRowClicked). WBP_MoveToFolderDialog v1.0 (PopulateRows/HandleRowSelected/OnMoveFolderConfirmed). WBP_FurnitureInventory v3.4: MovingFolderPath; CollectFolderTargets đệ quy (loại moving+con cháu); BuildMoveFolderTargetList; OnRequestMoveFolder implement; CB_MoveFolderClick implement; HandleMoveFolderConfirmed NEW. BUG FIX D-C5.4-1 (Array_Append ngược) + D-C5.4-2 (dead-end nhánh True thiếu merge). Backlog reorder: Issue 2 → Move Combo → NewFolder → Xóa folder → ChipTag right-click. |
-| 01/07/2026 | Issue 2 ✅ + C5.5 Move Combo ✅ DONE — WBP_ComboCard v1.1: InventoryRef lazy-init + On Mouse Button Down override (RMB→OnComboCardRightClicked). WBP_FurnitureInventory v3.5: 3 class var (MoveComboDialogRef/MovingComboID/MovingComboCurrentFolder); UpdateComboFolderHighlights NEW; OnComboCardRightClicked NEW; CB_MoveCombo NEW (guard stacking + ForEachLoopWithBreak); HandleMoveComboConfirmed NEW. BUG FIX 4.1 (ParseIntoArray delimiter) + 4.2 (bỏ Map_Contains leaf folder) + 4.3 (+UpdateComboFolderHighlights call RefreshComboFolderUI). Learning_System v1.3 (định dạng giải thích: sơ đồ + ví dụ đời thường). Tiếp theo: Tạo folder mới. |
-| 04/07/2026 | NF (New Folder) — context menu part ✅ DONE, nút "+" 🔲 CÒN NỢ. C++ NF.G0: `GetEmptyFoldersFilePath`→`Folders.json`; `GetAllFolderPaths` tự-ghi-bổ-sung path mới kể cả cấp cha — test PASS 6/6. Blueprint NF.G1: `BuildComboFolderTree` đổi nguồn sang `GetAllFolderPaths` (1 nguồn duy nhất, bỏ vòng tự-gộp AllComboViews) — test PASS 4/4. WBP_FurnitureInventory v3.6: `GetChildFolderNames`/`GetUniqueNewFolderName`/`GetNewFolderParent` (helpers); `OnRequestNewFolder`/`CB_CreateNewFolder` NEW (tạo cùng cấp node right-click, tự vào rename mode qua C5.2); `OnComboTreeNodeRightClicked` +1 menu item đầu chuỗi. Test PASS 9/9. Deviation: dialog (NF.G2-G5 gốc) → SUPERSEDED bởi inline rename (UX Explorer-style). Tiếp theo: nút "+" đầu cột tree → C5.6 (Xóa folder) → C5.7 (ChipTag rename). |
-| 06/07/2026 | NF.G3 ✅ + C5.6 ✅ + C5.7a ✅ DONE — WBP_FurnitureInventory v3.7: `PopulateComboTreeColumn` +PlusNode (nút "+", sentinel `__NEWFOLDER__`) + `OnComboTreeNodeClicked` +guard; class var `PendingDeleteFolderPath`; `OnRequestDeleteFolder`/`HandleDeleteFolderConfirmed`/`CB_DeleteFolderClick` (Xóa folder, Deviation D-C5.6-1 nhảy về cha thay vì `__ALL__`); `RebuildChipRowForPath`+`RefreshChipBreadcrumb` NEW (gộp code ChipRow trùng lặp + fix chip area không tự refresh sau Move/Xóa/Rename — 3 bug fix: dead-end 2/3 nhánh, delimiter "/ " sai, BooleanAND→OR); bug fix SelectedPath nhầm biến (class var trùng tên param) trong OnComboTreeNodeClicked. WBP_ChipTag v1.2: +dispatcher OnChipRightClicked + On Mouse Button Down override. WBP_ConfirmDialog TẠO MỚI (generic Yes/No). Tiếp theo: C5.7b (inline rename trong chip) → REG → C5 HOÀN TẤT. |
-| 06/07/2026 (tối) | C5.7b ✅ DONE — **C5 FOLDER MANAGEMENT HOÀN TẤT.** WBP_ChipTag v1.3: `EditLabel_ChipTag` (WBP_EditableLabel) thay `TextBlock_ChipTag`; `EnterRenameMode`/`HandleLabelCommitted` NEW; dispatcher `OnChipRenameCommitted`. WBP_FurnitureInventory v3.8: class var `RenameTargetChip`; `OnRequestRenameFolder` mở rộng fallback tree→chip (double-break qua Completed loop lồng); `RebuildChipRowForPath` +bind `OnChipRenameCommitted`→`OnRenameFolderCommitted`. BUG FIX `CB_CreateNewFolder` (node SET thừa đè cache → luôn tạo root); BUG FIX `CB_RenameFolder` (thiếu SET LibraryMenuRef=None cuối chuỗi). Test PASS full case. Tiếp theo: REG (regression 12 bước) → C6/C7 (defer) hoặc WBP_Toast → C9. |
-| 07/07/2026 | **C5.8 (Folder Tree Picker Unify) 🔲 PLANNED** — nhận delta kiến trúc v2 (Fable/Opus) gộp lõi data+component cho `WBP_MoveToFolderDialog`+`WBP_SaveComboDialog` (tree picker: guide line, search, expand/collapse, inline create). Slot chốt: NGAY SAU C5, TRƯỚC C9 (cuhoang chốt). Plan đầy đủ + 2 Task Card: `docs/Sprints/Sprint5/C5.8_FolderTreePicker_Unify_Plan.md`. CHƯA thực thi — việc kế tiếp là Task Card #1 (Data Layer: rename `S_FolderTargetEntry`→`S_FolderTreeNode`, `BuildFolderTree`, verify Print trước UI). |
-| 08/07/2026 | **C5.8 Task Card #1 (Data Layer) ✅ DONE** — rename `S_FolderTargetEntry`→`S_FolderTreeNode` (+4 field: HasChildren/ChildCount/ContinuesAncestors/bIsLast); `CollectFolderTargets`→`BuildFolderTreeRecursive` (đệ quy, depth guard=12) + hàm mới `GetFilteredChildren` (Pure); wrapper `BuildComboFolderTreeNodes(ExcludePath)` — tên đổi khác plan gốc (`BuildFolderTree` trùng tên hàm cũ Material/Furniture catalog), log DEVIATIONS.md. Test Print PASS data thật (8 combo, nested 3 tầng, tiếng Việt) — không lệch. WBP_FurnitureInventory v3.9. Tiếp theo: Task Card #2 (`WBP_FolderTreePicker` UI component, §11b). |
-| 11/07/2026 | **C5.8 Task Card #2 Part B — Giai đoạn 1 ✅ DONE** — bug #2 xác định root cause: `SetNode` thiếu `SET RowNode = Node` (gây cả Path rỗng lẫn Arrow không đồng bộ Visibility với BTN_Arrow). Fix 2 chỗ trong `SetNode` (WBP_FolderPickerRow v1.1). Đính chính quan trọng: FixPlan v1.1 SAI về Custom Event trung gian — thực tế binding nối THẲNG OnClicked→Call dispatcher (không lớp trung gian) cho cả BTN_Arrow/BTN_Name VÀ 2 handler mới BTN_ExpandAll/BTN_CollapseAll (WBP_FolderTreePicker v1.0). Test mục 1→5 task card PASS (expand/collapse đơn + Mở tất cả/Thu gọn + nhớ state con cháu — 6A xác nhận). TIẾP THEO: Giai đoạn 2 — search (`PathMatchesQuery`/`BuildSearchOverride`/wire `SB_SearchFolder`/`SetSearchHighlight`), xem `C5.8_TaskCard2_FixPlan_11jul2026.md` Giai đoạn 2. |
-| 12/07/2026 10:40 | **C5.8 Task Card #2 Part B — Giai đoạn 2 (Search) + Giai đoạn 3 (Select) ✅ DONE** — 3 Function mới trên `WBP_FolderTreePicker`: `PathMatchesQuery` (Pure, Contains không phân biệt hoa thường), `BuildSearchOverride` (build `SearchExpandOverride` từ tổ tiên các node match), `GetParentPath` (Pure, hỗ trợ bug arrow-click trong lúc search). `RefreshVisibleRows` ghép xong nhánh search thật (không còn ⚠️ SUY LUẬN) + wire `SB_SearchFolder.OnSearchTextChanged` → class var `CurrentSearchFolder` (thay Local `QueryStr`). `SetSearchHighlight(bMatch)` DONE trên `WBP_FolderPickerRow` (2 class var màu `Color Match`/`Color Default`). Bug fix: `PathMatchesQuery` dùng nhầm `Path` đầy đủ thay `DisplayLabel` (substring match nhầm con); arrow-click node đang match trong lúc search không lộ con (`GetParentPath` + sửa `bShow`/`SetExpanded` bỏ hardcode). Test mục 1-10 PASS hết — Task Card #2 Part B + 2c HOÀN TẤT. TIẾP THEO: Giai đoạn 4 (Chốt sổ — comprehension check còn nợ 2 câu, cuhoang đang trả lời) → 2d (rename host) → wire Move → wire Save + Create Folder → REG C5.8 (thứ tự đã khoá). |
-| 13/07/2026 | **C5.8 — 2d + Wire Move + Wire Save build + test DONE**. 3 bug fix: (1) OnRequestMoveFolder/CB_MoveCombo sót gọi BuildMoveFolderTargetList (hàm cũ, thiếu HasChildren/ChildCount) — đổi sang BuildComboFolderTreeNodes, xoá hàm cũ; (2) SetSelectedHighlight so sai biến (CurrentPath thay SelectedPath) — tách so sánh riêng; (3) SetLabelColor type Slate Color không phải Linear Color. Test PASS: Phần 2 (1,2), 0.3, M1-M6, S6a/S6c. S6b [SCOPE] không áp dụng (context-menu rename không tồn tại theo thiết kế 2d). Version bump: WBP_FolderPickerRow v1.3, WBP_FolderTreePicker v1.3, WBP_EditableLabel v1.1, WBP_MoveToFolderDialog v2.0, WBP_SaveComboDialog v2.0, WBP_FurnitureInventory v3.11. TIẾP THEO: REG C5.8 (task card chốt sổ, khối A/B/C) → sau đó mới cho phép sang C9. |
-| 13/07/2026 (REG) | **C5.8 (Folder Tree Picker Unify) — CHÍNH THỨC DONE.** REG (task card `C5.8_REG_TaskCard_11jul2026.md`) chạy đủ Khối A/B/C/D: A1-A7 PASS (A1 kèm clarification wording task card — xem DEVIATIONS), B1-B4 PASS (B4 kèm scope note không live-sync 2 cây), C1 SKIP (rủi ro thấp)/C2-C5 PASS (không VRAM leak). D5 comprehension check PASS. 2 bug mới phát hiện qua REG — GHI Open_Bugs.md, KHÔNG sửa trong C5.8 (ngoài scope): (1) BTN_Confirm Save dialog không disable khi tên trống chưa gõ gì (bug có sẵn từ C3b, không phải do C5.8); (2) Move Folder không check trùng tên đích (backlog, cần task riêng). **Roadmap: mở khóa C9 (Replace).** |
-| 14/07/2026 | **P1 Combo Thumbnail — Gate G0-R DONE.** One-shot capture (G0 gốc) loại bỏ do ảnh xám phẳng — Lumen GI/TAA/auto-exposure cần nhiều frame thật mới hội tụ, camera phụ vừa spawn chụp 1 frame không đủ. Đổi kiến trúc: `BeginComboCapture`/`FinishComboCapture` bọc bởi Custom Event dùng `Delay` latent (L8), thay `CaptureComboThumbnail` đồng bộ cũ (giữ `[LEGACY]`, không xóa/gọi). Test debug phím T trong `BP_ComboManager` — Delay warm-up 0.5s chưa đủ, 3s/6s/10s đều đẹp, chốt tạm 3.0s (số chính xác dời G4). Ảnh hưởng: Save Combo có thêm độ trễ latent, Broadcast dời xuống SAU FinishComboCapture, capture fail vẫn Broadcast (fallback icon 🧩). `.h` bị đụng lần 2 (chấp nhận). Tiếp theo: G1 (đọc PNG→Texture2D, thay stub `LoadComboThumbnail`). |
-| 14/07/2026 (dọn nợ) | **Dọn stale content C5.8 trong `## TIẾP THEO`** (đã báo 2 lần ở các lần phân phối trước, cuhoang xác nhận gộp dọn cùng lúc P1, KHÔNG thuộc nội dung delta P1 gốc): block prose "C5.8 — Folder Tree Picker Unify" (dòng cạnh mục P1) và dòng trong Roadmap v3.3 ASCII (Giai đoạn 2) sửa từ 🔄 IN PROGRESS (mô tả trạng thái 11/07, đã lỗi thời) → ✅ DONE (13/07/2026, REG PASS) — khớp với changelog 13/07/2026 (REG) đã ghi trước đó. |
-| 14/07/2026 (roadmap reorder) | **Sửa thứ tự + trạng thái Roadmap v3.3** (theo yêu cầu cuhoang): C4 và C8 sửa ⏳→✅ DONE (đã xong từ 25/06 và 24/06, marker cũ sai/lỗi thời). Dòng "C5 — Folder tree tab 🧩 Combo" viết lại thành "C5 — Folder Management đầy đủ... TOÀN BỘ HOÀN TẤT" (khớp phát biểu C5 đã dùng ở mục TIẾP THEO). **Dời C5.8** từ cuối Giai đoạn 2 → ngay sau C5 trong Giai đoạn 1 — khớp đúng ghi chú gốc "chốt slot NGAY SAU C5, TRƯỚC C9" (trước đó bị đặt sai chỗ, nằm sau cả WBP_Toast/C8/Xoay combo). Thumbnail System (P1) gắn nhãn "ĐANG LÀM" khớp `02_Current_Sprint.md`. |
-| 14/07/2026 (P1 G1) | **P1 Combo Thumbnail — Gate G1 DONE.** `LoadComboThumbnail` thân hàm đầy đủ: đọc PNG từ đĩa → `IImageWrapper` `SetCompressed`/`GetRaw` BGRA8 → optional `FImageUtils::ImageResize` xuống `MaxSize` → `UTexture2D::CreateTransient` + memcpy Mip 0. Build PASS, test phím Y (tách riêng khỏi phím T capture) → "G1 Load OK, size=256" đúng kỳ vọng. Thêm module `ImageCore` vào `FurnitureToolkit.Build.cs` + include `Engine/Texture2D.h`/`ImageUtils.h` trong `ComboThumbnail.cpp` — bắt buộc để build, KHÔNG phải deviation kiến trúc (đúng plan gốc). Tiếp theo: G2 (auto-fit FitRatio + ẩn gizmo/outline lúc capture + tinh chỉnh sharpen/PostProcess). |
-| 17/07/2026 | **P2 (Studio Thumbnail) — Gate A DONE.** Việc 1-4 hoàn tất, TEST PASS 6/7 case (case 7 — tắt PIE giữa Delay — dời kiểm tra sang Gate F). BP_ComboManager: `SpawnComboForThumbnail(ComboID, DeltaYaw=0)` Custom Event mới + chuỗi debug phím U (ground-align, BeginComboCapture/FinishComboCapture). BP_FurnitureInputManager: `SpawnFurnitureCopy` +param `bAddToRecent`. Fix aliasing `Add Actor World Offset` dùng nhầm Array Element giữa 2 For Each Loop liên tiếp. Delay(0.5→3.0) ceiling tạm cho LoadMeshAsync — xem DEVIATIONS. Chi tiết: `P2_StudioThumbnail_Execution.md`. Tiếp theo: Gate B (dome). |
-| 17/07/2026 (cuối phiên) | **P2 (Studio Thumbnail) — Gate B + Gate C DONE.** Gate B: dome hình học (`Cmb_StudioDomeRadius`, Scale=R/50) + `M_StudioBackdrop`; **Cast Shadow=False** trên dome (quyết định kiến trúc quan trọng nhất — dome chỉ nhận bóng, không chặn sáng đèn ngoài bán kính R); màu dome S1 dời sang đợt "tối ưu cuối" cùng cove mesh custom (nếu faceting xác nhận là vấn đề thật). Gate C: Function mới `SpawnStudioLight(AngleOffsetDeg, Intensity)` dùng chung cho Key/Fill RectLight (Mobility=Movable bắt buộc, Attenuation Radius=8000, elevation 45°); Manual EV100 qua `Get/Set members in Post Process Settings` (không dùng `Make`, tránh ghi đè Lumen override C++); camera H-B tick `bUseFixedAngle`. 12 bug/quyết định trong lúc làm Gate C (chi tiết đầy đủ: `DEVIATIONS.md` mục "P2 — 17/07/2026 (cuối phiên)") — đáng chú ý nhất: dịch số vị trí đèn sai hướng 5 lần liên tiếp trước khi Fable chỉ ra root cause thật là Cast Shadow, bài học "3 lần sai cùng chỗ → STOP hỏi Fable" bị áp dụng trễ. Verify PASS: 2 combo khác nhau → cùng góc + cùng độ sáng. Tiếp theo: Gate D (bóng + sweep hình dáng). |
-| 18/07/2026 | **P2 (Studio Thumbnail) — Gate D prerequisite: lighting isolation.** Task gốc Gate D (Source Size Key tune + sweep 5 combo) chưa chạm — capture đầu tiên lỗi nặng (cháy sáng, vệt đen, bóng cứng, tông đổi theo giờ UDS), toàn phiên dành điều tra + fix 3 nguyên nhân gốc chặn: [CORRECTION] RectLight offset Z thật = 1200 (không phải 1500), đèn thật ra nằm TRONG dome (~1700 < R=2000) — loại giả thuyết "đèn ngoài bán kính"; [BUG-FIX] Distance Field khối đặc của Sphere engine tự triệt tiêu RectLight khi Cast Shadow=True → duplicate asset riêng `SM_StudioDome` + Two-Sided Distance Field Generation; [ARCH] `Set Lighting Channels` cô lập dome+đèn+furniture clone khỏi Sun/UDS (Channel 1); [ARCH] `Set Show Flag Settings(SkyLighting=False)` trên Capture Component riêng, không đụng LightManager của đồng nghiệp. Dải đen viền khung hình còn lại — [SUY LUẬN chưa verify], dời xử lý sang đúng task Gate D. Chi tiết đầy đủ: `DEVIATIONS.md` mục "P2 — 18/07/2026". Tiếp theo: tune Source Size Key + sweep 5 combo (task gốc Gate D). |
-| 19/07/2026 | **P2 (Studio Thumbnail) — Gate D prerequisite: Noise + Aliasing Fix, DONE.** Vẫn chưa chạm task gốc Gate D — ảnh thumbnail còn noise nặng (đốm blotchy nền dome + bóng mềm) sau lighting isolation 18/07, đã loại 7 giả thuyết trước khi xác định `SceneCapture2D` không có temporal accumulation thực sự (khác viewport chính). Fix: `AccumulateComboFrame`/`ResetComboAccumulation` (C++ mới, `UComboThumbnail`) cộng dồn N=24 frame trong không gian linear color, mượn Event Tick của `BP_ComboManager` (biến mới `Cmb_AccumFramesLeft`/`Cmb_AccumTargetFrames`) thay vì subclass SceneCapture2D; SSAA 2× supersample (RT 2048² khi Resolution=1024) + box downscale, encode gamma sRGB đúng 1 lần cuối. Bug fix trong lúc code: sửa nhầm `CreateRenderTarget2D` bản [LEGACY] thay vì bản thật (2 hàm cùng signature, phân biệt qua `bCaptureEveryFrame`). Test: noise CONFIRM (mịn hơn, không giật) + aliasing/SSAA CONFIRM DONE (cuhoang tự chạy lại checklist đầy đủ — kích thước ảnh đúng, không giật thêm). Chi tiết đầy đủ: `DEVIATIONS.md` mục "SPRINT 5 — 19/07/2026 — P2 Noise + Aliasing Fix", `Data/ComboSerializer_Reference.md`. Tiếp theo: tune Source Size Key + sweep 5 combo (task gốc Gate D, vẫn CHƯA bắt đầu). |
-| 20/07/2026 | **P2 (Studio Thumbnail) — Gate D: Rim Light + VRAM Fix DONE, Source Size=500 chốt, sweep 3/5 PASS — TẠM DỪNG.** Rim Light (3-point lighting, [SCOPE] mở rộng Gate C) qua `SpawnStudioLight` gọi lần 3 + biến mới `Cmb_StudioRimLight`; đổi `InVect`/SourceSize/AttenRadius cả 3 đèn + Post Process Exposure Compensation +6.0 — verify PASS ảnh combo To+Tường. Fix VRAM/GPU crash (EndPlay `BP_ComboManager`, 2 bug wiring: `Map_Clear` lồng sai nhánh Branch + thứ tự đọc/ghi `Cmb_CaptureHandle` khiến `ResetComboAccumulation` no-op) — verify bằng đọc code + export K2Node, CHƯA đo VRAM dài hạn. Sweep 5 loại combo: 3/5 PASS (Nhỏ/To/Tường), phát hiện 2 bug kiến trúc MỚI — (1) dome cong nuốt chân đồ footprint rộng (sofa lộ nhẹ, thảm FAIL nặng); (2) combo "Cao" (Ceiling) dính lỗi ground-align giống Tường (H1) nhưng chưa từng ghi trong plan. **Gate D TẠM DỪNG — chờ Fable/Opus quyết kiến trúc** (đảo ngược 1 phần quyết định Gate B) trước khi tiếp tục. Chi tiết: `DEVIATIONS.md` mục "P2 — 20/07/2026", `Bugs/Open_Bugs.md`, `Blueprints/Blueprint_Logic_NodeFlow.md` v1.11. |
-| 20/07/2026 (Nấc 1 + Dome Custom + Gate E) | **P2 — Bug-CeilingGroundAlign FIXED (Nấc 1, Function `ResolveThumbAlign`) + Bug-DomeCurvature FIXED (dome custom, đồng nghiệp dựng) + Gate E (DOF) DONE.** Sweep 5 loại: 4/5 PASS chính thức (Nhỏ/To/Dẹt/Tường), 1/5 (Cao) PASS sơ bộ bằng stack dựng tay — chờ combo kệ/tủ cao thật (Lựa chọn B). Gate D CHƯA đóng lúc này (còn treo case Cao) — xem entry 21/07 để biết trạng thái cuối. Chi tiết: `DEVIATIONS.md` mục "P2 — 20/07/2026 (Nấc 1)", "(Dome Custom)", "(Sweep 5 Loại)", "(Gate E)". |
-| 21/07/2026 | **P2 (Studio Thumbnail) — Gate F DONE, P2 HOÀN TẤT VỀ TÍNH NĂNG (Gate A→F).** Nối Studio pipeline vào `SaveComboFromSelection` thật (thay capture in-place P1): Custom Event mới `BeginThumbnailCapture` + `SetPendingUserCamYaw`; class var `Cmb_StudioCamYaw`(55)/`Cmb_PendingUserCamYaw`/`Cmb_PendingCaptureComboID`/`Cmb_DebugLastCaptureDistance`; Bước 7 gọi `BeginThumbnailCapture(DeltaYaw=StudioCamYaw−PendingUserCamYaw)`; Broadcast dời sang Event Tick tail (bắt buộc, pipeline async N=24). Fix framing: Radius bounding rotation-invariant (C++ `BeginComboCapture`, 235vs282→248vs263, ~20%→~3-6%). Hệ quả phụ: Save thật hết bug ảnh 2048² thô. Debug phím U + Enable Input đã xóa (`bDebugTestThumb`/`Cmb_DebugTestComboIDs`/`Cmb_DebugComboIndex` xóa theo). Backlog: VRAM regression SSAA 2048² + Feature-CanonicalStudioAngle (Sprint 6, `Bugs/Open_Bugs.md`). Chi tiết: `DEVIATIONS.md` mục "P2 — 21/07/2026 — Gate F", `BP_ComboManager.md` v1.10, `Blueprint_Logic_NodeFlow.md` v1.12. |
-| 21/07/2026 (K3) | **K3 (bAddToRecent) DONE** — 2 call site đã pin `bAddToRecent=False`: `RestoreSnapshot` (BP_UndoManager, Step 4) + `SpawnComboByID` (BP_ComboManager, Phase 3). Verify qua Blueprint Export Method (K2Node text) + screenshot thật, 4 case PASS (spawn combo, Undo/Redo, spawn furniture từ card, copy/paste). Kèm sửa doc: `BP_UndoManager.md` đoạn body `RestoreSnapshot` Step 4 ghi nhầm nhãn "v1.8" nhưng vẫn mô tả spawn inline cũ (mâu thuẫn changelog v1.10 đã đúng) — viết lại khớp export K2Node thật. Chi tiết: `Bugs/Open_Bugs.md` mục K3, `BP_UndoManager.md` v1.11, `BP_ComboManager.md` v1.11. |
-| 22/07/2026 | **C6 (Favorite + Recent combo) — CHÍNH THỨC DONE HOÀN TOÀN.** C6.1-C6.4 (API/nút tim/hook Recent/tab hiển thị) test PASS bao gồm persist qua tắt/mở PIE (thực hiện trực tiếp trong UE5 Editor, ngoài phiên Claude Code — không có node flow chi tiết trong doc). 2 bug fix: (1) `AddRecentCombo` dead-end — `SaveUserPrefs` chỉ chạy khi Recent vượt cap 48 phần tử (nhánh `False` < 48 không nối gì) → fix merge cả 2 nhánh; cap thật = 48, không phải 20 như `UX_Phase2_Plan.md` ghi (sai lệch tài liệu). (2) Recent hiển thị chỉ 1 card — `FilterByCategory` đổi `AddItem` loop → `Set List Items` batch (giống Favorite/All), bài học ghi vào skill `ue5-blueprint-rules` L12. Ghi nhận backlog (không phải bug): duplicate `comboId` khi copy tay file JSON — xử lý khi làm Save As/Save đè. File mới: `Blueprints/BP_FurnitureUserPrefsManager.md`. Chi tiết: `Bugs/Open_Bugs.md` mục "Note-DuplicateComboID". Tiếp theo: **C7 — WBP_ComboDetailPopup**. |
-| 22/07/2026 (bàn kế hoạch) | **Bàn lại ưu tiên: C7 dời Sprint 6, thêm field Kích thước Card, feature mới Save As/Save đè (chèn sau C9, UX chưa chốt).** THUẦN KẾ HOẠCH — chưa có Blueprint/code nào thay đổi trong phiên này. Thứ tự mới: K1 (Toast) → Field Kích thước Combo Card → Delete Combo → C9 (Replace) → Save As/Save đè (mới, tái dùng `ResolveSelectedComboRoot()` của C9) → C11 → C10 → Gate 2. Task card Save As/Save đè thêm vào `Sprints/Sprint5/Combo_Execution.md` mục "C9.5" (chưa có mã C-number chính thức), đánh dấu [UX CHƯA CHỐT] — 2 phương án dialog sơ bộ, bàn chi tiết ở phiên làm C9. Việc đầu tiên phiên tới: Field Kích thước Card. |
-| 22/07/2026 (Field Kích thước Card) | **DONE.** WBP_ComboCard v1.3 — TextBlock_Dimensions hiện "L×W×H m — S m²" từ ComboItem.BoundingBoxExtent, format qua To Text (Float) MinFrac=MaxFrac=1 (node mới confirm, đã vào bảng AI_Implementation_Rules.md). Test PASS. Combo BoundingBoxExtent=(0,0,0) (data cũ/lỗi) hiện "0,0×0,0×0,0 m — 0,0 m²" — không phải bug, chấp nhận được. Tiếp theo: Delete Combo. |
-| 22/07/2026 (Delete Combo + Dimension Fix) | **Delete Combo DONE** (5/5 test PASS) — ShowToastMsg TẠM thay Print String (K1 chưa DONE, đính chính giả định sai trước đó). **CalculateComboBoundingExtent sửa** Get Actor Bounds → Get Local Bounds×Scale+Location (fix phồng khi 1 món tự xoay tại chỗ; giới hạn còn lại — cả đội hình xoay lệch trục — merge vào backlog Feature-CanonicalStudioAngle Sprint 6, xem Open_Bugs.md). Thứ tự ưu tiên mới: **K1 (Toast) → C9 (Replace Combo) → Save As/Save đè → C11 → C10 → Gate 2.** Chi tiết: `Widgets/WBP_ComboCard.md` v1.4, `Widgets/WBP_FurnitureInventory.md` v3.13, `Blueprints/BP_FurnitureUserPrefsManager.md` v1.1, `Blueprints/BP_ComboManager.md` v1.12. |
-| 23/07/2026 (K1) | **K1 (WBP_Toast) DONE — 5/5 test PASS.** Widget mới `WBP_Toast` (`ShowToast`/`HideToast`, timer tự ẩn) + `Foff_GameInstance.ToastRef` (global) + `WBP_FurnitureInventory.ShowToastMsg` (helper). 6 chỗ Print→Toast: `CreateNewFolderFlow`, `HandleDeleteFolderConfirmed`, `HandleMoveComboConfirmed`, `HandleDeleteComboConfirmed` (×2, gỡ `[TẠM 22/07]`), `SpawnComboByID` Sub-step C (Row Not Found — MỚI, trước dead-end trần trụi). **Đính chính as-built:** `OnRequestNewFolder` chỉ gọi Function riêng `CreateNewFolderFlow` (doc cũ mô tả logic thẳng trong Custom Event — SAI); 2 annotation `[gate bDebugMode]` sai/lỗi thời sửa lại (gate thật `EnabledState=Development Only`). Thứ tự ưu tiên mới: **C9 (Replace Combo) → Save As/Save đè → C11 → C10 → Gate 2.** Chi tiết: `Widgets/WBP_Toast.md` (mới), `Widgets/WBP_FurnitureInventory.md` v3.14, `Blueprints/BP_ComboManager.md` v1.13, `Planning/Architecture_Overview.md` v1.2. |
-| 24/07/2026 (C9.0c) | **C9.0c (Migrate E_ReplaceTarget) — HOÀN TẤT, 5/5 test regression PASS, 6/6 file compile sạch.** Migrate `bIsReplaceMode`→`ReplaceTarget` (Enum, None/Mesh/Combo) trên `BP_FurnitureInputManager` + `WBP_FurnitureInventory`, xảy ra ngoài phiên Claude Code — ghi nhận lại qua K2Node export thật. Pure Function mới `IsReplaceModeActive()` (2 bản riêng). 3 bug fix: `CB_Replace` (Branch dư literal=true), `WBP_DetailPopup.BTN_ChangeMesh` (SET nhầm `MeshToReplace` dead thay `MeshesToReplace`, refactor gọi thẳng `StartReplaceMode`), `WBP_FurnitureCard.Get_Button_ChangeMesh_Visibility` (Property Binding getter chưa từng document, đọc biến đã xóa → luôn Hidden). Xóa dead code trùng tên trên `WBP_ComboCard`. 2 Quan sát ghi nhận trong `StartReplaceMode` (RowNotFound dead-end, guard Length==0 mất tích) — chưa quyết định fix. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.5, `Widgets/WBP_FurnitureInventory.md` v3.15, `Widgets/WBP_MeshControls.md` v1.8, `Widgets/WBP_DetailPopup.md` v1.3, `Widgets/WBP_FurnitureCard.md` v1.1, `Widgets/WBP_ComboCard.md` v1.5, `Sprints/Sprint2/ContextMenu_Prep.md` v1.2, `Blueprints/Blueprint_Logic_NodeFlow.md` v1.13. Tiếp theo: **C9 (Replace Combo, tính năng thật)**. |
-| 30/07/2026 | **C9 (Replace Combo) — HOÀN TẤT.** C9.b–C9.f (spawn/destroy cụm, ReplaceCombo + rollback, mode combo cho inventory, wiring BTN_ChangeCombo) DONE, test pass theo `24-07-2026_C9_Execution_Plan.md` §10. Vòng bug-fix sau test: Bug B (EnterReplaceMode thiếu SET CurrentInventoryMode + visibility CTV + UpdateTabHighlight), Bug A2 (OnMeshSelected nhảy tree về Furniture giữa combo replace — guard `Branch(ReplaceTarget==Mesh)`), Bug folder-highlight (`FilterByFolderPathWithUI` cho `FilterByFolderPath` ăn full path thay vì relative → chỉ node "All" sáng; fix đổi input sang `Split.RightS` + chèn `UpdateFolderHighlights()`) — cả 3 đều FIXED, test pass. Còn 1 mục [OPEN] chưa verify: nhánh DA legacy (`RowName=="None"`) chưa test format `MeshFolderPath` có khớp `"Object_Model/"` không — xem `Bugs/Open_Bugs.md`. Chi tiết đầy đủ: `Blueprints/BP_FurnitureInputManager.md` v2.6, `Blueprints/BP_ComboManager.md` v1.14, `Blueprints/BP_UndoManager.md` v1.12, `Widgets/WBP_FurnitureInventory.md` v3.16, `Widgets/WBP_ComboCard.md`, `DEVIATIONS.md` mục "C9 Replace — 30/07/2026". Tiếp theo: **Save As / Save đè combo** (khung sơ bộ [UX CHƯA CHỐT] đã có ở `Sprints/Sprint5/Combo_Execution.md` mục "C9.5" — bàn UX trước khi lên task card; tái dùng `ResolveSelectedComboRoot()` viết trong C9). |
-| 01/08/2026 (Replace UX Fix) | **Replace UX Fix (01/08/2026) — bắt đầu.** Phase 0 DONE 5/5. P1.2 (#3b chiptag) + P3.2 (#3a minimize) DONE, test PASS PIE. Xem entry 02/08 cho trạng thái đóng đợt. |
-| 02/08/2026 (Replace UX Fix) | **Replace UX Fix (P0→P5) — ✅ ĐÓNG.** P1.3 (#5 card container), P2 (#4 re-route mesh↔combo — root cause thật: thiếu guard `IsValid(SelectedActor)`, không phải doc-drift), P3.1 (#1 BTN_ChangeCombo gate), P4 (đường ngược Luật 6A + xóa dead code `MeshToReplace`) đều DONE. 6 bug gốc (#1/#3a/#3b/#4/#5/#6) rụng hết. P5.1 (#2 chỉ báo Replace mode) dời Sprint 6; P5.2 (DA legacy) gác — thiếu file test. Quyết định Opus #1 (hàm `CreateComboChipTagsForPath` mới) bị huỷ — dùng `RebuildChipRowForPath`/`RefreshChipBreadcrumb` có sẵn, đủ dùng. Chi tiết đầy đủ: `Widgets/WBP_FurnitureInventory.md` v3.19, `Blueprints/BP_FurnitureInputManager.md` v2.8, `DEVIATIONS.md` mục "Replace UX Fix — P0→P5 HOÀN TẤT — 02/08/2026", `Bugs/Open_Bugs.md`. Tiếp theo (theo priority queue cũ): **Save As/Save đè → C11 → C10 → Gate 2.** |
-| 02/08/2026 (Q9 + 3 bug Surface) | **Luật Q9 (S-Matrix Gate) thiết lập** — `Rules/AI_Implementation_Rules.md` v2.14, đặt ngay trước Q8 (S-Scan 10 trạng thái S0-S9 + X-Check 10 hệ thống X1-X10). Nguồn: bug thật C9 Replace Combo (thiếu ca sử dụng lúc plan, không phải bug code). 3 bug xác nhận bằng test tay trong editor: Bug-MaterialPrimaryOnly, Bug-PasteVerticalCollapse, Bug-StaleSurfaceType — ghi `Bugs/Open_Bugs.md`, kèm ceiling/trigger trong `DEVIATIONS.md`. Cả 3 dời sau Gate 2, **KHÔNG đổi thứ tự ưu tiên: Save As/Save đè → C11 → C10 → Gate 2.** |
+- **2 ceiling item khi migrate standalone:** `BP_Lib_ArchvizPCG_Camera` (Geometry Script),
+  `BP_UnTest_Lib` (debug plugin) — chấp nhận, không chặn.
+- **Standalone chưa có git repo** — risk quy trình đã ghi nhận (backup dựa Git chưa áp cho
+  `I:\FurnitureTool_Standalone\`).
+- **Còn lỗi runtime trong bản packaged Development** (Gate 1.5 C5, chưa fix) — thuộc phần soi ở
+  Gate 2 smoke, KHÔNG chặn Sprint 7.
+- **2 bug Surface dời sau Gate 2** (Sprint Surface): Bug-PasteVerticalCollapse 🔴,
+  Bug-StaleSurfaceType 🟡 — cùng gốc "chọn sai điểm neo". (Bug-MaterialPrimaryOnly cũng cùng nhóm
+  nhưng đã đưa lên active bugs vì fix trong Sprint 7.) `Bugs/Open_Bugs.md`.
+
+---
+
+## Recent changes (tối đa 5, mới nhất trên cùng)
+> Chỉ để định vị "vừa xong gì". Lịch sử đầy đủ → PROGRESS.md + Git.
+
+- 20/08 — Gate 1.5 ĐÓNG: package Development chạy máy sạch (không cài UE) + GizmoTrace PASS.
+  Sự cố engine binary giữa phiên đã fix bằng Verify Epic Launcher (xem DEVIATIONS).
+- 20/08 — Migrate hoàn tất sang `I:\FurnitureTool_Standalone\` (tách hẳn master, độc lập).
+- 14/08 — Sprint 5 (Combo Mesh) CHÍNH THỨC DONE (C0-C11, bar 22/23; P3 Xoay combo defer).
+
+---
+
+## Canonical pointers (giai đoạn hiện tại)
+
+| Cần gì | Đọc |
+|---|---|
+| Plan Sprint 7 | `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` |
+| Material v1.1 nền (đổi vật liệu đã chạy) | `Features/ChangeMaterial.md` |
+| Rule Blueprint (Q8/Q9/L1-L11/bảng node) | `Rules/AI_Implementation_Rules.md` |
+| Kỷ luật thực thi + luật doc | `Rules/Execution_Discipline.md` |
+| Bug đang mở | `Bugs/Open_Bugs.md` |
+| Deviation + ceiling | `DEVIATIONS.md` |
+
+---
+
+## Nguyên tắc đọc doc đầu session (authority-by-question)
+> KHÔNG xếp mọi doc trên 1 thang. Xác định LOẠI câu hỏi trước → chọn nguồn:
+
+| AI cần biết | Nguồn thắng |
+|---|---|
+| Project đang ở đâu? | file này (Session State) |
+| Code HIỆN TẠI chạy thế nào? | canonical `Blueprints/` `Widgets/` `Data/` |
+| Task đang muốn ĐỔI thành gì? | Task Source (Plan/Delta/Open_Bugs/Feature doc) |
+| Constraint/quyết định nào còn phải tuân? | `Rules/` + `DEVIATIONS.md` |
+| Vì sao trước đây thành thế này? | `DEVIATIONS.md` / Git |
+| Bug nào hiện còn mở? | `Bugs/Open_Bugs.md` |
+
+**Lưu ý authority:** Plan KHÔNG override canonical về *reality hiện tại* — chỉ override về
+*intended future work*. Hỏi "code chạy sao" → canonical thắng; hỏi "task định sửa gì" → Plan thắng.

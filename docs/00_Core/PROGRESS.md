@@ -215,7 +215,7 @@ T1-T15 shipped. Chi tiết: `Blueprints/BP_FurnitureInputManager.md`, `Blueprint
 - [x] G1.2 — Hợp nhất spawn: RestoreSnapshot Step 4 gọi SpawnFurnitureCopy(bAutoSelect=False) qua cached ref (RestoreInputMgr), xóa code spawn inline cũ. Bug phát hiện trong test: bAutoSelect bị wire nhầm thành True → tất cả item bị select sau mọi lần restore → fix lại False. 5/5 test case PASS (case "crash khi tắt PIE sau Save/Load/Undo" — defer, nghi GPU/VRAM, verify ở Gate 2).
 - [x] G1.3 — Dọn doc drift (cập nhật PROGRESS.md, DEVIATIONS.md, Session_State.md, BP_UndoManager.md v1.10).
 
-→ Tiếp theo: Sprint D (Data Layer v2). Đọc `02_Current_Sprint.md` phần Sprint D khi bắt đầu.
+→ Tiếp theo: Sprint D (Data Layer v2). Đọc `01_Session_State.md` khi bắt đầu.
 
 ---
 

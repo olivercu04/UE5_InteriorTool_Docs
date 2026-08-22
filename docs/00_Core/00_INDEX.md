@@ -9,7 +9,7 @@
 | Muốn sửa / hiểu | File |
 |---|---|
 | Select / multi-select / box select / group / edit mode / clipboard / nudge | [Blueprints/BP_FurnitureInputManager.md](../Blueprints/BP_FurnitureInputManager.md) |
-| Undo / Redo / snapshot / CaptureSnapshot / RestoreSnapshot | [Blueprints/BP_UndoManager.md](../Blueprints/BP_UndoManager.md) (Bug B1 + bIsRestoring: xem [02_Current_Sprint.md](02_Current_Sprint.md)) |
+| Undo / Redo / snapshot / CaptureSnapshot / RestoreSnapshot | [Blueprints/BP_UndoManager.md](../Blueprints/BP_UndoManager.md) (Bug B1 + bIsRestoring: xem [01_Session_State.md](01_Session_State.md)) |
 | Toolbar / info bar / breadcrumb / nút edit mode / snap fields | [Widgets/WBP_MeshControls.md](../Widgets/WBP_MeshControls.md) |
 | Inventory / filter / search / folder tree / pagination / material grid / replace mode | [Widgets/WBP_FurnitureInventory.md](../Widgets/WBP_FurnitureInventory.md) |
 | Drag-drop spawn / ghost preview / surface snap | [Widgets/WBP_DragOverlay_FurnitureCard.md](../Widgets/WBP_DragOverlay_FurnitureCard.md) |
@@ -36,7 +36,6 @@
 | Antipatterns đã trả giá | [Rules/Antipatterns.md](../Rules/Antipatterns.md) |
 | Scale 1M assets | [Planning/Future_Architecture_1M_Assets.md](../Planning/Future_Architecture_1M_Assets.md) |
 | Bugs đang mở | [Bugs/Open_Bugs.md](../Bugs/Open_Bugs.md) |
-| Gate 1 + Sprint D execution plan | [00_Core/02_Current_Sprint.md](02_Current_Sprint.md) |
 
 ---
 
@@ -45,7 +44,6 @@
 | File | Mô tả |
 |---|---|
 | [00_Core/01_Session_State.md](01_Session_State.md) | Trạng thái hiện tại của dự án — đọc đầu tiên |
-| [00_Core/02_Current_Sprint.md](02_Current_Sprint.md) | Gate 1 + Sprint D — task đang chạy |
 | [00_Core/PROGRESS.md](PROGRESS.md) | Tiến độ tổng thể theo Sprint |
 | [00_Core/DEVIATIONS.md](DEVIATIONS.md) | Các lệch khỏi kế hoạch gốc, bug defer |
 | [Bugs/Open_Bugs.md](../Bugs/Open_Bugs.md) | B1 🔴, B-gizmo 🟢, B-folder 🟢 — bugs đang mở |
@@ -60,7 +58,6 @@
 |---|---|
 | [00_INDEX.md](00_INDEX.md) | File này — index toàn bộ docs/ |
 | [01_Session_State.md](01_Session_State.md) | Kiến trúc v1.9, Sprint 4 BugFix COMPLETE, roadmap v3.1 |
-| [02_Current_Sprint.md](02_Current_Sprint.md) | Gate 1 (G1.T1-G1.T3), Sprint D (D.T1-D.T9), Gate 2 notes |
 | [DEVIATIONS.md](DEVIATIONS.md) | Lệch kế hoạch, bugs defer, quyết định kiến trúc |
 | [MERGE_LOG.md](MERGE_LOG.md) | Log hợp nhất import_raw → docs/ (Lô A/B/C/D) |
 | [PROGRESS.md](PROGRESS.md) | Overview bar, Sprint timeline, Sprint 4 BugFix section |

@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.14 | **Cập nhật:** 02/08/2026 — thêm mục Q9 S-MATRIX GATE (S-Scan + X-Check), đặt ngay trước Q8
+**Phiên bản:** 2.15 | **Cập nhật:** 22/08/2026 — thêm mục L-DOC (ghi/đọc canonical Blueprint flow, hai biên khóa K2/canonical), đặt sau L12
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -160,6 +160,149 @@ IfThenElse kiểm IsValid(LoadedTex) dead-end → khi gọi liên tục trong Fo
 (LoadComboLibrary), combo chưa có thumbnail hiện NHẦM ảnh của combo trước đó trong vòng
 lặp. Q8 self-check L2 khi audit Function có Return Value: liệt kê ĐỦ từng nhánh, xác nhận
 mỗi nhánh có Return Node riêng.
+
+## L-DOC — Ghi & đọc canonical Blueprint flow (hai biên khóa)
+
+> Chống failure mode "thấy 80% flow → bịa 20%". Khóa hai đầu độc lập: K2 đủ trước khi GHI,
+> canonical đủ trước khi ĐỌC. Gánh trên Claude, không trên cuhoang.
+
+### Notation (giữ nguyên quy ước dự án)
+- `▶→` = execution wire. `●→` = data wire.
+- `NodeA.PinName ●→ NodeB.PinName` = data wire ở mức pin cụ thể.
+- Pin/data nào ẢNH HƯỞNG LOGIC → canonical PHẢI giữ pin-level truth, KHÔNG rút gọn thành
+  "A nối B". (Vd: `Get Mouse Position on Viewport.ReturnValue ●→ SET ResizeStartMousePos`,
+  không qua Make Vector2D — rút gọn "A nối B" là mất đúng chi tiết này.)
+
+### Raw K2 là EVIDENCE, không phải format lưu trữ
+- K2 export = ground truth để VERIFY. Canonical `▶→/●→` = representation để Claude làm việc
+  lâu dài.
+- KHÔNG lưu raw K2 làm canonical (noise/signal quá tệ: 80% là GUID/tọa độ, node không theo
+  execution order).
+
+---
+
+### L-DOC-WRITE — biên GHI (khi dịch K2 → canonical)
+
+Một flow chỉ được đóng dấu `[K2 dd/mm]` khi Claude đã tự kiểm K2 export phủ ĐỦ **graph
+boundary của CHÍNH flow đó**:
+
+1. Thấy **Entry** của flow.
+2. Lần được **mọi exec path** tới terminal (Return/End) hoặc dead-end.
+3. Kiểm đủ: **mọi output của Sequence** (then_0…then_N), **True/False của mọi Branch**,
+   **Loop Body + Completed của mọi loop**, **Success/Failed của mọi Cast**.
+4. **Bất kỳ `LinkedTo` nào trỏ tới Node/Pin KHÔNG có trong export → THIẾU coverage.**
+   Tuyệt đối, KHÔNG exception. (Đây là cách kiểm máy móc export có bị cắt không: pin nối tới
+   GUID mà GUID đó không xuất hiện trong phần đã paste = export thiếu.)
+
+Thiếu coverage → **KHÔNG đóng dấu K2.** Nói rõ THIẾU ĐOẠN NÀO, KHÔNG tự lấp.
+
+**Ghi MỌI branch outcome — kể cả dead/empty — BẮT BUỘC.** Raw K2 cho thấy nhánh trống là data
+CÓ THẬT. Không ghi → lần sau không phân biệt "nhánh thật sự không nối" với "người viết bỏ qua
+vì thấy hiển nhiên" → sinh đoán. (Bài học: nhiều bug dead-end của dự án — GetComboThumbnail,
+AddRecentCombo, Bước 7 SaveCombo — trốn ở đúng nhánh False không được ghi.)
+
+**Semantics của `[K2 dd/mm]`:** chứng nhận flow này, ở biên của CHÍNH NÓ, đã đối chiếu K2 export
+đầy đủ vào ngày đó. KHÔNG hứa gì về internals của flow mà nó gọi.
+
+---
+
+### L-DOC-READ — biên ĐỌC (khi task cần flow để reasoning/sửa node)
+
+- Kéo về **TRỌN** block canonical `▶→/●→` của flow: search phải lấy đủ từ **START → END**
+  (xem mốc neo bên dưới). Search tới khi đủ, KHÔNG dừng ở mảnh đầu tiên nghe hợp lý.
+- KHÔNG viết/sửa node từ mảnh rời. Mảnh CHỈ để định vị/bàn hướng.
+- Kéo không đủ → **DỪNG, nói rõ thiếu đoạn nào của flow nào**, xin cuhoang paste đúng đoạn đó
+  (hoặc K2 export đoạn đó) — KHÔNG đoán.
+- Nguồn tin cậy giảm dần: **K2 export (graph thật) > canonical `▶→/●→` đầy đủ > mảnh search.**
+
+**START/END chỉ bảo chứng biên ĐỌC** ("search lần này lấy đủ block từng verify"). KHÔNG bảo
+chứng biên GHI. Coverage-check (WRITE) và START/END (READ) là 2 việc khác nhau, làm cả hai.
+
+---
+
+### Mốc neo & ranh giới (để search kéo trọn)
+
+Mỗi flow trong canonical:
+- **Một heading riêng, tên ĐÚNG như trong editor:** `## BP_ComboManager.SaveComboFromSelection`.
+  (Search trúng đúng khối, không lẫn với chỗ khác nhắc tên nó thoáng qua.)
+- **Đánh dấu Entry và Return/End rõ ràng.** Kéo về mà không thấy mốc END → BIẾT còn thiếu đuôi,
+  phải search tiếp — không dừng non rồi đoán.
+- **Dấu trạng thái verify ngay dưới heading:** `[K2 dd/mm]` (đã verify) hoặc
+  `[UNVERIFIED — K2 REQUIRED]` (chưa) hoặc `[⚠ suy luận]` (ghi theo đoán, chưa có export).
+
+---
+
+### Cross-flow: khi flow gọi flow khác
+
+`Call BuildFolderTree` KHÔNG dùng `LinkedTo` để trỏ sang thân function (function gọi nào ghi ở
+trường `FunctionReference`, không phải wire). Nên:
+
+- **Call node đầy đủ trong export = boundary HỢP LỆ.** KHÔNG cần export internals của callee để
+  verify caller. (Nếu bắt export cả cây callee thì coverage thành bất khả: 1 flow gọi 5 flow
+  khác phải export 6 flow mới đóng dấu được.)
+- Canonical ghi call + anchor, KHÔNG inline thân callee:
+  ```
+  ▶→ Call BeginThumbnailCapture
+      ↳ See: BP_ComboManager.BeginThumbnailCapture
+  ```
+
+**3 điều kiện anchor:**
+- **A — Định danh đầy đủ:** `Asset.FlowName` (`BP_ComboManager.BeginThumbnailCapture`), KHÔNG
+  `→ xem BeginThumbnailCapture` trống.
+- **B — Chỉ nói điều mình biết:** callee CHƯA có canonical entry → ghi thẳng, KHÔNG giả vờ có:
+  ```
+  ↳ Callee: BP_ComboManager.BeginThumbnailCapture
+     Canonical flow: NOT DOCUMENTED
+  ```
+  (Anchor trỏ tới heading không tồn tại → lần sau search theo anchor không thấy → tưởng search
+  sai → đoán. Ghi NOT DOCUMENTED chặn thẳng.)
+- **C — Verification KHÔNG truyền qua anchor:** caller `[K2 22/08]` + callee
+  `[UNVERIFIED — K2 REQUIRED]` = trạng thái HỢP LỆ, không mâu thuẫn. Nghĩa chính xác:
+  ✓ chắc chắn caller GỌI callee. ? chưa chắc internals của callee.
+  - Hỏi "caller có gọi X không?" → caller đủ trả lời.
+  - Hỏi "X làm gì bên trong?" → RECURSE sang canonical của X. X chưa verified/không đủ →
+    L-DOC-READ DỪNG tại đó, không đoán.
+
+**Dispatcher / Interface / Delegate — KHÔNG có callee duy nhất:**
+- `Broadcast OnSelectionChanged` có thể có NHIỀU listener, listener THAY ĐỔI. KHÔNG ghi
+  `↳ See: WBP_X.OnSelectionChanged` như thể đó là đích duy nhất (biến broadcast thành lời gọi
+  thẳng = sai bản chất = anchor hóa thành suy luận kiến trúc).
+- Caller chỉ ghi sự thật CỤC BỘ: `▶→ Broadcast OnSelectionChanged`.
+- Cross-ref (nếu có) ghi đúng semantics, phân biệt:
+  ```
+  ↳ Dispatcher: BP_FurnitureInputManager.OnSelectionChanged
+  ↳ Known binding: WBP_FurnitureInventory.OnSelectionChangedMaterial
+  ```
+  Chỉ gọi "Known binding" khi **K2 evidence đã chứng minh binding đó** — không phải khi đoán ai
+  đang nghe. (Tương tự Blueprint Interface/dynamic dispatch: caller verified ≠ implementation
+  đích verified hay xác định duy nhất.)
+
+---
+
+### Wording coverage rule (chuẩn, để tra nhanh)
+
+> K2 coverage của một flow chỉ xét graph boundary của CHÍNH flow đó. Mọi exec/data pin thuộc
+> flow phải lần đầy đủ tới terminal hoặc node đích trong CÙNG export. Bất kỳ `LinkedTo` nào
+> tham chiếu Node/Pin không có trong export → coverage thiếu. Call node tới Function/Event/
+> Macro/flow khác là boundary hợp lệ, không yêu cầu export internals của callee để verify
+> caller. Canonical ghi call + fully-qualified anchor nếu canonical target tồn tại; không inline
+> callee. `[K2 dd/mm]` chỉ chứng nhận local flow topology, KHÔNG truyền verification qua
+> dependency. Khi reasoning cần internals của callee, L-DOC-READ recurse sang canonical flow
+> đó; nếu flow đó chưa verified/không đủ → DỪNG tại đó.
+
+---
+
+### Quan hệ với M2 (không chồng chéo)
+
+Hai loại anchor làm hai việc khác nhau, đều qua representation test:
+- **Canonical anchor** (`▶→ Call X ↳ See: Asset.X`) = *local dependency truth* — "node này
+  thật sự gọi flow nào".
+- **NodeFlow.md anchor** (`Save Combo → validate → build → thumbnail → persist`, rồi
+  `Exact: → SaveComboFromSelection → BeginThumbnailCapture`) = *navigation/comprehension map*
+  — "feature đi qua subsystem lớn nào".
+
+Không mirror body → không tạo canonical thứ hai. (M2 rút NodeFlow thành compressed orchestration
++ anchor; luật này lo chuẩn ghi từng flow trong canonical. Bổ sung nhau.)
 
 ---
 
@@ -671,3 +814,4 @@ Sau khi 1 sprint/task lớn xong:
 | 2.12 | 22/07/2026 | Thêm `To Text (Float)` vào bảng NODE CHÍNH XÁC ĐÃ XÁC NHẬN — đã confirm qua screenshot editor thật (Field Kích thước Combo Card, `WBP_ComboCard.md` v1.3). |
 | 2.13 | 22/07/2026 (tiếp) | Thêm `Get Local Bounds` (StaticMeshComponent) vào "Nodes chờ xác nhận" — Dimension Fix `CalculateComboBoundingExtent` (`BP_ComboManager.md`), thay `Get Actor Bounds` (World AABB) để tránh phồng khi actor tự xoay tại chỗ. |
 | 2.14 | 02/08/2026 | Thêm mục **Q9 — S-MATRIX GATE**, đặt NGAY TRƯỚC Q8: TẦNG 1 bảng S-Scan (S0-S9), TẦNG 2 X-Check (X1-X10 + 4 kho persistence + 4 trục ngữ cảnh B/C/D/E), test kể cả ô N/A, giới hạn thực tế của luật (~80% bắt lúc plan). Nguồn: phiên bàn kiến trúc với Opus, phát hiện qua bug thật C9 Replace Combo. Xem `DEVIATIONS.md` mục "Q9 S-Matrix Gate + 3 bug Surface — 02/08/2026". |
+| 2.15 | 22/08/2026 | Thêm mục **L-DOC — Ghi & đọc canonical Blueprint flow (hai biên khóa)**, đặt sau L12 cuối phần Key Learnings: L-DOC-WRITE (coverage-check K2 trước khi đóng dấu `[K2 dd/mm]`), L-DOC-READ (kéo trọn block canonical START→END trước khi reasoning/sửa node), mốc neo Entry/End + trạng thái verify, quy tắc cross-flow (Call node = boundary hợp lệ, anchor 3 điều kiện, dispatcher/delegate không có callee duy nhất), wording coverage chuẩn, quan hệ với M2. Chống failure mode "thấy 80% flow → bịa 20%". Nguồn: Opus + ChatGPT (3 vòng phản biện), Cuhoang chuyển lời. Luật áp cho flow ghi/đọc TỪ ĐÂY, KHÔNG hồi tố lên canonical cũ. |
