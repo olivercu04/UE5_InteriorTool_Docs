@@ -1,5 +1,5 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 3.4 | **Cập nhật:** 04/08/2026 13:15 — `CB_Replace` re-export ✓K2 03/08/2026: có nhánh `ShouldRouteReplaceToCombo` (bản 24/07 cũ chưa phản ánh, đánh SUPERSEDED giữ lịch sử). Xác nhận đủ 2 call site T2 (`OnMeshSelected` + `CB_Replace`) — đóng caveat ghi ở v3.3 | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 3.5 | **Cập nhật:** 24/08/2026 — `OnRMBPressed`/`OnRMBReleased` (Right-click handler T4) re-export ✓K2 24/08/2026: cơ chế time-based + camera-rotation-delta thay mô tả cũ chưa từng verify; thêm biến `RMBPressTime`/`RMBPressCamRot`; `OnRightClick()` (callee) internals CHƯA verify đợt này, giữ mô tả cũ dạng `[⚠ suy luận]`. Ghi nhận `IA_RMBPress`/`IA_RMBRelease` chưa có trong bảng Input Action chính thức | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 > **v2.8 (Replace UX Fix P0→P5, 02/08/2026):** biến `MeshToReplace` (single, dead code) XÓA HOÀN
 > TOÀN (P4.4) — đính chính dòng Variables ghi sai đã "xóa từ v1.6". Node flow re-route (P2), card
@@ -101,6 +101,8 @@ PendingClickActor   : BP_FurnitureActor      ← đồ bị bấm vào (defer se
 ### Context Menu (v1.5 — Sprint 2 T3-T4)
 ```
 ContextMenuRef      : WBP_ContextMenu        ← menu chuột phải, tạo on-demand, clear ở Destruct của widget
+RMBPressTime         : Float (double)         ← [✓K2 24/08/2026] GetGameTimeInSeconds() lúc OnRMBPressed
+RMBPressCamRot       : Rotator                ← [✓K2 24/08/2026] camera rotation lúc OnRMBPressed, CHỈ ĐỌC để so sánh lúc thả
 ```
 
 ### Clipboard cũ (v1.2 — B2) — GIỮ tạm, bỏ ở S7.T9
@@ -940,10 +942,48 @@ GET LENGTH SelectedActors:
 ## CONTEXT MENU FUNCTIONS (v1.5 — Sprint 2 T3-T6)
 **Widget:** WBP_ContextMenu (container) + WBP_ContextMenuItem (mỗi dòng) + WBP_MenuSeparator.
 
-### Right-click handler (T4)
+### Right-click handler (T4) — [✓K2 24/08/2026]
+
+**Input Actions:** `IA_RMBPress` / `IA_RMBRelease` (map Right Mouse Button, trong
+`LM_FurnitureInput`). ⚠️ Không tìm thấy 2 action này trong bảng Input Action chính thức nào của
+canonical docs hiện có — khả năng leftover chưa từng ghi chép. `IA_RMBRelease` bị chính
+`IA_RMBPress` override trong Enhanced Input debug (2 action cùng `LM_FurnitureInput` tranh cùng
+phím Right Mouse Button) — không ảnh hưởng chức năng (logic vẫn đúng qua Branch bên dưới), nhưng
+đáng dọn nếu có dịp rà lại input list. Chưa thêm vào bảng "Node/Action chính xác" — cần cuhoang
+xác nhận trước.
+
+Biến liên quan: `RMBPressTime`/`RMBPressCamRot` (xem mục Variables → Context Menu).
+
 ```
-Phát hiện right-click: dùng time-based + check camera đang xoay/pan (cursor bị lock khi pan)
-→ nếu là click thật (không phải kết thúc pan):
+Custom Event OnRMBPressed   [✓K2 24/08/2026]
+▶→ SET RMBPressTime = GetGameTimeInSeconds()
+▶→ SET RMBPressCamRot = GetPlayerController(0).PlayerCameraManager.GetCameraRotation()
+   ← CHỈ ĐỌC, KHÔNG set lại camera. Ghi nhận rotation lúc bấm để so sánh lúc thả.
+```
+
+```
+Custom Event OnRMBReleased   [✓K2 24/08/2026]
+▶→ Branch(
+     (GetGameTimeInSeconds() - RMBPressTime < 0.3)                    ← thả nhanh (<0.3s)
+     AND (Abs(CurrentCamRot.Pitch - RMBPressCamRot.Pitch) < 0.5)      ← camera KHÔNG xoay
+     AND (Abs(CurrentCamRot.Yaw   - RMBPressCamRot.Yaw)   < 0.5)
+   )
+     True  ▶→ Call OnRightClick()                    ← click thật → mở context menu
+     False ▶→ Branch(IsValid(ContextMenuRef))
+                True  ▶→ ContextMenuRef.Hide ▶→ SET ContextMenuRef = None
+                False ▶→ (trống — L2 hợp lệ, cuối chain)
+```
+
+**Ý nghĩa cơ chế:** phân biệt "right-click thật" (bấm-thả nhanh, camera đứng yên trong ±0.5°)
+với "giữ chuột phải kéo pan/xoay camera rồi thả ra" (camera đã xoay → không phải click, chỉ đóng
+menu cũ nếu có, không mở menu mới). `GetCameraRotation()` chỉ dùng để SO SÁNH — không set ngược
+lại camera.
+
+**`OnRightClick()` (callee, boundary hợp lệ theo L-DOC — internals CHƯA verify trong đợt K2
+24/08/2026 này):**
+```
+↳ Callee: BP_FurnitureInputManager.OnRightClick
+   Canonical flow: [⚠ suy luận — mô tả cũ trước đợt 24/08, chưa từng verify bằng K2Node]
    IsValid(ContextMenuRef) → Remove cũ → SET None    (chỉ 1 menu cùng lúc)
    Create Widget(WBP_ContextMenu) → SET ContextMenuRef → Add to Viewport
    Set Position In Viewport(vị trí chuột)

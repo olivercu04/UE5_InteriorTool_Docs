@@ -22,6 +22,9 @@ và `Bug-ComboCategoryHardcode` (fix D2, verify `.json` ra `"category": ""`). Sa
 Sprint 5): Bug-ThumbnailMaterialOverride-Ignored, Bug-ComboSpawnLabel-MixedLooseGroup,
 Bug-ComboRoot-MixedLooseGroup (đóng `[CEILING]` "2 nơi cùng biết cách leo combo root" treo từ
 T5). Xem `01_Session_State.md`.
+**Cập nhật (tiếp) 24/08/2026:** Đóng `Bug-CameraSpeed-ShiftConsumed` (RESOLVED cùng ngày) —
+phát hiện lúc tích hợp standalone vào project tổng, `IA_Shift` Consume Lower Priority nuốt phím
+Shift của `IncreAction`.
 
 ---
 
@@ -64,6 +67,7 @@ T5). Xem `01_Session_State.md`.
 | Bug-ThumbnailMaterialOverride-Ignored | [OPEN] Thumbnail combo bỏ qua MaterialOverrides đã áp trên actor gốc lúc save — chụp mesh material mặc định | 🟡 Trung bình | Phát hiện C10 (14/08). Xem mục chi tiết dưới |
 | Bug-ComboSpawnLabel-MixedLooseGroup | [OPEN] Info bar hiện "N vật thể" (raw count) thay vì "📦 [Tên] (N)" sau spawn combo trộn nested-group + đồ rời top-level | 🟡 Trung bình | Phát hiện C10 (14/08). Xem mục chi tiết dưới |
 | Bug-ComboRoot-MixedLooseGroup | [OPEN, ĐÓNG CEILING treo] F_RegisterComboGroups Case B không tạo wrapper group cho đồ rời top-level khi combo có nested group thật | 🔴 Cao | Phát hiện C10 (14/08) — ƯU TIÊN FIX ĐẦU SPRINT 6. Xem mục chi tiết dưới |
+| Bug-CameraSpeed-ShiftConsumed | ✅ RESOLVED (24/08) — Sau tích hợp standalone vào project tổng: camera move speed luôn bắt đầu từ 0.1 (class default), không tăng qua Shift | — | `IA_Shift` (chord `IA_FurnitureUndo`/`IA_FurnitureRedo`) nuốt phím Shift, `IncreAction` (project tổng) không bao giờ Trigger. Fix: tắt `Consume Lower Priority Enhanced Input Mappings` trên `IA_Shift`. Xem mục chi tiết dưới |
 
 ---
 
@@ -1033,6 +1037,56 @@ con hay không.
 ### Trạng thái
 - **Open — ƯU TIÊN FIX ĐẦU SPRINT 6, trước khi làm việc khác** (bug chạm kiến trúc combo). Xem
   `01_Session_State.md` 14/08/2026, `02_Current_Sprint.md`.
+
+---
+
+## Bug-CameraSpeed-ShiftConsumed — Camera move speed không tăng qua Shift sau tích hợp project tổng
+
+**ID:** Bug-CameraSpeed-ShiftConsumed
+**Phát hiện:** 24/08/2026 (phiên tích hợp `FurnitureTool_Standalone` vào project tổng clone mới nhất)
+**Trạng thái:** ✅ RESOLVED 24/08/2026
+
+### Triệu chứng
+Sau khi tích hợp standalone vào project tổng clone: camera (`BP_ArchvizPCG_Camera`) move speed
+bắt đầu từ 0.1 (class default) thay vì từ giá trị đã tăng qua Shift như hành vi quen thuộc ở
+bản project tổng gốc.
+
+### Gốc rễ
+Input Action **`IA_Shift`** (dùng làm Chord Action cho `IA_FurnitureUndo`/`IA_FurnitureRedo`
+trong `LM_FurnitureInput`, priority 3) có setting mặc định `Consume Lower Priority Enhanced
+Input Mappings = true` → nuốt phím Left Shift ở tầng context priority cao nhất → `IncreAction`
+(Input Action điều khiển `Movement Speed` của `BP_ArchvizPCG_Camera`, nằm trong `LM_InputMapping`
+priority 2) không bao giờ Trigger được nữa.
+
+Xác nhận qua Enhanced Input debug (`showdebug enhancedinput`):
+```
+Action: IncreAction
+  Left Shift - : OVERRIDDEN BY LM_FurnitureInput:IA_Shift
+```
+
+Không phải bug do class default (0.1 giống nhau ở cả 2 bản), không phải do đổi priority (giữ
+nguyên 3 > 2 — cần thiết để `IA_Block_C/D/V/X/Z` tiếp tục chặn phím tắt master của project tổng).
+
+### Fix
+Input Action **`IA_Shift`** → Details panel → mục **Input Consumption** → bỏ tích
+**`Consume Lower Priority Enhanced Input Mappings`**.
+
+### Verify
+- Giữ Shift trong PIE (project tổng đã tích hợp) → camera tăng tốc bình thường. ✅
+- Ctrl+Shift+Z (Redo — dùng chung `IA_Shift` làm Chord) → vẫn chạy đúng, không bị ảnh hưởng bởi
+  việc tắt Consume. ✅
+
+### Bài học
+Bug này **vô hình trên standalone** (chỉ có 1 Input Mapping Context, không ai nuốt phím ai) —
+chỉ lộ ra khi tích hợp vào project tổng (4 context chồng nhau: `LM_FurnitureInput`(3) >
+`LM_InputMapping`(2) > `VicInputMappingContext`(?) > `IMC_Default`(0)).
+
+**Quy tắc áp dụng cho Input Action mới thêm vào `LM_FurnitureInput`:** nếu action chỉ cần *biết*
+phím đang giữ (chord, không cần độc chiếm) → tắt Consume Lower Priority theo mặc định. Chỉ giữ
+Consume=True khi thực sự cần độc chiếm phím đó (ví dụ `IA_FurnitureNudge` — mũi tên phải thuộc
+hẳn về tool khi có actor đang chọn, không được vừa nudge vừa lia camera).
+
+Nguồn: phiên tích hợp standalone vào project tổng, 24/08/2026.
 
 ---
 

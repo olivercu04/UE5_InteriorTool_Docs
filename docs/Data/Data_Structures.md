@@ -1,6 +1,7 @@
 # 05 — Data Structures
 **Mục đích:** Tham chiếu đầy đủ struct, enum, variables.
 **Cập nhật:** 14/07/2026 — đối chiếu C++ thật (`ComboTypes.h`/`ComboSerializer.h`), sửa mảng Combo lỗi thời (3+ tuần chưa cập nhật): `S_FolderTargetEntry`→`S_FolderTreeNode`, +`S_GroupData.SourceComboID`, `S_ComboMeshData`/`DT_ComboMeshCatalog`/`S_ComboJSONEntry` (planned, chưa từng xây) → `FComboData`/`FComboGroupData`/`FComboItemData` thật + JSON ví dụ, sửa vị trí function Combo (BP_ComboManager, không phải InputManager)
+**Cập nhật (tiếp) 24/08/2026:** thêm `IA_RMBPress`/`IA_RMBRelease` vào mục INPUT ACTIONS — xác nhận qua K2Node export (Right-click handler T4, `BP_FurnitureInputManager.md`). Ghi nhận mâu thuẫn chưa giải quyết với `IA_RightClick` đã có sẵn ở "Mới — Sprint 2".
 
 ---
 
@@ -348,6 +349,18 @@ IA_ToggleLock           (Boolean) — Ctrl+L
 IA_ToggleOutliner       (Boolean) — O
 IA_FocusSelected        (Boolean) — F
 ```
+
+### Mới — xác nhận qua K2Node export 24/08/2026
+```
+IA_RMBPress             (Boolean) — Right Mouse Button, trong LM_FurnitureInput
+IA_RMBRelease           (Boolean) — Right Mouse Button, trong LM_FurnitureInput
+```
+⚠️ `IA_RMBRelease` bị chính `IA_RMBPress` override trong Enhanced Input debug (2 action cùng
+`LM_FurnitureInput` tranh cùng phím Right Mouse Button) — không ảnh hưởng chức năng, đáng dọn
+nếu có dịp. Xem `Blueprints/BP_FurnitureInputManager.md` mục "Right-click handler (T4)".
+⚠️ Trùng khả năng với entry `IA_RightClick (Boolean) — Right Mouse Button` đã ghi ở "Mới — Sprint
+2" phía trên — CHƯA xác nhận có phải cùng 1 action đổi tên, 2 action riêng biệt, hay 1 trong 2 là
+dead/leftover. Ghi nhận mâu thuẫn, không tự gộp/sửa.
 
 ---
 
