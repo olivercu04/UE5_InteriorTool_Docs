@@ -1,9 +1,20 @@
 # Hướng dẫn Tích hợp vào Project Tổng
-**Phiên bản:** 1.3 | **Cập nhật:** 02/06/2026 — 11:44 ICT | Project: Lighting_Mnger (UE5.5.4)
+**Phiên bản:** 1.5 | **Cập nhật:** 24/08/2026 | Project: Lighting_Mnger (UE5.5.4)
 
 ---
 
 ## CHANGELOG
+
+### v1.5 (24/08/2026) — Bước 15 mở rộng: Script 7 (StaticMesh) + Script 8 (ThumbnailSoft)
+- **Bước 15** — chèn **15b.5** (Script 7, StaticMesh) và **15b.6** (Script 8, ThumbnailSoft) giữa
+  15b (BoundingSize) và bước EUW_CreateDataAssets cũ. Bước EUW_CreateDataAssets đổi số `15c`→`15e`.
+  Cả 2 script đã chạy thật + verify PASS Row Editor 24/08/2026. Xem `Python_Scripts.md` mục 7-8.
+
+### v1.4 (24/08/2026) — Selection Outline: PostProcessVolume actor → Post Process Component
+- **Bước 7b** — thay hẳn: không đặt `PostProcessVolume` trong level (Volume actor cần brush, không
+  đảm bảo tồn tại sẵn ở project tổng khác nhau). Gắn Post Process Component vào
+  `BP_FurnitureSceneManager` (Unbound=True, Post Process Materials += M_SelectionOutline). Verify
+  PASS trong Editor, không phải giả thuyết.
 
 ### v1.3 (02/06/2026) — Cập nhật sau integration thực tế
 - **Bước 3-5 (C++ Module) → XÓA HOÀN TOÀN** — thay bằng plugin FurnitureToolkit
@@ -166,8 +177,18 @@ Mở từng Gizmo Blueprint (trong RuntimeTransformer plugin) → từng compone
 
 ⚠️ Có thể báo *"Error: Failed to add the configuration file"* — đây là lỗi cosmetic, setting vẫn apply. Không cần sửa tay DefaultEngine.ini.
 
-**7b.** Trong level → Post Process Volume (hoặc tạo mới với Infinite Extent = True):
-→ Post Process Materials → **+** → chọn `M_SelectionOutline`
+**7b.** **Không đặt PostProcessVolume trong level** (Volume actor cần brush, không đảm bảo tồn
+tại sẵn ở project tổng khác nhau). Thay vào đó, gắn Post Process Component vào
+`BP_FurnitureSceneManager` (actor đã có sẵn trong spawn chain `WBP_FOFF_ToolDemo`):
+1. Mở `BP_FurnitureSceneManager` → Components panel → **+ Add** → gõ "Post Process" → chọn
+   **Post Process Component**
+2. Chọn component → Details:
+   - `Unbound` = True
+   - `Post Process Materials` → **+** → chọn `M_SelectionOutline`
+3. Compile + Save
+
+Không cần thêm node nào trong Event Graph — `BP_FurnitureSceneManager` tự sống theo spawn chain
+hiện có, component gắn cứng trong Class Defaults chạy ngay khi actor spawn.
 
 ---
 
@@ -312,7 +333,11 @@ print(f"Updated MeshFolderPath: {updated} rows")
 **15b. Chạy Script 1 (BoundingSize)** — xem Python_Scripts.md.
 ⚠️ Script này load nhiều mesh → **restart editor trước** để tránh GPU VRAM crash. Dùng batch size 30.
 
-**15c. Chạy EUW_CreateDataAssets** để sync vào DA_FurnitureItem.
+**15b.5. Chạy Script 7 (StaticMesh)** — xem Python_Scripts.md mục 7.
+
+**15b.6. Chạy Script 8 (ThumbnailSoft)** — xem Python_Scripts.md mục 8.
+
+**15e. Chạy EUW_CreateDataAssets** để sync vào DA_FurnitureItem.
 
 ---
 

@@ -1,6 +1,6 @@
 # Python Scripts — UE5 Data Pipeline
 # Chạy trong Output Log của UE5 Editor (Python tab)
-# Cập nhật: 16/05/2026 — 14:08 ICT
+# Cập nhật: 24/08/2026 — +mục 7 (Populate StaticMesh) + mục 8 (Populate ThumbnailSoft), cả 2 đã chạy thật + verify PASS Row Editor
 
 ---
 
@@ -206,6 +206,84 @@ print(f"Updated {updated} rows")
 **Tại sao cần:** `Make Soft Object Path` trong Blueprint cần format `PackagePath.AssetName` (ví dụ `/Game/.../MI_Stone.MI_Stone`). Nếu chỉ có `/Game/.../MI_Stone`, node không resolve được asset → `Async Load Asset` không fire Completed → material không apply được.
 
 **Sau khi chạy:** Không cần append `.AssetName` thủ công trong Blueprint nữa — dùng `MaterialPath` trực tiếp làm input cho `Make Soft Object Path`.
+
+---
+
+## 7. Populate StaticMesh (Furniture — full object path)
+**Dùng khi:** Thêm row mới vào DT_FurnitureCatalog, hoặc StaticMesh bị rỗng/sai.
+Field lưu full object path (`Package.AssetName`) — cùng convention MaterialPath (mục 6),
+cần thiết để `Break S_FurnitureData → Static Mesh` load đúng.
+
+**Đã chạy:** 24/08/2026 — trong lúc tích hợp project tổng clone.
+
+```python
+import unreal, json
+ar = unreal.AssetRegistryHelpers.get_asset_registry()
+dt = unreal.load_asset("/Game/cuong/UI/Data/DT_FurnitureCatalog")
+rows = json.loads(unreal.DataTableFunctionLibrary.export_data_table_to_json_string(dt))
+filter = unreal.ARFilter(class_names=["StaticMesh"], recursive_paths=True,
+    package_paths=["/Game/DatabaseProjectMaster"])
+all_assets = ar.get_assets(filter)
+asset_map = {str(a.asset_name): str(a.package_name) for a in all_assets}
+updated, missing = 0, 0
+for row in rows:
+    name = row["Name"]
+    if name in asset_map:
+        pkg = asset_map[name]
+        row["StaticMesh"] = pkg + "." + name
+        updated += 1
+    else:
+        missing += 1
+unreal.DataTableFunctionLibrary.fill_data_table_from_json_string(dt,
+    json.dumps(rows, ensure_ascii=False))
+print(f"Updated StaticMesh: {updated} | Missing: {missing}")
+```
+
+**Sau khi chạy:** verify Row Editor của vài row mới — field `StaticMesh` phải hiện thumbnail
+preview thật, không phải "None".
+
+---
+
+## 8. Populate ThumbnailSoft (Furniture)
+**Dùng khi:** Thêm row mới vào DT_FurnitureCatalog, hoặc ThumbnailSoft bị rỗng/sai.
+Nguồn ảnh: `/Game/DatabaseProjectMaster/Model/Model_Metadata` (các folder con) — tên texture
+trùng y hệt RowName, không tiền tố/hậu tố (verify 24/08/2026, 2961 textures tìm thấy).
+
+**Đã chạy:** 24/08/2026 — trong lúc tích hợp project tổng clone.
+
+```python
+import unreal, json
+ar = unreal.AssetRegistryHelpers.get_asset_registry()
+thumb_path = "/Game/DatabaseProjectMaster/Model/Model_Metadata"
+ar.scan_paths_synchronous([thumb_path], True)
+
+dt = unreal.load_asset("/Game/cuong/UI/Data/DT_FurnitureCatalog")
+rows = json.loads(unreal.DataTableFunctionLibrary.export_data_table_to_json_string(dt))
+
+filter = unreal.ARFilter(class_names=["Texture2D"], recursive_paths=True,
+    package_paths=[thumb_path])
+all_thumbs = ar.get_assets(filter)
+thumb_map = {str(a.asset_name): str(a.package_name) for a in all_thumbs}
+
+updated, missing = 0, 0
+for row in rows:
+    name = row["Name"]
+    if name in thumb_map:
+        pkg = thumb_map[name]
+        row["ThumbnailSoft"] = pkg + "." + name
+        updated += 1
+    else:
+        missing += 1
+
+unreal.DataTableFunctionLibrary.fill_data_table_from_json_string(dt,
+    json.dumps(rows, ensure_ascii=False))
+print(f"Updated ThumbnailSoft: {updated} | Missing: {missing}")
+```
+
+⚠️ `scan_paths_synchronous` bắt buộc gọi trước khi query — Content Browser ≠ Asset Registry
+(cùng lưu ý đã ghi ở mục 5).
+
+**Sau khi chạy:** verify Row Editor của vài row mới — field `ThumbnailSoft` hiện ảnh preview thật.
 
 ---
 

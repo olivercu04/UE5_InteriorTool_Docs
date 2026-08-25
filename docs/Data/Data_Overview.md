@@ -1,5 +1,6 @@
 # Data — Overview
 **Tạo:** 17/06/2026 — Sprint D.T6 | Kiến trúc data layer sau D.T6
+**Cập nhật (tiếp) 24/08/2026:** đính chính tên field `Mesh`→`StaticMesh` trong `S_FurnitureData` — verify qua `rows[0].keys()` thật (Python console), bản trước ghi nhầm.
 
 ---
 
@@ -22,7 +23,9 @@ Description      : String
 BoundingSize     : Vector
 MeshFolderPath   : String
 ThumbnailSoft    : TSoftObjectPtr<UTexture2D>
-Mesh             : TSoftObjectPtr<UStaticMesh>  ← populate 17/06/2026 qua D.T6
+StaticMesh       : TSoftObjectPtr<UStaticMesh>  ← populate 17/06/2026 qua D.T6 (tên field
+                                                    verify lại 24/08/2026 qua rows[0].keys() —
+                                                    KHÔNG phải "Mesh" như bản trước ghi nhầm)
 Link             : String
 ```
 

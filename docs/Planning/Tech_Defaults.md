@@ -1,5 +1,5 @@
 # Tech Defaults — Giá trị mặc định kỹ thuật
-**Phiên bản:** 1.1 | **Dự án:** Lighting_Mnger | **Cập nhật:** 20/05/2026 — 16:00 ICT
+**Phiên bản:** 1.2 | **Dự án:** Lighting_Mnger | **Cập nhật:** 24/08/2026 — Selection Outline: Post Process Component (gắn BP_FurnitureSceneManager) thay PostProcessVolume actor, verify PASS Editor
 
 ---
 
@@ -45,7 +45,9 @@
 
 - Custom Depth Stencil Pass = Enabled with Stencil
 - Stencil Value = 255
-- Post Process Volume: Infinite Extent = True
+- Post Process Component (gắn trên BP_FurnitureSceneManager, KHÔNG dùng PostProcessVolume actor riêng
+  — Volume actor cần brush hình học, không spawn/subclass được qua Blueprint picker ở nhiều project):
+  Unbound = True, Post Process Materials += M_SelectionOutline
 - M_SelectionOutline: Domain=PostProcess, Blendable=Translucency After DOF
 
 ---
@@ -138,7 +140,9 @@
 
 - Custom Depth Stencil Pass = Enabled with Stencil
 - Stencil Value = 255
-- Post Process Volume: Infinite Extent = True
+- Post Process Component (gắn trên BP_FurnitureSceneManager, KHÔNG dùng PostProcessVolume actor riêng
+  — Volume actor cần brush hình học, không spawn/subclass được qua Blueprint picker ở nhiều project):
+  Unbound = True, Post Process Materials += M_SelectionOutline
 - M_SelectionOutline: Domain=PostProcess, Blendable=Translucency After DOF
 
 ---
