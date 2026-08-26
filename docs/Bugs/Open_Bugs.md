@@ -25,6 +25,11 @@ T5). Xem `01_Session_State.md`.
 **Cập nhật (tiếp) 24/08/2026:** Đóng `Bug-CameraSpeed-ShiftConsumed` (RESOLVED cùng ngày) —
 phát hiện lúc tích hợp standalone vào project tổng, `IA_Shift` Consume Lower Priority nuốt phím
 Shift của `IncreAction`.
+**Cập nhật (tiếp) 25/08/2026:** Đóng `Bug-MaterialSkip-Cook` (43 MI bị cook skip, fix Additional
+Asset Directories to Cook) và `Bug-CookFail-10Errors` (3 nhóm lỗi cook phát sinh sau khi mở rộng
+scope, cả 2 CLOSED — cook 25/08 BUILD SUCCESSFUL). ⚠️ KHÔNG tìm thấy entry
+`SelectedGeometryMaterial_Blue` trong file này hay bất kỳ đâu trong `docs/` để cập nhật root
+cause theo delta 26/08 — ghi nhận mâu thuẫn, không tạo entry mới thay thế.
 
 ---
 
@@ -68,6 +73,8 @@ Shift của `IncreAction`.
 | Bug-ComboSpawnLabel-MixedLooseGroup | [OPEN] Info bar hiện "N vật thể" (raw count) thay vì "📦 [Tên] (N)" sau spawn combo trộn nested-group + đồ rời top-level | 🟡 Trung bình | Phát hiện C10 (14/08). Xem mục chi tiết dưới |
 | Bug-ComboRoot-MixedLooseGroup | [OPEN, ĐÓNG CEILING treo] F_RegisterComboGroups Case B không tạo wrapper group cho đồ rời top-level khi combo có nested group thật | 🔴 Cao | Phát hiện C10 (14/08) — ƯU TIÊN FIX ĐẦU SPRINT 6. Xem mục chi tiết dưới |
 | Bug-CameraSpeed-ShiftConsumed | ✅ RESOLVED (24/08) — Sau tích hợp standalone vào project tổng: camera move speed luôn bắt đầu từ 0.1 (class default), không tăng qua Shift | — | `IA_Shift` (chord `IA_FurnitureUndo`/`IA_FurnitureRedo`) nuốt phím Shift, `IncreAction` (project tổng) không bao giờ Trigger. Fix: tắt `Consume Lower Priority Enhanced Input Mappings` trên `IA_Shift`. Xem mục chi tiết dưới |
+| Bug-MaterialSkip-Cook | ✅ CLOSED (25/08) — Bản packaged: nhiều material bấm Replace không đổi trên mesh, mesh giữ material cũ, không toast | — | 43 MI dưới `DatabaseProjectMaster/Material/MaterialInstances/Surface/` bị cook skip (chỉ ref động qua path runtime, không ai ref cứng). Fix: thêm `Material` vào Additional Asset Directories to Cook. Xem mục chi tiết dưới |
+| Bug-CookFail-10Errors | ✅ CLOSED (25/08) — 10 cook error phát sinh ngay sau khi mở rộng scope cook thêm folder Material/ | — | 3 nhóm: EUW_RDMtiles Geometry Script editor-only (5 lỗi, fix Directories to never cook), texture CMYK 2 file (2 lỗi, convert RGB+reimport), FTargetSettings/UniversalCameraPlugin vô hại giống lần cook 19/08 thành công (3 lỗi, không sửa). Xem mục chi tiết dưới |
 
 ---
 
@@ -1087,6 +1094,69 @@ Consume=True khi thực sự cần độc chiếm phím đó (ví dụ `IA_Furni
 hẳn về tool khi có actor đang chọn, không được vừa nudge vừa lia camera).
 
 Nguồn: phiên tích hợp standalone vào project tổng, 24/08/2026.
+
+---
+
+## Bug-MaterialSkip-Cook — Material Replace không đổi trên bản packaged
+
+**ID:** Bug-MaterialSkip-Cook
+**Phát hiện:** 25/08/2026 (chạy bản packaged, build 19/08)
+**Trạng thái:** ✅ CLOSED 25/08/2026
+
+### Triệu chứng
+Nhiều material bấm Replace không đổi trên mesh, mesh giữ material cũ, không toast báo lỗi.
+
+### Bằng chứng
+Log phiên chạy — 43 dòng `LoadPackage: SkipPackage`, toàn bộ dưới
+`/Game/DatabaseProjectMaster/Material/MaterialInstances/Surface/` (27 Stone, 7 Concrete,
+6 Fabric, 2 Leather, 1 Metal).
+
+### Root cause
+MI chỉ được tham chiếu ĐỘNG (load bằng path runtime qua catalog), không ai ref cứng → cook coi
+là thừa, bỏ khỏi `.pak` → runtime `LoadPackage` miss → apply nhận None.
+
+### Fix
+Project Settings → Packaging → Additional Asset Directories to Cook thêm
+`/Game/DatabaseProjectMaster/Material`.
+
+### Verify
+Cook 25/08 BUILD SUCCESSFUL; chạy `.exe` apply Stone/Concrete/Fabric đổi được.
+
+### Liên quan
+Đánh đổi cook config ghi ở `DEVIATIONS.md` (25/08) — cook dư master/MI không dùng, `.pak` to
+hơn; bản ship sau này cân nhắc thu hẹp lại.
+
+---
+
+## Bug-CookFail-10Errors — 10 cook error sau khi mở rộng scope cook Material/
+
+**ID:** Bug-CookFail-10Errors
+**Phát hiện:** 25/08/2026 (ngay sau khi thêm folder `Material/` vào cook — hệ quả mở rộng
+scope cook, không phải regression code)
+**Trạng thái:** ✅ CLOSED 25/08/2026
+
+### 3 nhóm lỗi (10 error)
+
+**Nhóm A (5 lỗi) — `EUW_RDMtiles` [Compiler]:** node Geometry Script hỏng trên 5.5 (Make
+`<unknown struct>`, pin Enable Nanite / Nanite Settings / CreateNewStaticMeshAssetOptions).
+EUW là Editor Utility Widget, gọi `GeometryScriptingEditor` (editor-only) → về bản chất không
+thể chạy trong packaged.
+**Fix:** Directories to never cook thêm
+`/Game/DatabaseProjectMaster/Material/MasterMaterials/RDMtiles/Blueprints`.
+
+**Nhóm B (2 lỗi) — Texture `MF3100` + `MF3103` (`T_Encaustic_Tiles_30x30`):** JPEG nguồn hệ
+màu CMYK, UE chỉ đọc Grayscale/RGB.
+**Fix:** convert CMYK→RGB (đè file gốc) + Reimport.
+
+**Nhóm C (3 lỗi) — `FTargetSettings` / `UniversalCameraPlugin`:** VÔ HẠI — xuất hiện y hệt
+trong lần cook THÀNH CÔNG 19/08. Không sửa.
+
+### Verify
+Cook lại 25/08 BUILD SUCCESSFUL, ExitCode=0.
+
+### Liên quan
+2 thay đổi cook config (never-cook RDMtiles/Blueprints) + sửa asset nguồn (MF3100/MF3103
+CMYK→RGB) ghi ở `DEVIATIONS.md` (25/08).
 
 ---
 

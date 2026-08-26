@@ -1,5 +1,5 @@
 # Sprint 7 — Material Edit v1.2 (slot theo tên + từ điển param + save format v2)
-**Version:** 1.1 | **Cập nhật:** 05/07/2026 — 22:40 ICT
+**Version:** 1.2 | **Cập nhật:** 26/08/2026 — thêm S7.G0-prep (3 verify bằng mắt trước G0), dòng Logging LogMaterialSlot vào spec G1, case 10 (stress restore chồng nhau) vào ma trận G3, ghi chú kiến trúc Substrate vào §1, 3 mục backlog QRE/Fab
 **Vị trí roadmap:** sau Sprint 5 DONE + Gate 1.5 Packaged Smoke. Trước Sprint 6 Polish.
 **Đầu vào chờ:** kết quả test "P5-liên quan" trong C10 (Sprint 5) → đổ vào S7.G5.
 **Thực thi:** Sonnet step-by-step. Mỗi gate = 1 lần test-and-confirm, PASS mới sang gate sau.
@@ -48,6 +48,7 @@
 | — | Texture param lưu object path trong ParamsJson — texture ship theo app, chấp nhận theo tinh thần R5 |
 | — | Slider kéo → debounce CaptureSnapshot 0.5s sẵn có, 1 snapshot mỗi lần nhả |
 | — | Duo (2 vật liệu trộn): v1 chỉ expose bộ chính A; bộ B = backlog |
+| — | Substrate (UE 5.7+ production-ready, 5.8 đã ra 17/06/2026): project cũ nâng engine KHÔNG bị ép bật Substrate; material non-Substrate chạy nguyên. Kiến trúc param-based (service + từ điển) tương thích: master convert Substrate → chỉ cập nhật ParamName trong DT_MaterialParamMap, không refactor service. Không phải rủi ro của Sprint 7. |
 
 **Trả lời 7 câu hỏi (05/07/2026):**
 1. `MaterialRowName` String OK — FName so sánh case-insensitive, `FName(*Str)` tra DT an toàn. Giữ String cho JSON.
@@ -104,6 +105,24 @@ FMaterialSlotRecord {
 # ═══════════════════════════════════════
 
 Mục tiêu: thay "hỗn tạp" (M1) bằng 3 bảng số liệu. Kết quả quyết 2 quyết định treo: **(Q1)** name-thuần hay name+index-fallback; **(Q2)** pattern gạch dynamic hay static.
+
+# S7.G0-prep — RÀ 3 GIẢ ĐỊNH NỀN (bằng mắt trong editor, KHÔNG code, ~15 phút)
+Lý do: plan viết 05/07 — trước Gate 1.5 và trước integration project tổng tháng 6 (24/08).
+3 giả định dưới nếu lệch thì code G0 sai property/sai hàm ngay bước đầu.
+
+1. [VERIFY] `FindMaterialRowNameByPath` còn tồn tại trong ComboSerializer của project
+   tổng tháng 6? Chữ ký còn đúng như plan G3 migration giả định? Lệch → báo, sửa G3 trước.
+2. [VERIFY] `DT_MaterialInstancesCatalog`: tên field chứa path CHÍNH XÁC là gì, row struct
+   là BP struct hay C++ struct? (BP struct → property mangle GUID → SurveyMasterFamilies
+   phải dùng GetAuthoredName. Bài học C++ đọc BP struct đã có.)
+3. [VERIFY] Quét sơ danh sách folder `Material/MasterMaterials/` của tháng 6 — đối chiếu
+   con số cũ "RDMtiles ~7 master, 56 Fabric, TRLS, Generic" (05/07). Ghi chú sẵn:
+   - `M_Glass_Master` từng fail cook (MF_UV → StaticSwitchParameter thiếu cả input A và B)
+     → ứng viên diện loại-trừ ở G0.
+   - G0 phải search RowName/parent `M_Glass_Master` + `MI_hood_grille_001` trong
+     DT_MaterialInstancesCatalog: có trong catalog → loại trừ khỏi Sprint 7; không có →
+     user không đụng tới, an toàn.
+PASS G0-prep = 3 mục có câu trả lời ghi lại → mới sang G0 Việc 1.
 
 ## Việc 1 — Build.cs thêm module
 ```csharp
@@ -442,6 +461,10 @@ public:
 
 Ghi chú thiết kế đã chốt: Records truyền **UPARAM(ref)** — BP_FurnitureActor giữ biến, C++ sửa tại chỗ, không reflection mò tên biến BP. Set param sẽ **kiểm param tồn tại trước khi set** (GetAllXParameterInfo chứa tên đó không) → trả false thay vì im lặng vô hiệu — trị tận gốc bẫy "slider kéo mesh đứng im".
 
+- Logging: UE_LOG category riêng `LogMaterialSlot`. Mỗi lệnh ghi (apply/set param/reset/
+  restore) log: Actor label + SlotName + kết quả resolve/apply (true/false + lý do ngắn).
+  KHÔNG xây telemetry thêm — tool desktop, log local đủ.
+
 TEST G1 (chuỗi debug, chưa UI): apply MI theo tên vào 1 actor → đúng slot; SetScalar param có thật → đổi trên mesh; param bịa → trả **false**; slot nguyên bản chưa MID → SetVector vẫn ăn (MID-on-demand) + record có PathFallback; Serialize → Print JSON đọc được; Parse ngược → so khớp; **(v1.1)** Apply MI lần 2 cùng slot → Records vẫn 1 record/slot (không trùng) + ParamsJson đã clear; **(v1.1)** ResetSlotToAssetDefault → material về gốc + record biến mất.
 
 → **Làm xong báo tao.**
@@ -521,8 +544,9 @@ TEST G3 — ma trận:
 | 7 | Slot nguyên bản chỉnh param → save/load/undo | PathFallback sống đúng (Đ4) |
 | 8 | Apply MI → CaptureSnapshot → **Undo** | mesh về material NGUYÊN BẢN (Đ10 — lỗ đã vá) |
 | 9 | Actor ≥2 slot khác material → save/load | CẢ HAI slot đúng, không slot cuối "thắng" |
+| 10 | Stress restore chồng nhau: spam Undo trong lúc EMS ActorLoaded còn đang restore; spawn combo rồi Undo ngay lập tức | Không crash, không material lệch, không cộng dồn record. Nếu FAIL → mới thêm generation guard (Rst_Generation) — KP2, không thêm trước |
 
-→ **Làm xong báo tao + bảng 9 case.**
+→ **Làm xong báo tao + bảng 10 case.**
 
 ---
 
@@ -597,3 +621,10 @@ Theo Q2 từ G0b:
 
 ## BACKLOG SAU SPRINT 7
 Bánh xe màu HSV | Duo bộ B | chế độ Advanced (bAdvanced=true) | slot highlight trên mesh (backlog cũ Material_CopyPaste) | async encode texture list | pattern picker polish.
+
+**Thêm 26/08/2026 (nguồn: khảo sát Quiet Runtime Editor, Fab):**
+| Bánh xe màu runtime: khả thi (QRE đã build bằng UMG) — v1 giữ preset + 3 slider (Đ5) |
+| Undo history persist ra file (undo sống qua session): ghi nhận, không làm — đắt (file
+  phình + migration), chưa có nhu cầu user |
+| Router pattern (các manager nói chuyện qua trung gian GameplayTag): cân nhắc ở phase
+  Refactor NẾU coupling bắt đầu đau — không refactor giữa sprint |

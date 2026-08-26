@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 20/08/2026
+**Cập nhật:** 25/08/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1826,6 +1826,21 @@ lại tay từ doc.
 **Trigger:** bật git (hoặc backup thủ công có ngày) cho `I:\FurnitureTool_Standalone\` TRƯỚC
 mọi phiên sửa lớn. Tối thiểu: commit/copy trước khi package hoặc trước khi đụng nhiều Blueprint
 cùng lúc. Chi phí 2 phút, chống mất nhiều giờ.
+
+## COOK CONFIG — 25/08/2026 — Fix Material Skip + 10 Cook Errors
+
+- [25/08] Cook config đổi: THÊM Additional Asset Directories to Cook =
+  `/Game/DatabaseProjectMaster/Material` (fix 43 MI skip). Đánh đổi CHỦ ĐÍCH: cook dư
+  master/MI không dùng → `.pak` to hơn; bản ship sau này cân nhắc thu hẹp về
+  `Material/MaterialInstances`. Quyết định: cuhoang.
+- [25/08] Cook config đổi: THÊM Directories to never cook =
+  `/Game/DatabaseProjectMaster/Material/MasterMaterials/RDMtiles/Blueprints` (EUW +
+  BP generate là editor-only, node Geometry Script gãy trên 5.5 — không thuộc bản ship).
+- [25/08] Sửa asset nguồn: `MF3100.jpg` + `MF3103.jpg` convert CMYK→RGB + reimport
+  (`T_Flooring/T_Encaustic_Tiles/.../T_Encaustic_Tiles_30x30`).
+
+Chi tiết đầy đủ 2 bug đóng kèm theo: `Bugs/Open_Bugs.md` mục `Bug-MaterialSkip-Cook`,
+`Bug-CookFail-10Errors`.
 
 ---
 

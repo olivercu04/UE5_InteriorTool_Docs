@@ -3,7 +3,7 @@
 > Lịch sử → Git / PROGRESS.md / DEVIATIONS.md. KHÔNG thêm chronology/changelog vào đây.
 > Cập nhật khi trạng thái đổi. Giữ ~50-100 dòng. Cái gì đã có nơi khác sở hữu → cắt, không copy.
 
-**Last verified:** 20/08/2026 (Gate 1.5 C4+C5 DONE, packaged Development smoke PASS)
+**Last verified:** 26/08/2026 (Sprint 7 plan bump v1.2 + as-built Cook Fix 25/08)
 
 ---
 
@@ -11,15 +11,18 @@
 
 | | |
 |---|---|
+| **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | Chưa bắt đầu Sprint 7. Việc mở màn: rà lại plan Sprint 7 (G0 kiểm kê) trước khi code |
-| **Task Source** | `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` |
-| **Next** | G0 (kiểm kê C++ chỉ-đọc: vật liệu nào chỉnh param được) → G1+ |
+| **Current Task** | S7.G0-prep — 3 verify bằng mắt trong editor (~15 phút, KHÔNG code) trước khi vào G0 kiểm kê |
+| **Task Source** | `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` (nội dung đã bump v1.2, 26/08) |
+| **Next** | S7.G0-prep → S7.G0 kiểm kê (C++ chỉ-đọc) → G1+ |
 | **Blockers** | Không |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
 (sau Gate 2: Backend B0→B5 — cloud, chợ combo)
+Lý do S7 trước: integration sớm chính là để G0 kiểm kê material THẬT; luật riêng S7 đã chặn rủi
+ro đụng đồ đồng nghiệp.
 
 ---
 
@@ -47,15 +50,22 @@ Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish 
 - **2 bug Surface dời sau Gate 2** (Sprint Surface): Bug-PasteVerticalCollapse 🔴,
   Bug-StaleSurfaceType 🟡 — cùng gốc "chọn sai điểm neo". (Bug-MaterialPrimaryOnly cũng cùng nhóm
   nhưng đã đưa lên active bugs vì fix trong Sprint 7.) `Bugs/Open_Bugs.md`.
+- **Nợ Gate 2:** `SelectedGeometryMaterial_Blue` (TextureObjectParameter thiếu texture — root
+  cause đã biết, KHÔNG chặn Sprint 7).
 
 ---
 
 ## Recent changes (tối đa 5, mới nhất trên cùng)
 > Chỉ để định vị "vừa xong gì". Lịch sử đầy đủ → PROGRESS.md + Git.
 
+- 25/08 — Bug-MaterialSkip-Cook FIXED + Bug-CookFail-10Errors FIXED → cook BUILD SUCCESSFUL,
+  apply material Stone/Concrete/Fabric verify PASS trên `.exe`.
+- 24/08 (integration) — Bug-CameraSpeed-ShiftConsumed FIXED (`IA_Shift` tắt Consume Lower
+  Priority); RMB flow verified qua K2Node export.
+- 24/08 — Integration project tổng tháng 6 hoàn tất (thay `FurnitureTool_Standalone` làm nền
+  làm việc chính).
 - 20/08 — Gate 1.5 ĐÓNG: package Development chạy máy sạch (không cài UE) + GizmoTrace PASS.
   Sự cố engine binary giữa phiên đã fix bằng Verify Epic Launcher (xem DEVIATIONS).
-- 20/08 — Migrate hoàn tất sang `I:\FurnitureTool_Standalone\` (tách hẳn master, độc lập).
 - 14/08 — Sprint 5 (Combo Mesh) CHÍNH THỨC DONE (C0-C11, bar 22/23; P3 Xoay combo defer).
 
 ---
