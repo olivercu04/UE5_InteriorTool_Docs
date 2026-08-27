@@ -3,7 +3,7 @@
 > Lịch sử → Git / PROGRESS.md / DEVIATIONS.md. KHÔNG thêm chronology/changelog vào đây.
 > Cập nhật khi trạng thái đổi. Giữ ~50-100 dòng. Cái gì đã có nơi khác sở hữu → cắt, không copy.
 
-**Last verified:** 27/08/2026 (G0 DONE toàn phần + hybrid click-to-select chốt, G1 task card phát hành)
+**Last verified:** 27/08/2026 (S7.G1 ĐÓNG — 5/5 Việc PASS, không deviation. Sang G2)
 
 ---
 
@@ -14,9 +14,9 @@
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | S7.G1 — task card đã phát hành. Việc 1 = vertical slice `TraceSlotUnderCursor` (FAIL → STOP sprint) |
-| **Task Source** | `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` (nội dung đã bump v1.4, 27/08) |
-| **Next** | S7.G1 Việc 1 (TraceSlotUnderCursor) → GetEditableSlots → GetPanelSlots |
+| **Current Task** | S7.G1 ĐÓNG (5/5 Việc PASS, không deviation). Sang S7.G2 — reroute UI vào MaterialSlotService: RefreshSlotSwatches (SET SlotName/SelectedSlotName/SelectedSlotIndex), LoadAndApplyMaterial (gọi ApplyLoadedMaterialToSlot, bỏ CreateDMI/SetArrayElem rời rạc), Multi-apply E1 (fix Bug-MaterialPrimaryOnly), Copy/Paste material, Reset Slot/Reset All (ClearSlotParams mức 1 / ResetSlotToAssetDefault mức 2) |
+| **Task Source** | `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` mục S7.G2 (nội dung bump v1.5) |
+| **Next** | S7.G2 — [VERIFY] WBP_SlotSwatch variables hiện có + LoadAndApplyMaterial bản mới nhất trước khi sửa (plan đã ghi rõ) |
 | **Blockers** | Không |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**

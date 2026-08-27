@@ -1,5 +1,5 @@
 # Sprint 7 — Material Edit v1.2 (slot theo tên + từ điển param + save format v2)
-**Version:** 1.4 | **Cập nhật:** 27/08/2026 (tiếp) — thêm G0d (khảo sát collision) + hybrid click-to-select (Fable duyệt) + 3 API mới G1 (TraceSlotUnderCursor, GetEditableSlots, GetPanelSlots) + hợp đồng G3↔G5 (flash không lọt snapshot)
+**Version:** 1.5 | **Cập nhật:** 27/08/2026 (tiếp) — S7.G1 ĐÓNG: 5/5 Việc PASS, không deviation. Thêm section "ĐẦU RA S7.G1". Chi tiết đầy đủ: `Data/MaterialSlotService_Reference.md`
 **Vị trí roadmap:** sau Sprint 5 DONE + Gate 1.5 Packaged Smoke. Trước Sprint 6 Polish.
 **Đầu vào chờ:** kết quả test "P5-liên quan" trong C10 (Sprint 5) → đổ vào S7.G5.
 **Thực thi:** Sonnet step-by-step. Mỗi gate = 1 lần test-and-confirm, PASS mới sang gate sau.
@@ -532,7 +532,23 @@ Ghi chú thiết kế đã chốt: Records truyền **UPARAM(ref)** — BP_Furni
 
 TEST G1 (chuỗi debug, chưa UI): apply MI theo tên vào 1 actor → đúng slot; SetScalar param có thật → đổi trên mesh; param bịa → trả **false**; slot nguyên bản chưa MID → SetVector vẫn ăn (MID-on-demand) + record có PathFallback; Serialize → Print JSON đọc được; Parse ngược → so khớp; **(v1.1)** Apply MI lần 2 cùng slot → Records vẫn 1 record/slot (không trùng) + ParamsJson đã clear; **(v1.1)** ResetSlotToAssetDefault → material về gốc + record biến mất.
 
-→ **Làm xong báo tao.**
+## ĐẦU RA S7.G1 — 27/08/2026 (5/5 Việc PASS, không deviation)
+
+| Việc | Nội dung | Test | Kết quả |
+|---|---|---|---|
+| 1 | `TraceSlotUnderCursor` (vertical slice, gate-trong-gate) | 4 vùng trace (`Bed_SplitHeadboard_Soft_17236`) đối chiếu Static Mesh Editor | PASS 4/4 |
+| 2 | `FMaterialSlotRecord` + 10 hàm ghi (Resolve/Apply/SetScalar/SetVector/SetTexture/Clear/Reset×2/Serialize/Parse) | 7 mục TEST G1 (apply, scalar thật/bịa, serialize round-trip, dedupe, reset, MID-on-demand+PathFallback) | PASS 7/7 |
+| 3 | `GetEditableSlots` v1 (trả tất cả slot) | Length khớp số dòng Materials tab thật | PASS (8/8) |
+| 4 | `FPanelSlotInfo` + `GetPanelSlots` | 8/8 slot, RowName resolve đúng cả 2 nhánh (Records có sẵn + tra ngược qua `FindMaterialRowNameByPath`) | PASS 8/8 |
+| 5 | Logging + tổng hợp | `LogMaterialSlot` phủ mọi hàm (Actor\|Slot\|lý do khi false) — không cần code thêm | PASS |
+
+Build xanh xuyên suốt cả 4 lần thêm code (Việc 1→2→3→4), không strike nào, không compile error.
+**Deviation so với plan v1.4: KHÔNG CÓ** — API surface đóng băng khớp 100% code thật đã build,
+không phát sinh field/hàm ngoài kế hoạch (KP2 tuân thủ). Chi tiết struct + 14 hàm đầy đủ:
+`Data/MaterialSlotService_Reference.md`. Bài học node flow: `Blueprint_Logic_NodeFlow.md`
+mục L-NEW-7.
+
+→ **G1 ĐÓNG (27/08/2026). Sang G2.**
 
 ---
 

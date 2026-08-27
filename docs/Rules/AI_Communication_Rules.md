@@ -1,6 +1,6 @@
 # AI Communication Rules
 **Nguồn:** `import_raw/AI_Communication_Rules_update_15jun2026.md`
-**Phiên bản:** 1.2 | **Cập nhật:** 24/08/2026 (addendum) — backfill 2 mục "MÔ HÌNH SENIOR–INTERN" + "LUẬT MẤT PHƯƠNG HƯỚNG" (đặt trước "NGUYÊN TẮC ĐÓNG VÒNG") — cả 2 đã được tham chiếu bởi mục Đóng Vòng (merge trước đó) nhưng chưa tồn tại thành section chính thức trong canonical, chỉ có trong Custom Instructions rút gọn
+**Phiên bản:** 1.3 | **Cập nhật:** 27/08/2026 — thêm mục "Kinh nghiệm phối hợp — so sánh tính năng mới/cũ khi bề mặt giống nhau", đặt ngay sau "MÔ HÌNH SENIOR–INTERN". Nguồn: `DELTA 27/08/2026 — S7.G1 MaterialSlotService` mục 4
 > Rút ra từ Sprint 4 Bug Fix Session (15/06/2026). Áp dụng ngay từ session tiếp theo.
 > Nội dung này cũng được tích hợp vào `Rules/AI_Implementation_Rules.md` (v2.1).
 
@@ -90,6 +90,19 @@ Nguyên tắc phân quyền quyết định giữa Claude và cuhoang:
   cho intern học việc") — không học qua việc tự gánh quyết định kỹ thuật.
 - **Gánh nặng của rule đặt lên Claude, không lên cuhoang.** Rule nào bắt cuhoang phải nhớ bảng
   nhiều trục/nhiều cột là rule thiết kế hỏng — viết lại cho Claude tự chạy.
+
+### Kinh nghiệm phối hợp — so sánh tính năng mới/cũ khi bề mặt giống nhau (27/08/2026)
+
+Cuhoang hỏi "GetPanelSlots có phải làm lại Change Material v1.1 không" — dấu hiệu điển hình:
+tính năng MỚI có bề mặt giống tính năng CŨ (cùng hiển thị "slot + material đang gắn"), dễ gây
+cảm giác trùng lặp dù kiến trúc bên dưới khác hẳn (ở đây: gỡ code rải rác → 1 lớp ghi duy nhất,
+mở đường cho param edit mà v1.1 không làm được).
+
+**Bài học:** khi 1 gate mới có OUTPUT bề mặt giống tính năng cũ, chủ động so sánh bằng bảng
+"Trước/Sau" ngay khi cuhoang hỏi (không đợi hỏi tiếp) — nêu rõ cái GÌ giữ nguyên (UI, trải
+nghiệm) và cái GÌ đổi (kiến trúc, bug được fix, tính năng được mở khóa). Tránh trả lời chung
+chung kiểu "không, khác chứ" — phải cụ thể hóa bằng ví dụ (ở đây: Bug-MaterialPrimaryOnly chỉ
+fix được nhờ G1, đổi màu vải chỉ làm được nhờ G1).
 
 ---
 

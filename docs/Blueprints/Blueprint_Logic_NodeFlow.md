@@ -1,6 +1,6 @@
 # Blueprint Logic — Node Flow Reference
 **HỢP NHẤT TỪ 3 file:** v1.3 base (07/06) + v1.4_patch (12/06) + v1.5_patch (15/06)
-**Phiên bản:** 1.15 | **Cập nhật:** 02/08/2026 — MERGE_LOG Q3 đóng: `FindGroupData` đính chính chữ ký (bỏ output `Index` không tồn tại) + sửa ghi chú tự mâu thuẫn
+**Phiên bản:** 1.16 | **Cập nhật:** 27/08/2026 — thêm L-NEW-7 (`Array Find` không so khớp 1 field struct — dùng `For Each Loop with Break`), phát hiện lúc debug S7.G1 MaterialSlotService
 
 > **v1.14 (01/08/2026):** `PopulateComboTreeColumn()` viết lại toàn bộ theo K2Node export thật (Phase 0 Replace UX Fix) — doc cũ thiếu/sai 6 điểm, xem mục C5.0
 **Mục đích:** Ghi lại thứ tự node logic để không cần chụp ảnh lại Blueprint. Full flows sống trong file BP_*.md / WBP_*.md tương ứng — file này ghi node-by-node diff và cross-BP flows.
@@ -1077,6 +1077,28 @@ ComputeSelectionUnits(SelectedActors) → (GroupUnits, LooseActors)
 4. [Step 6b selection re-fire...]
 ```
 
+### L-NEW-7: `Array Find` không so khớp được 1 field của struct — chỉ so struct TOÀN PHẦN (by-value)
+
+**Sai:** `Array Find(TestMatSlotRecords, SlotName == SlotNm)` — Unreal báo lỗi ngay tại node
+("String is not compatible with Material Slot Record Structure (by ref)"), vì `Array Find` cần
+1 giá trị CÙNG KIỂU với phần tử mảng để so `==` toàn bộ struct, không so được từng field.
+
+**Đúng:** `For Each Loop with Break` — Loop Body:
+```
+Branch(CurElement.FieldName == TargetValue)
+  True  → SET biến kết quả → Break
+  False → (để trống, loop tự sang phần tử kế — L2: hợp lệ, giống Sequence.Then,
+           KHÔNG phải dead-end fatal)
+```
+
+**Khi nào áp dụng:** bất kỳ lúc nào cần "tìm phần tử trong Array<Struct> theo 1 field", không
+chỉ riêng `FMaterialSlotRecord`. Tình huống thấy lại trong G2 (`RefreshSlotSwatches` tìm slot
+theo tên) và G3 (`RestoreMyMaterialSlots` đọc `MaterialSlots.Get(Rst_SlotIdx)`).
+
+Nguồn: `DELTA 27/08/2026 — S7.G1 MaterialSlotService` mục 4, phát hiện lúc debug phím **J**
+(`SetSlotVectorParam` test MID-on-demand + PathFallback) trong Level Blueprint scratch chain —
+xem `Data/MaterialSlotService_Reference.md`.
+
 ---
 
 ## BP_ComboManager — Debug capture thumbnail (phím T)
@@ -1423,3 +1445,4 @@ tiếp)
 | 1.13 | 24/07/2026 | **BP_FurnitureInputManager — Event Tick box branch verified (C9.0c).** Nguồn: K2Node text export thật (Ctrl+A→Ctrl+C→paste). Không sửa logic — chỉ xác nhận đúng + phát hiện 1 khác biệt so với doc cũ: nhánh `bInventoryOpen==False` có thêm guard `Branch(bIsPendingBoxSelect OR bIsBoxSelecting)` trước `HideBox` (doc cũ mô tả gọi thẳng không điều kiện). Đóng mục "CHƯA kiểm" trong note WIP C9.0c. Ghi chú: `OnLMBReleased` Then 2 (mục kế tiếp trong file) chưa được delta này đụng tới, vẫn ghi tên biến cũ `bIsReplaceMode` — tên thật hiện tại là `ReplaceTarget` (xem `BP_FurnitureInputManager.md` v2.4). Bối cảnh đầy đủ: `Blueprints/BP_FurnitureInputManager.md` v2.4, `Sprints/Sprint2/ContextMenu_Prep.md` v1.2. |
 | 1.15 | 02/08/2026 | **MERGE_LOG Q3 đóng.** `FindGroupData(InGroupID) → (S_GroupData, Index, bFound)` đính chính thành `(S_GroupData, bFound)` — dòng ghi chú cũ tự mâu thuẫn ("KHÔNG có Index" rồi lại "TRẢ Index" trong cùng câu). Bằng chứng: K2Node export `ResolveSelectedComboRoot` 02/08/2026 + `Plans/24-07-2026_C9_Execution_Plan.md` §V8. Không đổi node flow thật. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.9, `00_Core/MERGE_LOG.md`. |
 | 1.14 | 01/08/2026 | **`PopulateComboTreeColumn()` viết lại toàn bộ theo K2Node export thật (Phase 0 Replace UX Fix).** Doc v1.13 thiếu/sai 6 điểm: (1) thiếu hẳn node "+ New" (`then_0`, `FolderPath="__NEWFOLDER__"`); (2) thiếu bind `OnNodeRightClicked` trên cả 4 loại node; (3) thiếu bind `OnNodeRenameCommitted` trên FolderNode/SubFolderNode; (4) **[SAI quan trọng nhất]** doc cũ mô tả cấp 2 (lvl2) luôn dựng cho MỌI lvl1 chỉ gate bằng `bFound2` — thực tế có thêm gate active-path (`lvl1==CurrentComboFolderPath OR StartsWith(...)`) TRƯỚC `bFound2`, nghĩa là cây combo là accordion/expand-on-active-path chứ không xoè phẳng toàn bộ 2 cấp; (5) thiếu `RefreshDisplay(bIsActive=...)` trên cả lvl1 lẫn lvl2 (cơ chế highlight node active); (6) `UncatNode.FolderPath=""` chưa ghi rõ quy ước. Nguồn: node flow do cuhoang cung cấp (K2Node export 01/08/2026, điều tra Phase 0 Replace UX Fix). Xem `DEVIATIONS.md` §"Replace UX Fix — Phase 0" (**[CẦN TẠO/XÁC NHẬN]** — mục này chưa tìm thấy trong `DEVIATIONS.md` hiện tại lúc patch, xem ghi chú cuối file). |
+| 1.16 | 27/08/2026 | **Thêm L-NEW-7** (nối tiếp L-NEW-6): `Array Find` không so khớp được 1 field của struct, chỉ so struct toàn phần by-value — dùng `For Each Loop with Break` thay thế. Phát hiện lúc debug S7.G1 MaterialSlotService (phím J, test `SetSlotVectorParam` MID-on-demand+PathFallback), CHƯA qua K2Node export (chỉ verify qua log Print/test PASS). Nguồn: `DELTA 27/08/2026 — S7.G1 MaterialSlotService` mục 4, xem `Data/MaterialSlotService_Reference.md`. |
