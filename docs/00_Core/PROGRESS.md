@@ -57,6 +57,10 @@ Gate 1.5 — Phase C.C5: package DEVELOPMENT thành công, .exe chạy máy sạ
                        Còn lỗi runtime packaged (chưa fix, dời đợt sau).
 Gate 1.5 — ĐÓNG 20/08/2026. ⚠️ Development build, KHÔNG phải Gate 2 (Shipping).
 Gate 1.5 — Sự cố engine binary giữa phiên (sửa code gốc UE → Verify Epic fix). Xem DEVIATIONS.
+**Cập nhật (tiếp) 27/08/2026:** Sprint 7 — G0 DONE toàn phần (a/b/c/d), Q1 chốt "ÍT nhưng CÓ Ý
+NGHĨA" (1,56% mesh trùng slot), Q2 chốt DYNAMIC (texture picker), hybrid click-to-select duyệt
+(Fable). G1 task card phát hành (Việc 1 = vertical slice `TraceSlotUnderCursor`). Xem
+`01_Session_State.md`, `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` v1.4.
 
 ---
 

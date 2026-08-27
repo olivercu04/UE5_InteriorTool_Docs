@@ -3,7 +3,7 @@
 > Lịch sử → Git / PROGRESS.md / DEVIATIONS.md. KHÔNG thêm chronology/changelog vào đây.
 > Cập nhật khi trạng thái đổi. Giữ ~50-100 dòng. Cái gì đã có nơi khác sở hữu → cắt, không copy.
 
-**Last verified:** 26/08/2026 (Sprint 7 plan bump v1.2 + as-built Cook Fix 25/08)
+**Last verified:** 27/08/2026 (G0 DONE toàn phần + hybrid click-to-select chốt, G1 task card phát hành)
 
 ---
 
@@ -14,9 +14,9 @@
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | S7.G0-prep — 3 verify bằng mắt trong editor (~15 phút, KHÔNG code) trước khi vào G0 kiểm kê |
-| **Task Source** | `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` (nội dung đã bump v1.2, 26/08) |
-| **Next** | S7.G0-prep → S7.G0 kiểm kê (C++ chỉ-đọc) → G1+ |
+| **Current Task** | S7.G1 — task card đã phát hành. Việc 1 = vertical slice `TraceSlotUnderCursor` (FAIL → STOP sprint) |
+| **Task Source** | `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` (nội dung đã bump v1.4, 27/08) |
+| **Next** | S7.G1 Việc 1 (TraceSlotUnderCursor) → GetEditableSlots → GetPanelSlots |
 | **Blockers** | Không |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
@@ -52,21 +52,25 @@ ro đụng đồ đồng nghiệp.
   nhưng đã đưa lên active bugs vì fix trong Sprint 7.) `Bugs/Open_Bugs.md`.
 - **Nợ Gate 2:** `SelectedGeometryMaterial_Blue` (TextureObjectParameter thiếu texture — root
   cause đã biết, KHÔNG chặn Sprint 7).
+- **Chưa chốt (Sprint 7):** cơ chế đánh dấu slot khóa (hướng LockedSlots blacklist trong DT là
+  ứng viên, cuhoang chưa duyệt). Chốt chặn `GetEditableSlots` (G1) cô lập quyết định này — KHÔNG
+  chặn G1-G4.
 
 ---
 
 ## Recent changes (tối đa 5, mới nhất trên cùng)
 > Chỉ để định vị "vừa xong gì". Lịch sử đầy đủ → PROGRESS.md + Git.
 
+- 27/08 (tiếp) — G0 DONE toàn phần (a/b/c/d, kể cả collision). G5 hướng chốt: hybrid
+  click-to-select (trace FaceIndex) + chips phụ (Fable duyệt). G1 task card đã phát hành.
+- 27/08 — S7.G0 ĐÓNG: Q1="ÍT nhưng CÓ Ý NGHĨA" (1,56% mesh trùng slot, review tay xác nhận
+  có thật), Q2=DYNAMIC (texture picker, không cần Plan B). MaterialSurvey.h/.cpp compile PASS.
 - 25/08 — Bug-MaterialSkip-Cook FIXED + Bug-CookFail-10Errors FIXED → cook BUILD SUCCESSFUL,
   apply material Stone/Concrete/Fabric verify PASS trên `.exe`.
 - 24/08 (integration) — Bug-CameraSpeed-ShiftConsumed FIXED (`IA_Shift` tắt Consume Lower
   Priority); RMB flow verified qua K2Node export.
 - 24/08 — Integration project tổng tháng 6 hoàn tất (thay `FurnitureTool_Standalone` làm nền
   làm việc chính).
-- 20/08 — Gate 1.5 ĐÓNG: package Development chạy máy sạch (không cài UE) + GizmoTrace PASS.
-  Sự cố engine binary giữa phiên đã fix bằng Verify Epic Launcher (xem DEVIATIONS).
-- 14/08 — Sprint 5 (Combo Mesh) CHÍNH THỨC DONE (C0-C11, bar 22/23; P3 Xoay combo defer).
 
 ---
 

@@ -1,5 +1,5 @@
 # Sprint 7 — Material Edit v1.2 (slot theo tên + từ điển param + save format v2)
-**Version:** 1.2 | **Cập nhật:** 26/08/2026 — thêm S7.G0-prep (3 verify bằng mắt trước G0), dòng Logging LogMaterialSlot vào spec G1, case 10 (stress restore chồng nhau) vào ma trận G3, ghi chú kiến trúc Substrate vào §1, 3 mục backlog QRE/Fab
+**Version:** 1.4 | **Cập nhật:** 27/08/2026 (tiếp) — thêm G0d (khảo sát collision) + hybrid click-to-select (Fable duyệt) + 3 API mới G1 (TraceSlotUnderCursor, GetEditableSlots, GetPanelSlots) + hợp đồng G3↔G5 (flash không lọt snapshot)
 **Vị trí roadmap:** sau Sprint 5 DONE + Gate 1.5 Packaged Smoke. Trước Sprint 6 Polish.
 **Đầu vào chờ:** kết quả test "P5-liên quan" trong C10 (Sprint 5) → đổ vào S7.G5.
 **Thực thi:** Sonnet step-by-step. Mỗi gate = 1 lần test-and-confirm, PASS mới sang gate sau.
@@ -54,9 +54,9 @@
 1. `MaterialRowName` String OK — FName so sánh case-insensitive, `FName(*Str)` tra DT an toàn. Giữ String cho JSON.
 2. `FindMaterialRowNameByPath`: [VERIFY] signature thật đầu G1. Contract: miss → `MaterialRowName=""` + `MaterialPathFallback=path cũ` → restore đi đường fallback.
 3. `MaterialSurvey` có compile vào shipping → guard đầu thân cả 3 hàm: `#if UE_BUILD_SHIPPING return false; #endif`.
-4. Ngưỡng Q1 5% = số tạm; chốt thật theo report G0c + danh sách mesh dính (mesh hay vào combo quan trọng hơn %).
+4. **[CHỐT 27/08]** Ngưỡng Q1 5% chỉ là số tạm — thật ra 1,56% (40/2559 mesh) nhưng review tay xác nhận CÓ Ý NGHĨA (nhóm sofa/bàn trà/ghế đôn/ghế thư giãn, nhiều vùng vật liệu thật), không bỏ qua theo %. Xem "ĐẦU RA G0 — 27/08/2026" ở trên.
 5. JSON casing không lẫn: JsonObjectConverter tự đổi PascalCase field → lowerCamel (kể cả struct lồng). Verify bằng mắt test G1.
-6. `DT_MaterialInstancesCatalog` chưa có cột nhóm pattern → Q2 ra static thì thêm cột `PatternGroup` (hoặc derive từ họ G0a). Ghi TODO vào G7.
+6. **[CHỐT 27/08]** `DT_MaterialInstancesCatalog` KHÔNG cần thêm cột `PatternGroup` — Q2 ra DYNAMIC (không phải static), nhánh "thêm cột nhóm pattern" không áp dụng. Xem "ĐẦU RA G0 — 27/08/2026" ở trên.
 7. Naming §9 áp cho widget có ≥2 event dùng chung class var (WBP_MaterialParamPanel → `MPP_`); row widget nhỏ tên trần.
 
 **Sơ đồ kiến trúc:**
@@ -393,17 +393,82 @@ bool UMaterialSurvey::SurveyMeshSlotNames(UDataTable* FurnitureDT,
 - G0b: chọn **1 MI đại diện MỖI HỌ** từ families.txt (Std, Custom, Duo, vải, TRLS, Generic...) → Async Load từng cái (Custom Event) → `DumpMaterialParams` → dán `params_dump.txt`. Mở song song MI trong editor, ghi param nào THẤY trong editor mà THIẾU trong dump (= static, Đ1 — đặc biệt soi pattern gạch).
 - G0c: `SurveyMeshSlotNames(DT_FurnitureCatalog, "MeshPath" [VERIFY], 0, 100)` → chạy lát cắt 100 rows/lần tới hết → dán dòng tổng kết các lô.
 
-## ĐẦU RA G0 — 2 quyết định chốt (cuhoang + Fable cùng chốt, ghi vào doc này bản v1.1)
-- **Q1 (Đ2):** slot rỗng/trùng ít (<5%) → name-thuần + HintIndex dự phòng; nhiều → name+index bắt buộc song song.
-- **Q2 (Đ1):** pattern gạch có texture param dynamic → G7 làm texture picker; static → G7 Plan B = variant-MI swap (hoặc defer).
+## ĐẦU RA G0 — 27/08/2026 (kết quả thật, thay 2 nhánh giả định ở trên)
 
-→ **Làm xong báo tao + 3 file txt.**
+### Q1 — Slot name rỗng/trùng
+- Quét 2559/2577 mesh (18 row thiếu StaticMesh, bỏ qua)
+- Rỗng: 0% | Trùng trong cùng mesh: 40 mesh (~1,56%)
+- Review tay 40 mesh trùng: rơi nhiều vào sofa/bàn trà/ghế đôn/ghế thư giãn —
+  đây là nhóm CÓ THẬT nhiều vùng vật liệu khác nhau (vải bọc ≠ khung ≠ mặt đá),
+  không phải kiểu "4 chân cùng tên" vô hại.
+- **CHỐT: Q1 = ÍT nhưng CÓ Ý NGHĨA** — không chỉ là % thấp bỏ qua được.
+  → Kéo theo quyết định thiết kế UI mới, xem mục "Note gửi Opus" (⚠️ không có trong
+  nguồn merge 27/08 — chưa được đính kèm, cần cuhoang bổ sung).
+
+### Q2 — CustomTile Map UV+Distribution (pattern gạch)
+- Dump 23/23 material đại diện (params_dump.txt)
+- Verify chéo bằng mắt trên MI_FL_W_AC_4001_NWM (RDMtiles Custom_Grout):
+  toàn bộ nhóm "CustomTile - Pattern Configuration" liên quan chọn mẫu gạch
+  đều là Texture param dynamic — khớp dump.
+- 2 static switch phụ tìm thấy (Use RandomRotation, Use RandomFlip) — không
+  chặn mục tiêu chính "chọn mẫu gạch", ghi nhận backlog nếu sau cần điều khiển.
+- **CHỐT: Q2 = DYNAMIC** → G7 dùng texture picker, không cần Plan B variant-MI.
+
+### G0 Việc 1-3 (C++ inventory)
+- MaterialSurvey.h/.cpp hoàn thành: SurveyMasterFamilies (G0a), DumpMaterialParams
+  (G0b), SurveyMeshSlotNames (G0c) — cả 3 compile PASS trên project tổng tháng 6.
+- G0a: 2767 MI / 23 master family (families.txt) — MM_GenericMaterial 54%,
+  RM_FabricMaster 928.
+- SurveyMeshSlotNames đọc field StaticMesh (Soft Object Reference) thay vì ghép
+  MeshFolderPath+RowName — quyết định bền vững, không phụ thuộc RowName có
+  mang ý nghĩa filename hay không (đề phòng tương lai đổi RowName thành ID số).
+
+### G0d — khảo sát collision (27/08/2026)
+- Quét 2559 mesh: 2555 CTF_USE_DEFAULT (project default = SIMPLE_AND_COMPLEX)
+  + 4 CTF_USE_COMPLEX_AS_SIMPLE. **0 mesh SIMPLE_AS_COMPLEX** → FaceIndex trace
+  khả thi trên 100% mesh load được. 18 LOAD FAIL = 18 row đã biết (mesh chưa có
+  trong project). Chi tiết: `Saved/MaterialSurvey/collision.txt`
+- **QUYẾT ĐỊNH CHỐT (Fable, 27/08):** G5 đổi sang hybrid — click-chọn-vùng trên
+  mesh là đường chính (trace FaceIndex, KHÔNG per-poly collision đại trà);
+  chips thumbnail-material làm đường phụ (slot che khuất/nhỏ + discoverability).
+  Slot name = nội bộ 100%, không hiển thị UI.
+- **CHƯA CHỐT:** cơ chế đánh dấu slot khóa (hướng LockedSlots blacklist trong DT
+  là ứng viên, cuhoang chưa duyệt). Chốt chặn `GetEditableSlots` (G1) cô lập quyết
+  định này — v1 trả tất cả slot.
+
+→ **G0 ĐÓNG toàn phần (a/b/c/d). Sang G1.**
 
 ---
 
 # ═══════════════════════════════════════
 # S7.G1 — NỀN C++: FMaterialSlotRecord + MaterialSlotService
 # ═══════════════════════════════════════
+
+**VIỆC 1 TRƯỚC MỌI THỨ — vertical slice TraceSlotUnderCursor. FAIL → STOP sprint.**
+API mới đóng băng thêm vào bề mặt G1:
+```cpp
+// Trace từ chuột → slot dưới con trỏ. bReturnFaceIndex=true + bTraceComplex=true
+// → GetMaterialFromCollisionFaceIndex. Trả false nếu không hit/không phải StaticMesh.
+static bool TraceSlotUnderCursor(APlayerController* PC, float TraceDistance,
+    AActor*& OutActor, int32& OutSlotIndex, FString& OutSlotName);
+
+// Chốt chặn hiển thị/tương tác slot. v1: trả tất cả. Cơ chế lọc chưa chốt —
+// mọi thay đổi tương lai chỉ sửa ruột hàm này.
+static TArray<int32> GetEditableSlots(UStaticMeshComponent* Mesh, const FString& RowName);
+
+USTRUCT(BlueprintType) struct FPanelSlotInfo {
+  UPROPERTY(BlueprintReadOnly) FString SlotName;
+  UPROPERTY(BlueprintReadOnly) int32 SlotIndex = -1;
+  UPROPERTY(BlueprintReadOnly) FString RowNameResolved; // rỗng nếu tra ngược fail
+};
+// 1 call cho panel chips: gộp slot mesh + Records + FindMaterialRowNameByPath.
+// Chỉ trả slot nằm trong GetEditableSlots.
+static TArray<FPanelSlotInfo> GetPanelSlots(UStaticMeshComponent* Mesh,
+    const TArray<FMaterialSlotRecord>& Records, UDataTable* MaterialDT);
+```
+TEST G1 mở rộng: +trace 3 vùng sofa (nhóm 40-dup) ra đúng 3 slot; +GetEditableSlots
+trả đủ N; +GetPanelSlots actor có 1 slot applied + 1 slot nguyên bản → cả 2 đúng RowName.
+Q9: MIỄN S-Scan (C++ service, không đụng SelectedActors). Routing click (G5) mới cần Q9.
 
 File mới `MaterialSlotService.h/.cpp`. Đây là **LỚP GHI DUY NHẤT** — thân hàm chi tiết Sonnet dán ở đầu gate lúc thực thi (sau khi Q1 chốt chính sách ResolveSlotIndex). Bề mặt API đóng băng từ bây giờ:
 
@@ -545,6 +610,10 @@ TEST G3 — ma trận:
 | 8 | Apply MI → CaptureSnapshot → **Undo** | mesh về material NGUYÊN BẢN (Đ10 — lỗ đã vá) |
 | 9 | Actor ≥2 slot khác material → save/load | CẢ HAI slot đúng, không slot cuối "thắng" |
 | 10 | Stress restore chồng nhau: spam Undo trong lúc EMS ActorLoaded còn đang restore; spawn combo rồi Undo ngay lập tức | Không crash, không material lệch, không cộng dồn record. Nếu FAIL → mới thêm generation guard (Rst_Generation) — KP2, không thêm trước |
+
+**Hợp đồng với G5:** highlight flash tạm (click-chọn vùng) không được lọt vào snapshot —
+G5 guard phía nó (flash trả material xong mới cho capture). G3 không code gì thêm; G8
+regression thêm case kiểm hợp đồng này.
 
 → **Làm xong báo tao + bảng 10 case.**
 
