@@ -58,6 +58,7 @@
 |---|---|
 | [00_INDEX.md](00_INDEX.md) | File này — index toàn bộ docs/ |
 | [01_Session_State.md](01_Session_State.md) | Kiến trúc v1.9, Sprint 4 BugFix COMPLETE, roadmap v3.1 |
+| [Architecture_Map.md](Architecture_Map.md) | Bản đồ kiến trúc — danh sách BP/Widget, folder tree, Index map (Phần 2/3 quan hệ = khung rỗng, chờ K2) |
 | [DEVIATIONS.md](DEVIATIONS.md) | Lệch kế hoạch, bugs defer, quyết định kiến trúc |
 | [MERGE_LOG.md](MERGE_LOG.md) | Log hợp nhất import_raw → docs/ (Lô A/B/C/D) |
 | [PROGRESS.md](PROGRESS.md) | Overview bar, Sprint timeline, Sprint 4 BugFix section |
