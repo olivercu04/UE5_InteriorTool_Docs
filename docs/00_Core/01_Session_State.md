@@ -7,6 +7,11 @@
 
 ---
 
+Current: Sprint 7 (Material v1.2) → G2 (reroute UI → MaterialSlotService) → Phase VERIFY | Active task: viết Blueprint node G2 đầu tiên — RefreshSlotSwatches (thêm SET SlotName vào từng swatch) | Status: mid-VERIFY, 8 vòng K2 cross-check xong, CHƯA viết node
+> Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
+
+---
+
 ## Đang ở đâu
 
 | | |
@@ -101,3 +106,19 @@ ro đụng đồ đồng nghiệp.
 
 **Lưu ý authority:** Plan KHÔNG override canonical về *reality hiện tại* — chỉ override về
 *intended future work*. Hỏi "code chạy sao" → canonical thắng; hỏi "task định sửa gì" → Plan thắng.
+
+---
+
+## ROUTE ĐỌC TỐI THIỂU KHI NHẬN TASK — [ĐANG PILOT — chưa thành rule chính thức]
+
+Session_State → core Rules + rule của loại task → Architecture_Map → scoped DEVIATIONS/Open_Bugs + rule của vùng → canonical → sprint doc → K2 (chỉ khi doc mờ)
+
+- Architecture_Map = BẢN LỀ: trước Map chỉ nạp global context/ràng buộc vừa đủ để không đi sai; sau Map mới nạp mọi knowledge theo component.
+- Đọc-trước (Rules, sau này DEVIATIONS) chỉ QUÉT phần liên quan — không nuốt cả file.
+- Map giải RIÊNG bài định tuyến. Không giải: current state (file này lo), ràng buộc (Rules lo), resolution ở đích (canonical/K2 lo). Đủ 4 chân mới ra plan tốt.
+
+Nghiệm thu pilot — chạy 1 task thật rồi soi 3 câu:
+(a) AI đọc thừa doc không?
+(b) thiếu doc nào khiến plan sai không?
+(c) có chỗ nào AI đứng hình, không biết route tiếp đi đâu không?
+→ Pilot PASS mới nâng route này thành rule trong `Rules/`. Chưa PASS thì KHÔNG formalize.
