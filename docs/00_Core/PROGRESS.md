@@ -61,6 +61,15 @@ Gate 1.5 — Sự cố engine binary giữa phiên (sửa code gốc UE → Veri
 NGHĨA" (1,56% mesh trùng slot), Q2 chốt DYNAMIC (texture picker), hybrid click-to-select duyệt
 (Fable). G1 task card phát hành (Việc 1 = vertical slice `TraceSlotUnderCursor`). Xem
 `01_Session_State.md`, `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` v1.4.
+**Cập nhật (tiếp) 03/09/2026:** Sprint 7 — S7.G2 đang chạy: Bước 0 + Việc 1 (swatch tên +
+selection) + Việc 2 (reroute apply — đường GHI Records) PASS. **Resequence G2↔G3**
+(`DELTA_Opus_S7_Resequence`, cuhoang duyệt): đường khôi phục snapshot (`RestoreMyMaterialSlots`
+on-actor + Capture/Restore chụp `MaterialSlots`) kéo từ G3 lên G2 = **Việc 2B** (GATE undo/redo,
+PASS mới sang Việc 3); G3 co lại còn legacy branch + EMS + Combo + migration. Tên struct snapshot
+chốt `S_FurniturePlacement` (trong `BP_UndoManager`) — `S_ActorSnapshotData` trong plan G3 cũ là
+sai, đã sửa toàn doc. Bar Sprint 7 KHÔNG đổi (resequence không đóng G-task nào). Xem
+`Plans/Sprint7_MaterialEdit_Plan_v1.1.md` v1.6, `Sprints/Sprint7/S7G2_Reroute_ExecutionPlan_27aug2026.md`,
+`01_Session_State.md`, `DEVIATIONS.md` mục "SPRINT 7 — 03/09/2026".
 
 ---
 

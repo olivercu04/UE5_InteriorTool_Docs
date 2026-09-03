@@ -1,5 +1,5 @@
 # Sprint 7 — Material Edit v1.2 (slot theo tên + từ điển param + save format v2)
-**Version:** 1.5 | **Cập nhật:** 27/08/2026 (tiếp) — S7.G1 ĐÓNG: 5/5 Việc PASS, không deviation. Thêm section "ĐẦU RA S7.G1". Chi tiết đầy đủ: `Data/MaterialSlotService_Reference.md`
+**Version:** 1.6 | **Cập nhật:** 03/09/2026 11:14 — Resequence G2↔G3 per `DELTA_Opus_S7_Resequence`: đường khôi phục snapshot (`RestoreMyMaterialSlots` + capture/restore) kéo lên G2/Việc 2B; G3 co lại còn legacy branch + EMS + Combo. | 27/08/2026 (tiếp) — S7.G1 ĐÓNG: 5/5 Việc PASS, không deviation. Thêm section "ĐẦU RA S7.G1". Chi tiết đầy đủ: `Data/MaterialSlotService_Reference.md`
 **Vị trí roadmap:** sau Sprint 5 DONE + Gate 1.5 Packaged Smoke. Trước Sprint 6 Polish.
 **Đầu vào chờ:** kết quả test "P5-liên quan" trong C10 (Sprint 5) → đổ vào S7.G5.
 **Thực thi:** Sonnet step-by-step. Mỗi gate = 1 lần test-and-confirm, PASS mới sang gate sau.
@@ -92,7 +92,7 @@ FMaterialSlotRecord {
 
 **Vị trí dữ liệu:**
 - `BP_FurnitureActor` + var mới `MaterialSlots : Array<FMaterialSlotRecord>` (SaveGame). Var cũ `MaterialOverrides`/`MaterialParams` GIỮ NGUYÊN (legacy, chỉ để đọc save cũ — không ghi nữa).
-- `S_ActorSnapshotData` + field `MaterialSlots` (additive — BP struct chứa được C++ struct).
+- `S_FurniturePlacement` (struct trong `BP_UndoManager`) + field `MaterialSlots` (additive — BP struct chứa được C++ struct).
 - `FComboData` item + field `materialSlots` (additive — JsonObjectConverter tự xử; combo cũ thiếu field = mảng rỗng → đường legacy).
 - EMS: SaveGame flag lo phần còn lại.
 
@@ -574,9 +574,11 @@ TEST G2: toàn bộ test Change Material v1.1 cũ chạy lại PASS (apply, swat
 # S7.G3 — MỘT ĐƯỜNG RESTORE + 4 KHO (EMS, snapshot, combo) + MIGRATION
 # ═══════════════════════════════════════
 
+> **[RESEQUENCE 03/09/2026 — `DELTA_Opus_S7_Resequence`]** Đường khôi phục snapshot đã kéo lên **G2/Việc 2B** (xem `Sprints/Sprint7/S7G2_Reroute_ExecutionPlan_27aug2026.md`): item 1 `RestoreMyMaterialSlots` bản SẠCH + item 3 Snapshot (field + capture + restore) làm ở đó. **G3 mới = nhánh legacy (đầu `RestoreMyMaterialSlots`) + EMS + Combo + migration.** Test matrix 10 case giữ nguyên; case #8 đã PASS sớm ở 2B, G3 chỉ chạy lại xác nhận không hồi quy. Tên struct snapshot: **`S_FurniturePlacement`** (trong `BP_UndoManager`) — cuhoang xác nhận 03/09; tên cũ `S_ActorSnapshotData` trong plan là sai, đã sửa toàn mục.
+
 **ĐÓNG BĂNG MẪU TRƯỚC:** copy `Saved/SaveGames` + `Saved/Combos` → `_LegacySpecimens/` (Explorer). Chưa copy → KHÔNG được đi tiếp.
 
-**[VERIFY]:** flow `ActorLoaded` hiện tại (restore MaterialOverrides thế nào); `S_ActorSnapshotData` fields; `FComboData` item struct + `F_ApplyMaterialOverrides`; chỗ CaptureSnapshot đọc material.
+**[VERIFY]:** flow `ActorLoaded` hiện tại (restore MaterialOverrides thế nào); `S_FurniturePlacement` fields; `FComboData` item struct + `F_ApplyMaterialOverrides`; chỗ CaptureSnapshot đọc material.
 
 ```
 Q8: 2 Custom Event chuỗi | IsValid Mesh + IsValid loaded asset ✓ |
@@ -586,7 +588,7 @@ Latent trong Custom Event ✓ (không Function) |
     undo về Records rỗng vẫn trả mesh về nguyên bản ✓
 ```
 
-1. **RestoreMyMaterialSlots** (Custom Event trên BP_FurnitureActor — MỘT đường duy nhất, chuỗi TUẦN TỰ Đ9):
+1. **RestoreMyMaterialSlots** (Custom Event trên BP_FurnitureActor — MỘT đường duy nhất, chuỗi TUẦN TỰ Đ9): _[RESEQUENCE 03/09 — bản SẠCH (không nhánh legacy) đã làm ở G2/Việc 2B; G3 chỉ THÊM nhánh legacy `Branch(MaterialSlots.Length == 0 AND ...)` ở đầu, phần còn lại giữ nguyên như dưới]_
 ```
 RestoreMyMaterialSlots ▶→
   Branch(MaterialSlots.Length == 0 AND MaterialOverrides cũ có dữ liệu)   ← đường LEGACY
@@ -610,7 +612,7 @@ Class var mới trên BP_FurnitureActor: `Rst_SlotIdx : int`, `Rst_CurRecord : F
 Ghi chú: nếu test 6A lộ double-apply do 2 lần gọi chồng nhau giữa chừng → thêm `Rst_Generation` counter (mỗi lần gọi ++, Completed check khớp mới chạy tiếp). Chỉ thêm KHI test fail, không thêm trước (KP2).
 
 2. EMS `ActorLoaded` → gọi RestoreMyMaterialSlots (thay code restore cũ).
-3. Snapshot: `S_ActorSnapshotData` + field MaterialSlots; Capture copy từ actor; Restore sau khi spawn+mesh load → gọi RestoreMyMaterialSlots.
+3. Snapshot: `S_FurniturePlacement` (trong `BP_UndoManager`) + field MaterialSlots; Capture copy từ actor; Restore sau khi spawn+mesh load → gọi RestoreMyMaterialSlots. _[RESEQUENCE 03/09 — ĐÃ CHUYỂN sang G2/Việc 2B, G3 bỏ mục này. Tên struct: cuhoang xác nhận `S_FurniturePlacement` (03/09); tên cũ `S_ActorSnapshotData` là sai.]_
 4. Combo: `FComboData` item + `materialSlots`; SaveComboFromSelection điền từ actor; SpawnCombo → RestoreMyMaterialSlots (F_ApplyMaterialOverrides cũ thành legacy bên trong nó).
 
 TEST G3 — ma trận:
@@ -623,7 +625,7 @@ TEST G3 — ma trận:
 | 5 | Combo CŨ (specimen) spawn | material đúng đường legacy |
 | 6 | Đổi MI + nhuộm màu → lưu combo → spawn | **màu giữ nguyên** (Đ3 — lỗ đã vá) |
 | 7 | Slot nguyên bản chỉnh param → save/load/undo | PathFallback sống đúng (Đ4) |
-| 8 | Apply MI → CaptureSnapshot → **Undo** | mesh về material NGUYÊN BẢN (Đ10 — lỗ đã vá) |
+| 8 | Apply MI → CaptureSnapshot → **Undo** | mesh về material NGUYÊN BẢN (Đ10 — lỗ đã vá) — ⚠ đã PASS sớm ở G2/Việc 2B (03/09), G3 chỉ chạy lại xác nhận không hồi quy |
 | 9 | Actor ≥2 slot khác material → save/load | CẢ HAI slot đúng, không slot cuối "thắng" |
 | 10 | Stress restore chồng nhau: spam Undo trong lúc EMS ActorLoaded còn đang restore; spawn combo rồi Undo ngay lập tức | Không crash, không material lệch, không cộng dồn record. Nếu FAIL → mới thêm generation guard (Rst_Generation) — KP2, không thêm trước |
 

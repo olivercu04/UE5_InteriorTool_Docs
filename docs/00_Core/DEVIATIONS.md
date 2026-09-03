@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 25/08/2026
+**Cập nhật:** 03/09/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1841,6 +1841,20 @@ cùng lúc. Chi phí 2 phút, chống mất nhiều giờ.
 
 Chi tiết đầy đủ 2 bug đóng kèm theo: `Bugs/Open_Bugs.md` mục `Bug-MaterialSkip-Cook`,
 `Bug-CookFail-10Errors`.
+
+---
+
+## SPRINT 7 — 03/09/2026 — Resequence G2↔G3 + tên struct snapshot
+
+**Lệch so với:** `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` v1.5 (bố cục G2/G3). Nguồn: `DELTA_Opus_S7_Resequence` (Opus, cuhoang duyệt).
+
+- **[PLAN-SAI] Đường khôi phục snapshot MaterialSlots kéo từ G3 lên G2 = "Việc 2B"** (GATE undo/redo, đặt sau Việc 2 — đường ghi, trước Việc 3/4/5). Lý do: apply + undo material là MỘT tính năng — không đóng G2 sạch được khi undo còn gãy (Việc 3/4/5 đều test undo + Print JSON records). Ranh giới G2/G3 gốc (G2 = ghi, G3 = mọi restore) vạch sai chỗ. Việc 2B bản SẠCH — chưa nhánh legacy (legacy chỉ cần khi load save cũ, để lại G3).
+- **G3 co lại** còn: nhánh legacy ở đầu `RestoreMyMaterialSlots` + EMS `ActorLoaded` + Combo + migration. Test matrix G3 (10 case) giữ nguyên; case #8 (Apply→Snapshot→Undo→nguyên bản) PASS sớm ở 2B, G3 chỉ chạy lại xác nhận không hồi quy.
+- **[PLAN-SAI] Tên struct snapshot:** plan G3 ghi `S_ActorSnapshotData` — KHÔNG tồn tại. Tên thật = `S_FurniturePlacement` (struct trong `BP_UndoManager`, đã có sẵn `MaterialPaths`/`RowName`). cuhoang xác nhận 03/09. Đã sửa toàn bộ ref trong `Sprint7_MaterialEdit_Plan_v1.1.md` (v1.6) + `Sprints/Sprint7/S7G2_Reroute_ExecutionPlan_27aug2026.md`. Việc 2B thêm field `MaterialSlots` song hành `MaterialPaths`, không tạo struct mới.
+
+**KHÔNG đổi:** nội dung từng Việc 2/3/4/5 (chỉ chèn 2B vào giữa); test matrix G3; kiến trúc "1 đường restore on-actor" (Đ9/Đ10/L11 giữ nguyên — restore on-actor chính là lý do không aliasing `Rst_SlotIdx`/`Rst_CurRecord`).
+
+**Ảnh hưởng:** trình tự G2 = Bước 0 → Việc 1 → Việc 2 (ghi) → **Việc 2B (khôi phục, GATE)** → Việc 3 → 4 → 5 → Test tổng. Rủi ro lớn nhất gate = cặp Việc 2 + 2B (đường ghi + đường ngược).
 
 ---
 

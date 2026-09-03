@@ -3,7 +3,7 @@
 > **⚙ FILE THỰC THI (working plan) — KHÔNG phải canonical.**
 > Opus lập (27/08/2026). cuhoang + Sonnet thực thi qua nhiều phiên trên chính file này.
 > Sonnet điền kết quả [VERIFY] + as-built test vào các khối chừa sẵn.
-> **Claude Code CHƯA đụng** — chỉ merge tổng kết vào canonical docs SAU khi G2 ĐÓNG.
+> **Claude Code đã chèn khối Việc 2B** (03/09, từ `DELTA_Opus_S7_Resequence`). Phần as-built [VERIFY]/test vẫn do Sonnet+cuhoang điền trong phiên. Merge tổng vào canonical vẫn chờ G2 ĐÓNG.
 > Nguồn plan: `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` mục S7.G2 (v1.5).
 > Node thật đã verify (session 27/08): `RefreshSlotSwatches` · `RefreshDisplay` · `LoadAndApplyMaterial` ·
 > `OnSlotSwatchClicked` · `SelectedActors` source · `ShowToastMsg` · `CopySlotMaterial` · `PasteSlotMaterial` ·
@@ -13,14 +13,15 @@
 
 ## 0. TRẠNG THÁI THỰC THI — cập nhật mỗi phiên (mở phiên mới đọc khối này TRƯỚC)
 
-**Đang ở:** Bước 0 + Việc 1 ĐÃ PASS — sẵn sàng vào Việc 2 (⭐ rủi ro lớn nhất gate).
+**Đang ở:** Bước 0 + Việc 1 + Việc 2 (đường ghi) ĐÃ PASS — sẵn sàng vào Việc 2B (⭐ GATE undo/redo). Resequence 03/09/2026 per `DELTA_Opus_S7_Resequence`.
 
 | Mốc | Trạng thái | Ghi chú ngắn |
 |---|---|---|
 | Gom 8 [VERIFY] | ✅ | điền kết quả ở mục 3 — không còn câu treo |
 | Bước 0 — 3 biến nền | ✅ | 3 biến thêm xong, build xanh |
 | Việc 1 — swatch tên + selection | ✅ | PASS full — swatch tên, click-select, reset (xem deviation #9) |
-| Việc 2 — reroute apply (⭐ slice) | ☐ | validate đường ghi Records — chưa cần verify thêm |
+| Việc 2 — reroute apply (⭐ slice) | ✅ | Test 1-4 PASS (đường GHI đúng). Test 5 (Undo) tách sang Việc 2B — không phải lỗi Việc 2 |
+| Việc 2B — đường khôi phục snapshot (MỚI) | ☐ | chèn từ DELTA_Opus_S7_Resequence 03/09 — GATE undo/redo, PASS mới sang Việc 3 |
 | Việc 3 — multi-apply E1 | ☐ | Toast dùng `ShowToastMsg` có sẵn, không tự chế |
 | Việc 4 — copy/paste | ☐ | KP1 ĐÃ CHỐT bản C (xem dưới) — không còn A/B |
 | Việc 5 — reset slot/all | ☐ | Node thật khớp gần đúng dự đoán, 2 điều chỉnh nhỏ đã ghi |
@@ -251,12 +252,112 @@ Custom Event (Latent async hợp lệ, không Function) | IsValid MI + IsValid T
 
 **PASS bước 2-3 = cơ chế UPARAM(ref) ghi đúng biến actor → gate đứng vững.**
 
-**As-built Việc 2** _(điền):_
+**As-built Việc 2** _(điền 03/09/2026):_
 ```
-Print JSON sau apply đơn: _____
-Apply lại cùng slot (dedupe): _____
-Undo: _____
-Test tổng: _____
+Print JSON sau apply đơn: PASS — 1 record đúng SlotName/RowName, ParamsJson rỗng
+Apply lại cùng slot (dedupe): PASS — vẫn 1 record, RowName cập nhật
+Apply slot khác: PASS — 2 record đúng 2 slot
+Undo: TÁCH sang Việc 2B (đường khôi phục chưa có ở Việc 2 — đúng thiết kế resequence)
+```
+
+---
+
+## VIỆC 2B — Đường khôi phục snapshot cho MaterialSlots (MỚI — chèn từ DELTA_Opus_S7_Resequence 03/09/2026)
+
+**Mục tiêu:** undo/redo material chạy đúng qua đường records mới. Bản SẠCH — chưa nhánh legacy (legacy để G3, vì nó chỉ cần khi load save CŨ; snapshot trong phiên luôn format mới).
+
+**Gate:** Việc 2B PASS mới được sang Việc 3. 2B fail → vẫn STOP như Việc 2.
+
+> **Tên struct snapshot (cuhoang xác nhận 03/09):** **`S_FurniturePlacement`** (trong `BP_UndoManager`, đã có sẵn `MaterialPaths`, `RowName`...). Tên `S_ActorSnapshotData` trong plan G3 cũ là sai — đã sửa. Việc 2B thao tác trên `S_FurniturePlacement`, không tạo struct mới.
+
+### 2B.0 — [THÊM MỚI] field + class vars (thuần khai báo)
+
+| Nơi | Thêm | Kiểu | Ghi chú |
+|---|---|---|---|
+| `S_FurniturePlacement` (struct trong BP_UndoManager) | `MaterialSlots` | `Array<FMaterialSlotRecord>` | song hành `MaterialPaths` cũ; bump Version struct nếu file đang đánh version |
+| `BP_FurnitureActor` | `Rst_SlotIdx` | `int` | **KHÔNG** SaveGame |
+| `BP_FurnitureActor` | `Rst_CurRecord` | `FMaterialSlotRecord` | **KHÔNG** SaveGame |
+
+`MaterialSlots` (biến chính trên actor, SaveGame) đã thêm ở Bước 0 — không làm lại.
+
+### 2B.1 — [THÊM MỚI] `RestoreMyMaterialSlots` (Custom Event trên BP_FurnitureActor)
+
+Bản sạch, chưa legacy. Async tuần tự — vì trên **actor instance riêng** nên KHÔNG aliasing (L11 tôn trọng sẵn theo thiết kế).
+
+```
+RestoreMyMaterialSlots (Custom Event) ▶→
+  ResetAllSlotsToAssetDefault(FurnitureMesh)      ← Đ10, bước 0: mesh về gốc trước khi áp lại
+  ▶→ SET Rst_SlotIdx = 0
+  ▶→ Rst_LoadNextSlot
+
+Rst_LoadNextSlot (Custom Event) ▶→
+  Branch(Rst_SlotIdx >= MaterialSlots.Length)
+    True  → [xong]
+    False ▶→ MaterialSlots.Get(Rst_SlotIdx) ●→ SET Rst_CurRecord      ← temp var, không đọc pure 2 lần
+      ▶→ Branch(Rst_CurRecord.MaterialRowName != "")
+           True  → GetDataTableRow(DT_Material, Rst_CurRecord.MaterialRowName) → path
+           False → Rst_CurRecord.MaterialPathFallback → path
+      ▶→ MakeSoftObjectPath(path) → Async Load Asset → Completed
+        ▶→ Branch(IsValid loaded asset)
+             True → Cast MaterialInterface →
+                    ApplyLoadedMaterialToSlot(FurnitureMesh, MaterialSlots,
+                       Rst_CurRecord.SlotName, Rst_CurRecord.SlotIndex,
+                       MI, Rst_CurRecord.MaterialRowName, Rst_CurRecord.MaterialPathFallback)
+                    ▶→ ApplyParamsJsonToSlot(FurnitureMesh, Rst_CurRecord.ParamsJson,
+                       Rst_CurRecord.SlotName, Rst_CurRecord.SlotIndex)
+        (merge cả 2 nhánh IsValid) ▶→ SET Rst_SlotIdx = Rst_SlotIdx + 1 ▶→ Rst_LoadNextSlot
+```
+
+**Q8:**
+```
+RestoreMyMaterialSlots / Rst_LoadNextSlot: Custom Event (latent async hợp lệ) | IsValid loaded asset guard (load fail KHÔNG kẹt chain — vẫn idx++) | L2: mọi nhánh (kể cả load fail, kể cả IsValid=False) đều tới idx++ → Rst_LoadNextSlot, không dead-end fatal | Latent trong Custom Event ✓ (KHÔNG Function) | 6A: đây CHÍNH LÀ đường ngược — reset-trước-áp (Đ10) đảm bảo gọi lại nhiều lần không cộng dồn
+```
+
+> Ghi chú L11/aliasing: event nằm trên BP_FurnitureActor (mỗi actor 1 graph instance riêng) → nhiều actor restore song song không đè `Rst_SlotIdx`/`Rst_CurRecord` của nhau. Đây là lý do G3 đã thiết kế restore On-Actor, không On-Manager.
+> Ghi chú KP2: KHÔNG thêm `Rst_Generation` guard bây giờ. Chỉ thêm nếu test 2B lộ double-apply do gọi chồng (giữ đúng luật "không thêm trước khi fail").
+
+### 2B.2 — [SỬA] `CaptureSnapshot` (BP_UndoManager) — chụp thêm MaterialSlots
+
+Trong đoạn build `S_FurniturePlacement` mỗi actor (chỗ đang GET `RowName`, `MaterialPaths` — Step 3):
+```
+[THÊM] GET actor(cast BP_FurnitureActor).MaterialSlots ●→ SET placement.MaterialSlots
+```
+Song hành node GET RowName có sẵn (v1.15). KHÔNG đụng phần còn lại.
+
+### 2B.3 — [SỬA] `RestoreSnapshot` (BP_UndoManager) — trả MaterialSlots + gọi restore
+
+Trong Step 4 (sau khi Spawn actor + Set Static Mesh + SET RowName — actor đã có mesh):
+```
+[THÊM, sau SET NewActor.RowName]
+  SET NewActor.MaterialSlots = placement.MaterialSlots      ← trả records vào actor TRƯỚC khi restore
+  ▶→ Call NewActor.RestoreMyMaterialSlots                    ← áp lại lên mesh (async, tự chạy)
+```
+Thứ tự bắt buộc: SET mesh → SET MaterialSlots → Call RestoreMyMaterialSlots (event đọc cả FurnitureMesh lẫn MaterialSlots).
+
+**Q8 (2B.2 + 2B.3):**
+```
+CaptureSnapshot: giữ Custom Event cũ | không guard mới cần (đọc actor đã IsValid trong loop cũ) | L2: chuỗi thẳng thêm 1 GET/SET | No latent thêm | 6A: cặp với RestoreSnapshot
+RestoreSnapshot: giữ | SET trước Call (thứ tự) | L2: thẳng | Call event latent nằm trên actor (hợp lệ) | 6A: đây là đường ngược
+```
+
+### TEST Việc 2B (đây là test undo/redo THẬT — cái Việc 2 fail)
+```
+1. Apply slot2 (gray) → đợi 1-2s → apply slot3 (yellow) → đợi 1-2s
+2. Undo 1 lần → CHỈ slot3 về gốc, slot2 GIỮ gray | Print JSON: đúng 1 record (slot2)
+3. Undo lần nữa → slot2 về gốc | Print JSON: rỗng
+4. Redo → slot2 về lại gray | Print JSON: 1 record
+5. Redo → slot3 về lại yellow | Print JSON: 2 record
+6. Đổi material rồi Undo→Redo xen kẽ vài lần → không lệch, không cộng dồn record
+```
+PASS 1-6 = đường ghi + đường ngược khớp nhau → **xương sống G2 đứng vững thật** → sang Việc 3.
+
+**As-built Việc 2B** _(điền):_
+```
+2B.0 field/class var đã thêm: _____
+Test 1-2 (undo tách slot): _____
+Test 3 (undo về rỗng): _____
+Test 4-5 (redo): _____
+Test 6 (xen kẽ, không cộng dồn): _____
 ```
 
 ---
@@ -513,13 +614,14 @@ PASS toàn bộ → **G2 ĐÓNG.** `MaterialOverrides` thành legacy (G3 migrati
 ```
 Bước 0 (nền: 3 biến)
 Việc 1 (swatch tên + selection)          ← Việc 2 cần SelectedSlotName từ đây
-Việc 2 (⭐ reroute apply — VALIDATE Records)  ← rủi ro lớn nhất, làm sớm; FAIL → STOP
+Việc 2 (⭐ reroute apply — VALIDATE Records ghi)  ← làm sớm; FAIL → STOP
+Việc 2B (⭐ đường khôi phục snapshot — VALIDATE undo/redo)  ← GATE, PASS mới sang Việc 3; resequence 03/09
 Việc 3 (multi-apply — lặp pattern Việc 2)
 Việc 4 (copy/paste — lặp pattern)
 Việc 5 (reset — lặp pattern)
 Test tổng G2
 ```
-Mỗi việc PASS test riêng mới sang việc sau.
+Mỗi việc PASS test riêng mới sang việc sau. Rủi ro lớn nhất gate = cặp **Việc 2 + 2B** (đường ghi + đường ngược).
 
 ---
 
