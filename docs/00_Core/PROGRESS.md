@@ -70,6 +70,15 @@ chốt `S_FurniturePlacement` (trong `BP_UndoManager`) — `S_ActorSnapshotData`
 sai, đã sửa toàn doc. Bar Sprint 7 KHÔNG đổi (resequence không đóng G-task nào). Xem
 `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` v1.6, `Sprints/Sprint7/S7G2_Reroute_ExecutionPlan_27aug2026.md`,
 `01_Session_State.md`, `DEVIATIONS.md` mục "SPRINT 7 — 03/09/2026".
+**Cập nhật (tiếp) 04/09/2026:** Sprint 7 — S7.G2 **Việc 2B** (đường khôi phục snapshot:
+`RestoreMyMaterialSlots` on-actor + Capture/Restore chụp `MaterialSlots` trên `S_FurniturePlacement`)
+— ✅ PASS full 6 bước undo/redo + **bonus redo-stack case** (apply nhánh MỚI sau Undo → Redo đúng
+nhánh mới, không lẫn state nhánh cũ đã cắt — `CaptureSnapshot` resize redo-stack đúng). Cặp Việc 2 +
+2B (đường ghi + đường ngược) = xương sống G2 xác nhận đứng vững. Còn Việc 3 (multi-apply E1) · 4
+(copy/paste) · 5 (reset) → Test tổng G2. Race warning `ResetAllSlotsToAssetDefault Mesh không hợp lệ`
+mỗi lần restore (race LoadMeshAsync vs RestoreMyMaterialSlots) — vô hại luồng hiện tại (actor luôn
+spawn mới), dời `Sprint7_MaterialEdit_Plan_v1.1.md` G3 test #10 soi. Bar Sprint 7 KHÔNG đổi. Xem
+`Sprints/Sprint7/S7G2_Reroute_ExecutionPlan_27aug2026.md` (as-built Việc 2B).
 
 ---
 

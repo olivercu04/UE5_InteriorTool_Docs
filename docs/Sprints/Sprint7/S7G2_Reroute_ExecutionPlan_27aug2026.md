@@ -3,7 +3,7 @@
 > **⚙ FILE THỰC THI (working plan) — KHÔNG phải canonical.**
 > Opus lập (27/08/2026). cuhoang + Sonnet thực thi qua nhiều phiên trên chính file này.
 > Sonnet điền kết quả [VERIFY] + as-built test vào các khối chừa sẵn.
-> **Claude Code đã chèn khối Việc 2B** (03/09, từ `DELTA_Opus_S7_Resequence`). Phần as-built [VERIFY]/test vẫn do Sonnet+cuhoang điền trong phiên. Merge tổng vào canonical vẫn chờ G2 ĐÓNG.
+> **Claude Code đã chèn khối Việc 2B** (03/09, từ `DELTA_Opus_S7_Resequence`) **và thay mục Việc 3 sang Hướng B inline** (04/09, từ `DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026.md`). Phần as-built [VERIFY]/test vẫn do Sonnet+cuhoang điền trong phiên. Merge tổng vào canonical vẫn chờ G2 ĐÓNG.
 > Nguồn plan: `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` mục S7.G2 (v1.5).
 > Node thật đã verify (session 27/08): `RefreshSlotSwatches` · `RefreshDisplay` · `LoadAndApplyMaterial` ·
 > `OnSlotSwatchClicked` · `SelectedActors` source · `ShowToastMsg` · `CopySlotMaterial` · `PasteSlotMaterial` ·
@@ -13,7 +13,7 @@
 
 ## 0. TRẠNG THÁI THỰC THI — cập nhật mỗi phiên (mở phiên mới đọc khối này TRƯỚC)
 
-**Đang ở:** Bước 0 + Việc 1 + Việc 2 (đường ghi) ĐÃ PASS — sẵn sàng vào Việc 2B (⭐ GATE undo/redo). Resequence 03/09/2026 per `DELTA_Opus_S7_Resequence`.
+**Đang ở:** Bước 0 + Việc 1 + Việc 2 + Việc 2B (⭐ GATE undo/redo) ĐÃ PASS — sẵn sàng vào Việc 3. Resequence 03/09/2026 per `DELTA_Opus_S7_Resequence`.
 
 | Mốc | Trạng thái | Ghi chú ngắn |
 |---|---|---|
@@ -21,8 +21,8 @@
 | Bước 0 — 3 biến nền | ✅ | 3 biến thêm xong, build xanh |
 | Việc 1 — swatch tên + selection | ✅ | PASS full — swatch tên, click-select, reset (xem deviation #9) |
 | Việc 2 — reroute apply (⭐ slice) | ✅ | Test 1-4 PASS (đường GHI đúng). Test 5 (Undo) tách sang Việc 2B — không phải lỗi Việc 2 |
-| Việc 2B — đường khôi phục snapshot (MỚI) | ☐ | chèn từ DELTA_Opus_S7_Resequence 03/09 — GATE undo/redo, PASS mới sang Việc 3 |
-| Việc 3 — multi-apply E1 | ☐ | Toast dùng `ShowToastMsg` có sẵn, không tự chế |
+| Việc 2B — đường khôi phục snapshot | ✅ | PASS full 6 bước + bonus redo-stack case (04/09) |
+| Việc 3 — multi-apply E1 | ☐ | Hướng B inline (chỉ multi khi cùng RowName; trộn loại → chỉ Primary + Toast). Spec DELTA 04/09, chưa code |
 | Việc 4 — copy/paste | ☐ | KP1 ĐÃ CHỐT bản C (xem dưới) — không còn A/B |
 | Việc 5 — reset slot/all | ☐ | Node thật khớp gần đúng dự đoán, 2 điều chỉnh nhỏ đã ghi |
 | Test tổng G2 | ☐ | |
@@ -351,90 +351,178 @@ RestoreSnapshot: giữ | SET trước Call (thứ tự) | L2: thẳng | Call eve
 ```
 PASS 1-6 = đường ghi + đường ngược khớp nhau → **xương sống G2 đứng vững thật** → sang Việc 3.
 
-**As-built Việc 2B** _(điền):_
+**As-built Việc 2B** _(điền 04/09/2026):_
 ```
-2B.0 field/class var đã thêm: _____
-Test 1-2 (undo tách slot): _____
-Test 3 (undo về rỗng): _____
-Test 4-5 (redo): _____
-Test 6 (xen kẽ, không cộng dồn): _____
+2B.0 field/class var đã thêm: ✅ (S_FurniturePlacement.MaterialSlots, Rst_SlotIdx, Rst_CurRecord)
+Test 1-2 (undo tách slot): PASS — JSON record giảm đúng thứ tự apply ngược (4→3→2→1)
+Test 3 (undo về rỗng): PASS
+Test 4-5 (redo): PASS — bonus: apply nhánh MỚI sau Undo → Redo đúng nhánh mới, không lẫn state nhánh cũ đã cắt (xác nhận CaptureSnapshot resize redo-stack đúng)
+Test 6 (xen kẽ, không cộng dồn): PASS
+Ghi chú rủi ro (không chặn): Warning "ResetAllSlotsToAssetDefault Mesh không hợp lệ" mỗi lần restore — race LoadMeshAsync vs RestoreMyMaterialSlots, vô hại ở luồng hiện tại (actor luôn spawn mới, không tái dùng). Để G3 test #10 (stress restore chồng nhau) soi lại.
 ```
 
 ---
 
-## VIỆC 3 — Multi-apply E1 (fix Bug-MaterialPrimaryOnly)
+## VIỆC 3 — Multi-Apply Material (Hướng B, inline) — fix Bug-MaterialPrimaryOnly
 
-**Mục tiêu:** apply vào TẤT CẢ SelectedActors theo tên slot; actor thiếu slot → service false → đếm; Toast số lượng. Dùng lại `MI` đã load ở Việc 2 (cùng 1 `Completed`), KHÔNG load lại N lần.
+`[SỬA 04/09 — Hướng A → Hướng B inline; xem DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026.md]`
+**Trạng thái:** PLAN — chưa code, chưa test. As-built khung ở cuối, Sonnet điền sau.
 
-### Q9 — S-MATRIX GATE (Opus đã chạy — đụng `SelectedActors`)
+**Mục tiêu:** vá `Bug-MaterialPrimaryOnly` theo hướng an toàn. Multi-apply CHỈ chạy khi tất cả actor đang chọn **cùng RowName** (cùng model y hệt — case "N gối giống hệt"). Chọn trộn loại → giữ single-Primary + Toast cảnh báo rõ "N món khác loại chưa đổi". Dùng lại `MI` đã load ở Việc 2, KHÔNG load lại N lần.
+
+### 0. Bối cảnh quyết định (vì sao Hướng B, vì sao inline)
+
+**Bug đang vá:** `Bug-MaterialPrimaryOnly` (02/08). Chọn cả cụm → đổi material → chỉ Primary đổi, N actor còn lại im lặng không đổi, KHÔNG cảnh báo. User tưởng cả cụm đã đổi.
+
+**Hướng A (cũ, bỏ):** apply theo tên slot cho MỌI actor đang chọn, không phân biệt loại mesh.
+- Rủi ro: combo dị chủng (sofa + bàn trà + ghế) tình cờ trùng tên slot → áp nhầm material vào món user không chủ ý đổi. Toast chỉ đếm số, không nêu tên → sai ÂM THẦM, nguy cho combo thương mại.
+
+**Hướng B (chốt):** multi-apply chỉ khi tất cả actor **cùng RowName**. Chọn trộn loại → single-Primary + Toast cảnh báo.
+- Fail-safe: sai an toàn (kém tiện) thay vì sai tiện lợi (áp nhầm). Vá đúng phần gây hại nhất của bug gốc (silent), không mở rủi ro áp nhầm liên loại.
+- YAGNI: KHÔNG làm "multi-apply liên loại có xác nhận từng món" — chưa có bằng chứng cần, rủi ro cao.
+
+**Inline thay C++ (chốt 04/09):** logic "cùng loại?" = 1 phép so `RowName` (FName) trong ForEach. Đủ nhỏ để làm thẳng trong widget bằng Blueprint, KHÔNG cần hàm C++ mới.
+- KISS/YAGNI thắng SoC ở quy mô này: không thêm hàm C++, không compile lại `FurnitureToolkit`, không đụng file C++.
+- Đánh đổi đã cân: logic so sánh nằm ở widget (hơi lệch "widget mỏng") — chấp nhận, vì phép so 1 field quá nhỏ để tách service.
+
+### 1. Verify đã chốt (đọc K2Node/doc thật trong phiên Opus)
+
+| # | Điều verify | Kết quả | Nguồn |
+|---|---|---|---|
+| V1 | `LoadAndApplyMaterial` đã reroute sang `MaterialSlotService.ApplyLoadedMaterialToSlot`, ghi `MaterialSlots` (KHÔNG phải `MaterialOverrides` cũ) | ✅ ĐÃ reroute (Việc 2) | K2Node `LoadAndApplyMaterial` |
+| V2 | Điểm chèn multi-loop | Giữa `ApplyLoadedMaterialToSlot.then` và `SerializeSlotRecords` | K2Node (đuôi: Apply→Serialize→PrintDev→GetDataTableRow→UpdateThumbnail→ClearTimer→SetTimer→AddRecentMaterial) |
+| V3 | `MI` (material đã load) tái dùng, KHÔNG load lại N lần | Lấy pin `AsMaterial Interface` của Cast (qua Knot_34/35 — cùng nguồn Primary dùng) | K2Node |
+| V4 | `RowName` trên `BP_FurnitureActor` kiểu gì | **FName** (SaveGame) | `BP_FurnitureActor.md` Variables + `Data_Structures.md` |
+| V5 | Nguồn `SelectedActors` | `GetAllActorsOfClass(BP_FurnitureInputManager)[0] → SelectedActors`, gọi tươi mỗi lần (KHÔNG cache InputManagerRef trên widget) | S7G2 plan VERIFY#4 + K2Node pattern |
+| V6 | Đường gọi Toast | Function `ShowToastMsg(Message : Text)` có sẵn trên `WBP_FurnitureInventory` — tự lo `ToastRef` (trên `BP_FurnitureSceneManager`) + IsValid + fallback PrintString. Tham số **Text** → phải `Conv_StringToText` chuỗi nối | S7G2 plan VERIFY#5 |
+
+**Hệ quả V1:** cả Primary lẫn actor phụ đều ghi cùng format `MaterialSlots` → KHÔNG có case 2 format lẫn nhau trong 1 lần apply. Multi-loop chèn thẳng sau Primary, không cần bước reroute single.
+
+### 2. Biến mới (3 Class Variable trên `WBP_FurnitureInventory`, prefix `LoadApply_`)
+
+| Tên | Kiểu | Default | Lý do |
+|---|---|---|---|
+| `LoadApply_Selected` | Array of Actor | — | copy `SelectedActors` (L: array pass-by-ref → SET vào class var trước khi loop) |
+| `LoadApply_AllSame` | Boolean | **true** | cờ "tất cả cùng RowName"; vòng 1 chỉ SET false, không SET true |
+| `LoadApply_SuccessCount` | Integer | 0 | đếm actor phụ áp OK (vòng 2) |
+
+> ⚠ `LoadAndApplyMaterial` là **Custom Event** (K2Node xác nhận: `K2Node_CustomEvent CustomFunctionName="LoadAndApplyMaterial"`) → Event KHÔNG có Local Variable panel (L9). 3 biến trên **phải là Class Variable** với prefix `LoadApply_` (naming §9 — biến tạm phục vụ 1 event → prefix tên event). CLEAR `LoadApply_Selected` + reset `LoadApply_AllSame=true` + `LoadApply_SuccessCount=0` ở ĐẦU đoạn multi (trước vòng 1), vì là class var persistent.
+
+> _[04/09 — bản delta đầu ghi nhầm "Local Variable" ở tiêu đề mục này; cuhoang sửa tại nguồn → chốt **Class Variable** (đúng L9). Đã khớp.]_
+
+### 3. Node flow — chèn giữa `ApplyLoadedMaterialToSlot.then` và `SerializeSlotRecords`
+
+Ký hiệu: `▶→` exec, `●→` data.
+
+```
+[ApplyLoadedMaterialToSlot.then — Primary vừa áp xong]
+▶→ SET LoadApply_AllSame = true                       ← reset class var đầu đoạn
+▶→ SET LoadApply_SuccessCount = 0
+▶→ GetAllActorsOfClass(BP_FurnitureInputManager) → Get(0) → GET SelectedActors
+   → SET LoadApply_Selected                            ← copy (L: pass-by-ref)
+▶→ Branch(LoadApply_Selected.Length > 1)
+     False ▶→──────────────────────────────────┐       ← single thật: bỏ qua multi, không Toast
+     True  ▶→ ForEach(LoadApply_Selected → A):          ← ══ VÒNG 1: KIỂM CÙNG LOẠI ══
+                Cast A → BP_FurnitureActor  [dùng bSuccess pin, KHÔNG rẽ exec CastFailed]
+                  Branch(Cast bSuccess?)
+                    False → SET LoadApply_AllSame = false    ← actor lạ → khác loại (fail-safe)
+                    True  → Branch(CastedA.RowName != TargetFurnitureActor.RowName)
+                              True  → SET LoadApply_AllSame = false
+                              False → [dead-end hợp lệ — cùng RowName, không làm gì]
+              Completed ▶→ Branch(LoadApply_AllSame)
+                   True ▶→ ForEach(LoadApply_Selected → A2):   ← ══ VÒNG 2: APPLY ══
+                            Branch(A2 != TargetFurnitureActor)
+                              True → Cast A2 → BP_FurnitureActor
+                                   → ApplyLoadedMaterialToSlot(
+                                       Mesh      = CastedA2.FurnitureMesh,
+                                       Records   = CastedA2.MaterialSlots,   [ref]
+                                       SlotName  = SelectedSlotName,
+                                       HintIndex = SelectedSlotIndex,
+                                       LoadedMI  = MI,                        [từ Cast pin, không load lại]
+                                       RowName   = Conv_NameToString(PendingRowName),
+                                       PathFallback = "" ) ●→ bOK
+                                   → Branch(bOK)
+                                       True  → SET LoadApply_SuccessCount = LoadApply_SuccessCount + 1
+                                       False → [dead-end hợp lệ — actor thiếu slot tên đó]
+                              False → [dead-end hợp lệ — Primary đã áp ở đầu event]
+                          Completed ▶→ ShowToastMsg( Conv_StringToText(
+                                         "Áp cho " + (LoadApply_SuccessCount + 1) + "/"
+                                         + LoadApply_Selected.Length + " đồ" ) ) ──────────┐
+                   False ▶→ ShowToastMsg( Conv_StringToText(
+                                "Chỉ áp cho món đang chọn — " + (LoadApply_Selected.Length - 1)
+                                + " món khác loại chưa đổi" ) ) ─────────────────────────────┤
+     (mọi nhánh merge về đây) ◄─────────────────────────────────────────────────────────────┘
+▶→ SerializeSlotRecords → PrintString(Dev) → GetDataTableRow → UpdateThumbnail
+   → ClearTimer → SetTimer("CaptureMaterialSnapshot", 0.5s) → AddRecentMaterial   [đuôi cũ GIỮ NGUYÊN]
+```
+
+**Chi tiết wiring quan trọng:**
+- `MI` = pin `AsMaterial Interface` của node `Cast MaterialInterface` (đã tồn tại, K2Node Knot_34→35). Kéo thêm 1 nhánh data từ pin đó vào ô `LoadedMI` của service node trong VÒNG 2. KHÔNG thêm Async Load mới.
+- `Cast A → BP_FurnitureActor` trong VÒNG 1: dùng **pin `bSuccess`** (bool output) cho Branch, KHÔNG rẽ execution qua `CastFailed`. Lý do: giữ chuỗi exec thẳng trong ForEach, tránh dead-end nhánh CastFailed (L2).
+- `+ (số)` với chuỗi: các phép `+1`, `Length`, `Length-1` là Integer → phải `Conv_IntToString` (hoặc dùng thẳng Append/Concat với auto-convert) trước khi nối chuỗi. Kết quả chuỗi → `Conv_StringToText` cho `ShowToastMsg`.
+
+### 4. Vì sao 2 vòng loop riêng (không gộp — ghi để không ai "tối ưu" thành bug)
+
+Vòng 1 kiểm cùng loại, vòng 2 apply — **tách biệt CÓ CHỦ ĐÍCH**, KHÔNG phải trùng lặp thừa.
+
+Nếu gộp 1 vòng (vừa duyệt vừa apply): lỡ actor thứ 3 khác loại → 2 actor đầu ĐÃ bị đổi material rồi mới phát hiện phải dừng → sai (fail-unsafe). Phải biết TẤT CẢ cùng loại TRƯỚC khi chạm actor phụ đầu tiên. Ràng buộc "all-or-nothing" → 2 vòng là cách đúng.
+
+**Nguyên lý:** Design for Change — nếu sau này đổi chính sách (cho phép apply một phần), sửa vòng 2 độc lập, không đụng vòng 1.
+
+### 5. Q9 — S-MATRIX (RE-RUN cho Hướng B; hành vi rẽ nhánh theo RowName-match)
 
 **Tầng 1 — S-Scan:**
-| ID | Trạng thái | Kết quả |
+| ID | Trạng thái | Ô | Ghi chú |
+|---|---|---|---|
+| S1 | 1 mesh chọn | `→` single | Length=1, không vào multi. Y hành vi cũ |
+| S2 | N mesh rời **cùng RowName** | `→` multi-apply | Case bug gốc THẬT (N gối giống hệt) → apply cả cụm |
+| S2' | N mesh rời **khác RowName** | `⚠ chỉ Primary + Toast cảnh báo` | MỚI ở B — chặn áp nhầm liên loại |
+| S3 | 1 group cùng loại | `→S2` | leaf cùng RowName |
+| S3' | 1 group trộn loại | `→S2'` | cảnh báo |
+| S4 | combo cả cụm (thường trộn loại) | `⚠ →S2'` | ĐÚNG ví dụ sofa+bàn+ghế: chỉ Primary đổi + báo rõ |
+| S5 | không có actor nào (Length=0) | `N/A: SelectedSlotIndex<0 hoặc TargetFurnitureActor invalid → nhánh trên đã chặn ở Branch IsValid trước LoadAndApplyMaterial` | multi không tới được |
+| S6 | actor bị destroy giữa chừng | `N/A: SelectedActors đọc tươi tại thời điểm apply; Cast bSuccess guard actor null` | — |
+| S7 | slot index lệch giữa actor | `→` service `ResolveSlotIndex` theo tên (Q1 ít trùng) tự lo; actor phụ chỉ chạy khi cùng RowName → slot names khớp | an toàn |
+| S8 | mixed lock state | `N/A: multi-apply không đụng lock; apply material không bị chặn bởi bIsLocked (v1)` | — |
+| S9 | selection máy sinh | `→` đọc tươi `SelectedActors` → an toàn actor mới spawn | y A |
+
+**Ô đổi hành vi ở B: S2', S3', S4** → đều rẽ về "chỉ Primary + Toast", KHÔNG loop apply. An toàn hơn A.
+
+**Tầng 2 — X-Check (chỉ ô ⚠: S2'/S3'/S4):**
+- **X1 Undo:** VÒNG 2 reset debounce timer `CaptureMaterialSnapshot` (0.5s) mỗi lần — 1 CaptureSnapshot cả batch (kiến trúc capture đã ver' ở Việc 2B). Nhánh dị-loại chỉ Primary → 1 snapshot 1 actor, cũng đúng.
+- **X2 Persistence:** multi chỉ chạy khi cùng RowName → mọi actor cùng slot names → KHÔNG có case ghi record vào slot không tồn tại trên actor phụ.
+- **X7 Toast/Feedback:** CẢ 2 nhánh (multi lẫn dị-loại) đều Toast khi Length>1 → KHÔNG im lặng → vá đúng phần gây hại nhất của bug gốc.
+
+### 6. Q8 (viết VISIBLE trước node flow khi execute)
+
+```
+Q8: Container = Custom Event (nối tiếp LoadAndApplyMaterial, Latent Async ở đầu chain — hợp lệ)
+  | IsValid: Cast bSuccess pin guard mọi actor trong cả 2 ForEach; service tự trả false không crash
+  | L2: mọi nhánh False trong 2 ForEach + 2 nhánh Toast đều merge về SerializeSlotRecords — KHÔNG dead-end fatal
+  | No latent thêm (2 ForEach macro + service call, KHÔNG async mới)
+  | 6A: 1 CaptureSnapshot sau batch → undo phục hồi cả cụm (nhánh dị-loại chỉ Primary → undo 1 actor, đúng)
+```
+
+### 7. TEST Việc 3 (chạy khi code xong)
+
+| # | Setup | Kỳ vọng |
 |---|---|---|
-| S0 | Không chọn gì | `N/A: chặn sẵn bởi IsValid(TargetFurnitureActor) đầu ApplyMaterial` |
-| S1 | 1 mesh rời | `→` ForEach 1 vòng, y cũ |
-| S2 | N mesh rời | `⚠` **bug cần vá** — ForEach chạy hết N |
-| S3 | 1 group thường | `⚠` `SelectedActors` đã bung leaf qua `ExpandSelectionWithGroups` (đường InputManager) → = S2, ForEach đủ |
-| S4 | 1 combo cả cụm | `→S3` (combo bung leaf qua `GetAllDescendantActors`) |
-| S5 | 1 mesh trong group (edit) | `→S1` scope còn 1 actor |
-| S6 | 1 mesh trong combo (edit) | `→S1` |
-| S7 | sub-group nested (edit) | `→S3` có thể N leaf |
-| S8 | Mix Ctrl-click chéo loại | `→S3` đã dedupe ở tầng Expand |
-| S9 | Selection do máy sinh | `⚠` actor instance mới sau Restore/Spawn |
+| 1 | Chọn 3 mesh **CÙNG RowName** (3 gối giống hệt), ≥1 cái thiếu slot tên đó | Cái có slot đổi đúng, cái thiếu skip → Toast "Áp cho X/3 đồ" |
+| 2 | Chọn combo **TRỘN loại** (sofa+bàn+ghế, khác RowName) | **Chỉ Primary đổi**, Toast "Chỉ áp cho món đang chọn — 2 món khác loại chưa đổi". Bàn/ghế KHÔNG đổi màu |
+| 3 | Chọn 1 mesh (single) | Đổi đúng, KHÔNG Toast (Length=1) |
+| 4 | Sau case 1 → Undo | Cả cụm về nguyên trạng (1 snapshot) |
+| 5 | Sau case 2 → Undo | Chỉ Primary về (đúng — chỉ nó đổi) |
 
-**Tầng 2 — X-Check (ô ⚠: S2, S3, S9):**
-| # | Hệ | Kết luận |
-|---|---|---|
-| X1 Undo | ForEach reset debounce Timer 0.5s mỗi vòng → **1 CaptureSnapshot cho cả batch**, không N lần |
-| X2 Persistence | Ghi `MaterialSlots` từng actor (Records riêng — không aliasing). MaterialOverrides không đụng |
-| X3 UI | Swatch/thumbnail refresh CHỈ Primary (`TargetFurnitureActor`) — đúng, panel hiện 1 actor |
-| X4 Selection | Không đổi — chỉ đọc `SelectedActors`, không SET |
-| X7 Toast | Plan gốc "Print" = Dev Only, Shipping không thấy → **Toast thật** khi Length > 1 |
-| X9 Material state | `SelectedSlotName` không đổi giữa actor (đúng D2). HintIndex có thể lệch trên actor khác nhưng Q1=ÍT trùng → service resolve qua tên |
-| S9 | `SelectedActors` đọc tươi tại thời điểm click → an toàn actor mới spawn |
+PASS 1-5 = `Bug-MaterialPrimaryOnly` đóng theo hướng an toàn (B). Case 2 = bằng chứng B chặn đúng rủi ro áp nhầm sofa+bàn.
 
-**Ô đổi hành vi: chỉ S2/S3/S9** → rủi ro regression khoanh gọn.
-
-### ✅ [VERIFY #4] nguồn `SelectedActors` — chốt
-`GetAllActorsOfClass(BP_FurnitureInputManager) → Get(0) → SelectedActors`, gọi **tươi mỗi lần dùng**. KHÔNG có `InputManagerRef` cached trên inventory (pattern quán xuyến toàn widget, xác nhận qua đoạn Replace routing dùng cùng cơ chế).
-
-### [SỬA/THÊM] Chèn vào giữa Việc 2 (SAU ApplyLoadedMaterialToSlot cho Primary)
+**As-built Việc 3** _(Sonnet điền sau test — KHÔNG điền sẵn):_
 ```
-(tiếp nhánh True Việc 2, SAU Apply Primary)
-▶→ SET MultiApply_SuccessCount = 0                             ← temp var (prefix theo hàm)
-▶→ GetAllActorsOfClass(BP_FurnitureInputManager) → Get(0) → GET SelectedActors → ForEach (Actor):   ← gọi tươi, không cache
-     Branch(Actor != TargetFurnitureActor):
-       True ▶→ Cast Actor → BP_FurnitureActor
-              ▶→ ApplyLoadedMaterialToSlot(
-                    Mesh=Actor.FurnitureMesh, Records=Actor.MaterialSlots,
-                    SlotName=SelectedSlotName, HintIndex=SelectedSlotIndex,
-                    LoadedMI=MI, RowName=PendingRowName, PathFallback="" ) ●→ bOK
-              ▶→ Branch(bOK): True → SET MultiApply_SuccessCount +=1
-                              False → [dead-end hợp lệ — actor thiếu slot]
-       False ▶→ [dead-end hợp lệ — Primary đã áp Việc 2]
-   Completed ▶→ Branch(SelectedActors.Length > 1):
-       True → ShowToastMsg( Conv_StringToText("Áp cho " + (SuccessCount+1) + "/" + SelectedActors.Length + " đồ") )
-       False → (merge)
-▶→ (merge) → [đuôi Việc 2: GetDataTableRow → UpdateThumbnail → Timer → AddRecent]
-```
-Đếm: `SuccessCount` = actor phụ OK. `+1` cho Primary (luôn OK, đã áp Việc 2). Toast chỉ khi >1 actor.
-
-### ✅ [VERIFY #5] đường gọi Toast — chốt
-Đã có sẵn Function `ShowToastMsg(Message : Text)` trong `WBP_FurnitureInventory` — tự lo `GetAllActorsOfClass(BP_FurnitureSceneManager)[0].ToastRef` + `IsValid` + fallback `PrintString` (Dev Only). **`ToastRef` nằm trên `BP_FurnitureSceneManager`**, không phải GameInstance. Gọi thẳng `ShowToastMsg(...)` — không cần dựng IsValid/GetAllActorsOfClass thủ công. Tham số là **Text**, phải `Conv_StringToText` chuỗi nối trước khi truyền.
-
-### Q8
-```
-Custom Event nối tiếp Việc 2 (cùng container, Latent ở đầu chain) | IsValid: Cast Actor tự guard, service tự trả false không crash | L2: 2 nhánh False trong ForEach dead-end hợp lệ (không logic sau cho nhánh đó); Completed LUÔN merge về đuôi | No latent thêm (ForEach macro không latent) | 6A: 1 CaptureSnapshot sau cả batch → undo phục hồi cả cụm
-```
-
-**TEST Việc 3:** chọn 3 đồ khác chủng loại (≥1 đồ KHÔNG có slot tên đó) → đổi material → đồ có slot đổi đúng, đồ thiếu skip → Toast "Áp cho 2/3 đồ" → undo về cả 3 nguyên trạng. PASS = Bug-MaterialPrimaryOnly đóng.
-
-**As-built Việc 3** _(#4, #5 đã điền từ VERIFY — Sonnet điền phần Test khi code xong):_
-```
-#4 nguồn SelectedActors: GetAllActorsOfClass(BP_FurnitureInputManager)[0], gọi tươi, không cache
-#5 ShowToast: dùng ShowToastMsg(Text) có sẵn — tự lo ToastRef trên BP_FurnitureSceneManager + fallback Print
-Test multi 3 đồ: _____
-Toast: _____  Undo batch: _____
+2 (biến class var LoadApply_*) đã thêm: _____
+Node flow chèn (V2 điểm chèn): _____
+Test 1 (multi cùng loại, skip actor thiếu slot): _____
+Test 2 (dị loại → chỉ Primary + Toast cảnh báo): _____
+Test 3 (single, không Toast): _____
+Test 4-5 (undo): _____
 ```
 
 ---

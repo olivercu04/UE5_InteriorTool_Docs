@@ -1,5 +1,5 @@
 # Sprint 7 — Material Edit v1.2 (slot theo tên + từ điển param + save format v2)
-**Version:** 1.6 | **Cập nhật:** 03/09/2026 11:14 — Resequence G2↔G3 per `DELTA_Opus_S7_Resequence`: đường khôi phục snapshot (`RestoreMyMaterialSlots` + capture/restore) kéo lên G2/Việc 2B; G3 co lại còn legacy branch + EMS + Combo. | 27/08/2026 (tiếp) — S7.G1 ĐÓNG: 5/5 Việc PASS, không deviation. Thêm section "ĐẦU RA S7.G1". Chi tiết đầy đủ: `Data/MaterialSlotService_Reference.md`
+**Version:** 1.8 | **Cập nhật:** 04/09/2026 10:40 — §S7.G2 item 3 thêm marker: Multi-apply đổi Hướng A → Hướng B (xem `DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026.md`); giữ mô tả A cũ làm [HISTORICAL]. | 1.7 (04/09 00:05) — G3 test #10 thêm ghi chú race warning `ResetAllSlotsToAssetDefault Mesh không hợp lệ`. | 1.6 (03/09 11:14) — Resequence G2↔G3 per `DELTA_Opus_S7_Resequence`: đường khôi phục snapshot kéo lên G2/Việc 2B; G3 co lại còn legacy branch + EMS + Combo. | 27/08/2026 (tiếp) — S7.G1 ĐÓNG: 5/5 Việc PASS, không deviation. Thêm section "ĐẦU RA S7.G1". Chi tiết đầy đủ: `Data/MaterialSlotService_Reference.md`
 **Vị trí roadmap:** sau Sprint 5 DONE + Gate 1.5 Packaged Smoke. Trước Sprint 6 Polish.
 **Đầu vào chờ:** kết quả test "P5-liên quan" trong C10 (Sprint 5) → đổ vào S7.G5.
 **Thực thi:** Sonnet step-by-step. Mỗi gate = 1 lần test-and-confirm, PASS mới sang gate sau.
@@ -560,7 +560,8 @@ mục L-NEW-7.
 
 1. `RefreshSlotSwatches`: đã đọc `GetMaterialSlotNames` sẵn → thêm SET `SlotName` vào từng swatch; chọn swatch SET cả `SelectedSlotName` + `SelectedSlotIndex` (Hint).
 2. `LoadAndApplyMaterial` (Custom Event, async giữ nguyên): Completed → Cast MI → **`ApplyLoadedMaterialToSlot(FurnitureMesh, TargetActor.MaterialSlots, SelectedSlotName, SelectedSlotIndex, MI, PendingRowName, "")`** → debounce CaptureSnapshot như cũ. Bỏ CreateDMI/SetArrayElem rời rạc.
-3. Multi-apply (E1): ForEach SelectedActors → gọi service theo TÊN — actor thiếu slot → service trả false → đếm; xong Print "Áp cho X/Y đồ".
+3. _[SỬA 04/09 — Hướng A trong mục này ĐÃ ĐỔI sang Hướng B (inline, không hàm C++). Xem `DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026.md` để lấy bản hiện hành.]_
+   Multi-apply (E1): ForEach SelectedActors → gọi service theo TÊN — actor thiếu slot → service trả false → đếm; xong Print "Áp cho X/Y đồ".
 4. Copy/Paste material: paste đổi sang gọi service (copy giữ nguyên).
 5. Reset Slot/Reset All đổi sang: mức 2 = `ResetSlotToAssetDefault` (Đ7 — đọc StaticMesh asset, KHÔNG đụng PathFallback), mức 1 = `ClearSlotParams` (nút mới chưa cần UI — G5).
 
@@ -627,7 +628,7 @@ TEST G3 — ma trận:
 | 7 | Slot nguyên bản chỉnh param → save/load/undo | PathFallback sống đúng (Đ4) |
 | 8 | Apply MI → CaptureSnapshot → **Undo** | mesh về material NGUYÊN BẢN (Đ10 — lỗ đã vá) — ⚠ đã PASS sớm ở G2/Việc 2B (03/09), G3 chỉ chạy lại xác nhận không hồi quy |
 | 9 | Actor ≥2 slot khác material → save/load | CẢ HAI slot đúng, không slot cuối "thắng" |
-| 10 | Stress restore chồng nhau: spam Undo trong lúc EMS ActorLoaded còn đang restore; spawn combo rồi Undo ngay lập tức | Không crash, không material lệch, không cộng dồn record. Nếu FAIL → mới thêm generation guard (Rst_Generation) — KP2, không thêm trước |
+| 10 | Stress restore chồng nhau: spam Undo trong lúc EMS ActorLoaded còn đang restore; spawn combo rồi Undo ngay lập tức | Không crash, không material lệch, không cộng dồn record. Nếu FAIL → mới thêm generation guard (Rst_Generation) — KP2, không thêm trước. _[04/09 — Việc 2B ghi nhận: warning "ResetAllSlotsToAssetDefault Mesh không hợp lệ" mỗi lần restore (race LoadMeshAsync vs RestoreMyMaterialSlots), vô hại khi actor luôn spawn mới — case #10 phải soi khi restore CHỒNG nhau / tái dùng actor, chỗ race này có thể lộ thật.]_ |
 
 **Hợp đồng với G5:** highlight flash tạm (click-chọn vùng) không được lọt vào snapshot —
 G5 guard phía nó (flash trả material xong mới cho capture). G3 không code gì thêm; G8

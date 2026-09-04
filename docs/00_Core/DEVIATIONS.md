@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 03/09/2026
+**Cập nhật:** 04/09/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1855,6 +1855,30 @@ Chi tiết đầy đủ 2 bug đóng kèm theo: `Bugs/Open_Bugs.md` mục `Bug-M
 **KHÔNG đổi:** nội dung từng Việc 2/3/4/5 (chỉ chèn 2B vào giữa); test matrix G3; kiến trúc "1 đường restore on-actor" (Đ9/Đ10/L11 giữ nguyên — restore on-actor chính là lý do không aliasing `Rst_SlotIdx`/`Rst_CurRecord`).
 
 **Ảnh hưởng:** trình tự G2 = Bước 0 → Việc 1 → Việc 2 (ghi) → **Việc 2B (khôi phục, GATE)** → Việc 3 → 4 → 5 → Test tổng. Rủi ro lớn nhất gate = cặp Việc 2 + 2B (đường ghi + đường ngược).
+
+---
+
+## SPRINT 7 — 04/09/2026 — Việc 3 Multi-Apply: Hướng B (chỉ multi khi cùng RowName) + inline thay C++
+
+**Lệch so với:** bản Việc 3 Hướng A trong `Sprints/Sprint7/S7G2_Reroute_ExecutionPlan_27aug2026.md`. Nguồn: `DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026.md` (phiên Opus). **CHƯA code/test tại thời điểm ghi — delta là PLAN.**
+
+- **[PLAN-SAI] Hướng A → Hướng B.** A: multi-apply mù mọi actor đang chọn theo tên slot. B: chỉ multi khi TẤT CẢ actor cùng `RowName` (cùng model — case "N gối giống hệt"); chọn trộn loại → giữ single-Primary + Toast cảnh báo rõ "N món khác loại chưa đổi". Lý do: A áp nhầm material vào combo dị loại tình cờ trùng tên slot, Toast chỉ đếm số → sai ÂM THẦM (nguy cho combo thương mại). B fail-safe: sai an toàn thay sai tiện.
+- **[SCOPE] Bỏ hàm C++ `AreAllSameMesh`/`AreActorsSameMesh` dự kiến.** Check "cùng loại?" = 1 phép so `RowName` (FName) trong ForEach → làm inline Blueprint trong `LoadAndApplyMaterial`, KHÔNG thêm hàm C++, KHÔNG compile lại `FurnitureToolkit`, KHÔNG đụng file C++. KISS/YAGNI. Đánh đổi: logic so sánh nằm ở widget (hơi lệch "widget mỏng") — chấp nhận, phép so 1 field quá nhỏ để tách service.
+- **[SCOPE] YAGNI:** KHÔNG làm "multi-apply liên loại có xác nhận từng món" — chưa có bằng chứng cần, rủi ro cao. Ngoài phạm vi G2.
+
+**Drift trong delta (đã đóng):** bản delta đầu ghi nhầm tiêu đề mục 2 là "Local Variable"; cuhoang sửa tại nguồn 04/09 → chốt **Class Variable** (đúng L9 — `LoadAndApplyMaterial` là Custom Event, không có Local Variable panel), prefix `LoadApply_`. Execution plan đã khớp.
+
+Cross-check `LoadAndApplyMaterial` trong canonical → xem `[DOC-DEBT]` ngay dưới.
+
+---
+
+## [DOC-DEBT] as-built `LoadAndApplyMaterial` chưa phản ánh reroute service (Việc 2) — 04/09/2026
+
+`Widgets/WBP_FurnitureInventory.md` (§ `LoadAndApplyMaterial` v1.1), `Features/ChangeMaterial.md` (bước 6), `Blueprints/Blueprint_Logic_NodeFlow.md` (§ `LoadAndApplyMaterial`) vẫn mô tả bản TRƯỚC Việc 2 — 3 node `CreateDMI`/`SetMaterial`/`SetArrayElem(MaterialOverrides)`, chưa có `ApplyLoadedMaterialToSlot` + ghi `MaterialSlots`.
+
+Việc 2 đã PASS (Test 1-4, 03/09) → as-built này **đang treo thật**, không phải "chưa tới lúc". Cần **Sonnet** đọc K2Node export (đã có trong phiên 04/09, cuhoang đối chiếu confirm) rồi viết as-built vào 3 file trên. Claude Code KHÔNG tự viết node flow (không truy cập graph).
+
+Phần multi-apply (Việc 3) chồng lên đây — đợi Việc 3 code + test xong thì cập nhật 1 lần luôn.
 
 ---
 
