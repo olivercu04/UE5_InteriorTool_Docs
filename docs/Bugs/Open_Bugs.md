@@ -30,6 +30,8 @@ Asset Directories to Cook) và `Bug-CookFail-10Errors` (3 nhóm lỗi cook phát
 scope, cả 2 CLOSED — cook 25/08 BUILD SUCCESSFUL). ⚠️ KHÔNG tìm thấy entry
 `SelectedGeometryMaterial_Blue` trong file này hay bất kỳ đâu trong `docs/` để cập nhật root
 cause theo delta 26/08 — ghi nhận mâu thuẫn, không tạo entry mới thay thế.
+**Cập nhật (tiếp) 05/09/2026:** Đóng `Bug-MaterialPrimaryOnly` — fix thật qua S7.G2 Việc 3
+(multi-apply Hướng B), test PASS 5/5.
 
 ---
 
@@ -58,7 +60,7 @@ cause theo delta 26/08 — ghi nhận mâu thuẫn, không tạo entry mới tha
 | #3b (ComboReplace-ChiptagSync) | ✅ FIXED (01/08) — combo-replace: chiptag không rebuild + không highlight đúng (tree/card đúng combo nhưng chiptag vẫn Furniture) | — | Fix: gọi `RefreshChipBreadcrumb()` (hàm có sẵn) NGAY TRƯỚC `UpdateComboFolderHighlights()` trong `StartReplaceComboMode`. Test T1.1 PASS PIE. Xem `Blueprints/BP_FurnitureInputManager.md` v2.7, `DEVIATIONS.md` mục "Replace UX Fix — P1.2" |
 | #1, #4, #5, #6 | ✅ FIXED (02/08) — #1 BTN_ChangeCombo gate Visibility; #4 re-route Mesh↔Combo giữa chừng Replace; #5 card container theo mode; #6 chiptag đổi khi click tab Combo | — | Replace UX Fix P1.3/P2/P3.1 — node flow đầy đủ: `Widgets/WBP_FurnitureInventory.md` v3.19 (`OnMeshSelected`), `DEVIATIONS.md` mục "Replace UX Fix — P0→P5 HOÀN TẤT — 02/08/2026" |
 | Bug-EnterReplaceMode-MaterialPanel | [OPEN, ngoài scope] Từ tab Material bấm CB_Replace vào Replace Mesh → `CTV_FurnitureCard` bật Visible nhưng `CTV_MaterialCard`/`HB_SlotSwatches` KHÔNG Collapse → 2 panel chồng nhau | 🟢 Thấp | Phát hiện 02/08 qua test P4/T4.1 (Case A). Gác — xem mục chi tiết dưới |
-| Bug-MaterialPrimaryOnly | [OPEN] Đổi vật liệu khi chọn cả cụm combo chỉ áp cho 1 mesh (Primary), không toast báo — người dùng tưởng đã đổi cả cụm | 🟡 Trung bình | Test tay 02/08. Vá tạm: toast cảnh báo (~15 phút). Vá thật: gộp Sprint 7 Material Edit multi-apply (E1). Xem mục chi tiết dưới |
+| Bug-MaterialPrimaryOnly | ✅ CLOSED (05/09) — Đổi vật liệu khi chọn cả cụm combo chỉ áp cho 1 mesh (Primary), không toast báo — người dùng tưởng đã đổi cả cụm | — | Fix qua S7.G2 Việc 3 (multi-apply Hướng B). Test PASS 5/5. Xem mục chi tiết dưới |
 | Bug-PasteVerticalCollapse | [OPEN] Paste nhiều món chênh cao độ (đồ trần + đồ sàn) → TÂM nhóm bị neo vào bề mặt trace trúng thay vì từng món neo bề mặt riêng → đồ trần lơ lửng, đồ sàn chìm | 🔴 Cao | Test tay 02/08. KHÔNG chặn Gate 2. Backlog "Sprint Surface" sau Gate 2. Xem mục chi tiết dưới |
 | Bug-StaleSurfaceType | [OPEN] Kéo đồ bằng gizmo sang bề mặt khác → `PlacementSurfaceType` không cập nhật lại (chỉ SET 1 lần lúc drag-drop) → nudge phím mũi tên đi sai trục | 🟡 Trung bình | Test tay 02/08. KHÔNG chặn Gate 2. Backlog "Sprint Surface" sau Gate 2. Xem mục chi tiết dưới |
 | Bug-ReplaceInCombo-TabJump | ✅ ĐÃ SỬA (03/08) — đủ 2 call site (`OnMeshSelected` + `CB_Replace`) | — | `ShouldRouteReplaceToCombo()`, `BP_FurnitureInputManager.md` v3.3/v3.4. Test 6/6 PASS + 2 trial CB_Replace PASS |
@@ -662,11 +664,13 @@ prefix `"Object_Model/"` hardcode (phương án đã chốt trong `DEVIATIONS.md
 
 ---
 
-## Bug-MaterialPrimaryOnly — Đổi vật liệu cả cụm combo chỉ ăn 1 món
+## Bug-MaterialPrimaryOnly — ✅ CLOSED (05/09/2026) — Đổi vật liệu cả cụm combo chỉ ăn 1 món
 
 **ID:** Bug-MaterialPrimaryOnly
 **Phát hiện:** Test tay 02/08/2026 (xác nhận qua editor thật, không phải suy đoán từ doc)
-**Ưu tiên:** 🟡 Trung bình — KHÔNG chặn Gate 2
+**Đóng:** 05/09/2026 — S7.G2 Việc 3 (multi-apply Hướng B) code + test PASS 5/5. Xem
+`Widgets/WBP_FurnitureInventory.md` § `LoadAndApplyMaterial` v1.2.
+**Ưu tiên:** 🟡 Trung bình (đã đóng)
 
 ### Triệu chứng
 ```
@@ -690,8 +694,11 @@ Nghiêm trọng ở chỗ: không có toast, không có lỗi — người dùng
   trong `LoadAndApplyMaterial`). Gộp vào đó, không làm lẻ.
 
 ### Trạng thái
-- **Open.** Chưa fix trong đợt này (KP3 — chỉ ghi nhận). Xem `DEVIATIONS.md` mục "Q9 S-Matrix
-  Gate + 3 bug Surface — 02/08/2026". Xem thêm ghi chú "Gốc chung 3 bug Surface" bên dưới.
+- **✅ CLOSED 05/09/2026.** Fix thật qua S7.G2 Việc 3 (multi-apply Hướng B): multi-apply CHỈ khi
+  tất cả actor đang chọn cùng `RowName` (case "N gối giống hệt") — apply cho cả cụm + Toast báo
+  N/N; trộn loại → giữ single-Primary + Toast cảnh báo rõ số món chưa đổi. Test PASS 5/5 (multi
+  cùng loại · trộn loại · single · undo ×2). Xem `Widgets/WBP_FurnitureInventory.md` §
+  `LoadAndApplyMaterial` v1.2, nguồn `DELTA_S7G2_Viec2_Viec3_AsBuilt_05sep2026.md`.
 
 ---
 

@@ -1,5 +1,5 @@
 # Context — Tính năng Change Material v1.1
-**Phiên bản:** 1.6 | **Cập nhật:** 18/05/2026 — 08:55 ICT | Project: Lighting_Mnger (UE5.5.4)
+**Phiên bản:** 1.7 | **Cập nhật:** 05/09/2026 — 19:40 ICT | Project: Lighting_Mnger (UE5.5.4)
 
 ---
 
@@ -51,10 +51,12 @@
 5. ApplyMaterial(RowName):
    - Branch IsValid(TargetFurnitureActor)? Nếu không → tìm lại bằng TargetMeshPath
    - Get Data Table Row → SET PendingMaterialPath → Call LoadAndApplyMaterial
-6. LoadAndApplyMaterial (async):
+6. LoadAndApplyMaterial (async) — as-built 05/09/2026 (S7.G2 Việc 2+3, xem `Widgets/WBP_FurnitureInventory.md` § LoadAndApplyMaterial v1.2):
    - Make Soft Object Path → To Soft Object Reference → Async Load Asset
-   - Completed → Cast MaterialInterface → Create MID → Set Material → Set Array Elem
-   - Debounce 0.5s → CaptureSnapshot("ChangeMaterial")
+   - Completed → Cast MaterialInterface → Branch IsValid MI + IsValid TargetFurnitureActor
+   - ApplyLoadedMaterialToSlot(Primary) ghi vào `MaterialSlots` (thay CreateDMI/SetMaterial/SetArrayElem(MaterialOverrides) cũ)
+   - Multi-apply Hướng B: nếu >1 actor đang chọn → kiểm cùng RowName → cùng loại thì apply thêm cho actor phụ + Toast kết quả; khác loại → giữ single-Primary + Toast cảnh báo
+   - SerializeSlotRecords(Primary) → Debounce 0.5s → CaptureSnapshot("ChangeMaterial")
 7. Undo/Redo:
    - RestoreSnapshot spawn actors mới → Broadcast OnRestoreCompleted(actor)
    - WBP_FurnitureInventory.OnSceneRestored → SET TargetFurnitureActor = actor mới
@@ -111,3 +113,4 @@
 | 1.3–1.4 | 13/05/2026 | Bước 3.3, i18n plan, thumbnail optimization |
 | 1.5 | 16/05/2026 — 14:08 ICT | Bước 3.4+3.5+3.6 code xong, bugs documented |
 | 1.6 | 18/05/2026 — 08:55 ICT | **v1.1 HOÀN THÀNH** — 4.1+4.2+4.3 pass, fix OnRestoreCompleted dead-end, key learnings |
+| 1.7 | 05/09/2026 — 19:40 ICT | Bước 6 cập nhật as-built S7.G2 Việc 2+3 (reroute `ApplyLoadedMaterialToSlot` + multi-apply Hướng B), xem `DELTA_S7G2_Viec2_Viec3_AsBuilt_05sep2026` |

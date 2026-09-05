@@ -1,5 +1,7 @@
 # Blueprint Logic — Node Flow Reference
 **HỢP NHẤT TỪ 3 file:** v1.3 base (07/06) + v1.4_patch (12/06) + v1.5_patch (15/06)
+**Phiên bản:** 1.17 | **Cập nhật:** 05/09/2026 — 19:40 ICT — `LoadAndApplyMaterial` SUPERSEDED: as-built S7.G2 Việc 2+3 chuyển sang bản compressed trỏ anchor `Widgets/WBP_FurnitureInventory.md` (M2)
+
 **Phiên bản:** 1.16 | **Cập nhật:** 27/08/2026 — thêm L-NEW-7 (`Array Find` không so khớp 1 field struct — dùng `For Each Loop with Break`), phát hiện lúc debug S7.G1 MaterialSlotService
 
 > **v1.14 (01/08/2026):** `PopulateComboTreeColumn()` viết lại toàn bộ theo K2Node export thật (Phase 0 Replace UX Fix) — doc cũ thiếu/sai 6 điểm, xem mục C5.0
@@ -178,19 +180,20 @@ Branch IsValid(TargetFurnitureActor) AND SelectedSlotIndex >= 0:
     Row Found → SET PendingMaterialPath = OutRow.MaterialPath → Call LoadAndApplyMaterial
 ```
 
-### LoadAndApplyMaterial (Custom Event, Event Graph)
+### LoadAndApplyMaterial (Custom Event, Event Graph) — SUPERSEDED 05/09/2026 (S7.G2 Việc 2+3)
+> Full as-built (node-by-node, K2Node export thật + test PASS 5/5): anchor
+> `Widgets/WBP_FurnitureInventory.md` § `LoadAndApplyMaterial` v1.2. Tóm tắt orchestration:
 ```
-MakeSoftObjectPath(PendingMaterialPath) → ToSoftObjectReference → AsyncLoadAsset
-  Completed:
-    Cast Object To MaterialInterface → MI_Source
-    Branch IsValid(MI_Source) AND IsValid(TargetFurnitureActor):
-      T:
-        CreateDynamicMaterialInstance(TargetFurnitureActor.FurnitureMesh, SelectedSlotIndex, MI_Source) → MID
-        SetMaterial(FurnitureMesh, SelectedSlotIndex, MID)
-        SetArrayElem(TargetFurnitureActor.MaterialOverrides, SelectedSlotIndex, PendingMaterialPath, SizeToFit=True)
-        ClearTimer(ApplyMaterialTimerHandle)
-        SetTimerByFunctionName("CaptureMaterialSnapshot", 0.5s) → SET ApplyMaterialTimerHandle
+AsyncLoadAsset(PendingMaterialPath) → Cast MaterialInterface
+  → Branch IsValid(MI) AND IsValid(TargetFurnitureActor):
+      T: ApplyLoadedMaterialToSlot(Primary, Records=TargetFurnitureActor.MaterialSlots)
+           → nếu >1 actor đang chọn: kiểm cùng RowName → cùng loại (apply thêm actor phụ + Toast
+             kết quả) / khác loại (giữ single-Primary + Toast cảnh báo) — multi-apply Hướng B
+           → SerializeSlotRecords(Primary) → Debounce 0.5s → CaptureMaterialSnapshot
 ```
+Thay hoàn toàn bản cũ (CreateDynamicMaterialInstance/SetMaterial/SetArrayElem(MaterialOverrides))
+— nay ghi qua service `ApplyLoadedMaterialToSlot` vào `MaterialSlots` (Việc 2, reroute), không
+còn `MaterialOverrides`/index trực tiếp.
 
 ### CaptureMaterialSnapshot / OnSceneRestored / BTN_ResetSlot / BTN_ResetAll
 ```

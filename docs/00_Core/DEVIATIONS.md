@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 04/09/2026
+**Cập nhật:** 05/09/2026
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1872,13 +1872,18 @@ Cross-check `LoadAndApplyMaterial` trong canonical → xem `[DOC-DEBT]` ngay dư
 
 ---
 
-## [DOC-DEBT] as-built `LoadAndApplyMaterial` chưa phản ánh reroute service (Việc 2) — 04/09/2026
+## [DOC-DEBT ĐÃ ĐÓNG] as-built `LoadAndApplyMaterial` chưa phản ánh reroute service (Việc 2) — 04/09/2026 → ĐÓNG 05/09/2026
 
 `Widgets/WBP_FurnitureInventory.md` (§ `LoadAndApplyMaterial` v1.1), `Features/ChangeMaterial.md` (bước 6), `Blueprints/Blueprint_Logic_NodeFlow.md` (§ `LoadAndApplyMaterial`) vẫn mô tả bản TRƯỚC Việc 2 — 3 node `CreateDMI`/`SetMaterial`/`SetArrayElem(MaterialOverrides)`, chưa có `ApplyLoadedMaterialToSlot` + ghi `MaterialSlots`.
 
 Việc 2 đã PASS (Test 1-4, 03/09) → as-built này **đang treo thật**, không phải "chưa tới lúc". Cần **Sonnet** đọc K2Node export (đã có trong phiên 04/09, cuhoang đối chiếu confirm) rồi viết as-built vào 3 file trên. Claude Code KHÔNG tự viết node flow (không truy cập graph).
 
 Phần multi-apply (Việc 3) chồng lên đây — đợi Việc 3 code + test xong thì cập nhật 1 lần luôn.
+
+**ĐÓNG 05/09/2026:** Việc 3 test PASS 5/5 (05/09). As-built đầy đủ (Việc 2 + Việc 3) đã cập nhật cả
+3 file: `Widgets/WBP_FurnitureInventory.md` (v3.26, § `LoadAndApplyMaterial` v1.2 — full node flow),
+`Features/ChangeMaterial.md` (v1.7, bước 6), `Blueprints/Blueprint_Logic_NodeFlow.md` (v1.17, bản
+compressed trỏ anchor). Nguồn: `DELTA_S7G2_Viec2_Viec3_AsBuilt_05sep2026.md`.
 
 ---
 

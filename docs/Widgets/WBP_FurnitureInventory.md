@@ -1,5 +1,7 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
+**Phiên bản:** 3.26 | **Cập nhật:** 05/09/2026 — 19:40 ICT — S7.G2 Việc 2+3 as-built: `LoadAndApplyMaterial` viết lại từ K2Node export thật (reroute `ApplyLoadedMaterialToSlot` + multi-apply Hướng B), thêm 3 class var `LoadApply_Selected`/`LoadApply_AllSame`/`LoadApply_SuccessCount`. Test PASS 5/5. Đóng `Bug-MaterialPrimaryOnly`.
+
 **Phiên bản:** 3.25 | **Cập nhật:** 10/08/2026 — C11.3 (Import combo) DONE: Custom Event mới `CB_ImportCombo` (bound `BTN_ImportCombo.OnClicked`) — quét `Exports/`, nhập ALL, `CallDelegate ComboManagerRef.OnComboLibraryChanged` (Target PHẢI là `ComboManagerRef`, không phải `self`). Test PASS 4/4. **C11 (Export/Import combo) ĐÓNG HOÀN TOÀN.**
 
 > **v2.6 (18/06/2026):** Thêm `IsPathActive` (Pure) + `UpdateFolderHighlights` cho
@@ -84,6 +86,9 @@ Python 1: populate BoundingSize | Python 2: update MeshFolderPath | (Sprint D: P
 | `AllFilteredMaterialRows` | Array of Name | Cache RowNames sau FilterMaterialItems |
 | `PendingMaterialPath` / `PendingRowName` | String/Name | Chờ async load/apply |
 | `ApplyMaterialTimerHandle` | Timer Handle | Debounce snapshot 0.5s |
+| `LoadApply_Selected` | Array of Actor | [S7.G2 Việc 3, 05/09/2026] Snapshot `SelectedActors` từ `BP_FurnitureInputManager` lúc `LoadAndApplyMaterial` chạy — dùng cho multi-apply Hướng B |
+| `LoadApply_AllSame` | Boolean, default true | [S7.G2 Việc 3, 05/09/2026] True nếu mọi actor trong `LoadApply_Selected` cùng `RowName` với `TargetFurnitureActor` |
+| `LoadApply_SuccessCount` | Integer, default 0 | [S7.G2 Việc 3, 05/09/2026] Đếm actor phụ apply thành công (không tính Primary) — dùng build Toast |
 | `UndoManagerRef` | BP_UndoManager | Cache, set ở Construct |
 | `PendingRestoredActor` | BP_FurnitureActor | Chờ restore sau timer 0.1s ← SET None ở Destruct |
 | **— C2 Favorites —** | | |
@@ -322,14 +327,110 @@ Branch IsValid(TargetFurnitureActor) AND SelectedSlotIndex >= 0:
   T → GetDataTableRow → SET PendingRowName, SET PendingMaterialPath → Call LoadAndApplyMaterial
 ```
 
-### LoadAndApplyMaterial — v1.1 (Custom Event, async)
+### LoadAndApplyMaterial — v1.2 (Custom Event, async) — AS-BUILT 05/09/2026 (S7.G2 Việc 2 + Việc 3)
+
+> As-built từ K2Node export thật + test PASS 5/5 (05/09/2026). Thay bản v1.1 cũ (3 node
+> CreateDMI/SetMaterial/SetArrayElem(MaterialOverrides)) — nay đi qua service
+> `ApplyLoadedMaterialToSlot` ghi `MaterialSlots` (Việc 2, reroute) + multi-apply Hướng B (Việc 3).
+> Ký hiệu: `▶→` exec, `●→` data.
+
+**Đầu event — Load + Cast:**
 ```
-Async Load(PendingMaterialPath) → Cast MaterialInterface
-→ CreateDMI(FurnitureMesh, MI_Source, SelectedSlotIndex) → SetMaterial
-→ SetArrayElem(MaterialOverrides, SelectedSlotIndex, PendingMaterialPath)
-→ Debounce 0.5s → CaptureSnapshot("ChangeMaterial")
-→ GetDataTableRow(PendingRowName) → UpdateThumbnail swatch[SelectedSlotIndex]
+Event LoadAndApplyMaterial
+▶→ Async Load Asset(Asset = Conv_SoftObjPathToSoftObjRef(MakeSoftObjectPath(PendingMaterialPath)))
+   Completed ▶→ Cast To MaterialInterface(Object = LoadAsset.Object)
+                 then ▶→ Branch(IsValid(AsMaterialInterface))
+                        True ▶→ Branch(IsValid(TargetFurnitureActor))
+                               True ▶→ [Primary apply — xem dưới]
+                               False ▶→ [dead-end — actor không hợp lệ]
+                        False ▶→ [dead-end — MI load fail]
+                 CastFailed → [không nối — dead-end]
 ```
+2 Branch IsValid liên tiếp trước khi chạm actor = đúng L1 — cả 2 nhánh False dead-end hợp lệ vì
+đây là Custom Event chain thật, không có tác vụ nào bị bỏ lỡ khi input không hợp lệ.
+
+**Primary apply + khởi tạo Việc 3:**
+```
+ApplyLoadedMaterialToSlot(
+    Mesh      = TargetFurnitureActor.FurnitureMesh,
+    Records   = TargetFurnitureActor.MaterialSlots,      [ref — tái dùng ở SerializeSlotRecords cuối]
+    SlotName  = SelectedSlotName,
+    HintIndex = SelectedSlotIndex,
+    LoadedMI  = AsMaterialInterface,                       [từ Cast — không load lại]
+    RowName   = Conv_NameToString(PendingRowName),
+    PathFallback = "" )
+▶→ SET LoadApply_AllSame = true
+▶→ SET LoadApply_SuccessCount = 0
+▶→ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → GET SelectedActors
+   ●→ SET LoadApply_Selected
+▶→ Branch(Array_Length(LoadApply_Selected) > 1)
+     False ▶→ [thẳng tới SerializeSlotRecords, KHÔNG qua Toast nào]
+     True  ▶→ [Vòng 1 — kiểm cùng RowName]
+```
+
+**Vòng 1 — kiểm cùng RowName:**
+```
+ForEachLoop(LoadApply_Selected → A):
+  Cast A → BP_FurnitureActor
+    then       ▶→ Branch(CastedA.RowName != TargetFurnitureActor.RowName)
+                    True  ▶→ SET LoadApply_AllSame = false   [dead-end]
+                    False ▶→ [dead-end — cùng RowName, không làm gì]
+    CastFailed ▶→ SET LoadApply_AllSame = false               [dead-end]
+Completed ▶→ Branch(LoadApply_AllSame)
+```
+> **Lệch so với spec `DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026`:** spec yêu cầu dùng pin
+> `bSuccess` (bool) + Branch để tránh rẽ exec qua `CastFailed`. As-built thật nối thẳng
+> `CastFailed` → SET AllSame=false, không dùng `bSuccess`. Hai cách tương đương về hành vi (actor
+> cast fail → coi là khác loại). Dead-end của `CastFailed` nằm trong thân ForEach nên vẫn hợp lệ
+> theo L2 (không phải Event chain trực tiếp). Chấp nhận as-built, không sửa lại.
+
+**Vòng 2 — apply cho actor phụ + 2 nhánh Toast:**
+```
+Branch(LoadApply_AllSame)
+  True ▶→ ForEachLoop(LoadApply_Selected → A2):
+            Branch(A2 != TargetFurnitureActor)
+              True  ▶→ Cast A2 → BP_FurnitureActor
+                       then ▶→ ApplyLoadedMaterialToSlot(
+                                  Mesh = CastedA2.FurnitureMesh,
+                                  Records = CastedA2.MaterialSlots,
+                                  SlotName = SelectedSlotName,
+                                  HintIndex = SelectedSlotIndex,
+                                  LoadedMI = AsMaterialInterface,      [MI Primary tái dùng]
+                                  RowName = Conv_NameToString(PendingRowName),
+                                  PathFallback = "" ) ●→ bOK
+                              → Branch(bOK)
+                                  True  ▶→ SET LoadApply_SuccessCount += 1   [dead-end]
+                                  False ▶→ [dead-end — actor thiếu slot]
+                       CastFailed ▶→ [không nối — dead-end, bỏ qua actor]
+              False ▶→ [dead-end — chính Primary]
+          Completed ▶→ ShowToastMsg(Conv_StringToText(
+                          "Áp cho " + ToString(LoadApply_SuccessCount + 1)
+                          + "/" + ToString(LoadApply_Selected.Length) + " đồ"))
+                        ▶→ [SerializeSlotRecords]
+  False ▶→ ShowToastMsg(Conv_StringToText(
+              "Chỉ áp cho món đang chọn — " + ToString(LoadApply_Selected.Length - 1)
+              + " món khác loại chưa đổi"))
+           ▶→ [SerializeSlotRecords]
+```
+
+**Điểm hội tụ — SerializeSlotRecords (đuôi cũ giữ nguyên):**
+
+3 nguồn đổ vào cùng 1 điểm exec (`Branch(Length>1).False`, `ShowToastMsg thành công.then`,
+`ShowToastMsg cảnh báo.then`):
+```
+▶→ SerializeSlotRecords(Records = TargetFurnitureActor.MaterialSlots)   [Primary's records — không đổi]
+▶→ PrintString(Dev, "SerializeSlotRecords(...): " + Result)
+▶→ GetDataTableRow(DT_MaterialInstancesCatalog, PendingRowName)
+   Row Found ▶→ Cast → WBP_SlotSwatch → UpdateThumbnail(NewThumbnail = Row.ThumbnailMI)
+▶→ ClearAndInvalidateTimerHandle(ApplyMaterialTimerHandle)
+▶→ SetTimer("CaptureMaterialSnapshot", 0.5s) → SET ApplyMaterialTimerHandle
+▶→ GetAllActorsOfClass(BP_FurnitureUserPrefsManager) → Get(0) → AddRecentMaterial(PendingRowName)
+```
+
+Test PASS 5/5 (05/09/2026): multi cùng RowName (2 gối giống hệt) → cả 2 đổi + Toast "N/N đồ";
+trộn RowName (combo dị loại) → chỉ Primary đổi + Toast cảnh báo; single actor → hành vi như cũ,
+không Toast; Undo sau case multi cùng loại → khôi phục đúng; Undo sau case trộn loại → khôi phục
+đúng. Đóng `Bug-MaterialPrimaryOnly` (xem `Bugs/Open_Bugs.md`).
 
 ### RefreshSlotSwatches — v1.1
 ```

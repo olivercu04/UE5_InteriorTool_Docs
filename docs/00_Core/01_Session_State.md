@@ -3,11 +3,11 @@
 > Lịch sử → Git / PROGRESS.md / DEVIATIONS.md. KHÔNG thêm chronology/changelog vào đây.
 > Cập nhật khi trạng thái đổi. Giữ ~50-100 dòng. Cái gì đã có nơi khác sở hữu → cắt, không copy.
 
-**Last verified:** 04/09/2026 (S7.G2 — Bước 0 → Việc 2B PASS. Việc 2B GATE undo/redo: 6 bước + bonus redo-stack. Sẵn sàng Việc 3 multi-apply)
+**Last verified:** 05/09/2026 (S7.G2 — Bước 0 → Việc 3 PASS. Việc 3 multi-apply Hướng B: 5/5 test, Bug-MaterialPrimaryOnly đóng. Sẵn sàng Việc 4 copy/paste)
 
 ---
 
-Current: Sprint 7 (Material v1.2) → G2 (reroute UI → MaterialSlotService) → Phase EXECUTE | Active task: Việc 3 — Multi-Apply Hướng B inline (chỉ multi khi cùng RowName), theo DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026 | Status: spec xong (Hướng B), chưa code
+Current: Sprint 7 (Material v1.2) → G2 → Phase EXECUTE | Active task: Việc 4 — Copy/Paste material (bản C đã chốt) | Status: chưa bắt đầu
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -19,9 +19,9 @@ Current: Sprint 7 (Material v1.2) → G2 (reroute UI → MaterialSlotService) �
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | S7.G2 đang chạy. Bước 0 ✅ · Việc 1 (swatch tên + selection) ✅ · Việc 2 (reroute apply — đường GHI Records) ✅ · Việc 2B (đường khôi phục snapshot — RestoreMyMaterialSlots on-actor + Capture/Restore chụp MaterialSlots trên `S_FurniturePlacement`) ✅ PASS 6 bước undo/redo + bonus redo-stack (04/09). **Resequence per `DELTA_Opus_S7_Resequence`.** Còn lại: Việc 3 multi-apply **Hướng B inline** (Bug-MaterialPrimaryOnly — chỉ multi khi cùng RowName) · Việc 4 copy/paste · Việc 5 reset slot/all → Test tổng G2 |
+| **Current Task** | S7.G2 đang chạy. Bước 0 ✅ · Việc 1 (swatch tên + selection) ✅ · Việc 2 (reroute apply — đường GHI Records) ✅ · Việc 2B (đường khôi phục snapshot — RestoreMyMaterialSlots on-actor + Capture/Restore chụp MaterialSlots trên `S_FurniturePlacement`) ✅ PASS 6 bước undo/redo + bonus redo-stack (04/09) · Việc 3 multi-apply **Hướng B inline** ✅ PASS 5/5 (05/09), đóng `Bug-MaterialPrimaryOnly`. **Resequence per `DELTA_Opus_S7_Resequence`.** Còn lại: Việc 4 copy/paste · Việc 5 reset slot/all → Test tổng G2 |
 | **Task Source** | `Sprints/Sprint7/S7G2_Reroute_ExecutionPlan_27aug2026.md` (working plan — mục 0 = trạng thái từng Việc). Plan gốc: `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` mục S7.G2 (v1.8) |
-| **Next** | Code Việc 3 (Hướng B) — thêm 3 class var `LoadApply_*` (Selected/AllSame/SuccessCount), chèn 2-vòng ForEach vào `LoadAndApplyMaterial` giữa Apply Primary và `SerializeSlotRecords` (vòng 1 kiểm cùng `RowName`, vòng 2 apply), 2 nhánh Toast. Test 5 case (multi cùng loại · trộn loại → chỉ Primary + cảnh báo · single · undo ×2). Spec: `DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026.md` |
+| **Next** | Việc 4 — Copy/Paste material (bản C đã chốt). Chưa bắt đầu. |
 | **Blockers** | Không |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
@@ -34,9 +34,6 @@ ro đụng đồ đồng nghiệp.
 ## Active bugs relevant now
 > Chỉ bug đang CHẶN việc hiện tại. Danh sách đầy đủ → `Bugs/Open_Bugs.md`.
 
-- **Bug-MaterialPrimaryOnly** 🟡 — CHẶN THẲNG Sprint 7: đổi vật liệu khi chọn cả cụm combo chỉ áp
-  cho 1 mesh (Primary), không toast. Vá thật = chính phần multi-apply (E1) của Sprint 7 Material
-  Edit — fix TRONG Sprint 7, không làm lẻ. `Bugs/Open_Bugs.md`.
 - **Bug-ComboRoot-MixedLooseGroup** 🔴 — chặn ĐẦU SPRINT 6 (không phải Sprint 7). Chạm kiến trúc
   combo: `SaveComboFromSelection` nên LUÔN tạo 1 wrapper root group. Ghi ở đây để không quên khi
   Sprint 7 xong chuyển sang Sprint 6. `Bugs/Open_Bugs.md`.
@@ -66,10 +63,9 @@ ro đụng đồ đồng nghiệp.
 ## Recent changes (tối đa 5, mới nhất trên cùng)
 > Chỉ để định vị "vừa xong gì". Lịch sử đầy đủ → PROGRESS.md + Git.
 
-- 04/09 — Việc 3 chốt **Hướng B inline**: multi-apply CHỈ khi tất cả actor cùng `RowName`
-  (case "N gối giống hệt"); trộn loại → chỉ Primary + Toast cảnh báo. Bỏ hàm C++ dự kiến, check
-  inline Blueprint (so RowName trong ForEach). Spec `DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026`,
-  CHƯA code.
+- 05/09 — S7.G2 Việc 3 (multi-apply Hướng B) PASS 5/5. As-built khớp spec, 1 lệch nhỏ (Cast dùng
+  CastFailed thay bSuccess — chấp nhận, xem DELTA_S7G2_Viec2_Viec3_AsBuilt_05sep2026).
+  Bug-MaterialPrimaryOnly ĐÓNG.
 - 04/09 — S7.G2 Việc 2B (đường khôi phục snapshot) PASS full: 6 bước undo/redo + bonus
   redo-stack case (apply nhánh MỚI sau Undo → Redo đúng nhánh mới, không lẫn state nhánh cũ đã
   cắt). Cặp Việc 2 + 2B (đường ghi + đường ngược) = xương sống G2 đứng vững. Race warning
