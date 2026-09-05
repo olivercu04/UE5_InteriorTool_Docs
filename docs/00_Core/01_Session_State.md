@@ -3,11 +3,11 @@
 > Lịch sử → Git / PROGRESS.md / DEVIATIONS.md. KHÔNG thêm chronology/changelog vào đây.
 > Cập nhật khi trạng thái đổi. Giữ ~50-100 dòng. Cái gì đã có nơi khác sở hữu → cắt, không copy.
 
-**Last verified:** 05/09/2026 (S7.G2 — Bước 0 → Việc 3 PASS. Việc 3 multi-apply Hướng B: 5/5 test, Bug-MaterialPrimaryOnly đóng. Sẵn sàng Việc 4 copy/paste)
+**Last verified:** 05/09/2026 (S7.G2 — Bước 0 → Việc 4 PASS. Việc 4 copy/paste: 2 bug thật fix trong phiên. Sẵn sàng Việc 5 reset slot/all)
 
 ---
 
-Current: Sprint 7 (Material v1.2) → G2 → Phase EXECUTE | Active task: Việc 4 — Copy/Paste material (bản C đã chốt) | Status: chưa bắt đầu
+Current: Sprint 7 (Material v1.2) → G2 → Phase EXECUTE | Active task: Việc 5 — Reset Slot/Reset All qua service | Status: chưa bắt đầu
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -19,9 +19,9 @@ Current: Sprint 7 (Material v1.2) → G2 → Phase EXECUTE | Active task: Việc
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | S7.G2 đang chạy. Bước 0 ✅ · Việc 1 (swatch tên + selection) ✅ · Việc 2 (reroute apply — đường GHI Records) ✅ · Việc 2B (đường khôi phục snapshot — RestoreMyMaterialSlots on-actor + Capture/Restore chụp MaterialSlots trên `S_FurniturePlacement`) ✅ PASS 6 bước undo/redo + bonus redo-stack (04/09) · Việc 3 multi-apply **Hướng B inline** ✅ PASS 5/5 (05/09), đóng `Bug-MaterialPrimaryOnly`. **Resequence per `DELTA_Opus_S7_Resequence`.** Còn lại: Việc 4 copy/paste · Việc 5 reset slot/all → Test tổng G2 |
+| **Current Task** | S7.G2 đang chạy. Bước 0 ✅ · Việc 1 (swatch tên + selection) ✅ · Việc 2 (reroute apply — đường GHI Records) ✅ · Việc 2B (đường khôi phục snapshot — RestoreMyMaterialSlots on-actor + Capture/Restore chụp MaterialSlots trên `S_FurniturePlacement`) ✅ PASS 6 bước undo/redo + bonus redo-stack (04/09) · Việc 3 multi-apply **Hướng B inline** ✅ PASS 5/5 (05/09), đóng `Bug-MaterialPrimaryOnly` · Việc 4 copy/paste ✅ PASS full, 2 bug thật bắt được và fix trong phiên (xem DELTA_S7G2_Viec4). **Resequence per `DELTA_Opus_S7_Resequence`.** Còn lại: Việc 5 reset slot/all → Test tổng G2 |
 | **Task Source** | `Sprints/Sprint7/S7G2_Reroute_ExecutionPlan_27aug2026.md` (working plan — mục 0 = trạng thái từng Việc). Plan gốc: `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` mục S7.G2 (v1.8) |
-| **Next** | Việc 4 — Copy/Paste material (bản C đã chốt). Chưa bắt đầu. |
+| **Next** | Việc 5 — Reset Slot/Reset All qua service. Chưa bắt đầu. |
 | **Blockers** | Không |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
@@ -63,6 +63,9 @@ ro đụng đồ đồng nghiệp.
 ## Recent changes (tối đa 5, mới nhất trên cùng)
 > Chỉ để định vị "vừa xong gì". Lịch sử đầy đủ → PROGRESS.md + Git.
 
+- 05/09 — S7.G2 Việc 4 (Copy/Paste chuyển sang Records) PASS. 2 bug thật bắt được: (A) Branch hội
+  tụ sai vị trí — ghi đè giá trị đúng; (B) ClipboardMaterialPath không clear đầu hàm — vi phạm
+  rule CLEAR class var persistent có sẵn. Xem DELTA_S7G2_Viec4_CopyPaste_AsBuilt_05sep2026.
 - 05/09 — S7.G2 Việc 3 (multi-apply Hướng B) PASS 5/5. As-built khớp spec, 1 lệch nhỏ (Cast dùng
   CastFailed thay bSuccess — chấp nhận, xem DELTA_S7G2_Viec2_Viec3_AsBuilt_05sep2026).
   Bug-MaterialPrimaryOnly ĐÓNG.
@@ -74,8 +77,6 @@ ro đụng đồ đồng nghiệp.
   (`DELTA_Opus_S7_Resequence`): đường khôi phục snapshot kéo lên G2 = Việc 2B (GATE undo/redo);
   G3 co lại còn legacy + EMS + Combo. Struct snapshot: `S_FurniturePlacement` (trong
   `BP_UndoManager`) — cuhoang xác nhận 03/09, tên `S_ActorSnapshotData` cũ đã sửa toàn doc.
-- 27/08 (tiếp) — G0 DONE toàn phần (a/b/c/d, kể cả collision). G5 hướng chốt: hybrid
-  click-to-select (trace FaceIndex) + chips phụ (Fable duyệt). G1 task card đã phát hành.
 - 27/08 — S7.G0 ĐÓNG: Q1="ÍT nhưng CÓ Ý NGHĨA" (1,56% mesh trùng slot, review tay xác nhận
   có thật), Q2=DYNAMIC (texture picker, không cần Plan B). MaterialSurvey.h/.cpp compile PASS.
 

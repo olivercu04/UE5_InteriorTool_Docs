@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 05/09/2026
+**Cập nhật:** 05/09/2026 (tiếp — S7.G2 Việc 4, 2 bug thật)
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1884,6 +1884,29 @@ Phần multi-apply (Việc 3) chồng lên đây — đợi Việc 3 code + test
 3 file: `Widgets/WBP_FurnitureInventory.md` (v3.26, § `LoadAndApplyMaterial` v1.2 — full node flow),
 `Features/ChangeMaterial.md` (v1.7, bước 6), `Blueprints/Blueprint_Logic_NodeFlow.md` (v1.17, bản
 compressed trỏ anchor). Nguồn: `DELTA_S7G2_Viec2_Viec3_AsBuilt_05sep2026.md`.
+
+---
+
+## SPRINT 7 — 05/09/2026 — S7.G2 Việc 4 (Copy/Paste) — 2 bug thật bắt được trong phiên [BUG]
+
+**Nguồn:** `DELTA_S7G2_Viec4_CopyPaste_AsBuilt_05sep2026.md`. Cả 2 do Sonnet sửa sai lúc hướng
+dẫn, không phải lỗi cuhoang thao tác. Chi tiết node-by-node: `Features/Material_CopyPaste.md`.
+
+- **[BUG A] Branch hội tụ sai vị trí (`CopySlotMaterial`)** — 2 nhánh của
+  `Branch(ClipboardMaterialPath == "")` nối chung 1 điểm TRƯỚC node
+  `SET...GetPathName(...)` thay vì SAU → node chạy vô điều kiện, ghi đè giá trị đúng vừa tìm từ
+  Record. Triệu chứng: copy slot đã đổi material → không log gì (im lặng hoàn toàn). Fix: dời
+  điểm hội tụ ra SAU node data. Nguyên tắc rút ra (đề xuất Opus cân nhắc thêm L12 vào
+  `AI_Implementation_Rules.md`): khi 2 nhánh Branch cùng đích nhưng chỉ 1 nhánh có node xử lý
+  data ở giữa, điểm hội tụ phải đặt SAU node đó — đặt trước làm node chạy vô điều kiện, xoá tác
+  dụng của Branch.
+- **[BUG B] Class var persistent không CLEAR đầu hàm (`CopySlotMaterial`)** —
+  `ClipboardMaterialPath` không được reset ở đầu hàm. Triệu chứng: copy slot 1 (đã đổi, ra
+  `MI_A`) → paste đúng; copy slot 5 (chưa từng đổi) → paste vẫn ra `MI_A` (giá trị lần Copy
+  trước), dù log báo copy thành công. Nguyên nhân: slot chưa đổi không có Record → rơi vào nhánh
+  `Branch(ClipboardMaterialPath == "") = False` (biến còn mang rác) → không set gì mới. Fix:
+  `SET ClipboardMaterialPath = ""` đầu hàm. Đây là vi phạm rule ĐÃ CÓ SẴN "CLEAR class var
+  persistent ở đầu function" — không phải rule mới, ghi lại làm ví dụ cụ thể.
 
 ---
 

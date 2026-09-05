@@ -1,5 +1,5 @@
-# Material Copy/Paste (Single-Slot) — v0
-**Hoàn thành:** 02/06/2026 — 12:30 ICT | Trên: master project
+# Material Copy/Paste (Single-Slot) — v1
+**Hoàn thành:** 02/06/2026 — 12:30 ICT | **Cập nhật:** 05/09/2026 — 19:55 ICT — S7.G2 Việc 4 as-built: chuyển nguồn đọc/ghi từ `MaterialOverrides` (chết từ Việc 2) sang `MaterialSlots` (qua `MaterialSlotService`), 2 bug thật fix trong phiên | Trên: master project
 **Vị trí code:** WBP_FurnitureInventory
 
 ---
@@ -20,53 +20,88 @@ Copy vật liệu của **1 slot** trên mesh này → paste sang **1 slot** tr�
 
 ```
 ClipboardMaterialPath : String   (WBP_FurnitureInventory)
+PasteRowName : Name, default None   (WBP_FurnitureInventory)   ← [S7.G2 Việc 4, 05/09/2026]
+  Không theo prefix chuẩn §9 (`Paste_RowName`) vì dùng lại ở 3 chỗ trong cùng event
+  (ApplyLoadedMaterialToSlot / GetDataTableRow / AddRecentMaterial) — đặt tên trực tiếp
+  cho rõ nghĩa, cuhoang đã duyệt.
 ```
 
 ---
 
-## FUNCTION CopySlotMaterial (Function)
+## FUNCTION CopySlotMaterial (Function) — AS-BUILT 05/09/2026 (S7.G2 Việc 4)
+
+> Bản cuối cùng, đã qua 2 lần vá trong phiên (xem "Bug thật bắt được" bên dưới). Nguồn đọc
+> chuyển từ `MaterialOverrides` (chết từ Việc 2, reroute apply sang `MaterialSlots`) sang
+> `MaterialSlots` qua `MaterialSlotService`. Ký hiệu: `▶→` exec, `●→` data.
 
 ```
-Branch IsValid(TargetFurnitureActor) AND SelectedSlotIndex >= 0:
-  True:
-    Cast → BP_FurnitureActor → GET FurnitureMesh
-    Branch SelectedSlotIndex < Get Num Materials(FurnitureMesh):
-      True:
-        GET MaterialOverrides[SelectedSlotIndex] → matPath
-        Branch matPath != "":
-          True  → SET ClipboardMaterialPath = matPath
-          False → ← slot dùng vật liệu gốc
-                   Get Material(FurnitureMesh, SelectedSlotIndex)
-                   → Get Object Path Name → SET ClipboardMaterialPath
-        Print "✅ Đã copy vật liệu slot N"
+Entry ▶→ Branch(IsValid(TargetFurnitureActor) AND SelectedSlotIndex >= 0)
+  True ▶→ Branch(SelectedSlotIndex < GetNumMaterials(FurnitureMesh))
+     True ▶→ SET ClipboardMaterialPath = ""                          ← FIX Bug B (clear đầu hàm)
+          ▶→ GET TargetFurnitureActor.MaterialSlots
+          ▶→ ForEachLoopWithBreak(MaterialSlots → Record):
+               Branch(Record.SlotName == SelectedSlotName):
+                 True → Branch(Record.MaterialRowName != ""):
+                          True  → GetDataTableRow(DT_MaterialInstancesCatalog, Record.MaterialRowName)
+                                    Row Found     → MaterialPath ●→ SET ClipboardMaterialPath → Break
+                                    Row Not Found → SET ClipboardMaterialPath = Record.MaterialPathFallback → Break
+                          False → SET ClipboardMaterialPath = Record.MaterialPathFallback → Break
+                 False → [dead-end — không phải slot đang tìm]
+             Completed ▶→ Branch(ClipboardMaterialPath == "")
+                            True  ▶→ SET ClipboardMaterialPath = GetPathName(GetMaterial(FurnitureMesh, SelectedSlotIndex))
+                                    ▶→ Print "✅ Đã copy vật liệu slot: N"
+                            False ▶→ ─────────────────────────────────────┘   ← FIX Bug A (hội tụ SAU node data)
+     False → Print "Slot chưa có vật liệu để copy" (Dev Only)
 ```
 
-⚠️ Luôn copy được — kể cả slot dùng vật liệu gốc (lấy qua Get Object Path Name).
+⚠️ Luôn copy được — kể cả slot dùng vật liệu gốc (không có Record → fallback `GetPathName`).
 
 ---
 
-## CUSTOM EVENT PasteSlotMaterial (Event — vì có Async Load)
+## CUSTOM EVENT PasteSlotMaterial (Event — vì có Async Load) — AS-BUILT 05/09/2026 (S7.G2 Việc 4)
 
 ```
-Branch IsValid(TargetFurnitureActor) AND SelectedSlotIndex >= 0
-       AND ClipboardMaterialPath != "":
-  True:
-    Cast → BP_FurnitureActor → GET FurnitureMesh
-    Make Soft Object Path(ClipboardMaterialPath) → To Soft Object Ref
-    → Async Load Asset → Completed:
-        Loaded Asset → Cast To Material Interface → MI_Source
-        Create Dynamic Material Instance
-          (Target=FurnitureMesh, Element Index=SelectedSlotIndex,
-           Source Material=MI_Source)   ← node này vừa tạo DMI vừa set
-        Set Array Elem (MaterialOverrides, SelectedSlotIndex, ClipboardMaterialPath)
-        [Refresh slot swatch thumbnail — copy từ ApplyMaterial]
-        [AddRecentMaterial: ParseIntoArray(path, ".") → last → Name → AddRecentMaterial]
-        Clear Timer + Set Timer "CaptureAfterPaste" 0.3s
-        Print "✅ Dán vật liệu slot N"
+Entry ▶→ IsValid(TargetFurnitureActor) AND SelectedSlotIndex>=0 AND ClipboardMaterialPath != ""
+  True ▶→ MakeSoftObjectPath(ClipboardMaterialPath) → Async Load Asset
+       Completed ▶→ Cast To MaterialInterface → Branch(IsValid(MI))
+          True ▶→ Branch(IsValid(TargetFurnitureActor))   [guard lặp có sẵn, giữ nguyên]
+             True ▶→ ClipboardMaterialPath.ParseIntoArray(".") → LastIndex → Get → Conv_StringToName
+                     ●→ SET PasteRowName
+                  ▶→ ApplyLoadedMaterialToSlot(
+                        Mesh = FurnitureMesh, Records = TargetFurnitureActor.MaterialSlots,
+                        SlotName = SelectedSlotName, HintIndex = SelectedSlotIndex,
+                        LoadedMI = MI, RowName = PasteRowName, PathFallback = ClipboardMaterialPath)
+                  ▶→ GetDataTableRow(DT_MaterialInstancesCatalog, PasteRowName)
+                        Row Found ▶→ UpdateThumbnail(...)
+                  ▶→ ClearTimer + SetTimer("CaptureAfterPaste", 0.3s)
+                  ▶→ GetAllActorsOfClass(BP_FurnitureUserPrefsManager) → Get(0) → AddRecentMaterial(PasteRowName)
+             False → dead-end
+          False → dead-end
 
 CaptureAfterPaste (Event):
   Get All Actors Of Class(BP_UndoManager) → Get(0) → Cast → CaptureSnapshot("PasteMaterial")
 ```
+
+### Bug thật bắt được trong phiên (05/09/2026, cả 2 do sửa sai lúc hướng dẫn, không phải lỗi thao tác)
+
+**Bug A — Branch hội tụ SAI VỊ TRÍ (trước node data thay vì sau).** Hướng dẫn ban đầu nối cả 2
+nhánh của `Branch(ClipboardMaterialPath == "")` vào chung 1 điểm TRƯỚC node
+`SET...GetPathName(...)` → node đó chạy vô điều kiện, ghi đè luôn giá trị đúng vừa tìm từ Record
+bằng material đọc thẳng từ mesh. Fix: dời điểm hội tụ ra SAU node đó, tại `Print`. Nguyên tắc:
+khi 2 nhánh Branch cần tới cùng 1 đích nhưng chỉ 1 nhánh có node xử lý data ở giữa, điểm hội tụ
+PHẢI đặt SAU node đó.
+
+**Bug B — Class var persistent không CLEAR đầu hàm.** `ClipboardMaterialPath` không được reset
+ở đầu `CopySlotMaterial` → copy slot chưa từng đổi (không có Record) rơi vào nhánh
+`Branch(ClipboardMaterialPath == "") = False` (vì biến còn mang rác từ lần Copy trước) → giữ
+nguyên giá trị cũ, báo "✅ Đã copy" giả. Fix: thêm `SET ClipboardMaterialPath = ""` đầu hàm.
+Đây là vi phạm rule ĐÃ CÓ SẴN "CLEAR class var persistent ở đầu function", không phải phát hiện
+mới. Chi tiết đầy đủ 2 bug: `DEVIATIONS.md`, nguồn `DELTA_S7G2_Viec4_CopyPaste_AsBuilt_05sep2026`.
+
+Test PASS 05/09/2026: copy slot nguyên bản → paste mesh khác; copy slot đã đổi (qua Việc 2/3) →
+paste mesh khác, đối chiếu `MaterialSlots`/JSON; thumbnail + Recent Material cập nhật đúng; copy
+slot 1 (đã đổi) → paste → copy slot 5 (chưa đổi) → paste → đúng theo lần copy mới nhất (sau fix
+Bug B); nhiều đường thao tác tự do không phát hiện lỗi mới.
 
 ---
 

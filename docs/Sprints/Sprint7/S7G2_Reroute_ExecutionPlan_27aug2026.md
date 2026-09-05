@@ -13,7 +13,7 @@
 
 ## 0. TRẠNG THÁI THỰC THI — cập nhật mỗi phiên (mở phiên mới đọc khối này TRƯỚC)
 
-**Đang ở:** Bước 0 + Việc 1 + Việc 2 + Việc 2B (⭐ GATE undo/redo) ĐÃ PASS — sẵn sàng vào Việc 3. Resequence 03/09/2026 per `DELTA_Opus_S7_Resequence`.
+**Đang ở:** Bước 0 + Việc 1 + Việc 2 + Việc 2B (⭐ GATE undo/redo) + Việc 3 + Việc 4 ĐÃ PASS — sẵn sàng vào Việc 5. Resequence 03/09/2026 per `DELTA_Opus_S7_Resequence`.
 
 | Mốc | Trạng thái | Ghi chú ngắn |
 |---|---|---|
@@ -22,8 +22,8 @@
 | Việc 1 — swatch tên + selection | ✅ | PASS full — swatch tên, click-select, reset (xem deviation #9) |
 | Việc 2 — reroute apply (⭐ slice) | ✅ | Test 1-4 PASS (đường GHI đúng). Test 5 (Undo) tách sang Việc 2B — không phải lỗi Việc 2 |
 | Việc 2B — đường khôi phục snapshot | ✅ | PASS full 6 bước + bonus redo-stack case (04/09) |
-| Việc 3 — multi-apply E1 | ☐ | Hướng B inline (chỉ multi khi cùng RowName; trộn loại → chỉ Primary + Toast). Spec DELTA 04/09, chưa code |
-| Việc 4 — copy/paste | ☐ | KP1 ĐÃ CHỐT bản C (xem dưới) — không còn A/B |
+| Việc 3 — multi-apply E1 | ✅ | Hướng B inline (chỉ multi khi cùng RowName; trộn loại → chỉ Primary + Toast). PASS 5/5 (05/09), đóng Bug-MaterialPrimaryOnly |
+| Việc 4 — copy/paste | ✅ | PASS full. 2 bug thật bắt được và fix trong phiên (Branch hội tụ sai vị trí; ClipboardMaterialPath không clear đầu hàm). Xem DELTA_S7G2_Viec4_CopyPaste_AsBuilt_05sep2026 |
 | Việc 5 — reset slot/all | ☐ | Node thật khớp gần đúng dự đoán, 2 điều chỉnh nhỏ đã ghi |
 | Test tổng G2 | ☐ | |
 
@@ -600,12 +600,18 @@ Paste: Custom Event (Latent async hợp lệ) | IsValid MI + IsValid TargetFurni
 
 **TEST Việc 4:** copy slot **NGUYÊN BẢN** (chưa đổi) → paste sang mesh khác → PASS (đường live vẫn hoạt động). Copy slot **ĐÃ ĐỔI** (qua Việc 2) → paste sang mesh khác → PASS + `MaterialSlots` bên nhận có record đúng RowName (đối chiếu `PasteRowName` khớp tên thật DT, Print JSON). Case thứ 2 là case sẽ FAIL âm thầm nếu Copy không sửa.
 
-**As-built Việc 4** _(#6, #7 đã điền từ VERIFY — Sonnet điền phần Test khi code xong):_
+**As-built Việc 4** — ✅ PASS (điền 05/09/2026):
 ```
 #6 tên clipboard thật: ClipboardMaterialPath (đúng dự đoán A) — Copy có bounds check + rẽ nhánh IsEmpty(MaterialOverrides)
 #7 KP1 chốt: bản C — dùng lại ParseIntoArray có sẵn trong Paste, không cần FindMaterialRowNameByPath
-Test copy slot nguyên bản → paste: _____
-Test copy slot đã đổi (qua Việc 2) → paste: _____
+Test copy slot nguyên bản → paste: PASS
+Test copy slot đã đổi (qua Việc 2) → paste: PASS — MaterialSlots bên nhận có record đúng RowName
+Test thumbnail + Recent Material cập nhật đúng sau paste: PASS
+Test copy slot 1 (đã đổi) → paste → copy slot 5 (chưa đổi) → paste → đúng lần copy mới nhất: PASS (sau fix Bug B)
+Test nhiều đường thao tác tự do (nhiều mesh, nhiều slot, xen kẽ đổi qua UI): không phát hiện lỗi mới
+2 bug thật bắt được và fix trong phiên (xem DEVIATIONS.md mục "S7.G2 Việc 4"):
+  Bug A — Branch hội tụ sai vị trí (trước node data thay vì sau) → ghi đè giá trị đúng
+  Bug B — ClipboardMaterialPath không CLEAR đầu hàm → paste dính giá trị copy cũ
 ```
 
 ---
