@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 05/09/2026 (tiếp — S7.G2 Việc 4, 2 bug thật)
+**Cập nhật:** 05/09/2026 (tiếp — Multi-apply Hướng B: known limitation tất-cả-hoặc-không)
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1907,6 +1907,14 @@ dẫn, không phải lỗi cuhoang thao tác. Chi tiết node-by-node: `Features
   `Branch(ClipboardMaterialPath == "") = False` (biến còn mang rác) → không set gì mới. Fix:
   `SET ClipboardMaterialPath = ""` đầu hàm. Đây là vi phạm rule ĐÃ CÓ SẴN "CLEAR class var
   persistent ở đầu function" — không phải rule mới, ghi lại làm ví dụ cụ thể.
+
+---
+
+## [SCOPE, backlog] 05/09/2026 — Multi-apply Hướng B là tất-cả-hoặc-không
+
+Multi-apply Hướng B (1 actor khác `RowName` huỷ cả cụm multi, kể cả actor cùng loại với Primary
+cũng không được áp theo). Chấp nhận, ghi backlog — đúng thiết kế đã chốt, không phải bug. Xem
+`DELTA_S7G2_Viec3_KnownLimitation_AllOrNothing_05sep2026`.
 
 ---
 

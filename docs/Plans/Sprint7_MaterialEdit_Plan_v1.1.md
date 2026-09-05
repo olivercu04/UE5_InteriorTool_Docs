@@ -1,5 +1,5 @@
 # Sprint 7 — Material Edit v1.2 (slot theo tên + từ điển param + save format v2)
-**Version:** 1.8 | **Cập nhật:** 04/09/2026 10:40 — §S7.G2 item 3 thêm marker: Multi-apply đổi Hướng A → Hướng B (xem `DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026.md`); giữ mô tả A cũ làm [HISTORICAL]. | 1.7 (04/09 00:05) — G3 test #10 thêm ghi chú race warning `ResetAllSlotsToAssetDefault Mesh không hợp lệ`. | 1.6 (03/09 11:14) — Resequence G2↔G3 per `DELTA_Opus_S7_Resequence`: đường khôi phục snapshot kéo lên G2/Việc 2B; G3 co lại còn legacy branch + EMS + Combo. | 27/08/2026 (tiếp) — S7.G1 ĐÓNG: 5/5 Việc PASS, không deviation. Thêm section "ĐẦU RA S7.G1". Chi tiết đầy đủ: `Data/MaterialSlotService_Reference.md`
+**Version:** 1.9 | **Cập nhật:** 05/09/2026 20:50 — S7.G2 ĐÓNG: Bước 0 + 5/5 Việc PASS, test tổng 7/7 PASS. Thêm section "ĐẦU RA S7.G2". Sang G3. | 1.8 (04/09/2026 10:40) — §S7.G2 item 3 thêm marker: Multi-apply đổi Hướng A → Hướng B (xem `DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026.md`); giữ mô tả A cũ làm [HISTORICAL]. | 1.7 (04/09 00:05) — G3 test #10 thêm ghi chú race warning `ResetAllSlotsToAssetDefault Mesh không hợp lệ`. | 1.6 (03/09 11:14) — Resequence G2↔G3 per `DELTA_Opus_S7_Resequence`: đường khôi phục snapshot kéo lên G2/Việc 2B; G3 co lại còn legacy branch + EMS + Combo. | 27/08/2026 (tiếp) — S7.G1 ĐÓNG: 5/5 Việc PASS, không deviation. Thêm section "ĐẦU RA S7.G1". Chi tiết đầy đủ: `Data/MaterialSlotService_Reference.md`
 **Vị trí roadmap:** sau Sprint 5 DONE + Gate 1.5 Packaged Smoke. Trước Sprint 6 Polish.
 **Đầu vào chờ:** kết quả test "P5-liên quan" trong C10 (Sprint 5) → đổ vào S7.G5.
 **Thực thi:** Sonnet step-by-step. Mỗi gate = 1 lần test-and-confirm, PASS mới sang gate sau.
@@ -568,6 +568,36 @@ mục L-NEW-7.
 TEST G2: toàn bộ test Change Material v1.1 cũ chạy lại PASS (apply, swatch thumbnail, multi 3 đồ, copy/paste) + `MaterialSlots` trên actor nhìn thấy record đúng (debug Print JSON).
 
 → **Làm xong báo tao.**
+
+## ĐẦU RA S7.G2 — 05/09/2026 (Bước 0 + 5/5 Việc PASS, test tổng 7/7 PASS)
+
+| Việc | Nội dung | Test | Kết quả |
+|---|---|---|---|
+| 0 | 3 biến nền: `MaterialSlots` (BP_FurnitureActor), `SelectedSlotName` (WBP_FurnitureInventory), `SlotName` (WBP_SlotSwatch) | Build xanh | PASS |
+| 1 | Swatch biết tên slot + selection theo tên (`RefreshSlotSwatches`, `OnSlotSwatchClicked`) | 8/8 slot đúng tên+thứ tự, reset đúng khi đổi actor | PASS |
+| 2 | Reroute `LoadAndApplyMaterial` sang `ApplyLoadedMaterialToSlot` (⭐ vertical slice) | Print JSON `MaterialSlots` đúng, apply lại cùng slot không nhân đôi, apply slot khác ra 2 record | PASS |
+| 2B | Đường khôi phục snapshot (`RestoreMyMaterialSlots` on-actor + Capture/Restore chụp `MaterialSlots` trên `S_FurniturePlacement`) — resequence từ G3 | 6 bước undo/redo + bonus redo-stack case | PASS |
+| 3 | Multi-apply Hướng B inline (chỉ multi khi cùng `RowName`; trộn loại → chỉ Primary + Toast cảnh báo) — vá `Bug-MaterialPrimaryOnly` | Multi cùng loại · trộn loại · single · undo ×2 | PASS 5/5 |
+| 4 | Copy/Paste chuyển nguồn sang `MaterialSlots` qua service | Copy slot nguyên bản/đã đổi → paste, thumbnail+Recent đúng | PASS full |
+| 5 | Reset Slot/Reset All qua `ResetSlotToAssetDefault`/`ResetAllSlotsToAssetDefault` | Reset 1 slot (record mất, slot kia giữ) · Reset All (rỗng hoàn toàn) · Undo | PASS |
+
+**Test tổng G2 — 7/7 PASS:** apply đơn · swatch thumbnail lúc apply · multi 3 đồ (1 đồ khác loại) ·
+copy→paste sang mesh khác · reset slot/all · undo mỗi thao tác · `MaterialSlots` Print JSON mỗi
+bước không rác.
+
+**Deviation:** KHÔNG CÓ ngoài backlog UX Test 3 (ghi riêng, không phải deviation kỹ thuật) — multi-apply
+Hướng B là tất-cả-hoặc-không (1 actor khác `RowName` huỷ cả cụm multi). Đúng thiết kế đã chốt,
+cuhoang quyết định giữ nguyên, không sửa giữa chừng Sprint 7. Xem `DEVIATIONS.md` mục "05/09/2026 —
+Multi-apply Hướng B là tất-cả-hoặc-không", `Features/ChangeMaterial.md` mục BACKLOG LIÊN QUAN.
+
+2 bug thật bắt được và fix trong phiên Việc 4 (Branch hội tụ sai vị trí; class var persistent
+không CLEAR đầu hàm) — xem `DEVIATIONS.md` mục "S7.G2 Việc 4", `Features/Material_CopyPaste.md`.
+
+Chi tiết node flow đầy đủ: `Widgets/WBP_FurnitureInventory.md` (§ `LoadAndApplyMaterial` v1.2, §
+Reset), `Features/ChangeMaterial.md`, `Features/Material_CopyPaste.md`, `Blueprints/BP_FurnitureActor.md`
+(biến `MaterialSlots`). Lịch sử thực thi từng phiên: `Sprints/Sprint7/S7G2_Reroute_ExecutionPlan_27aug2026.md`.
+
+→ **G2 ĐÓNG (05/09/2026). Sang G3.**
 
 ---
 

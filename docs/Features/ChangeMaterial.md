@@ -1,5 +1,5 @@
 # Context — Tính năng Change Material v1.1
-**Phiên bản:** 1.7 | **Cập nhật:** 05/09/2026 — 19:40 ICT | Project: Lighting_Mnger (UE5.5.4)
+**Phiên bản:** 1.8 | **Cập nhật:** 05/09/2026 — 20:15 ICT | Project: Lighting_Mnger (UE5.5.4)
 
 ---
 
@@ -105,6 +105,18 @@
 
 ---
 
+## BACKLOG LIÊN QUAN
+
+**Multi-apply Hướng B — tất-cả-hoặc-không:** chọn nhiều actor, chỉ cần 1 actor khác `RowName` với
+Primary → huỷ cả phần multi, kể cả actor cùng loại với Primary cũng không được áp theo (chỉ
+Primary đổi). Đúng thiết kế đã chốt (an toàn tuyệt đối), không phải bug — cuhoang đánh giá chưa
+đủ nghiêm trọng để đổi giữa chừng Sprint 7. Hướng sửa nếu sau này cần: bỏ vòng kiểm `AllSame` +
+biến `LoadApply_AllSame`, chỉ giữ 1 vòng — mỗi actor tự so `RowName` với Primary, khớp thì áp,
+không khớp thì skip (không huỷ cả cụm); đổi hành vi CORE của Hướng B nên phải báo Opus khi merge.
+Xem `DEVIATIONS.md` mục "05/09/2026 — Multi-apply Hướng B là tất-cả-hoặc-không".
+
+---
+
 ## Lịch sử cập nhật
 
 | Phiên bản | Ngày | Nội dung |
@@ -114,3 +126,4 @@
 | 1.5 | 16/05/2026 — 14:08 ICT | Bước 3.4+3.5+3.6 code xong, bugs documented |
 | 1.6 | 18/05/2026 — 08:55 ICT | **v1.1 HOÀN THÀNH** — 4.1+4.2+4.3 pass, fix OnRestoreCompleted dead-end, key learnings |
 | 1.7 | 05/09/2026 — 19:40 ICT | Bước 6 cập nhật as-built S7.G2 Việc 2+3 (reroute `ApplyLoadedMaterialToSlot` + multi-apply Hướng B), xem `DELTA_S7G2_Viec2_Viec3_AsBuilt_05sep2026` |
+| 1.8 | 05/09/2026 — 20:15 ICT | Thêm mục BACKLOG LIÊN QUAN — known limitation multi-apply Hướng B tất-cả-hoặc-không, xem `DELTA_S7G2_Viec3_KnownLimitation_AllOrNothing_05sep2026` |

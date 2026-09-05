@@ -1,6 +1,6 @@
 # BP_FurnitureActor
 **Tách từ:** `BP_FurnitureActor_SceneManager.md` (phần Actor)
-**Phiên bản:** 2.0 | **Cập nhật:** 19/06/2026 — Async Load Events | Parent: StaticMeshActor | Interface: EMSActorSaveInterface
+**Phiên bản:** 2.1 | **Cập nhật:** 05/09/2026 — thêm biến `MaterialSlots` (S7.G2 Bước 0) | Parent: StaticMeshActor | Interface: EMSActorSaveInterface
 
 > **v1.2 (Sprint D.T6):** Thêm `RowName : Name (SaveGame)` — nguồn sự thật mới thay DA_FurnitureItem. DAPath giữ lại làm fallback cho save cũ chưa có RowName.
 
@@ -16,6 +16,7 @@ MaterialParams        : Array of String ← SaveGame (v1.1 placeholder — JSON 
 PlacementSurfaceType  : Name      ← SaveGame — "Floor" | "Wall" | "Ceiling", default="Floor"
 FurnitureMesh         : StaticMeshComponent (Mobility = Movable)
 GroupID               : String    ← SaveGame (xác nhận Sprint 3 T2) — ID của group chứa actor; "" = đồ rời
+MaterialSlots         : Array of FMaterialSlotRecord ← SaveGame (S7.G2 Bước 0, 05/09/2026) — kho ghi material theo tên slot (name-based), qua MaterialSlotService. Xem Data/MaterialSlotService_Reference.md
 ```
 
 ---
@@ -82,3 +83,4 @@ False → Branch: Overrides[Index] != ""
 | 1.1 | 22/05/2026 | Thêm MaterialOverrides + MaterialParams (SaveGame v1.1) |
 | 1.2 | 17/06/2026 — Sprint D.T6 | Thêm RowName : Name (SaveGame) — key DT_FurnitureCatalog. DAPath giữ fallback save cũ. GroupID [?] giải quyết: String SaveGame (Sprint 3 T2). |
 | 2.0 | 19/06/2026 — 19h ICT | Thêm LoadMeshAsync + LoadMaterialsAsync (async load tự quản lý trong actor, không gọi hộ từ InputManager) |
+| 2.1 | 05/09/2026 | Thêm `MaterialSlots : Array<FMaterialSlotRecord>` (SaveGame) — S7.G2 Bước 0, kho ghi material mới (name-based) qua `MaterialSlotService` |

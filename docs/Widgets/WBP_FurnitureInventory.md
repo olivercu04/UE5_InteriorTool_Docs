@@ -1,5 +1,7 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
+**Phiên bản:** 3.27 | **Cập nhật:** 05/09/2026 — 20:40 ICT — S7.G2 Việc 5 as-built: `BTN_ResetSlot`/`BTN_ResetAll` reroute sang `ResetSlotToAssetDefault`/`ResetAllSlotsToAssetDefault`. Test PASS. S7.G2 ĐÓNG (7/7 test tổng PASS).
+
 **Phiên bản:** 3.26 | **Cập nhật:** 05/09/2026 — 19:40 ICT — S7.G2 Việc 2+3 as-built: `LoadAndApplyMaterial` viết lại từ K2Node export thật (reroute `ApplyLoadedMaterialToSlot` + multi-apply Hướng B), thêm 3 class var `LoadApply_Selected`/`LoadApply_AllSame`/`LoadApply_SuccessCount`. Test PASS 5/5. Đóng `Bug-MaterialPrimaryOnly`.
 
 **Phiên bản:** 3.25 | **Cập nhật:** 10/08/2026 — C11.3 (Import combo) DONE: Custom Event mới `CB_ImportCombo` (bound `BTN_ImportCombo.OnClicked`) — quét `Exports/`, nhập ALL, `CallDelegate ComboManagerRef.OnComboLibraryChanged` (Target PHẢI là `ComboManagerRef`, không phải `self`). Test PASS 4/4. **C11 (Export/Import combo) ĐÓNG HOÀN TOÀN.**
@@ -170,9 +172,9 @@ Canvas Panel (root = Not Hit-Testable Self Only)
 
 ## Widgets Con
 
-### WBP_SlotSwatch (v1.1)
+### WBP_SlotSwatch (v1.2 — S7.G2 Bước 0/Việc 1, 05/09/2026)
 ```
-Variables: SlotIndex : Integer
+Variables: SlotIndex : Integer | SlotName : String (Instance Editable = false)   ← SlotName thêm S7.G2
 Event Dispatcher: OnSwatchClicked(ClickedSlotIndex : Integer)
 Functions: SetSelected(bSelected), UpdateThumbnail(NewThumbnail)
 Layout: 48×48 tròn, Common Lazy Image, Image overlay highlight
@@ -438,6 +440,42 @@ ClearChildren(HB_SwatchList)
 GET TargetFurnitureActor → FurnitureMesh → GetStaticMesh → GetMaterialSlotNames
 ForLoop → Create WBP_SlotSwatch → Bind OnSwatchClicked → AddChild
 ```
+
+### BTN_ResetSlot / BTN_ResetAll — AS-BUILT 05/09/2026 (S7.G2 Việc 5)
+
+> Reset đọc/ghi qua service (`ResetSlotToAssetDefault`/`ResetAllSlotsToAssetDefault`), thay
+> chuỗi cũ đọc `StaticMesh.GetMaterial()` + `Array_Set(MaterialOverrides)` trực tiếp. Test PASS
+> 05/09/2026: Reset 1 slot → slot đó về gốc, record slot đó mất, slot kia giữ; Reset All → cả 2
+> về gốc, `MaterialSlots` rỗng hoàn toàn; Undo sau mỗi thao tác đúng.
+
+```
+BTN_ResetSlot:
+  IsValid(TargetFurnitureActor) AND SelectedSlotIndex>=0
+    True → Cast → GET FurnitureMesh
+           ResetSlotToAssetDefault(FurnitureMesh, TargetFurnitureActor.MaterialSlots,
+                                     SelectedSlotName, SelectedSlotIndex)
+           ▶→ CaptureSnapshot("ResetSlot")
+           ▶→ Call RefreshSlotSwatches()
+
+BTN_ResetAll:
+  IsValid(TargetFurnitureActor)
+    True → Cast → GET FurnitureMesh
+           ResetAllSlotsToAssetDefault(FurnitureMesh)
+           ▶→ CLEAR TargetFurnitureActor.MaterialSlots     ← BẮT BUỘC làm tay
+           ▶→ CaptureSnapshot("ResetAll")
+           ▶→ Call RefreshSlotSwatches()                    ← ĐÃ CÓ SẴN, không đổi
+```
+
+`ResetSlotToAssetDefault` nhận `Records` → tự xóa Record đúng slot, không cần thao tác tay thêm.
+`RefreshSlotSwatches()` thay cho chuỗi cũ (`GetObjectName→GetDataTableRow→UpdateThumbnail` trên 1
+swatch) — mỗi swatch tự gọi `RefreshDisplay()` khi dựng lại, đã bao gồm cập nhật thumbnail. Sau
+Reset, material không còn là MID nên `RefreshDisplay()` không dính bug GetObjectName/MID đã biết
+(bug đó chỉ xảy ra khi material LÀ MID, tức sau Apply — không phải sau Reset).
+
+**Điểm bẫy đã xác nhận qua test:** `ResetAllSlotsToAssetDefault` chỉ nhận `Mesh` làm tham số,
+KHÔNG nhận `Records` → hàm không thể tự xóa `MaterialSlots`. Thiếu bước `CLEAR` tay → Record cũ
+còn sống sau Reset All, gây restore sai ở G3. Đã verify bằng test thật (Print JSON `MaterialSlots`
+rỗng hoàn toàn sau Reset All).
 
 ---
 
