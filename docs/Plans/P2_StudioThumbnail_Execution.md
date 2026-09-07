@@ -58,9 +58,23 @@ Q8: Custom Event (L8 ✓) | IsValid từng điểm ✓ | L2 mọi nhánh merge/g
        Branch(IsValid(NewActor)) True:
          GET NewActor.Tags → Array Remove Item("FurnitureSpawned")   ← by-ref, không SET Tags
          SET NewActor.GroupID = ""
+         [THÊM 07/09/2026 — S7.G3, fix bug Save Format v2] SET NewActor.MaterialSlots = Item.MaterialSlots
          Array Add(Cmb_StudioClones, NewActor)
    Completed ▶→ [caller nối tiếp — Việc 4]
 DeltaYaw Gate A = 0, chưa nối vào toán — chỉ khai param để Gate C khỏi đổi signature.
+
+**[SỬA 07/09/2026 — S7.G3 Item 4, bug phát sinh do Save Format v2]** Bug: `SpawnComboForThumbnail`
+đọc field `MaterialOverrides` cũ, combo mới để field đó rỗng → thumbnail chụp ra material gốc,
+sai với thực tế combo đã lưu (không phải lỗi code viết mới, mà là chỗ sót khi rollout field mới
+`MaterialSlots`, S7.G2). Fix: thêm dòng `SET NewActor.MaterialSlots = Item.MaterialSlots` (xem
+trong block ForEach ở trên). KHÔNG cần `Call RestoreMyMaterialSlots` — tự động qua fix
+`LoadMeshAsync` (`Blueprints/BP_FurnitureActor.md`). Test PASS: phím `U` debug capture → combo
+"Bàn ghế nhựa uống nước" → PNG thumbnail đúng material. Đã quét toàn project (`Find in Blueprint`
++ đối chiếu doc) tìm chỗ khác đọc `MaterialOverrides` theo cách sẽ hỏng với combo mới — không còn
+chỗ nào khác (`SpawnFurnitureCopy` Step 4 và `F_ApplyMaterialOverrides` đều chỉ thực thi theo
+param truyền vào / được gate đúng, không tự đọc sai nguồn). Nguồn: `07-09-2026_S7G3_Item1-4_Delta.md`
+mục B5.
+
 Việc 4 — Chuỗi chụp debug (phím U, pattern phím T P1; Enable Input theo bDebugMode)
 ▶→ SpawnComboForThumbnail("<GUID combo test từ Saved/Combos>", 0)   [nối từ Completed Việc 3]
 ▶→ Delay(0.5)                                  ← chờ LoadMeshAsync (asset resident, resolve nhanh)

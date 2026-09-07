@@ -1,5 +1,5 @@
 # Sprint 7 — Material Edit v1.2 (slot theo tên + từ điển param + save format v2)
-**Version:** 1.9 | **Cập nhật:** 05/09/2026 20:50 — S7.G2 ĐÓNG: Bước 0 + 5/5 Việc PASS, test tổng 7/7 PASS. Thêm section "ĐẦU RA S7.G2". Sang G3. | 1.8 (04/09/2026 10:40) — §S7.G2 item 3 thêm marker: Multi-apply đổi Hướng A → Hướng B (xem `DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026.md`); giữ mô tả A cũ làm [HISTORICAL]. | 1.7 (04/09 00:05) — G3 test #10 thêm ghi chú race warning `ResetAllSlotsToAssetDefault Mesh không hợp lệ`. | 1.6 (03/09 11:14) — Resequence G2↔G3 per `DELTA_Opus_S7_Resequence`: đường khôi phục snapshot kéo lên G2/Việc 2B; G3 co lại còn legacy branch + EMS + Combo. | 27/08/2026 (tiếp) — S7.G1 ĐÓNG: 5/5 Việc PASS, không deviation. Thêm section "ĐẦU RA S7.G1". Chi tiết đầy đủ: `Data/MaterialSlotService_Reference.md`
+**Version:** 1.10 | **Cập nhật:** 07/09/2026 — S7.G3 Item 1/2/4 PASS (nhánh legacy RestoreMyMaterialSlots + ActorLoaded reroute + Combo FComboItemData/MaterialSlots). 3 bug phát sinh+fix trong phiên. Nguồn: `07-09-2026_S7G3_Item1-4_Delta.md`. | 1.9 (05/09/2026 20:50) — S7.G2 ĐÓNG: Bước 0 + 5/5 Việc PASS, test tổng 7/7 PASS. Thêm section "ĐẦU RA S7.G2". Sang G3. | 1.8 (04/09/2026 10:40) — §S7.G2 item 3 thêm marker: Multi-apply đổi Hướng A → Hướng B (xem `DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026.md`); giữ mô tả A cũ làm [HISTORICAL]. | 1.7 (04/09 00:05) — G3 test #10 thêm ghi chú race warning `ResetAllSlotsToAssetDefault Mesh không hợp lệ`. | 1.6 (03/09 11:14) — Resequence G2↔G3 per `DELTA_Opus_S7_Resequence`: đường khôi phục snapshot kéo lên G2/Việc 2B; G3 co lại còn legacy branch + EMS + Combo. | 27/08/2026 (tiếp) — S7.G1 ĐÓNG: 5/5 Việc PASS, không deviation. Thêm section "ĐẦU RA S7.G1". Chi tiết đầy đủ: `Data/MaterialSlotService_Reference.md`
 **Vị trí roadmap:** sau Sprint 5 DONE + Gate 1.5 Packaged Smoke. Trước Sprint 6 Polish.
 **Đầu vào chờ:** kết quả test "P5-liên quan" trong C10 (Sprint 5) → đổ vào S7.G5.
 **Thực thi:** Sonnet step-by-step. Mỗi gate = 1 lần test-and-confirm, PASS mới sang gate sau.
@@ -609,7 +609,7 @@ Reset), `Features/ChangeMaterial.md`, `Features/Material_CopyPaste.md`, `Bluepri
 
 **ĐÓNG BĂNG MẪU TRƯỚC:** copy `Saved/SaveGames` + `Saved/Combos` → `_LegacySpecimens/` (Explorer). Chưa copy → KHÔNG được đi tiếp.
 
-**[VERIFY]:** flow `ActorLoaded` hiện tại (restore MaterialOverrides thế nào); `S_FurniturePlacement` fields; `FComboData` item struct + `F_ApplyMaterialOverrides`; chỗ CaptureSnapshot đọc material.
+**[VERIFY]** ✅ Xong (07/09/2026): flow `ActorLoaded` hiện tại (restore MaterialOverrides thế nào); `S_FurniturePlacement` fields; `FComboData` item struct + `F_ApplyMaterialOverrides`; chỗ CaptureSnapshot đọc material. Kết quả đầy đủ: `07-09-2026_S7G3_Item1-4_Delta.md` mục B1-B5.
 
 ```
 Q8: 2 Custom Event chuỗi | IsValid Mesh + IsValid loaded asset ✓ |
@@ -619,7 +619,7 @@ Latent trong Custom Event ✓ (không Function) |
     undo về Records rỗng vẫn trả mesh về nguyên bản ✓
 ```
 
-1. **RestoreMyMaterialSlots** (Custom Event trên BP_FurnitureActor — MỘT đường duy nhất, chuỗi TUẦN TỰ Đ9): _[RESEQUENCE 03/09 — bản SẠCH (không nhánh legacy) đã làm ở G2/Việc 2B; G3 chỉ THÊM nhánh legacy `Branch(MaterialSlots.Length == 0 AND ...)` ở đầu, phần còn lại giữ nguyên như dưới]_
+1. ✅ **PASS (07/09/2026).** **RestoreMyMaterialSlots** (Custom Event trên BP_FurnitureActor — MỘT đường duy nhất, chuỗi TUẦN TỰ Đ9): _[RESEQUENCE 03/09 — bản SẠCH (không nhánh legacy) đã làm ở G2/Việc 2B; G3 chỉ THÊM nhánh legacy `Branch(MaterialSlots.Length == 0 AND ...)` ở đầu, phần còn lại giữ nguyên như dưới]_ Bug phát sinh lúc wire tay (nhánh `False` dead-end, vi phạm L2) phát hiện + fix cùng phiên — xem `Bugs/Open_Bugs.md` mục `Bug-RestoreMyMaterialSlots-DeadEndLegacy`. Merge đầy đủ vào canonical: `Blueprints/BP_FurnitureActor.md` v2.2.
 ```
 RestoreMyMaterialSlots ▶→
   Branch(MaterialSlots.Length == 0 AND MaterialOverrides cũ có dữ liệu)   ← đường LEGACY
@@ -642,9 +642,17 @@ Rst_LoadNextSlot (Custom Event) ▶→
 Class var mới trên BP_FurnitureActor: `Rst_SlotIdx : int`, `Rst_CurRecord : FMaterialSlotRecord` (KHÔNG SaveGame).
 Ghi chú: nếu test 6A lộ double-apply do 2 lần gọi chồng nhau giữa chừng → thêm `Rst_Generation` counter (mỗi lần gọi ++, Completed check khớp mới chạy tiếp). Chỉ thêm KHI test fail, không thêm trước (KP2).
 
-2. EMS `ActorLoaded` → gọi RestoreMyMaterialSlots (thay code restore cũ).
+2. ✅ **PASS (07/09/2026).** EMS `ActorLoaded` → gọi RestoreMyMaterialSlots (thay code restore cũ).
+   As-built + phát hiện thêm: doc canonical cũ mô tả sai có bước "ADD Tags" sau restore — thực tế
+   không có (sửa theo K2Node export thật). Xem `Blueprints/BP_FurnitureActor.md` v2.2.
 3. Snapshot: `S_FurniturePlacement` (trong `BP_UndoManager`) + field MaterialSlots; Capture copy từ actor; Restore sau khi spawn+mesh load → gọi RestoreMyMaterialSlots. _[RESEQUENCE 03/09 — ĐÃ CHUYỂN sang G2/Việc 2B, G3 bỏ mục này. Tên struct: cuhoang xác nhận `S_FurniturePlacement` (03/09); tên cũ `S_ActorSnapshotData` là sai.]_
-4. Combo: `FComboData` item + `materialSlots`; SaveComboFromSelection điền từ actor; SpawnCombo → RestoreMyMaterialSlots (F_ApplyMaterialOverrides cũ thành legacy bên trong nó).
+4. ✅ **PASS (07/09/2026).** Combo: `FComboData` item + `materialSlots`; SaveComboFromSelection điền từ actor; SpawnCombo → RestoreMyMaterialSlots (F_ApplyMaterialOverrides cũ thành legacy bên trong nó).
+   As-built: `SpawnComboByID` Sub-step C KHÔNG gọi `Call RestoreMyMaterialSlots` trực tiếp — chỉ
+   `SET NewActor.MaterialSlots`, restore tự chạy qua `LoadMeshAsync.Completed` (fix race, item 2).
+   `F_ApplyMaterialOverrides` giữ nguyên 100% làm đường legacy cho combo cũ. Test PASS: combo mới
+   (4 ghế `Chair_VietNhat_1925`, 2 material khác nhau) spawn đúng cả 4; combo cũ (specimen, JSON
+   không có `materialSlots`) spawn đúng qua đường legacy, không đổi hành vi. Xem
+   `Blueprints/BP_ComboManager.md` v1.18.
 
 TEST G3 — ma trận:
 | # | Case | Kỳ vọng |

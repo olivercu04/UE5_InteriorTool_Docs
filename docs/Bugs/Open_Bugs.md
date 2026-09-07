@@ -32,6 +32,10 @@ scope, cả 2 CLOSED — cook 25/08 BUILD SUCCESSFUL). ⚠️ KHÔNG tìm thấy
 cause theo delta 26/08 — ghi nhận mâu thuẫn, không tạo entry mới thay thế.
 **Cập nhật (tiếp) 05/09/2026:** Đóng `Bug-MaterialPrimaryOnly` — fix thật qua S7.G2 Việc 3
 (multi-apply Hướng B), test PASS 5/5.
+**Cập nhật (tiếp) 07/09/2026 (S7.G3 Item 1/2/4):** Đóng `Bug-RowName-MissingInClipboard` (verify
+đúng nghi vấn + fix). Thêm 2 bug mới, cả 2 phát hiện+fix ngay trong phiên (R-DOC-DONE):
+`Bug-RestoreMyMaterialSlots-DeadEndLegacy` (đóng hoàn toàn), `Bug-LoadMeshAsync-RestoreRace`
+(đóng cho đường Combo — phần `RestoreSnapshot`/Undo-Redo còn treo, xem `Session_State.md`).
 
 ---
 
@@ -67,7 +71,9 @@ cause theo delta 26/08 — ghi nhận mâu thuẫn, không tạo entry mới tha
 | B-EditStackLeak | [OPEN, DEFERRED] editStack rò rỉ vào snapshot ở thao tác không build selection (Deselect/Spawn) sau khi thoát edit mode — pre-existing từ v1.8/A12, KHÔNG do T2 | 🔴 Cao | Không sửa Sprint 5. Xem mục chi tiết dưới |
 | Bug-SaveComboSilentBlock | [OPEN] Save Combo với <2 món bị chặn im lặng — không toast/log/dialog | 🟢 Thấp | Phát hiện lúc lập kế hoạch T3 (04/08). Không chặn Gate 2. Xem mục chi tiết dưới |
 | Bug-ComboCategoryHardcode | ✅ FIXED (08/08) — Mọi combo lưu ra đều có `category="MyCombo"` (hardcode, đáng lẽ rỗng) | — | Fix T5 D2 — xóa DefaultValue pin Category. Xem mục chi tiết dưới |
-| Bug-RowName-MissingInClipboard | [CHƯA VERIFY] Nghi `S_ClipboardEntry` (Copy/Paste/Duplicate) cùng thiếu `RowName` như `S_FurniturePlacement` từng thiếu (đã fix 03/08) | 🟡 Trung bình (nếu đúng) | Chưa verify — xem mục chi tiết dưới |
+| Bug-RowName-MissingInClipboard | ✅ FIXED (07/09) — `S_ClipboardEntry` (Copy/Paste/Duplicate) cùng thiếu `RowName` như `S_FurniturePlacement` từng thiếu (đã fix 03/08) | — | Verify đúng nghi vấn + fix. Xem mục chi tiết dưới |
+| Bug-RestoreMyMaterialSlots-DeadEndLegacy | ✅ FIXED (07/09) — nhánh `False` Branch legacy trong `RestoreMyMaterialSlots` bị để trống (dead-end), vi phạm L2 | — | Phát hiện + fix cùng phiên S7.G3 Item 1. Xem mục chi tiết dưới |
+| Bug-LoadMeshAsync-RestoreRace | ✅ FIXED cho đường Combo (07/09) — race `LoadMeshAsync` (async) vs gọi `RestoreMyMaterialSlots` ngay sau spawn (cùng frame, mesh chưa sẵn sàng) | — | Fix đường Combo (`LoadMeshAsync` + `SpawnComboByID` Sub-step C). ⚠️ CHƯA fix cho `RestoreSnapshot` (Undo/Redo) — xem `Session_State.md` mục "Việc tiếp theo". Xem mục chi tiết dưới |
 | Bug-RowNameLostOnUndo | ✅ FIXED (03/08) — `S_FurniturePlacement` thiếu field `RowName`, Undo respawn actor mất danh tính | — | Xem `Blueprints/BP_UndoManager.md` v1.15, mục chi tiết dưới |
 | Feature-SaveInEditMode | Save trong edit mode: 2 ý định (ghi đè A / tách sub-group thành combo mới) chưa tách bạch | 🟢 Thấp | Backlog sau Gate 2 |
 | Task-T4.5-AutoGroupAfterOverwrite | Sau Ghi đè S8 (Mix), mesh rời nuốt vào combo trên đĩa nhưng scene vẫn đứng rời — chưa tự gộp lại thành cụm chọn-1-lần | 🟡 Trung bình | Backlog, chưa mở — mở sau khi T4 PASS ổn định |
@@ -858,30 +864,104 @@ Xoá DefaultValue của pin `Category` (để rỗng). 1 thao tác, không đụ
 
 ---
 
-## Bug-RowName-MissingInClipboard — nghi clipboard cùng thiếu RowName như snapshot từng thiếu
+## Bug-RowName-MissingInClipboard — ✅ FIXED (07/09/2026) — clipboard cùng thiếu RowName như snapshot từng thiếu
 
 **ID:** Bug-RowName-MissingInClipboard
 **Phát hiện:** 04/08/2026 (suy từ fix `S_FurniturePlacement`/`RestoreSnapshot`, xem
 `Blueprints/BP_UndoManager.md` v1.14)
-**Ưu tiên:** 🟡 Trung bình (nếu xác nhận đúng) — **CHƯA VERIFY, chỉ là nghi vấn**
+**Đóng:** 07/09/2026 — verify đúng nghi vấn + fix. Xem `Blueprints/Flows/CopyPaste_Flow.md` v2.1.
+**Ưu tiên:** 🟡 Trung bình (đã đóng)
 
-### Nghi vấn
+### Nghi vấn ban đầu (đã xác nhận đúng 07/09)
 `S_FurniturePlacement` (dùng cho Undo snapshot) từng thiếu field `RowName` — actor spawn lại qua
 `RestoreSnapshot` mất `RowName` (đã fix 03/08/2026: thêm field + SET sau `SpawnFurnitureCopy`).
-`S_ClipboardEntry` (dùng cho `CopyMesh`/`PasteMesh`/`DuplicateMesh`) là struct **khác**, chưa kiểm
-tra — có khả năng mắc cùng lỗ hổng (thiếu `RowName`, actor paste/duplicate ra mất `RowName`).
+`S_ClipboardEntry` (dùng cho `CopyMesh`/`PasteMesh`/`DuplicateMesh`) là struct **khác** — mắc cùng
+lỗ hổng (thiếu `RowName`, actor paste/duplicate ra mất `RowName`).
 
-### Trigger verify
-Print `RowName` ngay sau `PasteMesh`/`DuplicateMesh` — nếu ra `None`/rỗng thay vì RowName thật
-→ xác nhận đúng nghi vấn.
+### Triệu chứng thật đã verify (07/09/2026)
+Copy 1 actor → Paste/Duplicate ra bản sao → multi-select cả cụm → đổi material cùng lúc → CHỈ
+actor Primary đổi màu. Nguyên nhân: thiết kế "Multi-apply Hướng B" (`Features/ChangeMaterial.md`,
+đã chốt Sprint 7) so sánh `RowName` giữa các actor trong `SelectedActors` — actor nào
+`RowName=None` (do bug clipboard) sẽ làm gate "tất cả hoặc không" loại cả cụm, chỉ Primary còn
+`RowName` đúng được áp. **Bug ở tầng dữ liệu (clipboard), KHÔNG phải bug ở logic multi-apply —
+không sửa lại multi-apply.**
 
-### Hướng fix (nếu xác nhận đúng — CHƯA quyết định)
-Cân nhắc thêm param `RowName` vào `SpawnFurnitureCopy` (đổi hàm chung, sửa mọi call site) thay vì
-vá lẻ tẻ từng nơi (Copy/Paste/Duplicate riêng) — nếu đúng có lỗ hổng thật, sửa hàm chung 1 lần
-mới đáng, không vá rời rạc.
+### Fix (07/09/2026)
+`S_ClipboardEntry` +field `RowName : Name`. `CopyMesh` +GET `RowName`. `PasteMesh`/`DuplicateMesh`
++`SET NewActor.RowName = entry.RowName` ngay sau `SpawnFurnitureCopy`. KHÔNG đổi chữ ký
+`SpawnFurnitureCopy` (vá surgical tại 2 caller còn thiếu, vì `RestoreSnapshot`/`SpawnComboByID`
+đã tự SET đúng từ trước) — xem `Blueprints/Flows/CopyPaste_Flow.md`.
 
-### Trạng thái
-- **Chưa verify.** Không tự kết luận khi chưa có Print xác nhận. Chờ test.
+### Verify
+Print `RowName` ngay sau Paste (ra `None`, xác nhận đúng nghi vấn trước fix) → fix → verify lại
+bằng test multi-apply thật: Copy → Paste/Duplicate → multi-select → đổi material → cả cụm đổi
+màu đúng, không chỉ Primary. PASS.
+
+### Liên quan
+`Bug-RowNameLostOnUndo` (đã fix 03/08/2026) — cùng gốc lỗ hổng ở `S_FurniturePlacement`, struct
+khác nhưng cùng loại bug (struct migrate RowName-based thiếu field).
+
+---
+
+## Bug-RestoreMyMaterialSlots-DeadEndLegacy — ✅ FIXED (07/09/2026) — dead-end nhánh False Branch legacy
+
+**ID:** Bug-RestoreMyMaterialSlots-DeadEndLegacy
+**Phát hiện:** 07/09/2026, trong lúc test S7.G3 Item 4 (Combo)
+**Đóng:** 07/09/2026 — cùng phiên phát hiện, theo R-DOC-DONE (fix + verify xong thì đóng thẳng)
+**Ưu tiên:** 🟡 Trung bình (đã đóng)
+
+### Nguyên nhân
+Lỗi wiring khi thêm nhánh legacy ở `RestoreMyMaterialSlots` (S7.G3 Item 1, sáng cùng ngày) — nhánh
+`False` (đường KHÔNG legacy, tức actor thường có sẵn `MaterialSlots`) bị bỏ trống thay vì merge
+vào `ResetAllSlotsToAssetDefault` như nhánh `True`. Vi phạm **L2** (dead-end trong Custom Event
+chain = fatal). Sáng cùng ngày test Item 1 không lộ ra vì dùng specimen giả ép luôn đi nhánh
+`True`. Chỉ lộ khi Combo test dùng actor CÓ SẴN `MaterialSlots` (đi nhánh `False`).
+
+### Triệu chứng
+Test Combo không in Print debug nào bên trong `Rst_LoadNextSlot` dù `RestoreMyMaterialSlots
+CALLED` có log — nghĩa là chết ngay ở Branch đầu hàm. Xác nhận bằng ảnh chụp graph cuhoang gửi
+trong chat.
+
+### Fix
+Nối `Branch.False` — cùng điểm `ResetAllSlotsToAssetDefault` mà `Branch.True` đang dẫn tới. Xem
+`Blueprints/BP_FurnitureActor.md` v2.2 mục `RestoreMyMaterialSlots`.
+
+### Bài học (đề xuất merge Rules, xem `Session_State.md` mục "Việc tiếp theo" / PHẦN E)
+Q8 checklist tự viết ("L2: mọi nhánh đều merge") là Ý ĐỊNH thiết kế, không phải bằng chứng đã wire
+đúng — cần xin K2Node export/ảnh chụp graph thật sớm hơn khi hành vi không như kỳ vọng.
+
+---
+
+## Bug-LoadMeshAsync-RestoreRace — ✅ FIXED cho đường Combo (07/09/2026) — race async vs gọi restore ngay sau spawn
+
+**ID:** Bug-LoadMeshAsync-RestoreRace
+**Phát hiện:** 07/09/2026, chẩn đoán bởi Opus (Mythos/senior session) dựa trên bằng chứng gián
+tiếp (`Plans/P2_StudioThumbnail_Execution.md` đã có `Delay(0.5)` workaround từ trước)
+**Đóng (một phần):** 07/09/2026 — fix cho đường Combo. ⚠️ **CHƯA fix cho `RestoreSnapshot`**
+(Undo/Redo) — xem `Session_State.md` mục "Việc tiếp theo"
+**Ưu tiên:** 🟡 Trung bình (đóng một phần, phần còn lại không chặn chức năng)
+
+### Nguyên nhân
+`SpawnFurnitureCopy` gọi `LoadMeshAsync` bất đồng bộ — mesh thật chỉ sẵn sàng ở `Completed`. Các
+caller (Combo Sub-step C, `RestoreSnapshot`) gọi `Call RestoreMyMaterialSlots` NGAY sau
+`SpawnFurnitureCopy` return (cùng frame) — mesh chưa load xong — restore chạy trên mesh rỗng, im
+lặng fail.
+
+### Verify
+Log thật xác nhận `MaterialSlots.Length` đúng tại `Completed` nhưng `Call RestoreMyMaterialSlots`
+chưa từng chạy khi gọi ngay sau spawn (do mesh chưa sẵn sàng).
+
+### Fix (đường Combo, 07/09/2026)
+Dời điểm gọi vào đúng lúc mesh CHẮC CHẮN sẵn sàng (`LoadMeshAsync.Completed`), guard bằng
+`MaterialSlots.Length>0` để không đổi hành vi các caller chưa dùng hộ `MaterialSlots`. Áp dụng ở
+`BP_FurnitureActor.LoadMeshAsync` (mục B1) + `BP_ComboManager.SpawnComboByID` Sub-step C (bỏ gọi
+`Call RestoreMyMaterialSlots` trực tiếp, chỉ `SET`, để `LoadMeshAsync` tự gọi lại đúng lúc).
+
+### Còn treo
+`BP_UndoManager.RestoreSnapshot` Step 4 vẫn còn dòng `Call NewActor.RestoreMyMaterialSlots` thừa
+ngay sau `SET NewActor.MaterialSlots` — nghi dính race tương tự nhưng CHƯA sửa trong phiên này.
+KHÔNG hỏng chức năng (`LoadMeshAsync` giờ tự phủ), nhưng dư 1 lần gọi sớm vô hiệu mỗi lần
+Undo/Redo material — CHƯA test regression Undo/Redo material để xác nhận không hồi quy.
 
 ---
 

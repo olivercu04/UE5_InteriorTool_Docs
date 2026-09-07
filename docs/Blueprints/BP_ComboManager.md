@@ -1,8 +1,21 @@
 # BP_ComboManager — Blueprint Logic
+**Version:** 1.18 | **Ngày:** 07/09/2026 | **S7.G3 Item 4:** `FComboItemData` +field `MaterialSlots` (C++, cần include `MaterialSlotService.h` trước `.generated.h`). `SaveComboFromSelection` Bước 5d +GET `MaterialSlots` vào field mới. `SpawnComboByID` Sub-step C: Branch `Material Slots.Length>0` — SET NewActor.MaterialSlots (đường mới, restore tự chạy qua `LoadMeshAsync` fix race) / `F_ApplyMaterialOverrides` giữ nguyên làm đường legacy. Test PASS (combo mới 4 ghế 2 material + combo cũ specimen qua đường legacy)
+
 **Version:** 1.17 | **Ngày:** 08/08/2026 | **T5 D2 (`Bug-ComboCategoryHardcode` fix):** `SaveComboFromSelection` Bước 5e — xóa DefaultValue `"MyCombo"` ở pin `Category`, để rỗng. Test PASS
 
 ## Vai trò
 Xử lý toàn bộ combo logic (save, spawn, replace). Nhận data qua PARAM, KHÔNG hard ref BP_FurnitureInputManager (R2). Được spawn trong Level BP sau UserPrefsManager.
+
+## `FComboItemData` (C++, `ComboTypes.h`) — THÊM field 07/09/2026 (S7.G3 Item 4)
+```cpp
+UPROPERTY(EditAnywhere, BlueprintReadWrite)
+TArray<FMaterialSlotRecord> MaterialSlots;
+```
+Cần `#include "MaterialSlotService.h"` **TRƯỚC** `#include "ComboTypes.generated.h"` (thứ tự
+include bắt buộc của UE — include sau `.generated.h` gây lỗi build, đã gặp và fix trong phiên).
+Build xanh, PASS. ⚠️ Bảng field đầy đủ của `FComboItemData` (canonical struct reference) sống ở
+`Data/Data_Structures.md` mục STRUCTS — file đó CHƯA được cập nhật field này trong phiên 07/09
+(ngoài phạm vi được chỉ định merge), cần đối chiếu/bổ sung riêng sau.
 
 ## Event Dispatchers
 - `OnComboLibraryChanged` — broadcast sau khi lưu/xóa combo → WBP_FurnitureInventory lắng nghe → LoadComboLibrary
@@ -349,7 +362,13 @@ nhánh Branch, thay vì 1 node đơn). Mọi thứ phía sau khóa theo biến n
 (ghi đè) trỏ đúng cùng file/thumbnail cache của combo gốc vì dùng lại `OverwriteComboID`.  
 **Bước 5b:** CLEAR OutputGroups/Items  
 **Bước 5c:** ForEach ComboGroups → resolve ParentToken (via TokenMap, branch "")→ Make FComboGroupData → ADD OutputGroups  
-**Bước 5d:** ForEach SelectedActors → Cast → CLEAR MaterialOverrides_SaveCombo → ForEach MaterialPaths → FindMaterialRowNameByPath → ADD; SET ItemRowName_SaveCombo: Branch RowName.ToString=="None" → True: ParseIntoArray(MeshPath, ".") → Last Index → Get → SET ItemRowName_SaveCombo; False: SET ItemRowName_SaveCombo = RowName gốc; Branch GroupToken → Make FComboItemData(RowName=ItemRowName_SaveCombo) → ADD OutputItems  
+**Bước 5d:** ForEach SelectedActors → Cast → CLEAR MaterialOverrides_SaveCombo → ForEach MaterialPaths → FindMaterialRowNameByPath → ADD; SET ItemRowName_SaveCombo: Branch RowName.ToString=="None" → True: ParseIntoArray(MeshPath, ".") → Last Index → Get → SET ItemRowName_SaveCombo; False: SET ItemRowName_SaveCombo = RowName gốc; Branch GroupToken → Make FComboItemData(RowName=ItemRowName_SaveCombo) → ADD OutputItems
+
+**[THÊM 07/09/2026 — S7.G3 Item 4]** Trước `Make FComboItemData`, cùng nhánh ForEach (Bước 5d):
+`GET (Actor).MaterialSlots` ●→ nối vào field `Material Slots` (mới) của `Make FComboItemData`.
+Quyết định kỹ thuật: GIỮ nguyên loop cũ tính `MaterialOverrides_SaveCombo` (dư thừa nhẹ, không
+còn ai đọc ở combo mới) — không tiện tay xóa code đang chạy tốt (KP3). Ghi backlog nếu muốn dọn
+(xem `Session_State.md` mục "Việc tiếp theo", việc 5, tùy chọn không khẩn).
 **Bước 5e (C4 — trước Make FComboData):**
 `CalculateComboBoundingExtent(SelectedActors) → ReturnVec → SET SaveCombo_BoundingExtent`
 
@@ -608,8 +627,25 @@ Loop Body:
       - False → SET NewActor.GroupID = ""              ← Case B ungrouped
     - False → Map Find(TokenToNewGUID, Key=GroupToken) → Value → SET NewActor.GroupID
     - (merge)
-  - F_ApplyMaterialOverrides(TargetActor=NewActor, MaterialRowNames=MaterialOverrides từ Break FComboItemData)
-  - Array ADD(Cmb_SpawnedActors, NewActor)
+  - **[SỬA 07/09/2026 — S7.G3 Item 4]** Thay `F_ApplyMaterialOverrides(...)` vô điều kiện bằng:
+    ```
+    Break FComboItemData → thêm lấy "Material Slots" (field mới)
+    ▶→ Branch(Material Slots.Length > 0)
+         True  ▶→ SET NewActor.MaterialSlots = (Material Slots)
+         False ▶→ F_ApplyMaterialOverrides(TargetActor=NewActor, MaterialRowNames=ItemMaterialOverrides)   ← Y HỆT CŨ, không sửa ruột hàm
+    (merge cả 2 nhánh) ▶→ Array ADD(Cmb_SpawnedActors, NewActor)
+    ```
+    **Quyết định kỹ thuật quan trọng:** nhánh `True` KHÔNG gọi `Call RestoreMyMaterialSlots` trực
+    tiếp — chỉ `SET`. Việc gọi restore giờ tự động xảy ra bên trong `LoadMeshAsync.Completed`
+    (`BP_FurnitureActor.md`, fix race 07/09) khi mesh thật sự sẵn sàng. `F_ApplyMaterialOverrides`
+    (nhánh `False`, combo cũ chưa có `materialSlots`) GIỮ NGUYÊN 100% logic bên trong — nó tự
+    nhiên trở thành "đường legacy" chỉ bằng cách đổi điểm gọi, không sửa 1 node nào bên trong hàm
+    đó. Lý do kỹ thuật: `Item.MaterialOverrides` (combo cũ) lưu RowName, còn cơ chế migrate
+    (`BuildRecordsFromLegacy`, `BP_FurnitureActor.md`) nhận input là path — 2 chiều ngược nhau,
+    không dùng chung được 1 hàm migrate, nên chọn: combo cũ áp material kiểu cũ (đúng, không
+    sai), không cố migrate ngược vào `MaterialSlots`.
+    **Test PASS:** combo cũ (specimen, JSON không có `materialSlots`) spawn → material đúng qua
+    đường legacy, không đổi hành vi so với trước phiên.
 
 Completed → (Sub-step D)
 
@@ -813,3 +849,4 @@ không giật thêm dù RT giờ 2048²).
 | 04/08/2026 15:20 | 1.15 | **Lô A — Verify đường ghi combo (T0 của T4, Save As/Save đè).** `SaveComboFromSelection` re-export K2Node — Bước 1-8 khớp doc cũ 1:1 (không mâu thuẫn), bổ sung **Bước 0** chưa từng ghi (6 param nhồi vào class var ngay Entry, mọi bước sau đọc class var chứ không đọc lại pin param). Xác nhận Bước 5a (`NewGuid()` vô điều kiện, `SaveCombo_ComboID` set đúng 1 chỗ) và Bước 7 (Broadcast `OnComboLibraryChanged` CHỈ ở nhánh `bSaveOK=False`; nhánh True broadcast qua Event Tick tail, không đổi so với doc 1.10). Nguồn: `DELTA_04-08-2026_LoA_SaveCombo_Verify.md`. Xem thêm `Bugs/Open_Bugs.md` mục `Bug-ComboCategoryHardcode` (Category hardcode "MyCombo" — đã ghi nhận từ v1.4, nay lên bug tracking chính thức) + `DEVIATIONS.md` mục "[AS-BUILT] Broadcast OnComboLibraryChanged..." và "[DOC-DRIFT] Plan C7 dựa vào LoadCombo...". |
 | 07/08/2026 15:40 | 1.16 | **T4 DONE — Overwrite Flow (Save As/Save đè).** `SaveComboFromSelection` +2 param `bOverwrite : Bool` (default false) / `OverwriteComboID : String` (default ""). Bước 5a: thay `SET SaveCombo_ComboID = "combo_"+NewGuid()` đơn lẻ bằng `Branch(bOverwrite)` — True→`SET SaveCombo_ComboID = OverwriteComboID`, False→node cũ giữ nguyên (Save As không đổi hành vi, verify qua test case 4). Event Tick tail: chèn `InvalidateThumbnail(SaveCombo_ComboID)` NGAY TRƯỚC `Broadcast OnComboLibraryChanged` có sẵn, chạy VÔ ĐIỀU KIỆN (không Branch theo `bOverwrite` — Save As = no-op vô hại). `FolderPath` (Bước 5e) không đổi — luôn ghi từ param, path vật lý luôn khóa theo `ComboID` (`GetCombosDir()/<ComboID>.json`) nên đổi Folder lúc Ghi đè không sinh file mồ côi (verify qua test case 5). Test PASS 6/6 case (bao gồm S8 — mix combo+mesh rời, nuốt hết vào combo khớp Save As) + 2 câu hiểu bài. Nguồn: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7d. |
 | 08/08/2026 | 1.17 | T5 D2 (`Bug-ComboCategoryHardcode` fix): xóa DefaultValue `"MyCombo"` ở pin `Category`, node `Make FComboData` (Bước 5e) — để rỗng. Verify `.json` ra `"category": ""`. Test lại A3+A4 PASS. Nguồn: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7e.4 (D2). |
+| 07/09/2026 | 1.18 | S7.G3 Item 4: `FComboItemData` +field `MaterialSlots` (C++, thứ tự include `MaterialSlotService.h` trước `.generated.h`). `SaveComboFromSelection` Bước 5d +GET `MaterialSlots` vào field mới, giữ nguyên loop `MaterialOverrides_SaveCombo` cũ (KP3). `SpawnComboByID` Sub-step C: Branch `Material Slots.Length>0` — SET NewActor.MaterialSlots (đường mới) / `F_ApplyMaterialOverrides` giữ nguyên làm đường legacy combo cũ. Test PASS combo 4 ghế 2 material + combo cũ specimen. Nguồn: `07-09-2026_S7G3_Item1-4_Delta.md` mục B3. |
