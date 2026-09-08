@@ -4,10 +4,11 @@
 > Cập nhật khi trạng thái đổi. Giữ ~50-100 dòng. Cái gì đã có nơi khác sở hữu → cắt, không copy.
 
 **Last verified:** 08/09/2026 (RestoreSnapshot Step 4 fix + regression Undo/Redo PASS. G3 không còn nợ nào. Next: S7.G4)
+**Last verified (tiếp):** 08/09/2026 — resequence nửa sau Sprint 7 (Opus). Bản đồ gate G4-G10 thay G4-G8 gốc.
 
 ---
 
-Current: Sprint 7 (Material v1.2) → G3 ĐÓNG HOÀN TOÀN (08/09/2026). Next: G4
+Current: Sprint 7 (Material v1.2) — G3 ĐÓNG. Nửa sau đã resequence (08/09): G4 trục-A → G5 kéo-thả vật liệu → G6 click-vào-mesh → G7 panel param → G8 từ điển → G9 gạch → G10 regression. Chờ cuhoang duyệt plan trước khi vào G4.
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -20,8 +21,8 @@ Current: Sprint 7 (Material v1.2) → G3 ĐÓNG HOÀN TOÀN (08/09/2026). Next: 
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
 | **Current Task** | S7.G3 ĐÓNG HOÀN TOÀN (08/09/2026). `RestoreSnapshot` Step 4 gỡ `Call RestoreMyMaterialSlots` thừa, test regression Undo/Redo material PASS — `Bug-LoadMeshAsync-RestoreRace` đóng hoàn toàn (Combo + Undo/Redo). Không còn nợ G3. |
-| **Task Source** | `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` mục S7.G4 (kế tiếp). Lịch sử G3: `07-09-2026_S7G3_Item1-4_Delta.md`, delta 08/09/2026 |
-| **Next** | S7.G4 theo plan gốc (EMS legacy diễn rộng hơn nếu còn trường hợp khác, panel engine, dictionary fill, tile pattern, final regression) — CHƯA bắt đầu. Xem thêm mục "Việc tiếp theo" bên dưới. |
+| **Task Source** | `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md` (PLAN, chưa duyệt) → mục "Bản đồ gate Sprint 7 — nửa sau" bên dưới. Lịch sử G3: `07-09-2026_S7G3_Item1-4_Delta.md`, delta 08/09/2026 |
+| **Next** | S7.G4 = xác nhận trục-A (material bám đúng slot theo tên qua save/load, dùng swatch đã có). Các việc cũ (EMS legacy / panel / dictionary / tile / regression) đã tách ra G7-G10 trong bản resequence 08/09. Chờ cuhoang duyệt plan resequence trước khi vào việc. Xem thêm mục "Việc tiếp theo" bên dưới. |
 | **Blockers** | Không |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
@@ -31,10 +32,27 @@ ro đụng đồ đồng nghiệp.
 
 ---
 
+## Bản đồ gate Sprint 7 — nửa sau (G4-G10, resequence 08/09/2026)
+> Thay bản đồ G4-G8 gốc (05/07, chưa rà) — xem `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md`.
+> PLAN, chưa giao Sonnet — chờ cuhoang duyệt. Bản gốc đóng dấu [HISTORICAL] trong
+> `Plans/Sprint7_MaterialEdit_Plan_v1.1.md`, không xóa.
+
+| Gate | Tên | Rủi ro | Test bằng | Ước lượng |
+|---|---|---|---|---|
+| **G4** | Xác nhận trục-A (chips/swatch đã có) | Thấp | Save/Load + mắt | ~1 buổi |
+| **G5** | Kéo-thả vật liệu (đường phối màu CHÍNH) | **Cao** (có [VERIFY] trace-on-drop) | Print → mắt | ~3-4 buổi |
+| **G6** | Click-vào-mesh chọn slot (đường phụ "thử nhiều lần") | Trung bình (Q9 luồng click) | Print → mắt | ~2-3 buổi |
+| **G7** | Động cơ panel param (slider/color) + từ điển TẠM | Trung bình | Từ điển tạm 2 dòng | ~3-4 buổi |
+| **G8** | Điền từ điển thật (23 họ master) + nhãn Việt | Thấp-TB (dữ liệu, không logic) | Bộ test T7 | ~2-3 buổi |
+| **G9** | Pattern gạch (texture) + đóng Đ12 texture restore | Trung bình | Mắt | ~2 buổi |
+| **G10** | Regression tổng + VRAM + docs | Thấp | Chuỗi 12 bước | ~1-2 buổi |
+
+---
+
 ## Việc tiếp theo (chưa làm)
 
-1. **S7.G4 theo plan gốc:** EMS legacy diễn rộng hơn nếu còn trường hợp khác, panel engine,
-   dictionary fill, tile pattern, final regression — CHƯA bắt đầu.
+1. **Next: G4 (xác nhận trục-A).** Chờ cuhoang duyệt plan resequence
+   (`DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md`) trước khi vào việc.
 2. **(Tùy chọn, không khẩn) Dọn `SaveComboFromSelection` Bước 5d** — xóa loop tính
    `MaterialOverrides_SaveCombo` (dư thừa, không ai đọc ở combo mới) — chỉ làm khi có thời gian
    rảnh, không phải ưu tiên.

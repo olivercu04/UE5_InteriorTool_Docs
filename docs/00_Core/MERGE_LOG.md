@@ -77,6 +77,9 @@ CategoryList chưa SET) merge vào `Bugs/Open_Bugs.md`. **KHÔNG merge** PHẦN 
 NodeFlow.md`), nội dung khớp nguyên văn thật ra nằm ở `Widgets/WBP_FurnitureInventory.md`
 dòng 247-256/264-265 — cuhoang xác nhận BỎ QUA, chờ delta đính chính sau. Không đóng dấu
 banner nào cho file delta.
+**Cập nhật (tiếp) 08/09/2026:** merge `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md`. Plan gốc
+G4-G8 → `[HISTORICAL]`. Bản đồ gate mới G4-G10 vào `Session_State.md` + `PROGRESS.md`. KHÔNG đụng
+`Blueprints/`/`Widgets/` (delta là plan, chưa as-built).
 
 ---
 

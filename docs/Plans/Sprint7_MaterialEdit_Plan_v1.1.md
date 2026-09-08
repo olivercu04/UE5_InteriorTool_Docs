@@ -1,5 +1,5 @@
 # Sprint 7 — Material Edit v1.2 (slot theo tên + từ điển param + save format v2)
-**Version:** 1.10 | **Cập nhật:** 07/09/2026 — S7.G3 Item 1/2/4 PASS (nhánh legacy RestoreMyMaterialSlots + ActorLoaded reroute + Combo FComboItemData/MaterialSlots). 3 bug phát sinh+fix trong phiên. Nguồn: `07-09-2026_S7G3_Item1-4_Delta.md`. | 1.9 (05/09/2026 20:50) — S7.G2 ĐÓNG: Bước 0 + 5/5 Việc PASS, test tổng 7/7 PASS. Thêm section "ĐẦU RA S7.G2". Sang G3. | 1.8 (04/09/2026 10:40) — §S7.G2 item 3 thêm marker: Multi-apply đổi Hướng A → Hướng B (xem `DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026.md`); giữ mô tả A cũ làm [HISTORICAL]. | 1.7 (04/09 00:05) — G3 test #10 thêm ghi chú race warning `ResetAllSlotsToAssetDefault Mesh không hợp lệ`. | 1.6 (03/09 11:14) — Resequence G2↔G3 per `DELTA_Opus_S7_Resequence`: đường khôi phục snapshot kéo lên G2/Việc 2B; G3 co lại còn legacy branch + EMS + Combo. | 27/08/2026 (tiếp) — S7.G1 ĐÓNG: 5/5 Việc PASS, không deviation. Thêm section "ĐẦU RA S7.G1". Chi tiết đầy đủ: `Data/MaterialSlotService_Reference.md`
+**Version:** 1.11 | **Cập nhật:** 08/09/2026 — Đóng dấu [HISTORICAL] mục G4-G8 (bản thiết kế 05/07) — đã resequence thành G4-G10, xem `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md`. Nội dung gốc GIỮ NGUYÊN, chỉ thêm banner. | 1.10 (07/09/2026) — S7.G3 Item 1/2/4 PASS (nhánh legacy RestoreMyMaterialSlots + ActorLoaded reroute + Combo FComboItemData/MaterialSlots). 3 bug phát sinh+fix trong phiên. Nguồn: `07-09-2026_S7G3_Item1-4_Delta.md`. | 1.9 (05/09/2026 20:50) — S7.G2 ĐÓNG: Bước 0 + 5/5 Việc PASS, test tổng 7/7 PASS. Thêm section "ĐẦU RA S7.G2". Sang G3. | 1.8 (04/09/2026 10:40) — §S7.G2 item 3 thêm marker: Multi-apply đổi Hướng A → Hướng B (xem `DELTA_S7G2_Viec3_MultiApply_HuongB_04sep2026.md`); giữ mô tả A cũ làm [HISTORICAL]. | 1.7 (04/09 00:05) — G3 test #10 thêm ghi chú race warning `ResetAllSlotsToAssetDefault Mesh không hợp lệ`. | 1.6 (03/09 11:14) — Resequence G2↔G3 per `DELTA_Opus_S7_Resequence`: đường khôi phục snapshot kéo lên G2/Việc 2B; G3 co lại còn legacy branch + EMS + Combo. | 27/08/2026 (tiếp) — S7.G1 ĐÓNG: 5/5 Việc PASS, không deviation. Thêm section "ĐẦU RA S7.G1". Chi tiết đầy đủ: `Data/MaterialSlotService_Reference.md`
 **Vị trí roadmap:** sau Sprint 5 DONE + Gate 1.5 Packaged Smoke. Trước Sprint 6 Polish.
 **Đầu vào chờ:** kết quả test "P5-liên quan" trong C10 (Sprint 5) → đổ vào S7.G5.
 **Thực thi:** Sonnet step-by-step. Mỗi gate = 1 lần test-and-confirm, PASS mới sang gate sau.
@@ -680,6 +680,8 @@ regression thêm case kiểm hợp đồng này.
 # S7.G4 — REGRESSION NỀN P5 (mục tiêu gốc của slot-theo-tên)
 # ═══════════════════════════════════════
 
+> [HISTORICAL] — Bản thiết kế 05/07, đã resequence 08/09. Xem DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md. Giữ để tra lý do quyết định gốc.
+
 1. Re-import 1 mesh test đổi thứ tự/tên slot **[VERIFY cách re-import an toàn — hỏi cuhoang mesh nào]** → actor cũ trong save load lại: material bám đúng slot theo TÊN (trước đây theo index là lệch).
 2. Replace mesh A→B: slot trùng tên → **GIỮ material** (hành vi mới, ghi DEVIATIONS); slot không trùng → nguyên bản của B.
 3. Đối chiếu dữ liệu C10 ("P5-liên quan") — case nào C10 ghi fail giờ phải PASS.
@@ -692,6 +694,8 @@ regression thêm case kiểm hợp đồng này.
 # ═══════════════════════════════════════
 # S7.G5 — ĐỘNG CƠ PANEL TỪ ĐIỂN (UI engine)
 # ═══════════════════════════════════════
+
+> [HISTORICAL] — Bản thiết kế 05/07, đã resequence 08/09. Xem DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md. Giữ để tra lý do quyết định gốc.
 
 1. **DT_MaterialParamMap** — row struct C++ `FMaterialParamMapRow` (không mangle):
 ```
@@ -713,6 +717,8 @@ TEST G5 (từ điển tạm 2 dòng test): slider đổi mesh live; kéo giữ �
 # S7.G6 — ĐIỀN TỪ ĐIỂN (dữ liệu thật từ G0) + BỘ TEST T7
 # ═══════════════════════════════════════
 
+> [HISTORICAL] — Bản thiết kế 05/07, đã resequence 08/09. Xem DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md. Giữ để tra lý do quyết định gốc.
+
 Điền DT_MaterialParamMap theo `params_dump.txt`: mọi họ (màu chính, nhám/độ bóng nếu có param dynamic); RDMtiles (màu ron, cỡ gạch, bevel, độ hư — đúng tên thật, M2); vải (color/fuzz/normal strength/UV scale); Duo chỉ bộ A. Nhãn tiếng Việt do cuhoang duyệt từng dòng (bảng gửi trước khi nhập).
 
 Chạy bộ test sẵn **T7.1–T7.5** (07_Testing_Strategy): color live | slider roughness | multi 3 đồ | reset | param save/load/undo qua UI.
@@ -725,6 +731,8 @@ Chạy bộ test sẵn **T7.1–T7.5** (07_Testing_Strategy): color live | slide
 # S7.G7 — PATTERN GẠCH (texture control) — gate TÁCH ĐƯỢC, trễ dời không vỡ
 # ═══════════════════════════════════════
 
+> [HISTORICAL] — Bản thiết kế 05/07, đã resequence 08/09. Xem DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md. Giữ để tra lý do quyết định gốc.
+
 Theo Q2 từ G0b:
 - **Dynamic** → `DT_TilePatterns` {tên, texture soft ref, thumbnail} + `WBP_TexturePickerRow` (grid ~40 mẫu, Lazy Image) → `SetSlotTextureParam`. Lưu path texture trong ParamsJson (đã chốt).
 - **Static** → Plan B: pattern = **swap giữa MI biến thể** (UI giống hệt — grid mẫu, hành động = ApplyMaterial MI khác); hoặc defer sang backlog nếu số MI biến thể chưa đủ.
@@ -736,6 +744,8 @@ Theo Q2 từ G0b:
 # ═══════════════════════════════════════
 # S7.G8 — REGRESSION TỔNG + VRAM + DOCS
 # ═══════════════════════════════════════
+
+> [HISTORICAL] — Bản thiết kế 05/07, đã resequence 08/09. Xem DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md. Giữ để tra lý do quyết định gốc.
 
 - Chuỗi 12 bước: apply → param → multi → combo save/spawn → EMS save/load → undo ×5 → replace mesh → reset 2 mức → save cũ load → reload.
 - `stat rhi` 4 mốc (baseline / sau 20 lần đổi MI / sau 50 lần kéo slider / sau undo chuỗi) — MID không phình theo số lần chỉnh (mỗi slot 1 MID tái dùng, không tạo mới mỗi kéo). Ghi số vào DEVIATIONS.
