@@ -36,6 +36,8 @@ cause theo delta 26/08 — ghi nhận mâu thuẫn, không tạo entry mới tha
 đúng nghi vấn + fix). Thêm 2 bug mới, cả 2 phát hiện+fix ngay trong phiên (R-DOC-DONE):
 `Bug-RestoreMyMaterialSlots-DeadEndLegacy` (đóng hoàn toàn), `Bug-LoadMeshAsync-RestoreRace`
 (đóng cho đường Combo — phần `RestoreSnapshot`/Undo-Redo còn treo, xem `Session_State.md`).
+**Cập nhật (tiếp) 08/09/2026:** Đóng HOÀN TOÀN `Bug-LoadMeshAsync-RestoreRace` — `RestoreSnapshot`
+Step 4 gỡ `Call RestoreMyMaterialSlots` thừa, test regression Undo/Redo material PASS.
 
 ---
 
@@ -73,7 +75,7 @@ cause theo delta 26/08 — ghi nhận mâu thuẫn, không tạo entry mới tha
 | Bug-ComboCategoryHardcode | ✅ FIXED (08/08) — Mọi combo lưu ra đều có `category="MyCombo"` (hardcode, đáng lẽ rỗng) | — | Fix T5 D2 — xóa DefaultValue pin Category. Xem mục chi tiết dưới |
 | Bug-RowName-MissingInClipboard | ✅ FIXED (07/09) — `S_ClipboardEntry` (Copy/Paste/Duplicate) cùng thiếu `RowName` như `S_FurniturePlacement` từng thiếu (đã fix 03/08) | — | Verify đúng nghi vấn + fix. Xem mục chi tiết dưới |
 | Bug-RestoreMyMaterialSlots-DeadEndLegacy | ✅ FIXED (07/09) — nhánh `False` Branch legacy trong `RestoreMyMaterialSlots` bị để trống (dead-end), vi phạm L2 | — | Phát hiện + fix cùng phiên S7.G3 Item 1. Xem mục chi tiết dưới |
-| Bug-LoadMeshAsync-RestoreRace | ✅ FIXED cho đường Combo (07/09) — race `LoadMeshAsync` (async) vs gọi `RestoreMyMaterialSlots` ngay sau spawn (cùng frame, mesh chưa sẵn sàng) | — | Fix đường Combo (`LoadMeshAsync` + `SpawnComboByID` Sub-step C). ⚠️ CHƯA fix cho `RestoreSnapshot` (Undo/Redo) — xem `Session_State.md` mục "Việc tiếp theo". Xem mục chi tiết dưới |
+| Bug-LoadMeshAsync-RestoreRace | ✅ FIXED HOÀN TOÀN (08/09) — race `LoadMeshAsync` (async) vs gọi `RestoreMyMaterialSlots` ngay sau spawn (cùng frame, mesh chưa sẵn sàng) | — | Fix cho cả đường Combo (07/09) và `RestoreSnapshot`/Undo-Redo (08/09). Xem mục chi tiết dưới |
 | Bug-RowNameLostOnUndo | ✅ FIXED (03/08) — `S_FurniturePlacement` thiếu field `RowName`, Undo respawn actor mất danh tính | — | Xem `Blueprints/BP_UndoManager.md` v1.15, mục chi tiết dưới |
 | Feature-SaveInEditMode | Save trong edit mode: 2 ý định (ghi đè A / tách sub-group thành combo mới) chưa tách bạch | 🟢 Thấp | Backlog sau Gate 2 |
 | Task-T4.5-AutoGroupAfterOverwrite | Sau Ghi đè S8 (Mix), mesh rời nuốt vào combo trên đĩa nhưng scene vẫn đứng rời — chưa tự gộp lại thành cụm chọn-1-lần | 🟡 Trung bình | Backlog, chưa mở — mở sau khi T4 PASS ổn định |
@@ -932,14 +934,14 @@ Q8 checklist tự viết ("L2: mọi nhánh đều merge") là Ý ĐỊNH thiế
 
 ---
 
-## Bug-LoadMeshAsync-RestoreRace — ✅ FIXED cho đường Combo (07/09/2026) — race async vs gọi restore ngay sau spawn
+## Bug-LoadMeshAsync-RestoreRace — ✅ FIXED HOÀN TOÀN (08/09/2026) — race async vs gọi restore ngay sau spawn
 
 **ID:** Bug-LoadMeshAsync-RestoreRace
 **Phát hiện:** 07/09/2026, chẩn đoán bởi Opus (Mythos/senior session) dựa trên bằng chứng gián
 tiếp (`Plans/P2_StudioThumbnail_Execution.md` đã có `Delay(0.5)` workaround từ trước)
-**Đóng (một phần):** 07/09/2026 — fix cho đường Combo. ⚠️ **CHƯA fix cho `RestoreSnapshot`**
-(Undo/Redo) — xem `Session_State.md` mục "Việc tiếp theo"
-**Ưu tiên:** 🟡 Trung bình (đóng một phần, phần còn lại không chặn chức năng)
+**Đóng HOÀN TOÀN:** 08/09/2026 — fix cho cả đường Combo (07/09) và `RestoreSnapshot`/Undo-Redo
+(08/09, gỡ `Call RestoreMyMaterialSlots` thừa ở Step 4).
+**Ưu tiên:** 🟡 Trung bình (đã đóng)
 
 ### Nguyên nhân
 `SpawnFurnitureCopy` gọi `LoadMeshAsync` bất đồng bộ — mesh thật chỉ sẵn sàng ở `Completed`. Các
@@ -957,11 +959,11 @@ Dời điểm gọi vào đúng lúc mesh CHẮC CHẮN sẵn sàng (`LoadMeshAs
 `BP_FurnitureActor.LoadMeshAsync` (mục B1) + `BP_ComboManager.SpawnComboByID` Sub-step C (bỏ gọi
 `Call RestoreMyMaterialSlots` trực tiếp, chỉ `SET`, để `LoadMeshAsync` tự gọi lại đúng lúc).
 
-### Còn treo
-`BP_UndoManager.RestoreSnapshot` Step 4 vẫn còn dòng `Call NewActor.RestoreMyMaterialSlots` thừa
-ngay sau `SET NewActor.MaterialSlots` — nghi dính race tương tự nhưng CHƯA sửa trong phiên này.
-KHÔNG hỏng chức năng (`LoadMeshAsync` giờ tự phủ), nhưng dư 1 lần gọi sớm vô hiệu mỗi lần
-Undo/Redo material — CHƯA test regression Undo/Redo material để xác nhận không hồi quy.
+### Fix (RestoreSnapshot/Undo-Redo, 08/09/2026)
+`BP_UndoManager.RestoreSnapshot` Step 4 gỡ dòng `Call NewActor.RestoreMyMaterialSlots` thừa ngay
+sau `SET NewActor.MaterialSlots` — chỉ còn dòng `SET`, restore tự chạy qua
+`LoadMeshAsync.Completed` bên trong actor. Test regression Undo/Redo material (đổi material 1
+actor → Ctrl+Z → Ctrl+Y) PASS, không nháy, không lỗi double-call, không hồi quy.
 
 ---
 

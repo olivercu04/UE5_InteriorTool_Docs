@@ -3,11 +3,11 @@
 > Lịch sử → Git / PROGRESS.md / DEVIATIONS.md. KHÔNG thêm chronology/changelog vào đây.
 > Cập nhật khi trạng thái đổi. Giữ ~50-100 dòng. Cái gì đã có nơi khác sở hữu → cắt, không copy.
 
-**Last verified:** 07/09/2026 (S7.G3 Item 1/2/4 PASS. Còn treo: RestoreSnapshot Step 4 dòng Call thừa + test regression Undo/Redo material — xem "Việc tiếp theo")
+**Last verified:** 08/09/2026 (RestoreSnapshot Step 4 fix + regression Undo/Redo PASS. G3 không còn nợ nào. Next: S7.G4)
 
 ---
 
-Current: Sprint 7 (Material v1.2) → G3 ĐÓNG (07/09/2026). Next: G4
+Current: Sprint 7 (Material v1.2) → G3 ĐÓNG HOÀN TOÀN (08/09/2026). Next: G4
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -19,9 +19,9 @@ Current: Sprint 7 (Material v1.2) → G3 ĐÓNG (07/09/2026). Next: G4
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | S7.G2 ĐÓNG (05/09/2026). S7.G3: [VERIFY] đầu G3 ✅ · Item 1 (nhánh legacy `RestoreMyMaterialSlots`) ✅ PASS · Item 2 (`ActorLoaded` reroute) ✅ PASS · Item 4 (Combo `FComboItemData`+ghi/đọc `MaterialSlots`) ✅ PASS. Item 3 (snapshot) đã dời sang G2/2B từ trước (RESEQUENCE 03/09), không thuộc G3 nữa. 3 bug phát sinh trong phiên 07/09 đều đã fix (`Bug-RowName-MissingInClipboard`, `Bug-RestoreMyMaterialSlots-DeadEndLegacy`, `Bug-LoadMeshAsync-RestoreRace` — phần Combo). |
-| **Task Source** | `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` mục S7.G3 (v1.9). Delta 07/09: `07-09-2026_S7G3_Item1-4_Delta.md` |
-| **Next** | G3 còn lại theo plan gốc: G3.G5-G8 (EMS legacy diễn rộng hơn nếu còn trường hợp khác, panel engine, dictionary fill, tile pattern, final regression) — CHƯA bắt đầu. Xem thêm mục "Việc tiếp theo" bên dưới (việc treo từ phiên 07/09, ưu tiên cao hơn G5-G8). |
+| **Current Task** | S7.G3 ĐÓNG HOÀN TOÀN (08/09/2026). `RestoreSnapshot` Step 4 gỡ `Call RestoreMyMaterialSlots` thừa, test regression Undo/Redo material PASS — `Bug-LoadMeshAsync-RestoreRace` đóng hoàn toàn (Combo + Undo/Redo). Không còn nợ G3. |
+| **Task Source** | `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` mục S7.G4 (kế tiếp). Lịch sử G3: `07-09-2026_S7G3_Item1-4_Delta.md`, delta 08/09/2026 |
+| **Next** | S7.G4 theo plan gốc (EMS legacy diễn rộng hơn nếu còn trường hợp khác, panel engine, dictionary fill, tile pattern, final regression) — CHƯA bắt đầu. Xem thêm mục "Việc tiếp theo" bên dưới. |
 | **Blockers** | Không |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
@@ -31,28 +31,13 @@ ro đụng đồ đồng nghiệp.
 
 ---
 
-## Việc tiếp theo (chưa làm, từ delta 07/09/2026 — PHẦN D, giữ nguyên y hệt)
+## Việc tiếp theo (chưa làm)
 
-1. **`RestoreSnapshot` Step 4 (`BP_UndoManager`)** — gỡ dòng `Call NewActor.RestoreMyMaterialSlots`
-   thừa (chỉ giữ `SET NewActor.MaterialSlots`), đúng pattern đã áp cho Combo. Ưu tiên: TRUNG BÌNH
-   — không hỏng chức năng (LoadMeshAsync giờ tự phủ), nhưng để lại 1 lần gọi sớm vô hiệu mỗi lần
-   Undo/Redo material, và CHƯA test Undo/Redo material sau đợt fix hôm nay để xác nhận không hồi
-   quy.
-2. **Test regression Undo/Redo material** — chưa chạy trong phiên này. Kịch bản: đổi material 1
-   actor → Ctrl+Z → Ctrl+Y (redo) → material phải đúng, không nháy/lỗi do double-call.
-3. **Merge field `MaterialSlots` vào `S_FurniturePlacement`** trong canonical `BP_UndoManager.md`
-   (nợ từ G2/2B, 03/09 — chưa merge từ trước phiên này, không phải nợ mới).
-4. **S7.G3 còn lại theo plan gốc:** G3.G5-G8 (EMS legacy diễn rộng hơn nếu còn trường hợp khác,
-   panel engine, dictionary fill, tile pattern, final regression) — CHƯA bắt đầu.
-5. **(Tùy chọn, không khẩn) Dọn `SaveComboFromSelection` Bước 5d** — xóa loop tính
+1. **S7.G4 theo plan gốc:** EMS legacy diễn rộng hơn nếu còn trường hợp khác, panel engine,
+   dictionary fill, tile pattern, final regression — CHƯA bắt đầu.
+2. **(Tùy chọn, không khẩn) Dọn `SaveComboFromSelection` Bước 5d** — xóa loop tính
    `MaterialOverrides_SaveCombo` (dư thừa, không ai đọc ở combo mới) — chỉ làm khi có thời gian
    rảnh, không phải ưu tiên.
-
-> ⚠️ Ghi chú Claude Code (không thuộc PHẦN D gốc): mục 3 ở trên (merge field `MaterialSlots` vào
-> `S_FurniturePlacement`) đã được xử lý NGAY TRONG lần merge delta này (xem `Blueprints/BP_UndoManager.md`
-> v1.16) — giữ nguyên PHẦN D theo đúng yêu cầu "không rút gọn/diễn giải khác đi", chỉ ghi chú thêm
-> ở đây để tránh nhầm là việc còn treo. Đề xuất: khi đóng dấu việc này lần sau, xóa mục 3 khỏi
-> danh sách trên.
 
 ---
 
@@ -88,6 +73,9 @@ ro đụng đồ đồng nghiệp.
 ## Recent changes (tối đa 5, mới nhất trên cùng)
 > Chỉ để định vị "vừa xong gì". Lịch sử đầy đủ → PROGRESS.md + Git.
 
+- 08/09 — RestoreSnapshot Step 4 (BP_UndoManager) gỡ Call RestoreMyMaterialSlots thừa. Test
+  regression Undo/Redo material PASS. Bug-LoadMeshAsync-RestoreRace đóng hoàn toàn (cả đường
+  Combo lẫn RestoreSnapshot/Undo-Redo).
 - 07/09 — S7.G3 Item 1/2/4 PASS (nhánh legacy `RestoreMyMaterialSlots` + `ActorLoaded` reroute +
   Combo `FComboItemData`/`MaterialSlots`). Merge lần đầu `RestoreMyMaterialSlots`/`Rst_LoadNextSlot`
   vào canonical `BP_FurnitureActor.md`. Fix race `LoadMeshAsync` vs restore (đường Combo — đường
@@ -103,10 +91,6 @@ ro đụng đồ đồng nghiệp.
 - 05/09 — S7.G2 Việc 3 (multi-apply Hướng B) PASS 5/5. As-built khớp spec, 1 lệch nhỏ (Cast dùng
   CastFailed thay bSuccess — chấp nhận, xem DELTA_S7G2_Viec2_Viec3_AsBuilt_05sep2026).
   Bug-MaterialPrimaryOnly ĐÓNG.
-- 04/09 — S7.G2 Việc 2B (đường khôi phục snapshot) PASS full: 6 bước undo/redo + bonus
-  redo-stack case (apply nhánh MỚI sau Undo → Redo đúng nhánh mới, không lẫn state nhánh cũ đã
-  cắt). Cặp Việc 2 + 2B (đường ghi + đường ngược) = xương sống G2 đứng vững. Race warning
-  `ResetAllSlotsToAssetDefault Mesh không hợp lệ` — vô hại, dời G3 #10.
 
 ---
 

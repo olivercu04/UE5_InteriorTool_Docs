@@ -1,5 +1,7 @@
 # BP_UndoManager
 **HỢP NHẤT TỪ 6 file:** v1.2 (16/05) → v1.4 (04/06) → v1.5 (07/06) → **v1.6 base** (10/06) + v1.7_patch (12/06) + v1.8_patch (15/06)
+**Phiên bản:** 1.17 | **Cập nhật:** 08/09/2026 | `RestoreSnapshot` Step 4 gỡ dòng `Call RestoreMyMaterialSlots` thừa (đóng nợ từ 07/09) — chỉ còn SET MaterialSlots, restore tự chạy qua `LoadMeshAsync.Completed`. Test regression Undo/Redo material PASS. `Bug-LoadMeshAsync-RestoreRace` đóng hoàn toàn
+
 **Phiên bản:** 1.16 | **Cập nhật:** 07/09/2026 | Merge nợ từ G2/Việc 2B (03/09): `S_FurniturePlacement` +field `MaterialSlots : Array<FMaterialSlotRecord>` (đã code+test PASS từ 03/09, canonical doc chưa từng ghi). `RestoreSnapshot` Step 4 dòng `Call RestoreMyMaterialSlots` thừa VẪN CÒN TREO, chưa sửa trong phiên này
 
 **Phiên bản:** 1.15 | **Cập nhật:** 04/08/2026 11:05 | Fix Bug-RowNameLostOnUndo: `S_FurniturePlacement` +field `RowName : Name` (✓K2 03/08), `CaptureSnapshot` Step 3 GET RowName (✓K2), `RestoreSnapshot` Step 4 SET NewActor.RowName (✓K2) — struct thiếu field này kể từ khi migrate RowName-based (Sprint D.T6, 17/06) mà chưa cập nhật theo
@@ -72,10 +74,10 @@ PASS từ 03/09 (song hành `MaterialPaths` cũ, xem `Sprints/Sprint7/S7G2_Rerou
 mục 2B.0/2B.2/2B.3) nhưng canonical doc đứng ở v1.15 chưa từng ghi field này — merge lần đầu ở
 đây. `CaptureSnapshot` Step 3 GET `(Actor).MaterialSlots` → SET vào field này; `RestoreSnapshot`
 Step 4 `SET NewActor.MaterialSlots = placement.MaterialSlots` (đã có sẵn từ 2B, node flow đầy đủ
-xem mục `RestoreSnapshot` bên dưới). ⚠️ `RestoreSnapshot` Step 4 vẫn còn dòng `Call
-NewActor.RestoreMyMaterialSlots` thừa ngay sau — nghi dính race giống `LoadMeshAsync` đã fix ở
-`BP_FurnitureActor.md` (07/09/2026), NHƯNG CHƯA ĐƯỢC SỬA trong phiên này, chỉ ghi nhận còn treo
-(xem `Session_State.md` mục "Việc tiếp theo").
+xem mục `RestoreSnapshot` bên dưới). ✅ **FIXED (08/09/2026).** `RestoreSnapshot` Step 4 gỡ dòng `Call NewActor.RestoreMyMaterialSlots`
+thừa — chỉ còn `SET NewActor.MaterialSlots = placement.MaterialSlots`, restore tự chạy qua
+`LoadMeshAsync.Completed` bên trong actor (cùng pattern đã áp cho Combo, xem `BP_FurnitureActor.md`
+v2.2). Test regression Undo/Redo material PASS, không hồi quy.
 
 **S_GroupData**: `GroupID(String), GroupName(String), ParentGroupID(String), bIsLocked(Boolean)`.
 
@@ -434,3 +436,4 @@ Event End Play →
 | 1.14 | 04/08/2026 | **RowName preservation qua Undo (phát hiện lúc verify case 6, T2 Save As/Save đè).** `S_FurniturePlacement` +field `RowName`. `CaptureSnapshot` Step 3: `RowName = GET BP_FurnitureActor.RowName` nối vào Make struct. `RestoreSnapshot` Step 4: THÊM `SET NewActor.RowName = Placement.RowName` ngay sau `SpawnFurnitureCopy`, TRƯỚC `SET NewActor.GroupID` — `RowName` KHÔNG nằm trong param `SpawnFurnitureCopy`, phải SET riêng. ✓TEST 03/08/2026: Print xác nhận `RowName=CLAMP_table_karkas_005` (không còn `None`) sau chuỗi Replace→Move→Undo→Replace lại. Trước fix này, actor respawn qua Undo mất `RowName` → nghi vấn cùng lỗ hổng có thể lan sang `S_ClipboardEntry` (Copy/Paste/Duplicate) — xem `Bugs/Open_Bugs.md` mục `Bug-RowName-MissingInClipboard` (chưa verify). |
 | 1.15 | 04/08/2026 11:05 | **Fix Bug-RowNameLostOnUndo (03/08)** — struct `S_FurniturePlacement` thiếu field `RowName` kể từ khi migrate RowName-based (Sprint D.T6, 17/06) — chỉ `CaptureSnapshot`/`RestoreSnapshot` dùng struct này chưa được cập nhật theo. Nâng dấu 3 chỗ (struct field, Step 3, Step 4) từ "chốt theo lời cuhoang" lên `✓K2 03/08/2026` (export Make/Break struct thật xác nhận). Đính chính type: `RowName` là **Name** (khớp `BP_FurnitureActor.RowName`), không phải `String` như ghi nhầm ở v1.14. |
 | 1.16 | 07/09/2026 | **Merge nợ từ S7.G2/Việc 2B (03/09/2026, chưa merge từ trước).** `S_FurniturePlacement` +field `MaterialSlots : Array<FMaterialSlotRecord>` — đã code+test PASS 03/09, canonical doc đứng ở v1.15 chưa từng ghi field này. ⚠️ `RestoreSnapshot` Step 4 dòng `Call NewActor.RestoreMyMaterialSlots` (nghi dính race giống `LoadMeshAsync` đã fix ở `BP_FurnitureActor.md` 07/09) — CHƯA SỬA trong phiên này, vẫn còn treo. Nguồn: `07-09-2026_S7G3_Item1-4_Delta.md` mục B2. |
+| 1.17 | 08/09/2026 | **Đóng nợ từ v1.16.** `RestoreSnapshot` Step 4 gỡ dòng `Call NewActor.RestoreMyMaterialSlots` thừa — chỉ còn `SET NewActor.MaterialSlots`, restore tự chạy qua `LoadMeshAsync.Completed` (cùng pattern Combo). Test regression Undo/Redo material PASS. `Bug-LoadMeshAsync-RestoreRace` đóng hoàn toàn (Combo + Undo/Redo). |
