@@ -5,10 +5,11 @@
 
 **Last verified:** 08/09/2026 (RestoreSnapshot Step 4 fix + regression Undo/Redo PASS. G3 không còn nợ nào. Next: S7.G4)
 **Last verified (tiếp):** 08/09/2026 — resequence nửa sau Sprint 7 (Opus). Bản đồ gate G4-G10 thay G4-G8 gốc.
+**Last verified (tiếp):** 08/09/2026 — S7.G4 ĐÓNG. Round-trip material theo tên qua save/load PASS (2 slot, reset-rồi-apply-lại đúng tên, không đè nhau). Trục-A xác nhận đứng vững.
 
 ---
 
-Current: Sprint 7 (Material v1.2) — G3 ĐÓNG. Nửa sau đã resequence (08/09): G4 trục-A → G5 kéo-thả vật liệu → G6 click-vào-mesh → G7 panel param → G8 từ điển → G9 gạch → G10 regression. Chờ cuhoang duyệt plan trước khi vào G4.
+Current: Sprint 7 (Material v1.2) — G4 ĐÓNG (08/09/2026, xác nhận trục-A PASS). Next: G5 — kéo-thả vật liệu (đường phối màu CHÍNH).
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -20,9 +21,9 @@ Current: Sprint 7 (Material v1.2) — G3 ĐÓNG. Nửa sau đã resequence (08/0
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | S7.G3 ĐÓNG HOÀN TOÀN (08/09/2026). `RestoreSnapshot` Step 4 gỡ `Call RestoreMyMaterialSlots` thừa, test regression Undo/Redo material PASS — `Bug-LoadMeshAsync-RestoreRace` đóng hoàn toàn (Combo + Undo/Redo). Không còn nợ G3. |
-| **Task Source** | `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md` (PLAN, chưa duyệt) → mục "Bản đồ gate Sprint 7 — nửa sau" bên dưới. Lịch sử G3: `07-09-2026_S7G3_Item1-4_Delta.md`, delta 08/09/2026 |
-| **Next** | S7.G4 = xác nhận trục-A (material bám đúng slot theo tên qua save/load, dùng swatch đã có). Các việc cũ (EMS legacy / panel / dictionary / tile / regression) đã tách ra G7-G10 trong bản resequence 08/09. Chờ cuhoang duyệt plan resequence trước khi vào việc. Xem thêm mục "Việc tiếp theo" bên dưới. |
+| **Current Task** | S7.G4 ĐÓNG (08/09/2026). Round-trip material theo tên qua save/load PASS — xem chi tiết Mục A delta này. Không dùng re-import (lý do đã ghi ở resequence). Sang G5. |
+| **Task Source** | `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md` → mục "Bản đồ gate Sprint 7 — nửa sau" bên dưới. Lịch sử G3: `07-09-2026_S7G3_Item1-4_Delta.md`. G4 ĐÓNG: delta 08/09/2026 (G4-ĐÓNG) |
+| **Next** | S7.G5 = kéo-thả vật liệu (đường phối màu CHÍNH). Mở màn bằng [VERIFY G5.0] — vertical slice trace-on-drop (xem `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md` mục G5). KHÔNG dựng gì trước khi verify xong. |
 | **Blockers** | Không |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
@@ -34,8 +35,8 @@ ro đụng đồ đồng nghiệp.
 
 ## Bản đồ gate Sprint 7 — nửa sau (G4-G10, resequence 08/09/2026)
 > Thay bản đồ G4-G8 gốc (05/07, chưa rà) — xem `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md`.
-> PLAN, chưa giao Sonnet — chờ cuhoang duyệt. Bản gốc đóng dấu [HISTORICAL] trong
-> `Plans/Sprint7_MaterialEdit_Plan_v1.1.md`, không xóa.
+> Đang thực thi, G4 đã đóng — xem tiến độ tại "Đang ở đâu" phía trên. Bản gốc đóng dấu
+> [HISTORICAL] trong `Plans/Sprint7_MaterialEdit_Plan_v1.1.md`, không xóa.
 
 | Gate | Tên | Rủi ro | Test bằng | Ước lượng |
 |---|---|---|---|---|
@@ -47,12 +48,14 @@ ro đụng đồ đồng nghiệp.
 | **G9** | Pattern gạch (texture) + đóng Đ12 texture restore | Trung bình | Mắt | ~2 buổi |
 | **G10** | Regression tổng + VRAM + docs | Thấp | Chuỗi 12 bước | ~1-2 buổi |
 
+**G4 ĐÓNG 08/09/2026 — PASS.**
+
 ---
 
 ## Việc tiếp theo (chưa làm)
 
-1. **Next: G4 (xác nhận trục-A).** Chờ cuhoang duyệt plan resequence
-   (`DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md`) trước khi vào việc.
+1. **Next: G5** — bắt đầu bằng [VERIFY G5.0] trace-on-drop (Print tạm trong On Drop/On Drag Over
+   hiện có của mesh, KHÔNG dựng gì mới trước khi có kết quả).
 2. **(Tùy chọn, không khẩn) Dọn `SaveComboFromSelection` Bước 5d** — xóa loop tính
    `MaterialOverrides_SaveCombo` (dư thừa, không ai đọc ở combo mới) — chỉ làm khi có thời gian
    rảnh, không phải ưu tiên.

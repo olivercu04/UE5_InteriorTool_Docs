@@ -80,6 +80,9 @@ banner nào cho file delta.
 **Cập nhật (tiếp) 08/09/2026:** merge `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md`. Plan gốc
 G4-G8 → `[HISTORICAL]`. Bản đồ gate mới G4-G10 vào `Session_State.md` + `PROGRESS.md`. KHÔNG đụng
 `Blueprints/`/`Widgets/` (delta là plan, chưa as-built).
+**Cập nhật (tiếp) 08/09/2026 (G4 ĐÓNG):** merge DELTA G4-ĐÓNG. Session_State Current/Next → G5,
+xóa "chờ duyệt" (G4 đã thực thi PASS). PROGRESS.md +1 dòng log. KHÔNG đụng Blueprints/Widgets
+(G4 không code mới, chỉ test qua swatch có sẵn — không có as-built node flow nào phát sinh).
 
 ---
 
