@@ -7,7 +7,7 @@
 
 ---
 
-Current: Sprint 7 (Material v1.2) → G3 → Phase EXECUTE | Active task: Item 1/2/4 xong (nhánh legacy + ActorLoaded reroute + Combo) | Status: còn G3.G5-G8 (panel engine, dictionary fill, tile pattern, final regression) — xem "Việc tiếp theo"
+Current: Sprint 7 (Material v1.2) → G3 ĐÓNG (07/09/2026). Next: G4
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
