@@ -6,10 +6,11 @@
 **Last verified:** 08/09/2026 (RestoreSnapshot Step 4 fix + regression Undo/Redo PASS. G3 không còn nợ nào. Next: S7.G4)
 **Last verified (tiếp):** 08/09/2026 — resequence nửa sau Sprint 7 (Opus). Bản đồ gate G4-G10 thay G4-G8 gốc.
 **Last verified (tiếp):** 08/09/2026 — S7.G4 ĐÓNG. Round-trip material theo tên qua save/load PASS (2 slot, reset-rồi-apply-lại đúng tên, không đè nhau). Trục-A xác nhận đứng vững.
+**Last verified (tiếp):** 08/09/2026 — Opus giao task card G5 (kéo-thả material) + G6 (click-vào-mesh chọn slot). [VERIFY G5.0] trace-on-drop đã PASS 3/3 (Sonnet). Đánh đổi phạm vi kéo-thả (Hướng A — áp 1 slot dưới con trỏ, không đọc SelectedActors) đã CHỐT. Chờ Sonnet execute G5.1.
 
 ---
 
-Current: Sprint 7 (Material v1.2) — G4 ĐÓNG (08/09/2026, xác nhận trục-A PASS). Next: G5 — kéo-thả vật liệu (đường phối màu CHÍNH).
+Current: Sprint 7 (Material v1.2) — S7.G5.1 — chờ execute, đánh đổi A chốt
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -21,9 +22,9 @@ Current: Sprint 7 (Material v1.2) — G4 ĐÓNG (08/09/2026, xác nhận trục-
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | S7.G4 ĐÓNG (08/09/2026). Round-trip material theo tên qua save/load PASS — xem chi tiết Mục A delta này. Không dùng re-import (lý do đã ghi ở resequence). Sang G5. |
-| **Task Source** | `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md` → mục "Bản đồ gate Sprint 7 — nửa sau" bên dưới. Lịch sử G3: `07-09-2026_S7G3_Item1-4_Delta.md`. G4 ĐÓNG: delta 08/09/2026 (G4-ĐÓNG) |
-| **Next** | S7.G5 = kéo-thả vật liệu (đường phối màu CHÍNH). Mở màn bằng [VERIFY G5.0] — vertical slice trace-on-drop (xem `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md` mục G5). KHÔNG dựng gì trước khi verify xong. |
+| **Current Task** | S7.G5 (kéo-thả vật liệu) đang chạy. [VERIFY G5.0] trace-on-drop PASS 3/3. Đánh đổi phạm vi Hướng A (áp 1 slot dưới con trỏ, không đọc `SelectedActors`) đã CHỐT — xem `DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md` mục 2. Chờ Sonnet execute G5.1 (nguồn kéo: `BP_DragDropOperation_Material` + `WBP_MaterialCard.OnDragDetected`). |
+| **Task Source** | `DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md` (task card G5+G6, Opus) — mục 4 (G5.1-G5.4) + mục 5 (G6.0-G6.2). G4 ĐÓNG: `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md` phần G4-ĐÓNG (08/09) |
+| **Next** | G5.1 — nguồn kéo material card (Q8 + node flow đầy đủ ở mục 4 delta). Sau đó tuần tự G5.2 (engine on-actor `ApplyMaterialByRowName`) → G5.3 (router `WBP_DragOverlay.On Drop`) → G5.4 (regression+dọn) → G5 ĐÓNG → G6.0 (VERIFY K2Node click flow) → G6.1-G6.2. |
 | **Blockers** | Không |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
@@ -54,8 +55,8 @@ ro đụng đồ đồng nghiệp.
 
 ## Việc tiếp theo (chưa làm)
 
-1. **Next: G5** — bắt đầu bằng [VERIFY G5.0] trace-on-drop (Print tạm trong On Drop/On Drag Over
-   hiện có của mesh, KHÔNG dựng gì mới trước khi có kết quả).
+1. **Next: G5.1** — nguồn kéo (`BP_DragDropOperation_Material` + `WBP_MaterialCard.OnDragDetected`).
+   [VERIFY G5.0] đã PASS 3/3 (08/09) — xem `DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md` mục 4.
 2. **(Tùy chọn, không khẩn) Dọn `SaveComboFromSelection` Bước 5d** — xóa loop tính
    `MaterialOverrides_SaveCombo` (dư thừa, không ai đọc ở combo mới) — chỉ làm khi có thời gian
    rảnh, không phải ưu tiên.
@@ -94,6 +95,12 @@ ro đụng đồ đồng nghiệp.
 ## Recent changes (tối đa 5, mới nhất trên cùng)
 > Chỉ để định vị "vừa xong gì". Lịch sử đầy đủ → PROGRESS.md + Git.
 
+- 08/09 — Opus giao task card G5+G6 (`DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md`). [VERIFY
+  G5.0] trace-on-drop PASS 3/3 — phát hiện deviation `TraceSlotUnderCursor` cần thêm param
+  `ScreenPosition` (Slate drag giữ quyền input chuột, PC không tự deproject được). Đánh đổi phạm
+  vi kéo-thả Hướng A chốt (áp 1 slot dưới con trỏ, không đọc SelectedActors). Chờ execute G5.1.
+- 08/09 — S7.G4 ĐÓNG. Round-trip material theo tên qua save/load PASS (2 slot, reset-rồi-apply-lại
+  đúng tên, không đè nhau). Trục-A xác nhận đứng vững. Sang G5.
 - 08/09 — RestoreSnapshot Step 4 (BP_UndoManager) gỡ Call RestoreMyMaterialSlots thừa. Test
   regression Undo/Redo material PASS. Bug-LoadMeshAsync-RestoreRace đóng hoàn toàn (cả đường
   Combo lẫn RestoreSnapshot/Undo-Redo).
@@ -106,12 +113,6 @@ ro đụng đồ đồng nghiệp.
 - 05/09 — S7.G2 ĐÓNG. Việc 5 (Reset Slot/Reset All qua service) PASS. Test tổng G2 7/7 PASS.
   Test 3 đào sâu thêm phát hiện backlog UX (multi-apply tất-cả-hoặc-không), ghi nhận không sửa.
   Sang G3.
-- 05/09 — S7.G2 Việc 4 (Copy/Paste chuyển sang Records) PASS. 2 bug thật bắt được: (A) Branch hội
-  tụ sai vị trí — ghi đè giá trị đúng; (B) ClipboardMaterialPath không clear đầu hàm — vi phạm
-  rule CLEAR class var persistent có sẵn. Xem DELTA_S7G2_Viec4_CopyPaste_AsBuilt_05sep2026.
-- 05/09 — S7.G2 Việc 3 (multi-apply Hướng B) PASS 5/5. As-built khớp spec, 1 lệch nhỏ (Cast dùng
-  CastFailed thay bSuccess — chấp nhận, xem DELTA_S7G2_Viec2_Viec3_AsBuilt_05sep2026).
-  Bug-MaterialPrimaryOnly ĐÓNG.
 
 ---
 
