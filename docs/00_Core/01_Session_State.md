@@ -10,7 +10,7 @@
 
 ---
 
-Current: Sprint 7 (Material v1.2) — S7.G5.1 — chờ execute, đánh đổi A chốt
+Current: Sprint 7 (Material v1.2) — S7.G5 ĐÓNG (G5.1-G5.4 xong, regression 8/8 PASS) — chờ G6.0
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -22,9 +22,9 @@ Current: Sprint 7 (Material v1.2) — S7.G5.1 — chờ execute, đánh đổi A
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | S7.G5 (kéo-thả vật liệu) đang chạy. [VERIFY G5.0] trace-on-drop PASS 3/3. Đánh đổi phạm vi Hướng A (áp 1 slot dưới con trỏ, không đọc `SelectedActors`) đã CHỐT — xem `DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md` mục 2. Chờ Sonnet execute G5.1 (nguồn kéo: `BP_DragDropOperation_Material` + `WBP_MaterialCard.OnDragDetected`). |
-| **Task Source** | `DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md` (task card G5+G6, Opus) — mục 4 (G5.1-G5.4) + mục 5 (G6.0-G6.2). G4 ĐÓNG: `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md` phần G4-ĐÓNG (08/09) |
-| **Next** | G5.1 — nguồn kéo material card (Q8 + node flow đầy đủ ở mục 4 delta). Sau đó tuần tự G5.2 (engine on-actor `ApplyMaterialByRowName`) → G5.3 (router `WBP_DragOverlay.On Drop`) → G5.4 (regression+dọn) → G5 ĐÓNG → G6.0 (VERIFY K2Node click flow) → G6.1-G6.2. |
+| **Current Task** | S7.G5 (kéo-thả vật liệu) — ĐÓNG HẲN 11/09/2026. G5.4 (dọn debug scaffolding + regression) đã xong sau lần merge trước. Code sạch, không còn scaffolding debug nào trong `WBP_MaterialCard` / `BP_FurnitureActor` / `WBP_DragOverlay`. |
+| **Task Source** | `11-09-2026_S7G5_G5.4_AsBuilt_Addendum.md` (as-built G5.4 + bug #5). As-built G5.1-G5.3: `11-09-2026_S7G5_G5.1-G5.3_AsBuilt_Delta.md`. Plan gốc: `DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md`. G4 ĐÓNG: `DELTA_Opus_S7_G4-G10_Resequence_08sep2026.md` phần G4-ĐÓNG (08/09) |
+| **Next** | G6.0 — VERIFY click resolution (K2Node export thật của `BP_FurnitureInputManager` Event Tick). Xem `DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md` mục 5. |
 | **Blockers** | Không |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
@@ -49,14 +49,14 @@ ro đụng đồ đồng nghiệp.
 | **G9** | Pattern gạch (texture) + đóng Đ12 texture restore | Trung bình | Mắt | ~2 buổi |
 | **G10** | Regression tổng + VRAM + docs | Thấp | Chuỗi 12 bước | ~1-2 buổi |
 
-**G4 ĐÓNG 08/09/2026 — PASS.**
+**G4 ĐÓNG 08/09/2026 — PASS. G5 ĐÓNG 11/09/2026 — PASS (G5.1-G5.4, regression 8/8).**
 
 ---
 
 ## Việc tiếp theo (chưa làm)
 
-1. **Next: G5.1** — nguồn kéo (`BP_DragDropOperation_Material` + `WBP_MaterialCard.OnDragDetected`).
-   [VERIFY G5.0] đã PASS 3/3 (08/09) — xem `DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md` mục 4.
+1. **Next: G6.0** — VERIFY click resolution (K2Node export thật của `BP_FurnitureInputManager`
+   Event Tick). Xem `DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md` mục 5. G5 ĐÓNG HẲN (11/09).
 2. **(Tùy chọn, không khẩn) Dọn `SaveComboFromSelection` Bước 5d** — xóa loop tính
    `MaterialOverrides_SaveCombo` (dư thừa, không ai đọc ở combo mới) — chỉ làm khi có thời gian
    rảnh, không phải ưu tiên.
@@ -95,6 +95,12 @@ ro đụng đồ đồng nghiệp.
 ## Recent changes (tối đa 5, mới nhất trên cùng)
 > Chỉ để định vị "vừa xong gì". Lịch sử đầy đủ → PROGRESS.md + Git.
 
+- 11/09 (tiếp) — S7.G5.4 xong: dọn 3 chỗ debug scaffolding, regression 8/8 PASS. Phát hiện thêm
+  1 gap (kéo-thả material thiếu AddRecentMaterial) — đã fix + verify. GATE G5 ĐÓNG HẲN.
+- 11/09 — S7.G5.1-G5.3 ĐÓNG. Nguồn kéo (BP_DragDropOperation_Material) + engine on-actor
+  (ApplyMaterialByRowName) + router (WBP_DragOverlay.On Drop nhánh material) chạy đúng end-to-end.
+  4 bug thật tìm+fix trong phiên (xem DEVIATIONS.md mục SPRINT 7 11/09). Còn nợ G5.4 (dọn debug +
+  regression 8 case).
 - 08/09 — Opus giao task card G5+G6 (`DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md`). [VERIFY
   G5.0] trace-on-drop PASS 3/3 — phát hiện deviation `TraceSlotUnderCursor` cần thêm param
   `ScreenPosition` (Slate drag giữ quyền input chuột, PC không tự deproject được). Đánh đổi phạm
@@ -104,15 +110,6 @@ ro đụng đồ đồng nghiệp.
 - 08/09 — RestoreSnapshot Step 4 (BP_UndoManager) gỡ Call RestoreMyMaterialSlots thừa. Test
   regression Undo/Redo material PASS. Bug-LoadMeshAsync-RestoreRace đóng hoàn toàn (cả đường
   Combo lẫn RestoreSnapshot/Undo-Redo).
-- 07/09 — S7.G3 Item 1/2/4 PASS (nhánh legacy `RestoreMyMaterialSlots` + `ActorLoaded` reroute +
-  Combo `FComboItemData`/`MaterialSlots`). Merge lần đầu `RestoreMyMaterialSlots`/`Rst_LoadNextSlot`
-  vào canonical `BP_FurnitureActor.md`. Fix race `LoadMeshAsync` vs restore (đường Combo — đường
-  `RestoreSnapshot`/Undo-Redo còn treo). 3 bug fix trong phiên: `Bug-RowName-MissingInClipboard`,
-  `Bug-RestoreMyMaterialSlots-DeadEndLegacy`, `Bug-LoadMeshAsync-RestoreRace`. Xem
-  `07-09-2026_S7G3_Item1-4_Delta.md`.
-- 05/09 — S7.G2 ĐÓNG. Việc 5 (Reset Slot/Reset All qua service) PASS. Test tổng G2 7/7 PASS.
-  Test 3 đào sâu thêm phát hiện backlog UX (multi-apply tất-cả-hoặc-không), ghi nhận không sửa.
-  Sang G3.
 
 ---
 

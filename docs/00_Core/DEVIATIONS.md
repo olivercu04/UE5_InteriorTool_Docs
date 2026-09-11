@@ -1918,6 +1918,33 @@ cũng không được áp theo). Chấp nhận, ghi backlog — đúng thiết k
 
 ---
 
+## SPRINT 7 — 11/09/2026 — S7.G5.1-G5.4 (Kéo-thả Material) — 5 bug thật bắt được trong phiên [BUG]
+
+**Nguồn:** `11-09-2026_S7G5_G5.1-G5.3_AsBuilt_Delta.md` mục 5 (bug 1-4) + `11-09-2026_S7G5_G5.4_AsBuilt_Addendum.md`
+mục 3 (bug 5). Node-by-node: `Blueprints/BP_FurnitureActor.md` (§ `ApplyMaterialByRowName`),
+`Widgets/WBP_DragOverlay_FurnitureCard.md` (§ On Drop nhánh material).
+
+| # | Chỗ | Triệu chứng | Root cause | Fix |
+|---|---|---|---|---|
+| 1 | `TraceSlotUnderCursor` (C++, ghi nhận từ G5.0, nhắc lại cho đủ bộ) | PC không đọc được chuột lúc Slate giữ quyền input trong drag | `DeprojectMousePositionToWorld()` fail 100% lúc Slate Drag&Drop | Đổi chữ ký, thêm param `ScreenPosition` nhận từ `PointerEvent`, dùng `DeprojectScreenPositionToWorld` |
+| 2 | `BP_FurnitureActor.ApplyMaterialByRowName` | Nhánh "RowName not found" không bao giờ chạy dù RowName sai thật | Dựng nhầm 1 `Branch` thừa (Condition hard-code `true`) NGAY SAU pin `Row Found` của `Get Data Table Row` — node này đã tự có 2 pin exec thật (`Row Found`/`Row Not Found`), không cần Branch thêm | Xóa Branch thừa, nối thẳng 2 pin thật của `Get Data Table Row` vào 2 nhánh xử lý |
+| 3 | `WBP_DragOverlay.On Drop`, nhánh `CastFailed(ComboCard)` (dead code cũ, chưa từng chạy thật trước khi có Material — chỉ Furniture/Combo tồn tại trước đây) | Sau khi thả material lần đầu (miss cả Furniture lẫn Combo cast), overlay full-screen không biến mất → chặn hit-test toàn màn hình → không kéo được card khác | `Return false` không kèm `Remove From Parent(self)` trước đó | Thêm `Remove From Parent(self)` trước `Return false`; patch này SAU ĐÓ dời đúng vị trí khi thêm nhánh `CastFailed(Material)` thật ở G5.3 |
+| 4 | `BP_FurnitureActor.ApplyMaterialByRowName`, khối X3 (refresh swatch) | Kéo material A thả lên mesh → swatch panel KHÔNG đổi ngay; kéo material B thả tiếp → swatch mới đổi thành A (chậm đúng 1 nhịp) | (a) X3 đặt sai lớp: ban đầu ở Router (`On Drop`) — router gọi `ApplyMaterialByRowName` (chứa `Async Load Asset`) rồi refresh NGAY, không đợi async xong → đọc `MaterialSlots` lúc chưa apply. (b) Sau khi dời sang Engine, so sánh sai kiểu: `FurnitureMesh` (Component) `==` `TargetFurnitureActor` (Actor) — 2 UObject khác loại, Condition compile được nhưng LUÔN false | (a) Dời X3 từ Router sang Engine, đặt SAU `CaptureSnapshot`, trong nhánh `Completed` thật của chính actor. (b) Đổi vế so sánh từ `GET FurnitureMesh` sang node `Self` |
+| 5 | `BP_FurnitureActor.ApplyMaterialByRowName` | Kéo-thả material áp thành công nhưng KHÔNG xuất hiện trong tab "Recent" của material grid | Đường apply drag-drop (G5.2) xây riêng, không đi qua `LoadAndApplyMaterial` (đường click swatch) nên không thừa hưởng lệnh `AddRecentMaterial` — thiếu sót trong task card gốc, phát hiện lúc test tay ngoài ma trận 8 case | Thêm `Get All Actors Of Class(BP_FurnitureUserPrefsManager) → Get(0) → AddRecentMaterial(RowName=Apply_PendingRowName)` ngay sau `CaptureSnapshot`, cùng lớp Engine — nhất quán với `LoadAndApplyMaterial`/`PasteSlotMaterial` |
+
+**Bài học chung cho bug #4 + #5 (cùng 1 nguyên nhân gốc):** đặt side-effect phụ thuộc kết quả async
+(refresh UI, ghi lịch sử) SAI LỚP (ở Router thay vì Engine). Nguyên tắc chốt: **mọi hệ quả phụ
+thuộc thời điểm apply thật xong (refresh UI, ghi Recent, hiệu ứng tương lai...) PHẢI đặt trong
+`ApplyMaterialByRowName` (Engine), không đặt ở `On Drop` (Router).** Áp dụng cho mọi tính năng
+tương lai theo cùng pattern 3 lớp này (vd G6 nếu có thao tác async nào tương tự). Xem
+`Planning/Architecture_Overview.md`.
+
+✅ **G5.4 (dọn debug scaffolding + regression 8 case) ĐÃ XONG (11/09/2026).** 3 chỗ debug đã xóa
+thật khỏi code (`Widgets/WBP_MaterialCard.md`, `Blueprints/BP_FurnitureActor.md`,
+`Widgets/WBP_DragOverlay_FurnitureCard.md`). Regression 8/8 PASS. **GATE G5 ĐÓNG HẲN.**
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |

@@ -1,5 +1,7 @@
 # Blueprint Logic — Node Flow Reference
 **HỢP NHẤT TỪ 3 file:** v1.3 base (07/06) + v1.4_patch (12/06) + v1.5_patch (15/06)
+**Phiên bản:** 1.18 | **Cập nhật:** 11/09/2026 — mục `WBP_MaterialCard` SUPERSEDED: tách thành file riêng `Widgets/WBP_MaterialCard.md` (M2), thêm as-built kéo-thả material S7.G5.1
+
 **Phiên bản:** 1.17 | **Cập nhật:** 05/09/2026 — 19:40 ICT — `LoadAndApplyMaterial` SUPERSEDED: as-built S7.G2 Việc 2+3 chuyển sang bản compressed trỏ anchor `Widgets/WBP_FurnitureInventory.md` (M2)
 
 **Phiên bản:** 1.16 | **Cập nhật:** 27/08/2026 — thêm L-NEW-7 (`Array Find` không so khớp 1 field struct — dùng `For Each Loop with Break`), phát hiện lúc debug S7.G1 MaterialSlotService
@@ -434,7 +436,11 @@ RefreshChipBreadcrumb() — Function, gọi từ RefreshComboFolderUI SAU Update
 
 ---
 
-## WBP_MaterialCard
+## WBP_MaterialCard — [SUPERSEDED 11/09/2026]
+
+> Tách thành file riêng: `Widgets/WBP_MaterialCard.md` (pattern M2, cùng lý do đã tách
+> `WBP_FurnitureCard.md`/`WBP_ComboCard.md`). Nội dung dưới đây GIỮ lại làm lịch sử — bản đầy đủ
+> + as-built kéo-thả material (S7.G5.1) đọc ở file mới, không đọc ở đây.
 
 ### OnListItemObjectSet
 ```

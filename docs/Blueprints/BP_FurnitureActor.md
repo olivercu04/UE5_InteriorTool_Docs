@@ -1,5 +1,9 @@
 # BP_FurnitureActor
 **Tách từ:** `BP_FurnitureActor_SceneManager.md` (phần Actor)
+**Phiên bản:** 2.4 | **Cập nhật:** 11/09/2026 (G5.4) — `ApplyMaterialByRowName` +khối `AddRecentMaterial` (fix bug #5 — kéo-thả thiếu ghi Recent). Xóa thật `Debug_TestApplyMaterial` (scaffolding, dọn xong). Regression 8/8 PASS. GATE G5 ĐÓNG HẲN | Parent: StaticMeshActor | Interface: EMSActorSaveInterface
+
+**Phiên bản:** 2.3 | **Cập nhật:** 11/09/2026 — S7.G5.2: thêm Custom Event `ApplyMaterialByRowName` (engine kéo-thả material, DT lookup → async load → apply → capture → refresh swatch) + 3 biến `Apply_Pending*`. 2 bug fix trong phiên (Branch thừa chặn nhánh Row Not Found; X3 refresh swatch sai lớp + so sánh sai kiểu). ⚠️ Code thật còn 1 chỗ debug scaffolding (`Debug_TestApplyMaterial`) CHƯA xóa, chờ G5.4 | Parent: StaticMeshActor | Interface: EMSActorSaveInterface
+
 **Phiên bản:** 2.2 | **Cập nhật:** 07/09/2026 — S7.G3 Item 1+2: `ActorLoaded` reroute sang `RestoreMyMaterialSlots` (thay ForEachLoop MaterialOverrides cũ); `LoadMeshAsync` +Branch gọi restore đúng lúc mesh sẵn sàng (fix race); merge lần đầu `RestoreMyMaterialSlots`/`Rst_LoadNextSlot` + 2 biến `Rst_SlotIdx`/`Rst_CurRecord` vào canonical | Parent: StaticMeshActor | Interface: EMSActorSaveInterface
 
 > **v1.2 (Sprint D.T6):** Thêm `RowName : Name (SaveGame)` — nguồn sự thật mới thay DA_FurnitureItem. DAPath giữ lại làm fallback cho save cũ chưa có RowName.
@@ -19,6 +23,9 @@ GroupID               : String    ← SaveGame (xác nhận Sprint 3 T2) — ID 
 MaterialSlots         : Array of FMaterialSlotRecord ← SaveGame (S7.G2 Bước 0, 05/09/2026) — kho ghi material theo tên slot (name-based), qua MaterialSlotService. Xem Data/MaterialSlotService_Reference.md
 Rst_SlotIdx           : Integer   ← KHÔNG SaveGame (S7.G2/2B, merge canonical 07/09/2026) — con trỏ vòng lặp Rst_LoadNextSlot
 Rst_CurRecord         : FMaterialSlotRecord ← KHÔNG SaveGame (S7.G2/2B, merge canonical 07/09/2026) — temp var, tránh đọc pure MaterialSlots.Get() 2 lần trong Rst_LoadNextSlot
+Apply_PendingSlotName  : String   ← KHÔNG SaveGame (S7.G5.2, 11/09/2026) — giữ qua khe async trong ApplyMaterialByRowName
+Apply_PendingSlotIndex : Integer  ← KHÔNG SaveGame (S7.G5.2, 11/09/2026) — cùng lý do trên
+Apply_PendingRowName   : Name     ← KHÔNG SaveGame (S7.G5.2, 11/09/2026) — cùng lý do trên
 ```
 
 ---
@@ -170,6 +177,95 @@ Rst_LoadNextSlot (Custom Event) ▶→
 2 material khác nhau) → spawn → cả 4 ghế đúng material. EMS Save/Load actor thường (không qua
 Combo) → regression PASS, không hồi quy.
 
+### ApplyMaterialByRowName(SlotName : String, SlotIndex : Integer, RowName : Name) — Custom Event MỚI (S7.G5.2, 11/09/2026)
+
+> Engine của kiến trúc 3 lớp kéo-thả material (Opus, `DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md`
+> mục 1): `WBP_MaterialCard.OnDragDetected` = nguồn, `WBP_DragOverlay.On Drop` = router, hàm này =
+> engine — nơi DUY NHẤT biết chính xác thời điểm async load xong. L11: đặt on-actor để mỗi instance
+> có graph riêng, không aliasing khi nhiều actor được kéo-thả liên tiếp.
+
+**Biến mới trên actor** (giữ qua khe async — Custom Event không có Local Variable, L9):
+```
+Apply_PendingSlotName  : String
+Apply_PendingSlotIndex : Integer
+Apply_PendingRowName   : Name
+```
+
+```
+Event ApplyMaterialByRowName (SlotName : String, SlotIndex : Integer, RowName : Name)
+▶→ SET Apply_PendingSlotName  = SlotName
+▶→ SET Apply_PendingSlotIndex = SlotIndex
+▶→ SET Apply_PendingRowName   = RowName
+▶→ Get Data Table Row
+     Data Table = DT_MaterialInstancesCatalog
+     Row Name   = RowName
+   [2 pin thật của node — KHÔNG qua Branch thừa, xem bug #2 DEVIATIONS.md mục SPRINT 7 11/09/2026]
+     Row Found     ▶→ Break S_MaterialInstancesData ●→ MaterialPath (String)
+                     ▶→ Make Soft Object Path(PathString=MaterialPath)
+                       ●→ [Conv_SoftObjPathToSoftObjRef tự chèn trên dây]
+                     ▶→ Async Load Asset (Asset = ...)
+                          Completed ▶→ Cast To MaterialInterface (Object = Loaded Asset)
+                               CastSuccess (AsMI) ▶→ ApplyLoadedMaterialToSlot(
+                                   Mesh=FurnitureMesh, Records=MaterialSlots [ref],
+                                   SlotName=Apply_PendingSlotName,
+                                   HintIndex=Apply_PendingSlotIndex, LoadedMI=AsMI,
+                                   RowName=Conv_NameToString(Apply_PendingRowName),
+                                   PathFallback="" ) ●→ bOK
+                                 ▶→ Branch(bOK)
+                                      True  ▶→ Get All Actors Of Class(BP_UndoManager) → Get(0)
+                                              ▶→ CaptureSnapshot("ApplyMaterial")
+                                              ▶→ Get All Actors Of Class(BP_FurnitureUserPrefsManager) → Get(0)
+                                                 ▶→ AddRecentMaterial(RowName = Apply_PendingRowName)   ← [MỚI, G5.4, 11/09/2026 — fix bug #5]
+                                              ▶→ [X3 — xem dưới]
+                                      False ▶→ Print (Dev) "service trả false — slot không khớp"
+                               CastFailed ▶→ Print (Dev) "MI cast fail RowName=" + RowName
+     Row Not Found ▶→ Print (Dev) "RowName not found: " + RowName
+```
+
+**X3 (refresh swatch panel) — nối tiếp sau `CaptureSnapshot("ApplyMaterial")`:**
+```
+▶→ Get All Actors Of Class(BP_FurnitureSceneManager) → Get(0)
+   → IsValid(FurnitureInventoryRef)
+        True  ▶→ GET TargetFurnitureActor
+                → Branch(Self == TargetFurnitureActor)     [Self = chính actor đang chạy event này]
+                     True  ▶→ FurnitureInventoryRef.RefreshSlotSwatches()
+                     False ▶→ (dead-end — actor này không hiện panel)
+        False ▶→ (dead-end)
+```
+> `ToastRef` VÀ `FurnitureInventoryRef` đều nằm trên `BP_FurnitureSceneManager` (xác nhận
+> 11/09/2026 qua K2Node export thật — KHÔNG phải `Foff_GameInstance` như `Planning/Architecture_Overview.md`
+> v1.2 ghi trước đây. Xem doc debt trong `Planning/Architecture_Overview.md`).
+
+**Điểm chốt lỗi (xử lý lỗi nhất quán):**
+- `bFound=False` / Cast MI fail → log + dead-end (cuối chain, KHÔNG có node critical sau — L2 OK). Không crash.
+- Không IsValid `FurnitureMesh` riêng vì actor sống mới gọi được event của nó; nhưng THÊM `IsValid(self)` ở
+  callback nếu lo actor bị destroy giữa khe async (drop rồi undo ngay) — guard nhẹ trước `ApplyLoadedMaterialToSlot`.
+- `CaptureSnapshot` sau apply (capture SAU action). Không debounce (1 drop = 1 snapshot, không spam).
+
+✅ **G5.4 (11/09/2026):** Custom Event `Debug_TestApplyMaterial` (Call In Editor, dùng test
+isolated) đã XÓA thật khỏi Blueprint — không còn tồn tại trong code.
+
+**Bug phát sinh + fix trong phiên (S7.G5.1-G5.4, 11/09/2026, xem `DEVIATIONS.md` mục SPRINT 7
+11/09/2026 để biết đầy đủ 5 bug):**
+- **Bug #2** — Branch thừa (condition hard-code `true`) chèn ngay sau pin `Row Found` của
+  `Get Data Table Row` khiến nhánh `Row Not Found` không bao giờ chạy dù RowName sai thật. Node
+  này đã tự có 2 pin exec thật, không cần Branch thêm. Đã xóa Branch thừa.
+- **Bug #4** — khối X3 (refresh swatch) ban đầu đặt sai lớp (ở Router `On Drop`, refresh trước khi
+  async load xong) + so sánh sai kiểu (`FurnitureMesh` Component `==` `TargetFurnitureActor` Actor
+  — luôn false). Đã dời X3 sang Engine (vị trí hiện tại ở trên) + đổi vế so sánh sang node `Self`.
+- **Bug #5** (G5.4, phát hiện lúc test tay ngoài ma trận 8 case) — kéo-thả material áp thành công
+  nhưng không xuất hiện trong tab "Recent" của material grid. Đường apply drag-drop xây riêng,
+  không đi qua `LoadAndApplyMaterial` (đường click swatch) nên không thừa hưởng `AddRecentMaterial`.
+  Đã thêm khối `AddRecentMaterial(Apply_PendingRowName)` ngay sau `CaptureSnapshot` (xem node flow
+  ở trên) — cùng bài học sai-lớp với bug #4: side-effect phụ thuộc thời điểm apply thật phải đặt ở
+  Engine, không đặt ở Router.
+
+**Test PASS 4/4 (G5.2, 11/09/2026):** bấm nút debug (Call In Editor) → material slot đổi đúng trên mesh ·
+Undo/Redo đúng · RowName bịa → log fail sạch, không crash, material không đổi · Save→Load →
+material bám đúng.
+
+---
+
 ### LoadMaterialsAsync(Overrides : Array of String, Index : Integer) — Custom Event (đệ quy)
 ```
 Branch: Index >= Overrides.Length → [dead-end, xong đệ quy]
@@ -197,3 +293,5 @@ False → Branch: Overrides[Index] != ""
 | 2.0 | 19/06/2026 — 19h ICT | Thêm LoadMeshAsync + LoadMaterialsAsync (async load tự quản lý trong actor, không gọi hộ từ InputManager) |
 | 2.1 | 05/09/2026 | Thêm `MaterialSlots : Array<FMaterialSlotRecord>` (SaveGame) — S7.G2 Bước 0, kho ghi material mới (name-based) qua `MaterialSlotService` |
 | 2.2 | 07/09/2026 | S7.G3 Item 1+2: `ActorLoaded` reroute sang `Call RestoreMyMaterialSlots` (xóa ForEachLoop MaterialOverrides cũ; sửa luôn lỗi doc "có ADD Tags" — thực tế không có). `LoadMeshAsync` +Branch gọi restore khi mesh sẵn sàng (fix race async). Merge lần đầu `RestoreMyMaterialSlots`/`Rst_LoadNextSlot` (đã PASS từ G2/2B) + fix dead-end nhánh `False` Branch legacy (bug phát sinh 07/09, đã fix) + 2 biến `Rst_SlotIdx`/`Rst_CurRecord` |
+| 2.3 | 11/09/2026 | S7.G5.2 (kéo-thả material, engine on-actor): thêm Custom Event `ApplyMaterialByRowName(SlotName, SlotIndex, RowName)` + 3 biến `Apply_Pending*`. 2 bug fix trong phiên: Branch thừa chặn nhánh "Row Not Found" của `Get Data Table Row`; khối X3 (refresh swatch) sai lớp (Router thay vì Engine) + so sánh sai kiểu (`FurnitureMesh` Component thay vì `Self`). Test PASS 4/4. ⚠️ Còn 1 chỗ debug scaffolding thật trong code (`Debug_TestApplyMaterial`, Call In Editor) CHƯA xóa — chờ G5.4. Nguồn: `11-09-2026_S7G5_G5.1-G5.3_AsBuilt_Delta.md` |
+| 2.4 | 11/09/2026 (G5.4) | Fix bug #5: `ApplyMaterialByRowName` +khối `AddRecentMaterial(Apply_PendingRowName)` sau `CaptureSnapshot` (kéo-thả material trước đó không ghi Recent). Xóa thật `Debug_TestApplyMaterial` (scaffolding, dọn xong theo G5.4). Regression 8/8 PASS. GATE G5 ĐÓNG HẲN. Nguồn: `11-09-2026_S7G5_G5.4_AsBuilt_Addendum.md` |

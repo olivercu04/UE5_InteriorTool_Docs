@@ -1,5 +1,9 @@
 # WBP_FurnitureCard (+ WBP_DragOverlay) — Drag & Drop + Replace Mesh
 **HỢP NHẤT TỪ 3 file:** v1.3 base (25/05) → v1.4 base (10/06) + Blueprint_Logic GroupID fix (12/06) + v1.5_patch (15/06)
+**Phiên bản:** 1.10 | **Cập nhật:** 11/09/2026 (G5.4) — `On Drop` xóa thật `Sequence` debug artifact G5.1, chain sạch hoàn toàn. Regression 8/8 PASS. GATE G5 ĐÓNG HẲN
+
+**Phiên bản:** 1.9 | **Cập nhật:** 11/09/2026 — S7.G5.3: `On Drop` thêm nhánh material (trace slot + lọc loại actor + gọi `BP_FurnitureActor.ApplyMaterialByRowName`), chèn trong `CastFailed(ComboCard)`. Fix bug dead-code thiếu `Remove From Parent` trước `Return false`. Test PASS 5/5. ⚠️ Code thật còn 1 `Sequence` debug ở đầu `On Drop` CHƯA xóa, chờ G5.4
+
 **Phiên bản:** 1.8 | **Cập nhật:** 25/06/2026 — ghost offset fix (Approach B, C4 100%)
 
 > **v1.6 (Sprint D.T6):** Bỏ `FurnitureDA` khỏi WBP_FurnitureCard (biến xóa). F_ExecuteReplace: dùng `RowData` (Get DataTable Row từ `CardRowName`) thay `FurnitureDA.*`. On Drop WBP_DragOverlay: `PendingFurnitureDA` → `PendingRowName : Name`; SET `PreviewActorRef.RowName = PendingRowName`. Button_InforItem → `OnCardInfoClicked(CardRowName)` thay FurnitureDA. AddRecentMesh dùng CardRowName.
@@ -206,7 +210,21 @@ PendingRowName  : Name              ← v1.6 Sprint D (thay PendingFurnitureDA �
 
 ---
 
-## On Drop — v1.7: Sprint 5 C4/C8 (thêm combo branch)
+## On Drop — v1.10: S7.G5.3+G5.4 (material branch + dọn scaffolding, 11/09/2026)
+
+> As-built thật (K2Node export, đối chiếu 11/09/2026). Nhánh material chèn trong `CastFailed` của
+> `Cast To BP_DragDropOperation_ComboCard`, KHÔNG đụng 2 nhánh Furniture/Combo cũ. ✅ **G5.4
+> (11/09/2026):** `Sequence` debug bọc đầu `On Drop` (artifact G5.1, Cast Material debug + Print
+> RowName) đã XÓA thật. `FunctionEntry.then` nối thẳng vào `Cast To BP_DragDropOperation_FurnitureCard`
+> như node đầu tiên của chain, không qua trung gian nào nữa — `On Drop` hiện sạch hoàn toàn.
+
+**Bug fix trong phiên (xem `DEVIATIONS.md` mục SPRINT 7 11/09/2026, bug #3):** nhánh
+`CastFailed(ComboCard)` cũ (dead code — chưa từng chạy thật trước khi có Material, chỉ
+Furniture/Combo tồn tại trước đây) thiếu `Remove From Parent(self)` trước `Return false` → sau khi
+thả material lần đầu (miss cả Furniture lẫn Combo cast), overlay full-screen không biến mất, chặn
+hit-test toàn màn hình, không kéo được card khác. Đã fix.
+
+
 
 **Exec flow đầy đủ:**
 ```
@@ -240,7 +258,10 @@ Entry
           False → dead-end
     CastFailed  →  ← v1.7: combo branch
       Cast To BP_DragDropOperation_ComboCard (Object = Operation):
-        CastFailed  → Return(false)
+        CastFailed  →  ← v1.9: material branch (S7.G5.3, 11/09/2026), THAY Return(false) đơn thuần cũ
+          Cast To BP_DragDropOperation_Material (Object = Operation):
+            Failed  → Remove From Parent(self) → Return false      ← FIX bug #3 (thêm Remove From Parent trước Return)
+            Success → [MATERIAL DROP — dưới đây]
         CastSuccess →
           GET As BP_DragDropOperation_ComboCard → GET ComboID
           GetActorLocation(PreviewActorRef) ●→ AnchorWithOffset
@@ -253,6 +274,46 @@ Entry
           Remove From Parent
           Return(true)
 ```
+
+**[MATERIAL DROP] — S7.G5.3, as-built 11/09/2026:**
+```
+Success (As BP_DragDropOperation_Material)
+  ●→ GET MaterialRowName → RowName
+
+▶→ Get Player Controller (Player Index = 0) → PC
+
+▶→ [DropScreenPos — công thức y hệt On Drag Over đã test PASS ở G5.0]:
+     InPointerEvent → Get Screen Space Position ●→ ScreenSpacePos (Vector2D)
+     Get Cached Geometry(self) → Local To Absolute(Local Coordinate=(0,0)) ●→ WindowOffset
+     ScreenSpacePos - WindowOffset ●→ DropScreenPos (Vector2D)
+
+▶→ TraceSlotUnderCursor(PC=PC, ScreenPosition=DropScreenPos, TraceDistance=5000)
+   ●→ OutActor, OutSlotIndex, OutSlotName, bHit
+
+▶→ Branch(bHit)
+     False ▶→ Remove From Parent(self) → Return true
+     True  ▶→ Get All Actors Of Class(BP_FurnitureSceneManager) → Get(0) ●→ SceneManagerRef
+             ▶→ Cast To BP_FurnitureActor (Object = OutActor)
+                  CastFailed (trúng kiến trúc)
+                    ▶→ SceneManagerRef → GET ToastRef → Branch IsValid
+                         True  ▶→ ShowToast("Chỉ áp vật liệu lên đồ nội thất", 2.5)
+                         False ▶→ (dead-end)
+                    ▶→ Remove From Parent(self) → Return true
+                  CastSuccess (BPActor)
+                    ▶→ Call BPActor.ApplyMaterialByRowName(
+                          SlotName=OutSlotName, SlotIndex=OutSlotIndex, RowName=RowName)
+                    ▶→ Remove From Parent(self) → Return true
+```
+> `ToastRef` nằm trên `BP_FurnitureSceneManager` (xác nhận 11/09/2026 qua K2Node export thật —
+> KHÔNG phải `Foff_GameInstance`, xem doc debt trong `Planning/Architecture_Overview.md`). X3
+> (refresh swatch panel) KHÔNG nằm ở router này — đã dời sang `ApplyMaterialByRowName`
+> (`Blueprints/BP_FurnitureActor.md`) vì lý do timing (bug #4, xem `DEVIATIONS.md`). Router chỉ gọi
+> engine rồi dọn overlay, không biết gì về panel.
+
+**Test PASS 5/5 (G5.3, 11/09/2026):** thả lên đúng vùng seat → slot đó đổi · thả vùng khác cùng
+ghế → đúng slot khác đổi · thả trúng kiến trúc → Toast "chỉ áp vật liệu lên đồ nội thất", material
+không đổi · thả chỗ trống → không lỗi · Furniture card + Combo card vẫn spawn bình thường
+(regression 2 nhánh cũ).
 
 > ⚠️ **L2 CRITICAL:** Nhánh False của Branch(Scope != "") trong furniture branch PHẢI merge về CaptureSnapshot — KHÔNG dead-end. False dead-end → On Drop không reach Return Node → trả false → UMG gọi On Drag Cancelled → Destroy PreviewActorRef → mesh biến mất (bug N5 trả giá 15/06).
 
@@ -281,3 +342,5 @@ Entry
 | 1.6 | 17/06/2026 — Sprint D.T6 | Bỏ FurnitureDA. WBP_FurnitureCard: var → CardRowName; OnListItemObjectSet cast BP_FurnitureItemView + DT lookup ThumbnailSoft; UpdateFavTint/Button_Favorite dùng CardRowName; Button_InforItem → OnCardInfoClicked(CardRowName); On Drag Detected SET Operation.RowName. F_ExecuteReplace: RowData từ DT, load RowData.Mesh, SET NewActor.RowName, AddRecentMesh(CardRowName). WBP_DragOverlay: PendingFurnitureDA→PendingRowName; On Drop DT lookup RowData, SET PreviewActor.RowName. |
 | 1.7 | 24/06/2026 — Sprint 5 C4/C8 | WBP_DragOverlay: PreviewActorRef BP_FurnitureActor → Actor generic (tương thích BP_ComboGhostActor); On Drag Over thêm Cast To BP_FurnitureActor (combo ghost skip PlacementSurfaceType); On Drop thêm CastFailed → Cast ComboCard → GetActorLocation(ghost) → SpawnComboByID. ⚠️ "Out Hit.Location" trong plan gốc là SAI — đã fix cùng phiên bởi Opus delta. |
 | 1.8 | 25/06/2026 — ghost offset fix (C4 100%) | On Drag Over: CastFailed BP_FurnitureActor → Cast To BP_ComboGhostActor → GET GhostExtentZ → Set Actor Location = HitLocation+(0,0,GhostExtentZ) (Approach B, đáy cube khớp sàn). On Drop combo: GetActorLocation − (0,0,GhostExtentZ) = SpawnLocation floor. C4/C8 → 100% DONE. |
+| 1.9 | 11/09/2026 — S7.G5.3 | `On Drop` +nhánh material: trace slot dưới điểm thả (`TraceSlotUnderCursor` + `ScreenPosition`) → lọc loại actor (Cast `BP_FurnitureActor`, trúng kiến trúc → Toast) → gọi `ApplyMaterialByRowName`. Chèn trong `CastFailed(ComboCard)`, không đụng 2 nhánh cũ. Fix bug: `CastFailed(ComboCard)` thiếu `Remove From Parent` trước `Return false` (overlay full-screen kẹt sau miss đầu tiên). Test PASS 5/5. Còn 1 `Sequence` debug đầu `On Drop` chưa xóa (G5.4). |
+| 1.10 | 11/09/2026 — S7.G5.4 | `On Drop` xóa thật `Sequence` debug artifact G5.1 (Cast Material debug + Print RowName) — chain sạch hoàn toàn, `FunctionEntry.then` nối thẳng vào `Cast To BP_DragDropOperation_FurnitureCard`. Regression 8/8 PASS. GATE G5 ĐÓNG HẲN. Nguồn: `11-09-2026_S7G5_G5.4_AsBuilt_Addendum.md` |

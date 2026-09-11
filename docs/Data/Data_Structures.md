@@ -2,6 +2,7 @@
 **Mục đích:** Tham chiếu đầy đủ struct, enum, variables.
 **Cập nhật:** 14/07/2026 — đối chiếu C++ thật (`ComboTypes.h`/`ComboSerializer.h`), sửa mảng Combo lỗi thời (3+ tuần chưa cập nhật): `S_FolderTargetEntry`→`S_FolderTreeNode`, +`S_GroupData.SourceComboID`, `S_ComboMeshData`/`DT_ComboMeshCatalog`/`S_ComboJSONEntry` (planned, chưa từng xây) → `FComboData`/`FComboGroupData`/`FComboItemData` thật + JSON ví dụ, sửa vị trí function Combo (BP_ComboManager, không phải InputManager)
 **Cập nhật (tiếp) 24/08/2026:** thêm `IA_RMBPress`/`IA_RMBRelease` vào mục INPUT ACTIONS — xác nhận qua K2Node export (Right-click handler T4, `BP_FurnitureInputManager.md`). Ghi nhận mâu thuẫn chưa giải quyết với `IA_RightClick` đã có sẵn ở "Mới — Sprint 2".
+**Cập nhật (tiếp) 11/09/2026:** đóng doc debt — bảng `VARIABLES — BP_FurnitureActor` thêm `MaterialSlots` (tồn tại thật từ 05/09, chưa từng liệt kê) + 3 biến `Apply_Pending*` (S7.G5.2). Thêm mục mới "BP_FurnitureActor Custom Events" (danh sách Custom Event async on-actor, gồm `ApplyMaterialByRowName` mới). Nguồn: `11-09-2026_S7G5_G5.1-G5.3_AsBuilt_Delta.md`.
 
 ---
 
@@ -260,6 +261,10 @@ GroupID               : String (SaveGame) — Sprint 3
 bIsLocked             : Boolean (SaveGame) — Sprint 6
 CustomName            : String (SaveGame) — Sprint 6
 FurnitureMesh         : StaticMeshComponent
+MaterialSlots         : Array of FMaterialSlotRecord (SaveGame) — S7.G2 Bước 0 (05/09/2026), kho ghi material theo tên slot qua MaterialSlotService. [DOC DEBT đã đóng 11/09/2026 — bảng này chưa từng liệt kê biến dù đã tồn tại thật từ 05/09, xác nhận qua K2Node export xuyên suốt G5.1-G5.3]
+Apply_PendingSlotName  : String  — S7.G5.2 (11/09/2026), giữ qua khe async trong ApplyMaterialByRowName (Custom Event không có Local Variable, L9)
+Apply_PendingSlotIndex : Integer — S7.G5.2 (11/09/2026), cùng lý do trên
+Apply_PendingRowName   : Name    — S7.G5.2 (11/09/2026), cùng lý do trên
 ```
 
 ---
@@ -491,6 +496,20 @@ ResetMaterialParams()
 SerializeMaterialParams(Actor, SlotIndex) → String (JSON)
 ApplySerializedMaterialParams(Actor, SlotIndex, JSON)
 ```
+> ⚠️ Danh sách "Material Edit (Sprint 7)" trên (`SetMaterialColor`... `ApplySerializedMaterialParams`)
+> là placeholder từ giai đoạn lập kế hoạch Sprint 7 trước G1 — CHƯA đối chiếu với hàm thật đã build
+> (`MaterialSlotService` C++, xem `Data/MaterialSlotService_Reference.md`). Ghi nhận, không tự sửa
+> trong lượt merge này (ngoài phạm vi delta 11/09/2026).
+
+### BP_FurnitureActor Custom Events (async, on-actor — L11)
+```
+LoadMeshAsync(MeshPath : String)
+LoadMaterialsAsync(Overrides : Array<String>, Index : Integer)
+RestoreMyMaterialSlots()
+Rst_LoadNextSlot()
+ApplyMaterialByRowName(SlotName : String, SlotIndex : Integer, RowName : Name)   — S7.G5.2, 11/09/2026
+```
+Chi tiết node flow đầy đủ: `Blueprints/BP_FurnitureActor.md`.
 
 ### BP_ComboManager Functions — [CORRECTION 14/07/2026] đúng vị trí thật (KHÔNG nằm trên BP_FurnitureInputManager)
 Actor riêng, tách khỏi InputManager (R2 — không hard ref). Signature Custom Event thật (xem `Blueprints/BP_ComboManager.md`):

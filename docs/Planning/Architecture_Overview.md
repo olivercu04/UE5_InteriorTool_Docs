@@ -1,4 +1,8 @@
 # Architecture — Nguyên tắc kiến trúc code
+**Phiên bản:** 1.4 | **Dự án:** Lighting_Mnger | **Cập nhật:** 11/09/2026 (G5.4) — thêm bài học chốt "side-effect phụ thuộc async phải đặt ở Engine, không đặt ở Router" (từ bug #4+#5, GATE G5 ĐÓNG HẲN). Nguồn: `11-09-2026_S7G5_G5.4_AsBuilt_Addendum.md`
+
+**Phiên bản:** 1.3 | **Dự án:** Lighting_Mnger | **Cập nhật:** 11/09/2026 — đính chính doc debt: `FurnitureInventoryRef`/`ToastRef` đích thật là `BP_FurnitureSceneManager`, không phải `Foff_GameInstance` (K2Node export S7.G5). Thêm mục "Pattern 3 lớp tách bạch — kéo-thả material" + `BP_DragDropOperation_Material`. Nguồn: `11-09-2026_S7G5_G5.1-G5.3_AsBuilt_Delta.md`
+
 **Phiên bản:** 1.2 | **Dự án:** Lighting_Mnger | **Cập nhật:** 23/07/2026 — thêm `ToastRef` vào Shared Code Foff_GameInstance (K1, WBP_Toast)
 
 ---
@@ -26,8 +30,48 @@
 ## Shared Code — Chỉ thêm, không sửa cấu trúc
 
 - `BP_FoffPlayerController` — **KHÔNG thêm variables furniture nữa**, đã chuyển sang BP_FurnitureInputManager
-- `Foff_GameInstance` — chỉ thêm `FurnitureInventoryRef`, `ToastRef` (WBP_Toast, K1 23/07/2026 — global toast access), không thay đổi gì khác
+- ⚠️ **[ĐÍNH CHÍNH 11/09/2026]** `FurnitureInventoryRef` VÀ `ToastRef` — dòng cũ ghi 2 field này nằm
+  trên `Foff_GameInstance`. XÁC NHẬN LẠI qua K2Node export thật (S7.G2 VERIFY #5, 27/08/2026 +
+  S7.G5.1-G5.3, 11/09/2026): đích thật hiện tại là **`BP_FurnitureSceneManager`**, KHÔNG phải
+  `Foff_GameInstance`. Chỉ báo cáo trạng thái ĐÍCH thật hiện tại — KHÔNG rõ ngày chuyển (refactor
+  nào đó ngoài phạm vi các phiên đã soi), không suy đoán lịch sử. Mọi truy cập MỚI từ nay dùng
+  `GetAllActorsOfClass(BP_FurnitureSceneManager)` cho 2 field này, không `Get Game Instance → Cast
+  Foff_GameInstance`.
 - **Báo đồng nghiệp** khi thêm variable vào shared code
+
+---
+
+## Pattern 3 lớp tách bạch — kéo-thả material (Opus chốt 08/09/2026, xác nhận qua thực thi 11/09/2026)
+
+- `WBP_MaterialCard.OnDragDetected` = NGUỒN (đóng gói RowName vào `BP_DragDropOperation_Material`).
+  Không biết apply.
+- `WBP_DragOverlay.On Drop` (nhánh material) = ROUTER (trace slot + lọc loại actor + gọi engine).
+  Không biết load/apply/refresh UI.
+- `BP_FurnitureActor.ApplyMaterialByRowName` = ENGINE (DT lookup → async load → apply → capture →
+  refresh UI nếu actor đang mở panel). Đây là nơi DUY NHẤT biết chính xác thời điểm async xong —
+  mọi hệ quả phụ thuộc thời điểm apply thật (refresh swatch, tương lai: hiệu ứng particle/sound
+  khi đổi material...) PHẢI đặt ở lớp này, không đặt ở Router.
+
+**Class mới `BP_DragDropOperation_Material`** — em út của bộ 3 `DragDropOperation` con
+(`BP_DragDropOperation_FurnitureCard`, `BP_DragDropOperation_ComboCard`, giờ thêm class này). Cùng
+pattern: 1 field payload chính (RowName/ComboID), tạo trong `OnDragDetected` của card nguồn tương
+ứng. Xem `Widgets/WBP_MaterialCard.md`.
+
+**Tiền lệ on-actor engine cho async material** — `ApplyMaterialByRowName` nối dài danh sách Custom
+Event đặt trên `BP_FurnitureActor` xử lý material async của chính actor đó
+(`RestoreMyMaterialSlots` là tiền lệ đầu tiên, Sprint 7 G3). Lý do kiến trúc không đổi: actor tự lo
+asset của mình, tránh aliasing khi Manager/Widget dùng chung class var cho nhiều target đồng thời.
+
+`WBP_DragOverlay` giờ route 3 loại `DragDropOperation` (Furniture / Combo / Material) qua cùng 1
+`On Drop`, phân biệt bằng chuỗi `Cast To` tuần tự — không dựng overlay riêng cho material (KISS).
+
+**Bài học chốt (11/09/2026, từ 2 bug thật cùng gốc — bug #4 refresh swatch + bug #5 AddRecentMaterial,
+xem `DEVIATIONS.md` mục SPRINT 7 11/09/2026):** mọi hệ quả phụ thuộc thời điểm apply thật xong
+(refresh UI, ghi Recent, hiệu ứng tương lai như particle/sound...) PHẢI đặt trong
+`ApplyMaterialByRowName` (Engine), KHÔNG đặt ở `On Drop` (Router). Cả 2 bug đều do đặt side-effect
+phụ thuộc async SAI LỚP — Router gọi Engine (chứa `Async Load Asset`) rồi làm tiếp ngay, không đợi
+async xong. Áp dụng cho mọi tính năng tương lai theo cùng pattern 3 lớp này (vd G6 nếu có thao tác
+async nào tương tự).
 
 ---
 
@@ -54,7 +98,9 @@ Chỉ làm ở đây:
 - **WBP_FurnitureInventory** → lấy reference qua `Foff_GameInstance.FurnitureInventoryRef`
 - **WBP_MeshControls** → lấy reference qua `Get Player Controller → Cast BP_FoffPlayerController`
 - Không hardcode reference, không dùng Get All Widgets of Class trong OnListItemObjectSet
-- **WBP_MaterialCard / WBP_SlotSwatch** → Event Destruct bắt buộc clear hard refs (v1.1)
+- **WBP_MaterialCard / WBP_SlotSwatch** → Event Destruct bắt buộc clear hard refs (v1.1). Thêm
+  `WBP_MaterialCard.DragOverlayRef` (S7.G5.1, 11/09/2026) vào danh sách, cùng nhóm
+  `WBP_FurnitureCard.DragOverlayRef`/`WBP_ComboCard.DragOverlayRef` đã có từ trước.
 
 ---
 
