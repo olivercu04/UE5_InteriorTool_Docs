@@ -1,5 +1,11 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 3.6 | **Cập nhật:** 12/09/2026 — G6.0 VERIFY (K2Node export thật): mục "TƯƠNG TÁC 3 ĐIỂM" + khối `OnLMBReleased FULL FLOW` viết lại — bản cũ ghi `SelectSingleActor` chốt trực tiếp, THỰC TẾ đường chính đã đổi sang `ExpandSelectionWithGroups`+`SelectActors`/`ToggleActor` từ Sprint 4 T8, doc chưa cập nhật theo. Thêm ghi chú dưới `SelectSingleActor`: chỉ còn sống ở nhánh fallback `Event Tick`, chưa đồng bộ group-aware (xem `Bug-TickFallback-GroupNotExpanded`, `Open_Bugs.md`) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 3.7 | **Cập nhật:** 12/09/2026 (G6.1) — `OnLMBReleased` Then 2 APPEND hook slot-pick sau `SET PendingClickActor=None` (guard `SelectedActors.Length==1` → `NotifyViewportSlotClick`). G6.1 (6/6) + G6.2 regression (8/8) PASS. GATE G6 ĐÓNG HẲN | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+
+> **v3.6 (12/09/2026, G6.0 VERIFY):** K2Node export thật — mục "TƯƠNG TÁC 3 ĐIỂM" + khối
+> `OnLMBReleased FULL FLOW` viết lại — bản cũ ghi `SelectSingleActor` chốt trực tiếp, THỰC TẾ
+> đường chính đã đổi sang `ExpandSelectionWithGroups`+`SelectActors`/`ToggleActor` từ Sprint 4 T8,
+> doc chưa cập nhật theo. Thêm ghi chú dưới `SelectSingleActor`: chỉ còn sống ở nhánh fallback
+> `Event Tick`, chưa đồng bộ group-aware (xem `Bug-TickFallback-GroupNotExpanded`, `Open_Bugs.md`).
 
 > **v3.5 (24/08/2026):** `OnRMBPressed`/`OnRMBReleased` (Right-click handler T4) re-export ✓K2
 > 24/08/2026: cơ chế time-based + camera-rotation-delta thay mô tả cũ chưa từng verify; thêm biến
@@ -316,6 +322,29 @@ Custom Event OnLMBReleased
                                                           ▶→ Get All Actors Of Class(BP_UndoManager)
                                                              → Get(0) → CaptureSnapshot("Select")
                                                           ▶→ SET PendingClickActor = None
+                                                          ▶→ [HOOK G6.1, ✓K2 12/09/2026 — APPEND
+                                                             sau SET PendingClickActor=None, trước
+                                                             đây dead-end thật, xác nhận G6.0]
+                                                             Branch( SelectedActors.Length == 1 )
+                                                               True →
+                                                                 Get Mouse Position on Viewport
+                                                                   → ClickScreenPos
+                                                                 ▶→ Get All Actors Of Class
+                                                                    (BP_FurnitureSceneManager)
+                                                                    → Get(0)
+                                                                    → GET FurnitureInventoryRef
+                                                                    → Branch IsValid
+                                                                         True → Call
+                                                                           FurnitureInventoryRef.
+                                                                           NotifyViewportSlotClick(
+                                                                             ClickedActor =
+                                                                               PrimarySelectedActor,
+                                                                             ScreenPos =
+                                                                               ClickScreenPos )
+                                                                           ← dead-end (node cuối)
+                                                                         False → (dead-end)
+                                                               False → (dead-end — group/combo/
+                                                                 multi, không pick)
 
                   False (bấm vào nền) → Branch(IsInputKeyDown(LeftControl))
                      True  → (dead-end — Ctrl+click nền giữ nguyên selection)
@@ -334,6 +363,11 @@ Custom Event OnLMBReleased
 ```
 **Lưu ý timing:** OnLMBReleased (input event) chạy TRƯỚC world Tick cùng frame → ActivateGizmo gọi
 từ đây KHÔNG nháy. Tick chỉ dọn nốt edge case.
+
+**Ghi chú hook G6.1 (12/09/2026, as-built khác dự thảo — gọn hơn, không sai):** không có
+`Get Player Controller` riêng trong chuỗi hook — PC chỉ cần bên trong
+`WBP_FurnitureInventory.NotifyViewportSlotClick` (đã lấy ở đó), không lấy lặp lại ở hook. Verify:
+K2Node export đối chiếu 12/09/2026 — khớp thiết kế, đúng vị trí G6.0 xác nhận.
 
 **Xác nhận thêm (12/09/2026):** `FurnitureInventoryRef` truy cập qua `BP_FurnitureSceneManager`
 (không phải `Foff_GameInstance`) — khớp lần thứ 2, độc lập với phát hiện ở delta S7.G5

@@ -1,6 +1,9 @@
 # Architecture Map — UE5 Interior Tool
 
-**Phiên bản:** 0.8 | **Tạo:** 28/08/2026 15:59 | **Cập nhật:** 12/09/2026 — +5 cạnh Selection/Click Resolution nâng `[K2 2026-09-12]` (G6.0 VERIFY) — xem delta "G6.0 As-Built: Click Resolution Flow (K2-Verified)" cùng ngày | **Người dựng:** Claude Code (theo handoff Opus 22/08/2026)
+**Phiên bản:** 0.9 | **Tạo:** 28/08/2026 15:59 | **Cập nhật:** 12/09/2026 (G6.1) — +1 cạnh `IM→INV` (`NotifyViewportSlotClick`, click-vào-mesh chọn slot) nâng `[K2 2026-09-12]`. GATE G6 ĐÓNG HẲN | **Người dựng:** Claude Code (theo handoff Opus 22/08/2026)
+
+> **v0.8 (12/09/2026, G6.0 VERIFY):** +5 cạnh Selection/Click Resolution nâng `[K2 2026-09-12]` —
+> xem delta "G6.0 As-Built: Click Resolution Flow (K2-Verified)" cùng ngày.
 
 > **v0.7:** +3 BP: UserPreferencesSave, 2× DragDropOperation; FurnitureRowRef = dead. Cập nhật 29/08/2026 00:42.
 
@@ -336,6 +339,7 @@ flowchart TB
   IM ==>|"chụp mốc Select/Deselect · CaptureSnapshot()"| UNDO
   IM ==>|"tìm singleton, đọc tham chiếu inventory · GetAllActorsOfClass, GET FurnitureInventoryRef"| SCENE
   SCENE ==>|"gọi thoát Replace Mode · .FurnitureInventoryRef.ExitReplaceMode()"| INV
+  IM ==>|"báo click-vào-mesh chọn slot · NotifyViewportSlotClick(ClickedActor, ScreenPos)"| INV
   IM -.->|"gọi lúc bấm chuột + giữ tham chiếu · OnMousePressed(), GizmoControllerRef"| GIZMO
   IM -.->|"giữ tham chiếu · TransformerPawnRef"| TPAWN
   IM -.->|"đọc-ghi số đếm nhóm · GroupNameCounter, Groups"| GROUPS
@@ -361,7 +365,8 @@ flowchart TB
 
 **Kiểm chứng K2:** `IM→CTX`, `IM→CTXITEM` (28/08) · `IM→BOXSEL` (24/07) · `MESHCTRL→IM` (24/07) ·
 `IM→UNDO` (CaptureSnapshot), `IM→SCENE`, `SCENE→INV` (ExitReplaceMode) — **[K2 2026-09-12]**, G6.0
-VERIFY (`OnLMBReleased` full flow). Còn lại: theo doc.
+VERIFY (`OnLMBReleased` full flow) · `IM→INV` (`NotifyViewportSlotClick`) — **[K2 2026-09-12]**,
+G6.1 as-built (hook APPEND trong `OnLMBReleased` Then 2). Còn lại: theo doc.
 
 > **2 đường resolve click song song, KHÔNG tương đương (xác nhận K2 12/09/2026):**
 > - **Đường chính** (`OnLMBReleased`, >99.9% lượt click): group-aware — qua

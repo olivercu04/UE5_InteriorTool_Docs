@@ -1,5 +1,7 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
+**Phiên bản:** 3.28 | **Cập nhật:** 12/09/2026 — S7.G6.1 as-built: thêm `NotifyViewportSlotClick` (Custom Event, click-vào-mesh chọn slot) + `HighlightSwatchByIndex` (Function, viết mới thay vì tái dùng `OnSlotSwatchClicked`). Test G6.1 6/6 + G6.2 regression 8/8 PASS. GATE G6 ĐÓNG HẲN.
+
 **Phiên bản:** 3.27 | **Cập nhật:** 05/09/2026 — 20:40 ICT — S7.G2 Việc 5 as-built: `BTN_ResetSlot`/`BTN_ResetAll` reroute sang `ResetSlotToAssetDefault`/`ResetAllSlotsToAssetDefault`. Test PASS. S7.G2 ĐÓNG (7/7 test tổng PASS).
 
 **Phiên bản:** 3.26 | **Cập nhật:** 05/09/2026 — 19:40 ICT — S7.G2 Việc 2+3 as-built: `LoadAndApplyMaterial` viết lại từ K2Node export thật (reroute `ApplyLoadedMaterialToSlot` + multi-apply Hướng B), thêm 3 class var `LoadApply_Selected`/`LoadApply_AllSame`/`LoadApply_SuccessCount`. Test PASS 5/5. Đóng `Bug-MaterialPrimaryOnly`.
@@ -440,6 +442,58 @@ ClearChildren(HB_SwatchList)
 GET TargetFurnitureActor → FurnitureMesh → GetStaticMesh → GetMaterialSlotNames
 ForLoop → Create WBP_SlotSwatch → Bind OnSwatchClicked → AddChild
 ```
+
+### NotifyViewportSlotClick(ClickedActor : BP_FurnitureActor, ScreenPos : Vector2D) — Custom Event MỚI (S7.G6.1, 12/09/2026)
+
+> As-built K2Node export thật, đối chiếu 12/09/2026 — khớp 100% thiết kế. Gọi từ hook mới trong
+> `BP_FurnitureInputManager.OnLMBReleased` (Then 2, APPEND sau `SET PendingClickActor=None`, guard
+> `SelectedActors.Length==1`). Khác dự thảo 1 chi tiết (không sai, gọn hơn): 3 điều kiện Branch 1
+> gộp bằng 1 node `AND` (BooleanAND 3 input) thay vì Branch lồng.
+
+```
+Event NotifyViewportSlotClick (ClickedActor, ScreenPos)
+▶→ Branch( AND(CurrentInventoryMode==Material, IsValid(TargetFurnitureActor),
+            ClickedActor==TargetFurnitureActor) )
+     False → (dead-end)
+     True  → Get Player Controller(0) → PC
+           ▶→ TraceSlotUnderCursor(PC, ScreenPos, 5000) ●→ OutActor, OutSlotIndex, OutSlotName, bHit
+           ▶→ Branch( AND(bHit, OutActor==TargetFurnitureActor) )
+                False → (dead-end)
+                True  → SET SelectedSlotIndex = OutSlotIndex
+                       ▶→ SET SelectedSlotName  = OutSlotName
+                       ▶→ Call HighlightSwatchByIndex(OutSlotIndex)   ← dead-end (node cuối)
+```
+
+### HighlightSwatchByIndex(SlotIndex : Integer) — Function MỚI (S7.G6.1, 12/09/2026)
+
+> Quyết định lúc VERIFY: `OnSwatchClicked` chỉ là Event Dispatcher khai báo trên `WBP_SlotSwatch`
+> (không có logic). Handler thật bind trong `RefreshSlotSwatches` là `OnSlotSwatchClicked` — đã có
+> sẵn 1 routine loop-highlight NHƯNG gộp chung với `SET SelectedSlotIndex` trong 1 Custom Event,
+> CHƯA tách hàm riêng, và so sánh bằng `Array Index` (vị trí trong `ForEachLoop`) chứ không phải
+> `child.SlotIndex`. → Quyết định: viết hàm MỚI, KHÔNG đụng `OnSlotSwatchClicked` (KP3).
+
+```
+Function HighlightSwatchByIndex(SlotIndex : Integer)
+Get Children(HB_SwatchList) → ForEachLoop:
+  Cast To WBP_SlotSwatch(child) → bValid
+    True → Call child.SetSelected( child.SlotIndex == SlotIndex )
+    CastFailed → dead-end
+  Completed → dead-end
+```
+So sánh dùng `child.SlotIndex` (thuộc tính riêng từng swatch) — tự chứa, không phụ thuộc thứ tự
+children trong `HB_SwatchList` (khác `OnSlotSwatchClicked` cũ dùng Array Index — 2 hàm độc lập,
+không gọi lẫn nhau, không xung đột).
+
+**Test G6.1 PASS 6/6 (12/09/2026):** Material mode, click nhiều vùng trên 1 ghế → swatch highlight
+nhảy đúng theo vùng · box-select 3 ghế → click 1 vùng → không pick (guard chặn) · group → click
+member → không pick · furniture mode → click mesh → không pick · click kiến trúc/nền → slot giữ
+nguyên · click swatch trực tiếp trên panel (đường cũ) → vẫn chọn + highlight bình thường.
+
+**Test G6.2 Regression PASS 8/8 (12/09/2026):** box-select nhiều đồ · Ctrl+click add/toggle ·
+gizmo drag · deselect all (click nền) · click swatch trực tiếp (đường cũ sống) · slot-pick rồi
+Undo (Undo trả selection, không có entry riêng cho slot-pick) · slot-pick → kéo-thả material (G5)
+lên slot đó → áp đúng slot · slot-pick actor A → chọn actor B → panel B đúng, không rò slot A
+sang B. **GATE G6 ĐÓNG HẲN.**
 
 ### BTN_ResetSlot / BTN_ResetAll — AS-BUILT 05/09/2026 (S7.G2 Việc 5)
 

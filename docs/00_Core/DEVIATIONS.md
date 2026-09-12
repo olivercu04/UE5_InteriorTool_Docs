@@ -1945,6 +1945,22 @@ thật khỏi code (`Widgets/WBP_MaterialCard.md`, `Blueprints/BP_FurnitureActor
 
 ---
 
+## SPRINT 7 — 12/09/2026 — G6.1+G6.2 (Click-vào-mesh chọn slot) — 3 deviation so với plan gốc
+
+**Nguồn:** `12-09-2026_G6.1-G6.2_AsBuilt_Delta.md` mục 5. Node-by-node:
+`Blueprints/BP_FurnitureInputManager.md` (§ OnLMBReleased), `Widgets/WBP_FurnitureInventory.md`
+(§ `NotifyViewportSlotClick`, `HighlightSwatchByIndex`).
+
+| # | Nội dung | Lý do |
+|---|---|---|
+| 1 | Hook slot-pick đặt ở `OnLMBReleased`, KHÔNG Event Tick như plan gốc (`DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md`) | G6.0 xác nhận K2Node: đường chính chốt selection là `OnLMBReleased`; Event Tick chỉ fallback hiếm (xem `Bug-TickFallback-GroupNotExpanded`, deferred) |
+| 2 | `FurnitureInventoryRef` truy cập qua `BP_FurnitureSceneManager`, KHÔNG qua `Foff_GameInstance` như plan gốc ghi | Xác nhận 2 lần độc lập (G5 + G6.0), đúng migrate đã ghi ở `overview.md` |
+| 3 | `HighlightSwatchByIndex` viết MỚI thay vì tái dùng `OnSlotSwatchClicked` | Routine cũ gộp set-var+highlight trong 1 Custom Event, chưa tách hàm, dùng Array Index thay vì `SlotIndex` riêng của swatch — viết hàm mới tự chứa, không refactor routine cũ (KP3) |
+
+✅ **G6.1 (6/6 test PASS) + G6.2 regression (8/8 PASS) — GATE G6 ĐÓNG HẲN (12/09/2026).**
+
+---
+
 ## BUGS DEFERRED (ghi nhận, xử lý sprint sau)
 
 | Bug | Mô tả | Deferred đến |
