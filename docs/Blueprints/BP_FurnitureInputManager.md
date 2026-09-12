@@ -1,5 +1,11 @@
 # BP_FurnitureInputManager
-**Phiên bản:** 3.5 | **Cập nhật:** 24/08/2026 — `OnRMBPressed`/`OnRMBReleased` (Right-click handler T4) re-export ✓K2 24/08/2026: cơ chế time-based + camera-rotation-delta thay mô tả cũ chưa từng verify; thêm biến `RMBPressTime`/`RMBPressCamRot`; `OnRightClick()` (callee) internals CHƯA verify đợt này, giữ mô tả cũ dạng `[⚠ suy luận]`. Ghi nhận `IA_RMBPress`/`IA_RMBRelease` chưa có trong bảng Input Action chính thức | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+**Phiên bản:** 3.6 | **Cập nhật:** 12/09/2026 — G6.0 VERIFY (K2Node export thật): mục "TƯƠNG TÁC 3 ĐIỂM" + khối `OnLMBReleased FULL FLOW` viết lại — bản cũ ghi `SelectSingleActor` chốt trực tiếp, THỰC TẾ đường chính đã đổi sang `ExpandSelectionWithGroups`+`SelectActors`/`ToggleActor` từ Sprint 4 T8, doc chưa cập nhật theo. Thêm ghi chú dưới `SelectSingleActor`: chỉ còn sống ở nhánh fallback `Event Tick`, chưa đồng bộ group-aware (xem `Bug-TickFallback-GroupNotExpanded`, `Open_Bugs.md`) | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+
+> **v3.5 (24/08/2026):** `OnRMBPressed`/`OnRMBReleased` (Right-click handler T4) re-export ✓K2
+> 24/08/2026: cơ chế time-based + camera-rotation-delta thay mô tả cũ chưa từng verify; thêm biến
+> `RMBPressTime`/`RMBPressCamRot`; `OnRightClick()` (callee) internals CHƯA verify đợt này, giữ mô
+> tả cũ dạng `[⚠ suy luận]`. Ghi nhận `IA_RMBPress`/`IA_RMBRelease` chưa có trong bảng Input Action
+> chính thức.
 
 > **v2.8 (Replace UX Fix P0→P5, 02/08/2026):** biến `MeshToReplace` (single, dead code) XÓA HOÀN
 > TOÀN (P4.4) — đính chính dòng Variables ghi sai đã "xóa từ v1.6". Node flow re-route (P2), card
@@ -135,7 +141,12 @@ OnEditModeChanged(bActive : Boolean, GroupID : String)   ← v1.7 Sprint 4
 
 **3. OnLMBReleased (input event):** chốt kết quả.
    - Nếu `bIsBoxSelecting` (đã kéo box) → `FinishBoxSelect` (chọn các đồ trong khung).
-   - Nếu `bIsPendingBoxSelect` mà CHƯA kéo (click đơn thuần) → nếu có `PendingClickActor` thì `SelectSingleActor` đồ đó; nếu không (bấm vào nền) thì `DeselectAll`.
+   - Nếu `bIsPendingBoxSelect` mà CHƯA kéo (click đơn thuần) → nếu có `PendingClickActor`: Ctrl+click
+     thì `ExpandSelectionWithGroups` + `ToggleActor` từng phần tử (cộng dồn); click thường thì
+     `DeselectAll` + `ExpandSelectionWithGroups` + `SelectActors` (thay selection, group-aware —
+     Sprint 4 T8). Nếu không có `PendingClickActor` (bấm vào nền): Ctrl+click giữ nguyên selection;
+     click thường thì `DeselectAll` (+ thoát Replace Mode nếu đang bật).
+     ⚠️ `SelectSingleActor` KHÔNG còn nằm trên đường này — xem ghi chú dưới định nghĩa hàm đó.
 
 **TẠI SAO defer (PendingClickActor) thay vì select ngay ở Mouse Left Pressed?**
 → Để phân biệt **click-chọn-1-đồ** vs **bắt đầu-kéo-box-từ-trên-một-đồ**. Nếu select ngay lúc bấm thì vừa chạm mesh đã single-select, không kéo box được.
@@ -259,31 +270,74 @@ Branch bLMBHeld:
 
 ---
 
-## OnLMBReleased — FULL FLOW (v1.5) ⭐ đường chính chốt selection
-```
-SET bLMBHeld = False                                   ← đầu tiên!
-Sequence:
-  Then 0: đóng context menu nếu đang mở (IsValid(ContextMenuRef) → Remove from Parent → SET None)
+## OnLMBReleased — FULL FLOW (v1.6, ✓K2 12/09/2026 — G6.0 VERIFY) ⭐ đường chính chốt selection
 
-  Then 1: Branch bIsBoxSelecting == True:               ← ĐANG kéo box, vừa thả
-            True →
-              Get Mouse Position on Viewport → EndPos
-              Call FinishBoxSelect(EndPos)
-              Branch IsValid(BoxSelectOverlayRef) → Call HideBox
-              SET bIsBoxSelecting = False
-              SET PendingClickActor = None
+> As-built thật, đối chiếu K2Node export 12/09/2026. Thay bản "v1.5" mô tả cũ — bản cũ ghi
+> `SelectSingleActor` chốt trực tiếp, THỰC TẾ đã đổi sang `ExpandSelectionWithGroups` +
+> `SelectActors`/`ToggleActor` từ Sprint 4 T8 (group-aware), doc chưa cập nhật theo cho tới nay.
 
-  Then 2: Branch bIsPendingBoxSelect == True:            ← CLICK đơn (chưa từng kéo)
-            True →
-              SET bIsPendingBoxSelect = False
-              Branch IsValid(PendingClickActor):
-                True  → SelectSingleActor(PendingClickActor) → CaptureSnapshot("Select") → SET PendingClickActor=None
-                False → Branch IsInputKeyDown(Left Ctrl):
-                          True  → (dead-end, giữ selection — Ctrl+click nền không deselect)
-                          False → DeselectAll → CaptureSnapshot("Deselect")
-                                  → Branch bIsReplaceMode → (exit replace mode chain nếu đang replace)
 ```
-**Lưu ý timing:** OnLMBReleased (input event) chạy TRƯỚC world Tick cùng frame → ActivateGizmo gọi từ đây KHÔNG nháy. Tick chỉ dọn nốt edge case.
+Custom Event OnLMBReleased
+▶→ SET bLMBHeld = False
+▶→ Sequence
+
+  Then 0 — đóng context menu:
+    IsValid(ContextMenuRef) → True →
+      IsInViewport(ContextMenuRef) → True →
+        Call ContextMenuRef.Hide() → SET ContextMenuRef = None
+
+  Then 1 — box-select vừa thả:
+    Branch(bIsBoxSelecting == True)
+      True → Get Mouse Position on Viewport → EndPos
+             ▶→ FinishBoxSelect(EndPos)
+             ▶→ Branch IsValid(BoxSelectOverlayRef) → True → Call HideBox()
+             ▶→ SET bIsBoxSelecting = False
+             ▶→ SET PendingClickActor = None
+      False → (dead-end)
+
+  Then 2 — click đơn thuần (chưa kéo box):
+    Branch(bIsPendingBoxSelect == True)
+      True → SET bIsPendingBoxSelect = False
+             ▶→ Print (Dev) "bIsPendingBoxSelect = " + ...      ← scaffolding chưa dọn, vô hại (Development Only)
+             ▶→ Print (Dev) "IsValid(PendingClickActor) = " + ...
+             ▶→ Branch(IsValid(PendingClickActor))
+
+                  True → Branch(IsInputKeyDown(LeftControl))
+                     True  (Ctrl+click — cộng dồn) ▶→
+                        ExpandSelectionWithGroups([PendingClickActor]) → Result
+                        ▶→ ForEachLoop(Result) → Call ToggleActor(mỗi phần tử)
+                        ▶→ Completed ──────────────────────────────────┐
+                     False (click thường — thay selection) ▶→          │
+                        DeselectAll()                                   │
+                        ▶→ ExpandSelectionWithGroups([PendingClickActor]) → Result
+                        ▶→ Call SelectActors(Result) ────────────────────┤
+                                                                          ▼
+                                                          [MERGE — cả 2 nhánh Ctrl]
+                                                          ▶→ Get All Actors Of Class(BP_UndoManager)
+                                                             → Get(0) → CaptureSnapshot("Select")
+                                                          ▶→ SET PendingClickActor = None
+
+                  False (bấm vào nền) → Branch(IsInputKeyDown(LeftControl))
+                     True  → (dead-end — Ctrl+click nền giữ nguyên selection)
+                     False → DeselectAll()
+                            ▶→ Get All Actors Of Class(BP_UndoManager) → Get(0)
+                               → CaptureSnapshot("Deselect")
+                            ▶→ Branch(IsReplaceModeActive())
+                                 True → SET ReplaceTarget = NewEnumerator0
+                                        ▶→ Array_Clear(MeshesToReplace)
+                                        ▶→ SET ComboRootGroupIDToReplace = ""
+                                        ▶→ Get All Actors Of Class(BP_FurnitureSceneManager)
+                                           → Get(0) → GET FurnitureInventoryRef
+                                           → Call ExitReplaceMode()
+                                 False → (dead-end)
+      False → (dead-end)
+```
+**Lưu ý timing:** OnLMBReleased (input event) chạy TRƯỚC world Tick cùng frame → ActivateGizmo gọi
+từ đây KHÔNG nháy. Tick chỉ dọn nốt edge case.
+
+**Xác nhận thêm (12/09/2026):** `FurnitureInventoryRef` truy cập qua `BP_FurnitureSceneManager`
+(không phải `Foff_GameInstance`) — khớp lần thứ 2, độc lập với phát hiện ở delta S7.G5
+(`Planning/Architecture_Overview.md`), củng cố chắc chắn đây là đích thật.
 
 ---
 
@@ -390,6 +444,12 @@ DeselectAll → ADD Actor → SelectedActors → SET Primary → UpdateOutlineSt
 ⚠️ KHÔNG có CaptureSnapshot nội bộ — caller tự gọi sau (xác nhận 07/06)
 ⚠️ v1.6: ĐÃ XÓA Broadcast OnMeshSelected (chỉ còn OnSelectionChanged)
 ```
+
+> **[GHI CHÚ 12/09/2026 — K2 xác nhận]** Hàm này không còn được gọi từ `OnLMBReleased` (đường
+> chính, đã đổi sang `SelectActors` từ Sprint 4 T8). CHỈ còn 1 call site sống: nhánh fallback trong
+> `Event Tick` (case chuột flick cực nhanh giữa 2 frame). Sprint 4 T2.2 định đồng bộ luôn nhánh này
+> sang `ExpandSelectionWithGroups+SelectActors` nhưng CHƯA thực hiện — xem `Open_Bugs.md`
+> `Bug-TickFallback-GroupNotExpanded`.
 
 ### SelectActors(Actors) (T5)
 ```

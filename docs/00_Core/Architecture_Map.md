@@ -1,6 +1,8 @@
 # Architecture Map — UE5 Interior Tool
 
-**Phiên bản:** 0.7 (+3 BP: UserPreferencesSave, 2× DragDropOperation; FurnitureRowRef = dead) | **Tạo:** 28/08/2026 15:59 | **Cập nhật:** 29/08/2026 00:42 | **Người dựng:** Claude Code (theo handoff Opus 22/08/2026)
+**Phiên bản:** 0.8 | **Tạo:** 28/08/2026 15:59 | **Cập nhật:** 12/09/2026 — +5 cạnh Selection/Click Resolution nâng `[K2 2026-09-12]` (G6.0 VERIFY) — xem delta "G6.0 As-Built: Click Resolution Flow (K2-Verified)" cùng ngày | **Người dựng:** Claude Code (theo handoff Opus 22/08/2026)
+
+> **v0.7:** +3 BP: UserPreferencesSave, 2× DragDropOperation; FurnitureRowRef = dead. Cập nhật 29/08/2026 00:42.
 
 > **DEVIATION so với handoff (cuhoang chỉ đạo 28/08/2026):** handoff gốc yêu cầu Phần 2/3 = khung rỗng, chỉ điền từ K2. cuhoang đổi: Claude Code ĐƯỢC rút quan hệ **từ mô tả flow trong canonical doc** — KHÔNG tự suy luận. Doc nói "✓K2Node" cho quan hệ đó → nét liền `[K2]`. Còn lại → nét đứt `[DOC]`. Claude Code vẫn KHÔNG được bịa quan hệ không có trong doc.
 >
@@ -318,6 +320,7 @@ flowchart TB
     MESHCTRL(["WBP_MeshControls"])
     CTX(["WBP_ContextMenu"])
     CTXITEM(["WBP_ContextMenuItem"])
+    INV(["WBP_FurnitureInventory"])
   end
   subgraph STc["Dữ liệu cảnh"]
     GROUPS["BP_GroupsContainer"]
@@ -330,6 +333,9 @@ flowchart TB
   IM ==>|"tạo 11 mục menu · Create Widget (OnRightClick)"| CTXITEM
   IM ==>|"tạo menu + gọi đóng · Create + Hide()"| CTX
   IM ==>|"tạo + gọi ẩn khung · Create + HideBox()"| BOXSEL
+  IM ==>|"chụp mốc Select/Deselect · CaptureSnapshot()"| UNDO
+  IM ==>|"tìm singleton, đọc tham chiếu inventory · GetAllActorsOfClass, GET FurnitureInventoryRef"| SCENE
+  SCENE ==>|"gọi thoát Replace Mode · .FurnitureInventoryRef.ExitReplaceMode()"| INV
   IM -.->|"gọi lúc bấm chuột + giữ tham chiếu · OnMousePressed(), GizmoControllerRef"| GIZMO
   IM -.->|"giữ tham chiếu · TransformerPawnRef"| TPAWN
   IM -.->|"đọc-ghi số đếm nhóm · GroupNameCounter, Groups"| GROUPS
@@ -350,10 +356,24 @@ flowchart TB
   classDef bp fill:#e8eef7,stroke:#33415c;
   classDef wbp fill:#f7efe8,stroke:#5c4633;
   class IM,GIZMO,PIVOT,TPAWN,GROUPS,FA,PC,UNDO,SCENE bp;
-  class BOXSEL,MESHCTRL,CTX,CTXITEM wbp;
+  class BOXSEL,MESHCTRL,CTX,CTXITEM,INV wbp;
 ```
 
-**Kiểm chứng K2:** `IM→CTX`, `IM→CTXITEM` (28/08) · `IM→BOXSEL` (24/07) · `MESHCTRL→IM` (24/07). Còn lại: theo doc.
+**Kiểm chứng K2:** `IM→CTX`, `IM→CTXITEM` (28/08) · `IM→BOXSEL` (24/07) · `MESHCTRL→IM` (24/07) ·
+`IM→UNDO` (CaptureSnapshot), `IM→SCENE`, `SCENE→INV` (ExitReplaceMode) — **[K2 2026-09-12]**, G6.0
+VERIFY (`OnLMBReleased` full flow). Còn lại: theo doc.
+
+> **2 đường resolve click song song, KHÔNG tương đương (xác nhận K2 12/09/2026):**
+> - **Đường chính** (`OnLMBReleased`, >99.9% lượt click): group-aware — qua
+>   `ExpandSelectionWithGroups` → `SelectActors`/`ToggleActor`.
+> - **Đường fallback** (`Event Tick`, case flick chuột cực nhanh): KHÔNG group-aware — vẫn gọi
+>   `SelectSingleActor` thẳng. Đây là **bug đang sống** (`Bug-TickFallback-GroupNotExpanded`,
+>   `Bugs/Open_Bugs.md`), không phải thiết kế có chủ đích.
+> `FurnitureInventoryRef` truy cập qua `BP_FurnitureSceneManager` (khớp lại lần 2, độc lập, với
+> phát hiện ở delta S7.G5 — không phải qua `Foff_GameInstance`).
+> `SelectActors`/`SelectSingleActor` báo tin `OnSelectionChanged` ĐỒNG BỘ — mọi widget đang nghe
+> (vd `MESHCTRL`, cạnh `MESHCTRL→IM` phía trên) nhận sự kiện ngay trong cùng lượt gọi, không phải
+> latent/deferred — xác nhận qua K2Node export `SelectActors` (G6.0, 12/09/2026).
 
 ### 3b — Combo (lưu / spawn / thay combo)
 

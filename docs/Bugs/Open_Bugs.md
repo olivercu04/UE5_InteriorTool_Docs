@@ -38,6 +38,10 @@ cause theo delta 26/08 — ghi nhận mâu thuẫn, không tạo entry mới tha
 (đóng cho đường Combo — phần `RestoreSnapshot`/Undo-Redo còn treo, xem `Session_State.md`).
 **Cập nhật (tiếp) 08/09/2026:** Đóng HOÀN TOÀN `Bug-LoadMeshAsync-RestoreRace` — `RestoreSnapshot`
 Step 4 gỡ `Call RestoreMyMaterialSlots` thừa, test regression Undo/Redo material PASS.
+**Cập nhật (tiếp) 12/09/2026 (G6.0 VERIFY):** Thêm `Bug-TickFallback-GroupNotExpanded` [OPEN,
+🟡 Trung bình] — `Event Tick` fallback single-click chưa đồng bộ group-aware (Sprint 4 T2.2 bỏ
+sót), phát hiện qua K2Node export đối chiếu `BP_FurnitureInputManager.OnLMBReleased`. Không chặn
+G6, chờ cuhoang quyết định ưu tiên fix.
 
 ---
 
@@ -85,6 +89,7 @@ Step 4 gỡ `Call RestoreMyMaterialSlots` thừa, test regression Undo/Redo mate
 | Bug-CameraSpeed-ShiftConsumed | ✅ RESOLVED (24/08) — Sau tích hợp standalone vào project tổng: camera move speed luôn bắt đầu từ 0.1 (class default), không tăng qua Shift | — | `IA_Shift` (chord `IA_FurnitureUndo`/`IA_FurnitureRedo`) nuốt phím Shift, `IncreAction` (project tổng) không bao giờ Trigger. Fix: tắt `Consume Lower Priority Enhanced Input Mappings` trên `IA_Shift`. Xem mục chi tiết dưới |
 | Bug-MaterialSkip-Cook | ✅ CLOSED (25/08) — Bản packaged: nhiều material bấm Replace không đổi trên mesh, mesh giữ material cũ, không toast | — | 43 MI dưới `DatabaseProjectMaster/Material/MaterialInstances/Surface/` bị cook skip (chỉ ref động qua path runtime, không ai ref cứng). Fix: thêm `Material` vào Additional Asset Directories to Cook. Xem mục chi tiết dưới |
 | Bug-CookFail-10Errors | ✅ CLOSED (25/08) — 10 cook error phát sinh ngay sau khi mở rộng scope cook thêm folder Material/ | — | 3 nhóm: EUW_RDMtiles Geometry Script editor-only (5 lỗi, fix Directories to never cook), texture CMYK 2 file (2 lỗi, convert RGB+reimport), FTargetSettings/UniversalCameraPlugin vô hại giống lần cook 19/08 thành công (3 lỗi, không sửa). Xem mục chi tiết dưới |
+| Bug-TickFallback-GroupNotExpanded | [OPEN] `Event Tick` nhánh fallback single-click vẫn gọi `SelectSingleActor` (không group-aware) — Sprint 4 T2.2 định đồng bộ nhưng chưa từng thực thi | 🟡 Trung bình (tần suất cực hiếm) | Phát hiện G6.0 VERIFY (12/09). KHÔNG chặn G6. Xem mục chi tiết dưới |
 
 ---
 
@@ -1301,6 +1306,43 @@ rỗng lúc mở panel → thêm retry/delay hoặc đảo thứ tự spawn.
 Class var CategoryList (WBP_FurnitureInventory) rỗng vĩnh viễn → ForEachLoop đầu Event
 Construct chạy 0 lần. KHÔNG gây lỗi hiện tại (loop rỗng không chặn Completed). Ghi lại phòng
 khi cần dựng nút category động — lúc đó phải bổ sung nguồn nạp CategoryList.
+
+---
+
+## Bug-TickFallback-GroupNotExpanded — Tick fallback chưa đồng bộ group-aware (Sprint 4 T2.2 bỏ sót)
+
+**ID:** Bug-TickFallback-GroupNotExpanded
+**Phát hiện:** 12/09/2026, G6.0 VERIFY (K2Node export đối chiếu với kế hoạch Sprint 4 T2.2).
+**Ưu tiên:** 🟡 Trung bình — tần suất cực hiếm, KHÔNG chặn G6.
+
+### Mô tả
+`Event Tick`, nhánh fallback single-click (case chuột flick cực nhanh giữa 2 frame,
+`bIsPendingBoxSelect=True`/`bLMBHeld=False` lỡ nhịp `OnLMBReleased`) vẫn gọi
+`SelectSingleActor(PendingClickActor)` — hàm KHÔNG group-aware. Click 1 đồ thuộc group qua đúng
+path này → chỉ đồ đó được chọn, không cả group. Đường chính (`OnLMBReleased`) đã đúng từ Sprint 4,
+không bị ảnh hưởng.
+
+### Root cause
+Sprint 4 T2.2 ("Đồng bộ Tick fallback") đã lên kế hoạch đổi nhánh này sang
+`DeselectAll→ExpandSelectionWithGroups→SelectActors` nhưng chưa từng được thực thi trong Blueprint.
+
+### Tần suất
+Rất hiếm — chỉ khi mouse-up rơi đúng giữa 2 frame Tick, gần như không nhận biết được qua thao tác
+bình thường.
+
+### Fix (chưa làm, chờ cuhoang quyết định ưu tiên)
+```
+Event Tick, nhánh fallback, thay:
+  IsValid(PendingClickActor) → SelectSingleActor(PendingClickActor) → CaptureSnapshot("Select")
+bằng:
+  IsValid(PendingClickActor) → DeselectAll() → ExpandSelectionWithGroups([PendingClickActor])
+  → SelectActors(Result) → CaptureSnapshot("Select") → SET PendingClickActor=None
+```
+(đúng y hệt pattern `OnLMBReleased` nhánh non-Ctrl — xem `Blueprints/BP_FurnitureInputManager.md`
+§ OnLMBReleased FULL FLOW v1.6, 12/09/2026)
+
+### Trạng thái
+- **Open.** Không tự sửa — chờ cuhoang quyết định ưu tiên fix ngay hay defer.
 
 ---
 
