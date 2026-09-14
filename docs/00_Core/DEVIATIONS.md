@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 05/09/2026 (tiếp — Multi-apply Hướng B: known limitation tất-cả-hoặc-không)
+**Cập nhật:** 14/09/2026 (tiếp — G7.0a SpikeGate InteriorColorPicker: Build.cs +Engine, tách project standalone để package)
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1958,6 +1958,29 @@ thật khỏi code (`Widgets/WBP_MaterialCard.md`, `Blueprints/BP_FurnitureActor
 | 3 | `HighlightSwatchByIndex` viết MỚI thay vì tái dùng `OnSlotSwatchClicked` | Routine cũ gộp set-var+highlight trong 1 Custom Event, chưa tách hàm, dùng Array Index thay vì `SlotIndex` riêng của swatch — viết hàm mới tự chứa, không refactor routine cũ (KP3) |
 
 ✅ **G6.1 (6/6 test PASS) + G6.2 regression (8/8 PASS) — GATE G6 ĐÓNG HẲN (12/09/2026).**
+
+---
+
+## SPRINT 7 — 14/09/2026 — G7.0a SpikeGate (plugin `InteriorColorPicker`, C++ Slate) — as-built
+
+**Nguồn:** `14-09-2026_G7.0_AsBuilt_Delta_FULL.md` (thay bản rút gọn `14-09-2026_G7.0_AsBuilt_Delta.md`)
+mục 2.3 + mục 4. `[CHỨA AS-BUILT]` — cuhoang verify bằng build + mắt (PIE + packaged Dev/Shipping).
+Chi tiết đầy đủ: `Widgets/InteriorColorPicker.md`.
+
+| # | Nội dung | Lý do |
+|---|---|---|
+| 1 | `InteriorColorPicker.Build.cs` — `PublicDependencyModuleNames` thêm `Engine` (từ `{Core, CoreUObject, UMG, Slate, SlateCore}`) | `AInteriorColorPickerSpikeActor` cần `AActor`/`APlayerController`/`UGameplayStatics`/`FInputModeUIOnly` (module Engine). As-built delta so với khóa cứng 5 module trong task card — hợp lệ vì rơi đúng điều kiện "Engine thêm NẾU compiler chứng minh cần". Chỉ phục vụ spike harness; production `UInteriorColorPickerWidget` không đụng Engine. Cân nhắc bỏ `Engine` khi bỏ spike harness lúc production. |
+| 2 | Package spike ở project C++ standalone MỚI (rỗng, chỉ chứa plugin), KHÔNG package trên `Lighting_Mnger` | `Lighting_Mnger` là bản copy project tổng → ~67 plugin marketplace precompiled → package dính "missing precompiled manifest" (lộ `DLSSMoviePipelineSupport`, y hệt Gate 1.5). `InteriorColorPicker` không coupling `Foff_GameInstance`/`WBP_FOFF_ToolDemo` → tách sạch, build từ source không dính precompiled manifest. |
+| 3 | [DOC-FIX] Handoff phiên trước ghi sai "không tách được, build kèm FurnitureToolkit tự động" | As-built chứng minh ngược lại: tách hoàn toàn được, đó mới là đường đúng — khác Gate 1.5 (tool furniture bám 3 thứ project tổng nên khó tách; plugin này không coupling gì). |
+
+**Kết quả:** G7.0a = **GO (PASS)** — 3 primitive Slate sống packaged Shipping (10/10 case, ExitCode=0).
+Code thật hiện chỉ nằm ở project standalone — **CHƯA copy về `Lighting_Mnger`** (treo, chặn trước
+khi bắt đầu G7.1, xem `01_Session_State.md`).
+
+✅ **Task card đã áp (cuhoang cung cấp file sau lượt merge đầu):**
+`Sprints/Sprint7/14-09-2026_G7.0_SpikeGate_TaskCard.md` v1.0→v1.1 — mục 2 (ghi chú `Engine`
+module), mục 3 (thêm dòng quyết định achromatic-S=0), mục 6 case #9 (sửa thành regression guard,
+tiền đề v1.0 sai — lẫn 2 đường SetColor/slider, không đường nào cứu Hue qua slider một mình).
 
 ---
 

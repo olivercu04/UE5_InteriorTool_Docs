@@ -8,10 +8,11 @@
 **Last verified (tiếp):** 08/09/2026 — S7.G4 ĐÓNG. Round-trip material theo tên qua save/load PASS (2 slot, reset-rồi-apply-lại đúng tên, không đè nhau). Trục-A xác nhận đứng vững.
 **Last verified (tiếp):** 08/09/2026 — Opus giao task card G5 (kéo-thả material) + G6 (click-vào-mesh chọn slot). [VERIFY G5.0] trace-on-drop đã PASS 3/3 (Sonnet). Đánh đổi phạm vi kéo-thả (Hướng A — áp 1 slot dưới con trỏ, không đọc SelectedActors) đã CHỐT. Chờ Sonnet execute G5.1.
 **Last verified (tiếp):** 12/09/2026 — S7.G6 ĐÓNG HẲN. G6.1 (`NotifyViewportSlotClick` + `HighlightSwatchByIndex`) 6/6 PASS. G6.2 regression 8/8 PASS. Hook đặt ở `OnLMBReleased` (không phải Event Tick như plan gốc).
+**Last verified (tiếp):** 14/09/2026 — S7.G7.0a (SpikeGate InteriorColorPicker) ĐÓNG — **GO (PASS)**. 3 primitive Slate (`SColorWheel`+`SSimpleGradient`+`SSlider`) sống trong packaged Shipping, 10/10 case PASS, build ExitCode=0. Fallback Đ5 (preset swatch) không dùng tới. Mở G7.1.
 
 ---
 
-Current: Sprint 7 (Material v1.2) — G6 ĐÓNG HẲN (12/09/2026, G6.1+G6.2 PASS). Chờ cuhoang chốt: G7 (panel param) hay chuyển Sprint 6
+Current: Sprint 7 (Material v1.2, 6/10 gate) — S7G7T0 ĐÓNG (14/09/2026, GO). Next: S7G7T1
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -23,10 +24,10 @@ Current: Sprint 7 (Material v1.2) — G6 ĐÓNG HẲN (12/09/2026, G6.1+G6.2 PAS
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | S7.G6 (click-vào-mesh chọn slot) — ĐÓNG HẲN 12/09/2026. G6.1 (`NotifyViewportSlotClick`+`HighlightSwatchByIndex`) 6/6 PASS, G6.2 regression 8/8 PASS. Nửa sau Sprint 7 (G4-G6) đã xong toàn bộ. |
-| **Task Source** | `12-09-2026_G6.1-G6.2_AsBuilt_Delta.md` (as-built G6.1+G6.2). G6.0 VERIFY: delta "G6.0 As-Built: Click Resolution Flow" (12/09). G5 ĐÓNG: `11-09-2026_S7G5_G5.4_AsBuilt_Addendum.md`. Plan gốc: `DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md` |
-| **Next** | Chờ cuhoang chốt thứ tự: G7 (Động cơ panel param) tiếp tục Sprint 7, hay chuyển sang Sprint 6 (Polish UX) trước. |
-| **Blockers** | Không |
+| **Current Task** | **S7G7T0** (SpikeGate plugin `InteriorColorPicker`, C++ Slate: `SColorWheel`+`SSimpleGradient`+`SSlider`) — ĐÓNG 14/09/2026, **GO**. PIE + packaged Development + packaged Shipping đều 10/10 case PASS. Package thử ở project C++ standalone riêng (KHÔNG phải `Lighting_Mnger`, né precompiled-manifest lỗi giống Gate 1.5) — xem `Widgets/InteriorColorPicker.md`. Breakdown đầy đủ G7 (T0-T5): mục "G7 — breakdown task" phía trên. |
+| **Task Source** | `14-09-2026_G7.0_AsBuilt_Delta_FULL.md` (thay bản rút gọn `14-09-2026_G7.0_AsBuilt_Delta.md`) + `Sprints/Sprint7/14-09-2026_G7.0_SpikeGate_TaskCard.md` v1.1. G6.1+G6.2 ĐÓNG: `12-09-2026_G6.1-G6.2_AsBuilt_Delta.md`. Plan gốc G5-G6: `DELTA_Opus_S7_G5-G6_ExecutionPlan_08sep2026.md` |
+| **Next** | **S7G7T1** (`DT_MaterialParamMap` + `GetControlsForMaterial`). **Trước tiên:** copy 5+ file plugin từ project standalone ngược về `Lighting_Mnger` (code thật hiện chỉ nằm ở project spike) — xem `Widgets/InteriorColorPicker.md` mục Việc còn treo. |
+| **Blockers** | Không (S7G7T0 sub-phần G7.0b compat 5.6/5.7/5.8 chưa chạy nhưng KHÔNG chặn T1 — tách entry backlog riêng) |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
 (sau Gate 2: Backend B0→B5 — cloud, chợ combo)
@@ -50,15 +51,34 @@ ro đụng đồ đồng nghiệp.
 | **G9** | Pattern gạch (texture) + đóng Đ12 texture restore | Trung bình | Mắt | ~2 buổi |
 | **G10** | Regression tổng + VRAM + docs | Thấp | Chuỗi 12 bước | ~1-2 buổi |
 
-**G4 ĐÓNG 08/09/2026 — PASS. G5 ĐÓNG 11/09/2026 — PASS (G5.1-G5.4, regression 8/8). G6 ĐÓNG 12/09/2026 — PASS (G6.1 6/6, G6.2 regression 8/8).**
+**G4 ĐÓNG 08/09/2026 — PASS. G5 ĐÓNG 11/09/2026 — PASS (G5.1-G5.4, regression 8/8). G6 ĐÓNG 12/09/2026 — PASS (G6.1 6/6, G6.2 regression 8/8). G7.0a (SpikeGate) ĐÓNG 14/09/2026 — GO (10/10 case, PIE+Dev+Shipping). G7.1 (integration) chưa chạy.**
+
+### G7 — breakdown task (chuẩn `S{sprint}G{gate}T{task}`, thêm 14/09/2026)
+> Sprint 7 = 10 gate (G1-G10; G1-G3 đã ĐÓNG trước 08/09, không lặp ở bảng trên). G7 tự nó có
+> nhiều bước con, cần track riêng — dùng ID `S7G7T0`..`S7G7T5`. Xem `Rules/Execution_Discipline.md`
+> mục R-DOC-TASKID. Nguồn G7.1-G7.5: `Sprints/Sprint7/14-09-2026_G7.0_SpikeGate_TaskCard.md` mục 9.
+
+| Task ID | Tên | Trạng thái |
+|---|---|---|
+| **S7G7T0** | SpikeGate `InteriorColorPicker` (viability 3 primitive Slate) | ĐÓNG — GO (14/09, sub-phần G7.0a). Sub G7.0b (compat 5.6/5.7/5.8) chưa chạy — backlog, không chặn T1. |
+| **S7G7T1** | `DT_MaterialParamMap` (row struct C++) + `GetControlsForMaterial` helper | Chưa bắt đầu |
+| **S7G7T2** | `WBP_ParamScalarRow` + `WBP_ParamColorRow` (nhúng `UInteriorColorPickerWidget`) | Chưa bắt đầu |
+| **S7G7T3** | `WBP_MaterialParamPanel` (build rows, 2 nút Reset, panel-trống khi MI ngoài từ điển) | Chưa bắt đầu |
+| **S7G7T4** | Nối `MaterialSlotService` (SetSlotParam, MID-on-demand, debounce 1 snapshot/lần nhả) | Chưa bắt đầu |
+| **S7G7T5** | Multi-select áp param cả cụm theo SlotName/ParamName + test từ điển tạm 2 dòng | Chưa bắt đầu |
+
+**Next thật sự:** copy plugin về `Lighting_Mnger` (xem "Việc tiếp theo" dưới) rồi vào **S7G7T1**.
 
 ---
 
 ## Việc tiếp theo (chưa làm)
 
-1. **Next: chờ cuhoang chốt** — G7 (Động cơ panel param, tiếp Sprint 7) hay chuyển Sprint 6
-   (Polish UX) trước. G6 ĐÓNG HẲN (12/09) — nửa sau Sprint 7 (G4-G6) xong toàn bộ.
-2. **(Tùy chọn, không khẩn) Dọn `SaveComboFromSelection` Bước 5d** — xóa loop tính
+1. **Next: G7.1** — copy plugin `InteriorColorPicker` (5+ file) từ project standalone ngược về
+   `Lighting_Mnger`, rồi integration vào panel param thật. G7.0a (SpikeGate) ĐÓNG 14/09 — 3
+   widget Slate xác nhận sống packaged Shipping, không cần test lại tầng đó ở G7.1.
+2. **G6 as-built** — đã merge canonical (xem G6 ĐÓNG HẲN 12/09 phía trên); không còn treo.
+3. **G7.0b** (compat UE 5.6/5.7/5.8) — chưa chạy, backlog riêng, không chặn G7.1.
+4. **(Tùy chọn, không khẩn) Dọn `SaveComboFromSelection` Bước 5d** — xóa loop tính
    `MaterialOverrides_SaveCombo` (dư thừa, không ai đọc ở combo mới) — chỉ làm khi có thời gian
    rảnh, không phải ưu tiên.
 
@@ -96,9 +116,13 @@ ro đụng đồ đồng nghiệp.
 ## Recent changes (tối đa 5, mới nhất trên cùng)
 > Chỉ để định vị "vừa xong gì". Lịch sử đầy đủ → PROGRESS.md + Git.
 
+- 14/09 — S7.G7.0a (SpikeGate `InteriorColorPicker`) ĐÓNG — GO (PASS). 3 primitive Slate
+  (`SColorWheel`+`SSimpleGradient`+`SSlider`) sống packaged Shipping, 10/10 case PASS. Package thử
+  ở project standalone riêng (né precompiled-manifest lỗi kiểu Gate 1.5). Còn nợ: copy file plugin
+  ngược về `Lighting_Mnger` trước G7.1. Xem `Widgets/InteriorColorPicker.md`, `DEVIATIONS.md`.
 - 12/09 — S7.G6 ĐÓNG HẲN. G6.1 (`NotifyViewportSlotClick`+`HighlightSwatchByIndex`, hook ở
   `OnLMBReleased` — KHÔNG phải Event Tick như plan gốc, G6.0 xác nhận) 6/6 PASS. G6.2 regression
-  8/8 PASS. Nửa sau Sprint 7 (G4-G6) xong toàn bộ. Chờ cuhoang chốt G7 hay chuyển Sprint 6.
+  8/8 PASS. Nửa sau Sprint 7 (G4-G6) xong toàn bộ.
 - 11/09 (tiếp) — S7.G5.4 xong: dọn 3 chỗ debug scaffolding, regression 8/8 PASS. Phát hiện thêm
   1 gap (kéo-thả material thiếu AddRecentMaterial) — đã fix + verify. GATE G5 ĐÓNG HẲN.
 - 11/09 — S7.G5.1-G5.3 ĐÓNG. Nguồn kéo (BP_DragDropOperation_Material) + engine on-actor
@@ -109,9 +133,6 @@ ro đụng đồ đồng nghiệp.
   G5.0] trace-on-drop PASS 3/3 — phát hiện deviation `TraceSlotUnderCursor` cần thêm param
   `ScreenPosition` (Slate drag giữ quyền input chuột, PC không tự deproject được). Đánh đổi phạm
   vi kéo-thả Hướng A chốt (áp 1 slot dưới con trỏ, không đọc SelectedActors). Chờ execute G5.1.
-- 08/09 — S7.G4 ĐÓNG. Round-trip material theo tên qua save/load PASS (2 slot, reset-rồi-apply-lại
-  đúng tên, không đè nhau). Trục-A xác nhận đứng vững. Sang G5.
-  Combo lẫn RestoreSnapshot/Undo-Redo).
 
 ---
 

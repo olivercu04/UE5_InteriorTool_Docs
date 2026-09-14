@@ -1,6 +1,6 @@
 # 10 — Kỷ Luật Thực Thi (Không bỏ cuộc, không đi lạc)
 **Nguồn:** `import_raw/28-05-2026_10_Execution_Discipline.md` (base v1.0) + `import_raw/10_Execution_Discipline_patch_v2.md` (v2.0, 14/06/2026)
-**Phiên bản:** 3.3 | **Cập nhật:** 02/08/2026 (tiếp 2) — thêm R-DOC-ASBUILT (kết quả thực thi phải về doc canonical, không giữ trong file plan; tạm ghi ở plan → bắt buộc banner [CHỨA AS-BUILT])
+**Phiên bản:** 3.4 | **Cập nhật:** 14/09/2026 — thêm R-DOC-TASKID (định danh task con `S{sprint}G{gate}T{task}`, áp từ Sprint 7 Gate 7)
 **Mục đích:** Cơ chế đảm bảo bám kế hoạch nhưng vẫn thích nghi được khi plan sai, không trôi dạt, không bỏ cuộc giữa chừng.
 
 ⚠️ Đọc file này cùng với `Rules/AI_Implementation_Rules.md`. File 09 = cách code đúng. File 10 = cách KHÔNG đi lạc trong quá trình code.
@@ -307,6 +307,19 @@ ai bắt (1 sự thật bị chép tay ở nhiều chỗ độc lập → sớm 
   rồi quét sau. Nguồn: 6 file "Plan"/"Task Card" bị lẫn as-built phát hiện qua quét lan 02/08 —
   xem `DEVIATIONS.md` mục "[DOC-DEBT] AS-BUILT lẫn trong Plans/Sprints — 02/08/2026".
 
+### R-DOC-TASKID — Định danh task chuẩn `S{sprint}G{gate}T{task}` (thêm 14/09/2026)
+- Task con bên trong 1 gate (vd Gate 7 Sprint 7 có nhiều bước: SpikeGate, data layer, widget
+  row, panel, service, multi-select) đặt tên `S{sprint}G{gate}T{task}` — vd `S7G7T0`, `S7G7T1`,
+  `S7G7T2`. Số task bắt đầu từ `T0` (thường là bước validate/spike rủi ro cao nhất trong gate,
+  đứng trước mọi task khác — xem `S7G7T0` = SpikeGate `InteriorColorPicker`).
+- Áp dụng khi 1 gate có ≥2 bước con cần track riêng (test PASS độc lập, có thể đứt gãy độc lập).
+  Gate chỉ có 1 khối việc liền mạch (như G4-G6 trước đó) KHÔNG bắt buộc đổi sang task ID — chỉ
+  Gate 7 trở đi mới áp mới (không hồi tố ngược G1-G6).
+- Bảng breakdown task của gate đang chạy đặt ở `01_Session_State.md` (mục "Bản đồ gate" hoặc
+  section riêng ngay dưới), KHÔNG lặp lại ở PROGRESS.md — PROGRESS.md chỉ đếm theo **gate**
+  (G1-G10), không đếm theo task con, tránh 2 mẫu số chồng nhau. Nguồn: cuhoang yêu cầu 14/09/2026,
+  xem `PROGRESS.md` bar Sprint 7 đổi mẫu số 9→10 (đếm theo G1-G10) cùng đợt.
+
 ---
 
 ## Lịch sử cập nhật
@@ -319,3 +332,4 @@ ai bắt (1 sự thật bị chép tay ở nhiều chỗ độc lập → sớm 
 | 3.1 | 02/08/2026 | Thêm **R-DOC-DONE** — task tick `[x]` khi tính năng chạy và không ai làm tiếp; nghiệm thu/sweep/regression còn treo → tách entry riêng `Bugs/Open_Bugs.md`, KHÔNG giữ task checklist mở. `[~]` chỉ dùng cho việc đang làm dở trong sprint hiện tại. Nguồn: mâu thuẫn nội bộ PROGRESS.md phát hiện quanh trạng thái P2 (Studio Thumbnail) — xem `DEVIATIONS.md` "[DOC-DEBT đã đóng] PROGRESS.md P2 self-contradiction — 02/08/2026". |
 | 3.2 | 02/08/2026 (tiếp) | Thêm **R-DOC-ATOMIC** — 1 ô checklist = 1 việc tick độc lập; ô gộp nhiều việc độc lập không tách giữa sprint (chỉ sửa text mô tả), chỉ tách thành nhiều ô lúc recount mẫu số đầu sprint kế tiếp. Nguồn: ô `C3` trong PROGRESS.md gộp 3 việc (Save dialog/móc capture thumbnail/P4 LOCALAPPDATA) — xem `DEVIATIONS.md` "[DOC-DEBT] C3 gộp 3 việc — 02/08/2026". |
 | 3.3 | 02/08/2026 (tiếp 2) | Thêm **R-DOC-ASBUILT** — kết quả thực thi (test PASS/K2Node export/đính chính as-built) phải cập nhật vào doc canonical `Blueprints/`/`Widgets/`, không chỉ ghi trong file plan; tạm ghi ở plan → bắt buộc chèn banner `📌 [CHỨA AS-BUILT]` ngay lúc ghi. Nguồn: 6 file Plan/Task Card lẫn as-built phát hiện qua quét lan — xem `DEVIATIONS.md` "[DOC-DEBT] AS-BUILT lẫn trong Plans/Sprints — 02/08/2026". |
+| 3.4 | 14/09/2026 | Thêm **R-DOC-TASKID** — task con trong 1 gate đặt tên `S{sprint}G{gate}T{task}` (vd `S7G7T0`), bắt đầu từ `T0`. Áp từ Sprint 7 Gate 7 trở đi (không hồi tố G1-G6). Breakdown task đặt ở `01_Session_State.md`, PROGRESS.md chỉ đếm theo gate (G1-G10), tránh 2 mẫu số chồng nhau. Nguồn: cuhoang yêu cầu 14/09/2026, gắn cùng đợt sửa bar Sprint 7 9→10 trong `PROGRESS.md`. |

@@ -120,9 +120,21 @@ Sprint 5 — Combo Mesh         ████████████████
                                A+B+C+D+E) → item cha `[~]` đủ điều kiện tick `[x]`, tử số +1
                                (18→19). Xem `01_Session_State.md` 08/08/2026.]
 Sprint 6 — Polish UX          ░░░░░░░░░░░░░░░  0/15 task (+C7, dời từ Sprint 5 31/07)
-Sprint 7 — Material v1.2      ░░░░░░░░░        0/9  task
+Sprint 7 — Material v1.2      ██████░░░░       6/10 gate (G1-G6 DONE; G7 đang chạy —
+                               S7G7T0 SpikeGate GO 14/09, sang S7G7T1. Đếm theo gate G1-G10, xem
+                               `01_Session_State.md` mục "Bản đồ gate")
+                               [14/09 mẫu số sửa 9→10: bar cũ "0/9" đứng im từ trước lần resequence
+                               08/09 (khi đó plan còn G4-G8), không cập nhật theo bản đồ G1-G10
+                               mới dù G4/G5/G6 đã ĐÓNG — R-DOC-COUNT recount lại. Đơn vị đổi từ
+                               "task" rời sang "gate" cho khớp bản đồ; task con trong gate track
+                               riêng bằng ID `S{sprint}G{gate}T{task}` (luật mới R-DOC-TASKID,
+                               `Rules/Execution_Discipline.md` v3.4), không cộng dồn vào mẫu số
+                               Sprint.]
 
-TỔNG: 73/103 task
+TỔNG: 73/103 task ⚠️ [14/09: đổi mẫu số Sprint 7 (9→10, task→gate) làm số này LỆCH — chưa recount
+lại. Tổng thật cần R-DOC-PASS cuối sprint mới chốt (tổng hiện tại vốn đã không khớp tổng các dòng
+trên — 73 ≠ 15+9+12+8+3+9+22+0+0=78 — drift từ trước, không phải do đợt sửa này). KHÔNG dùng số
+73/103 để báo cáo cho tới khi recount.]
 ```
 
 ---
@@ -530,3 +542,4 @@ Chi tiết kỹ thuật: `WBP_FurnitureInventory.md` v2.6 + `WBP_TreeNode.md` + 
 | 11/09/2026 | S7.G5.1-G5.3 ĐÓNG (nguồn kéo + engine on-actor + router). 4 bug fix trong phiên. Còn G5.4 (dọn + regression 8 case) trước khi G5 ĐÓNG hẳn. |
 | 11/09/2026 (tiếp) | S7.G5 ĐÓNG HẲN (G5.4: dọn scaffolding + regression 8/8 PASS + fix gap Recent Material). Kéo-thả material end-to-end hoàn chỉnh. Next: G6.0. |
 | 12/09/2026 | S7.G6 ĐÓNG HẲN. G6.1 (`NotifyViewportSlotClick` + `HighlightSwatchByIndex`, click-vào-mesh chọn slot) 6/6 test PASS. G6.2 regression 8/8 PASS. Hook đặt ở `OnLMBReleased` (không phải Event Tick như plan gốc — G6.0 xác nhận đường chính chốt selection). Next: G7 (động cơ panel param) hoặc Sprint 6 — cuhoang quyết thứ tự. |
+| 14/09/2026 (G7.0a) | S7.G7.0a (SpikeGate plugin `InteriorColorPicker`, C++ Slate `SColorWheel`+`SSimpleGradient`+`SSlider`) ĐÓNG — **GO (PASS)**. PIE + packaged Development + packaged Shipping đều 10/10 case PASS, build ExitCode=0, không symbol bị strip. Fallback Đ5 (preset swatch) không dùng tới, Color Wheel không về backlog. Package thử ở project C++ standalone riêng (KHÔNG phải `Lighting_Mnger`, né lỗi precompiled-manifest kiểu Gate 1.5). Còn nợ trước G7.1: copy 5+ file plugin ngược về `Lighting_Mnger`. G7.0b (compat 5.6/5.7/5.8) chưa chạy, backlog riêng, không chặn. Xem `Widgets/InteriorColorPicker.md`, `01_Session_State.md`, `DEVIATIONS.md`. |

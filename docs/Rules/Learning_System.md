@@ -1,6 +1,6 @@
 # Hệ thống học UE5 — Cá nhân hóa
 **Nguồn:** `import_raw/Learning_System.md`
-**Phiên bản:** 1.3 | **Cập nhật:** 01/07/2026 — thêm chuẩn định dạng giải thích (sơ đồ + ví dụ đời thường, tránh đoạn văn dài) | Mentor: Claude | Học viên: Cuhoang
+**Phiên bản:** 1.4 | **Cập nhật:** 14/09/2026 — thêm "Điều chỉnh quy trình" phiên G7.0a SpikeGate (C++ Slate) | Mentor: Claude | Học viên: Cuhoang
 
 ---
 
@@ -206,6 +206,23 @@ Bài học rút ra (áp dụng từ đây):
 4. **cuhoang đẩy nhịp đúng (ghi nhận):** khi Claude hỏi lại mấy thứ cơ bản đã confirm
    ("đã Play lại chưa"), cuhoang phản hồi thẳng → Claude bỏ ngay, không lặp. Giữ nhịp
    ngang hàng này: cuhoang chắc chỗ nào thì Claude tin, không hỏi thừa để "phòng xa".
+
+---
+
+## Điều chỉnh quy trình — 14/09/2026 (phiên G7.0a SpikeGate, C++ Slate)
+
+Bối cảnh: phiên spike C++ thuần đầu tiên đụng Slate (`SColorWheel`/`SSimpleGradient`/`SSlider`),
+khác hẳn nhịp Blueprint quen thuộc. Ghi lại pattern quy trình xác nhận đúng (giữ), không phải bug.
+
+1. **Claude đoán sai chữ ký nhiều lần** (`InteriorHSVState` member vs namespace,
+   `SSimpleGradient.Orientation`) — mỗi lần đều đã cảnh báo trước "nhớ từ API, chưa đọc header
+   máy mày". Khi sai, đọc header thật thay vì đoán tiếp — pattern đúng, giữ nguyên.
+2. **cuhoang bắt lỗi bằng mắt nhanh hơn Claude suy từ doc** (gradient chạy ngang/dọc, chiều
+   sáng/tối) — xác nhận lại nguyên tắc "test 1 phút bằng mắt thắng suy luận dài" (xem `C1` trong
+   `AI_Implementation_Rules.md`).
+3. **Kiểm hiểu bài sau mỗi bước KHÔNG skip dù đang chuỗi dài.** cuhoang tick đúng phần lớn; 1 câu
+   sai (case wheel/slider vì sao khác) là do gợi ý Claude đưa SAI hướng — Claude nhận lỗi, giảng
+   lại, không tick khống. Giữ nhịp kiểm tra này kể cả khi task đang chạy nhanh.
 
 ---
 

@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.15 | **Cập nhật:** 22/08/2026 — thêm mục L-DOC (ghi/đọc canonical Blueprint flow, hai biên khóa K2/canonical), đặt sau L12
+**Phiên bản:** 2.16 | **Cập nhật:** 14/09/2026 — thêm mục C1-C9 (gotcha C++/Slate, từ Spike G7.0a `InteriorColorPicker`), đặt sau L12, trước L-DOC
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -160,6 +160,49 @@ IfThenElse kiểm IsValid(LoadedTex) dead-end → khi gọi liên tục trong Fo
 (LoadComboLibrary), combo chưa có thumbnail hiện NHẦM ảnh của combo trước đó trong vòng
 lặp. Q8 self-check L2 khi audit Function có Return Value: liệt kê ĐỦ từng nhánh, xác nhận
 mỗi nhánh có Return Node riêng.
+
+## C1-C9 — Gotcha C++/Slate (từ Spike G7.0a `InteriorColorPicker`, 14/09/2026)
+> Khác L1-L12 (Blueprint node) — mục này riêng cho phần code C++ thuần (plugin Slate/UMG), áp
+> dụng khi task đụng `.Build.cs`, `SWidget`/`UWidget` custom, hoặc packaged test.
+
+### C1 — Compile pass ≠ đúng ngữ nghĩa
+`.Orientation(Orient_Vertical)` compile được nhưng có thể vô tác dụng nếu trùng default. Nghi ngờ
+hành vi widget → test 1 phút bằng mắt (A/B đổi giá trị ngược), đừng suy từ tên/giả định.
+
+### C2 — `SSimpleGradient.Orientation` ngược trực giác
+`Orient_Horizontal` cho ra dải màu chạy DỌC. Tham số mô tả hướng các dải màu, không phải trục
+widget.
+
+### C3 — Forward-declare ≠ dùng được
+`UUserWidget.h` chỉ forward-declare `UWidgetTree` → subclass gọi hàm phải tự
+`#include "Blueprint/WidgetTree.h"`. Pattern lặp lại toàn UE.
+
+### C4 — 2 tầng lỗi build: compile vs link
+Compile cần header; link cần module trong `Build.cs`. Nhiều `unresolved external` cùng prefix
+class = thiếu 1 module (đọc log link gom theo class prefix, 1 gốc không phải N lỗi).
+
+### C5 — Cascade Slate dễ vỡ từ 1 arg sai kiểu
+`SNew(...).Arg(...)[...]` là 1 biểu thức nối bằng operator overload — 1 arg sai kiểu làm vỡ cả
+chuỗi, phun lỗi vô nghĩa phía sau. Luôn tìm dòng `no overloaded function`/`does not name a type`
+ĐẦU TIÊN trong log.
+
+### C6 — Delegate 0-param vs 1-param
+`OnMouseCaptureBegin/End` = `DECLARE_DELEGATE` (0 param); `OnValueChanged` = 1 param. Handler End
+không nhận param — lúc End, state đã được Changed cập nhật sống lúc kéo rồi.
+
+### C7 — 2 hệ vòng đời độc lập (UObject vs SWidget)
+UObject sống chết theo GC; SWidget theo refcount SharedPtr. `UWidget` nên bind qua `CreateUObject`
+(tự hủy binding khi GC); `ReleaseSlateResources → Reset()` vẫn bắt buộc vì SWidget không tự chết
+theo UWidget (chống VRAM leak, xem R4).
+
+### C8 — Live Coding chặn Build qua VS
+"Unable to build while Live Coding is active" — đóng Editor hoặc Ctrl+Alt+F11. Giai đoạn cần độ
+tin cậy cao (gate) → đóng Editor build sạch, đừng tin Live Coding patch.
+
+### C9 — Source plugin package sạch, marketplace precompiled thì không
+Project tổng (`Lighting_Mnger`) kéo theo nhiều plugin marketplace precompiled → package dễ dính
+"missing precompiled manifest". Plugin C++ độc lập (không coupling code project tổng) tách sang
+project rỗng để package = né lỗi này hoàn toàn (xem `Widgets/InteriorColorPicker.md`).
 
 ## L-DOC — Ghi & đọc canonical Blueprint flow (hai biên khóa)
 
