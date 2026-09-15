@@ -214,3 +214,33 @@ Row Name tùy ý — hàm tra bằng field `BaseMaterial`, KHÔNG bằng Row Nam
 | 4 | đọc field 2 row | LabelVI+ParamName đúng | ✅ |
 
 Q9: MIỄN (C++ thuần, không đụng `SelectedActors`).
+
+### HexToLinearColor(HexString, OutColor) → bool (S7G7T2, 15/09/2026)
+> Cùng class `UMaterialParamMap` (`MaterialParamMap.h/.cpp`), KHÔNG phải file C++ mới. Nguồn:
+> `DELTA — S7G7T2 AS-BUILT` (Opus+Sonnet, 15/09/2026) Phần E. Dùng bởi `Widgets/WBP_ParamColorRow.md`
+> (`EditableTextBox_Hex.OnTextCommitted`).
+
+```cpp
+// Parse hex "RRGGBB" hoặc "RRGGBBAA" (có/không dấu #) → LinearColor.
+// Validate hex hợp lệ TRƯỚC khi gọi FColor::FromHex (hàm gốc không an toàn với input rác).
+UFUNCTION(BlueprintPure, Category = "Material|ParamMap")
+static bool HexToLinearColor(const FString& HexString, FLinearColor& OutColor);
+```
+```cpp
+bool UMaterialParamMap::HexToLinearColor(const FString& HexString, FLinearColor& OutColor)
+{
+    FString Clean = HexString.TrimStartAndEnd();
+    if (Clean.StartsWith(TEXT("#"))) { Clean = Clean.RightChop(1); }
+    if (Clean.Len() != 6 && Clean.Len() != 8) { return false; }
+    for (const TCHAR C : Clean) { if (!FChar::IsHexDigit(C)) { return false; } }
+    const FColor Parsed = FColor::FromHex(Clean);
+    OutColor = FLinearColor(Parsed);
+    return true;
+}
+```
+
+**Test cô lập — 4/4 PASS:** `FF0000`→true đỏ đúng · `#00FF00FF`→true xanh đúng · `zzz`→false ·
+`12345` (sai độ dài)→false.
+
+**Node UE sẵn dùng (verify, thêm vào bảng node được phép nếu chưa có):** `To Hex` /
+`ToHex_LinearColor` (`KismetMathLibrary`, format `RRGGBBAA`, nhận thẳng `LinearColor`).

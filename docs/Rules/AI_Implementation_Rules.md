@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.16 | **Cập nhật:** 14/09/2026 — thêm mục C1-C9 (gotcha C++/Slate, từ Spike G7.0a `InteriorColorPicker`), đặt sau L12, trước L-DOC
+**Phiên bản:** 2.17 | **Cập nhật:** 15/09/2026 — thêm L13 (bẫy `Const` Function UMG), L14 (pure node đọc nhiều lần), từ phiên S7G7T2 | 2.16 (14/09/2026) — thêm mục C1-C9 (gotcha C++/Slate, từ Spike G7.0a `InteriorColorPicker`), đặt sau L12, trước L-DOC
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -160,6 +160,29 @@ IfThenElse kiểm IsValid(LoadedTex) dead-end → khi gọi liên tục trong Fo
 (LoadComboLibrary), combo chưa có thumbnail hiện NHẦM ảnh của combo trước đó trong vòng
 lặp. Q8 self-check L2 khi audit Function có Return Value: liệt kê ĐỦ từng nhánh, xác nhận
 mỗi nhánh có Return Node riêng.
+
+### L13 — `Const` trên Function Blueprint (UMG) là bẫy 2-lỗi-1-gốc (15/09/2026)
+```
+Tạo Function mới trong UMG WBP có thể bị tick sẵn Const (checkbox trong Details panel,
+mục Graph). Hệ quả: KHÔNG cho SET biến member ("read-only within this context"), VÀ
+KHÔNG cho gọi bất kỳ function nào khác có khả năng ghi state ("can modify state and
+cannot be called on self because it is a read-only Target") — 2 dòng lỗi nhìn như 2 bug
+khác nhau nhưng cùng 1 nguyên nhân.
+```
+Gặp cả 2 lỗi này cùng lúc trên 1 function mới tạo → kiểm `Const` trước tiên, đừng đoán lung
+tung. Phát hiện trong phiên S7G7T2 (`WBP_ParamScalarRow`/`WBP_ParamColorRow`).
+
+### L14 — Pure node đọc pin nhiều lần = chạy lại toàn bộ chuỗi (15/09/2026)
+```
+Pure node (BlueprintPure, không có exec pin) được UE RE-EVALUATE mỗi lần 1 pin output
+của nó được đọc — không cache kết quả giữa các lần đọc trong cùng 1 nhánh thực thi.
+Đọc cùng 1 pure node ở ≥2 chỗ trong 1 nhánh → chuỗi phía trước nó chạy lại nhiều lần.
+```
+Ví dụ thật (`WBP_ParamColorRow.OnTextCommitted`): `HexToLinearColor` bị đọc pin 2 lần
+(`ReturnValue` cho Branch, `OutColor` cho `SyncCurrentColor`) → `Conv_TextToString→
+HexToLinearColor` chạy lại 2 lần. Vô hại nếu chuỗi rẻ (như case này), nhưng tốn nếu chuỗi
+đắt (async, DB lookup, loop lớn) — nếu vậy SET kết quả vào local var 1 lần rồi đọc lại var,
+đừng đọc thẳng pin pure node nhiều chỗ.
 
 ## C1-C9 — Gotcha C++/Slate (từ Spike G7.0a `InteriorColorPicker`, 14/09/2026)
 > Khác L1-L12 (Blueprint node) — mục này riêng cho phần code C++ thuần (plugin Slate/UMG), áp

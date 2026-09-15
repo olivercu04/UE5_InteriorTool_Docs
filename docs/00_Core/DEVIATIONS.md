@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 15/09/2026 (tiếp — fix `Bug-MaterialSlots-MissingInClipboard`: quy tắc Array input trống call-site vs SET-node)
+**Cập nhật:** 15/09/2026 (tiếp — S7G7T2: CurrentColor single-source-of-truth, hex-error chỉ revert, backlog Project Palette/Recent Colors)
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -2048,6 +2048,51 @@ Khi sửa `SpawnFurnitureCopy` (+input `MaterialSlots`) để fix bug clipboard 
 
 → Ghi lại để tránh nhầm lẫn tương lai khi thêm field Array mới vào chuỗi tương tự (khác hành vi
 `MaterialOverrides` cũ mà nhiều đoạn code cũ dựa vào).
+
+---
+
+## 15/09/2026 — as-built note (S7G7T2): `CurrentColor` single-source-of-truth pattern
+
+**Nguồn:** `DELTA — S7G7T2 AS-BUILT + Bài học phiên` (Opus+Sonnet, 15/09/2026) Phần D1.
+`[CHỨA AS-BUILT]`. Chi tiết đầy đủ: `Widgets/WBP_ParamColorRow.md`.
+
+Task card gốc không đặc tả rõ; cuhoang chủ động chốt trong phiên: mọi UI con (Border preview / ô
+Hex / `InteriorColorPicker`) đọc từ 1 biến `CurrentColor` DUY NHẤT, đồng bộ qua 1 hàm hub
+`SyncCurrentColor` — không cho phép state rải rác nhiều nơi dễ lệch nhau.
+
+→ **Giữ pattern này làm mẫu cho mọi widget multi-display sau này trong G7** (và G8/G9 khi mở rộng
+từ điển param thật).
+
+---
+
+## 15/09/2026 — as-built note (S7G7T2): hex-error UX thu hẹp — chỉ revert, không đỏ chữ + Timer
+
+**Nguồn:** `DELTA — S7G7T2 AS-BUILT + Bài học phiên` (Opus+Sonnet, 15/09/2026) Phần D3.
+`[CHỨA AS-BUILT]`. Chi tiết đầy đủ: `Widgets/WBP_ParamColorRow.md`.
+
+Thu hẹp so với task card gốc ("inline error + revert"): gõ hex sai → `EditableTextBox_Hex` CHỈ
+revert về giá trị `CurrentColor` hiện tại, KHÔNG bắn dispatcher nào, KHÔNG hiện chữ đỏ + Timer.
+
+Lý do: revert (chữ rác biến mất, giá trị đúng quay lại) tự nó đã là tín hiệu đủ rõ; thêm Timer kéo
+theo latent + state màu-chữ cho lợi ích nhỏ. Không latent = đúng luật L8 (Latent chỉ trong Custom
+Event, ở đây tránh hẳn không cần).
+
+---
+
+## [BACKLOG UX sau G7] Project Palette / Recent Colors — thay preset tĩnh trong `WBP_ParamColorRow`
+
+**Nguồn:** `DELTA — S7G7T2 AS-BUILT + Bài học phiên` (Opus+Sonnet, 15/09/2026) Phần D2.
+
+`WBP_ParamColorRow` v1 (15/09) đã BỎ 8 `Button_Preset` — không phải quên, là quyết định có chủ
+đích. cuhoang phân biệt 3 nhu cầu UX khác nhau của "swatch màu":
+- **Color Picker** — "tôi muốn tìm màu mới" (đã có, wheel+hex).
+- **Project Palette** (chưa làm) — "tôi muốn dùng lại màu đang có trong thiết kế".
+- **Recent Colors** (chưa làm) — "tôi vừa dùng màu này, lấy lại nhanh".
+
+Preset tĩnh 8 màu cố định không phục vụ đúng nhu cầu nào trong 3 cái trên — dồn việc dựng swatch UI
+lại khi Project Palette/Recent Colors có dữ liệu thật để suggest (sau G7, chưa có ETA). Đây là
+insight sản phẩm cụ thể từ cuhoang — **giữ nguyên văn khi lập kế hoạch Project Palette / Recent
+Colors sau này, không diễn giải lại khác đi.**
 
 ---
 

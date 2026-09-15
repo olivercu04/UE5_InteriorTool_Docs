@@ -1,6 +1,6 @@
 # MERGE LOG — UE5 InteriorTool Docs
 **Mục đích:** Reviewer chỉ cần đọc file này để biết file nào cần soi kỹ.
-**Cập nhật:** 15/09/2026 (tiếp — SpawnFurnitureCopy viết lại theo K2Node export thật, 3 drift đóng)
+**Cập nhật:** 15/09/2026 (tiếp — S7G7T2 ĐÓNG: WBP_ParamScalarRow/WBP_ParamColorRow, chờ xác nhận L-rule mới)
 **Cập nhật (tiếp) 02/08/2026:** thêm mục "HISTORICAL stamps 02/08/2026" (banner [HISTORICAL] cho 8 file plan/Sprint cũ).
 **Cập nhật (tiếp) 02/08/2026 (b):** `Sprints/Sprint3/Regression_DualDispatcher_Log.md` — quyết định cuối KHÔNG đóng dấu (as-built phụ), thêm vào coverage như nguồn as-built phụ cho BP_FurnitureInputManager.md/BP_UndoManager.md.
 **Cập nhật (tiếp) 02/08/2026 (c):** thêm mục "AS-BUILT lẫn trong Plans/Sprints — 02/08/2026" — 6 file đóng dấu `📌 [CHỨA AS-BUILT]` (không di chuyển/đổi tên).
@@ -121,6 +121,22 @@ bên trong không — ghi đúng K2Node, không suy diễn thêm). Cũng phát h
 `SpawnFurnitureCopy` viết lại theo K2Node thật trong `Blueprints/Flows/CopyPaste_Flow.md` v2.2
 (đóng dấu `[ĐÃ K2Node VERIFY]`), giữ nguyên `MeshPath`/`DAPath`/Tags/GroupID (`then_0` phần đầu) và
 `PlacementSurfaceType`/`AddRecentMesh` (`then_2`) vì khớp bản cũ, không đổi.
+**Cập nhật (tiếp) 15/09/2026 (S7G7T2 ĐÓNG):** 📌 merge `DELTA — S7G7T2 AS-BUILT + Bài học phiên`
+(Opus+Sonnet). `[CHỨA AS-BUILT]`. **Tạo mới** `Widgets/WBP_ParamScalarRow.md` (Hierarchy,
+`Setup`, event flow Slider/SpinBox → 3 dispatcher, 2 bug fix B1/B2, test 4/4 PASS) và
+`Widgets/WBP_ParamColorRow.md` (Hierarchy, `SyncCurrentColor` hub, `Setup`, event flow
+Picker/Hex → 3 dispatcher, 3 quyết định D1-D3, test PASS). `Data/MaterialSlotService_Reference.md`
+mục "UMaterialParamMap" — APPEND hàm `HexToLinearColor` (cùng class `UMaterialParamMap`, không
+file C++ mới). `01_Session_State.md`: Current/Next S7G7T1→S7G7T2 ĐÓNG, bảng breakdown G7 cập nhật,
+Recent changes +1 dòng (drop dòng cũ nhất giữ max 5). `PROGRESS.md`: +1 dòng log. `DEVIATIONS.md`:
++3 mục (as-built D1 `CurrentColor` single-source-of-truth, as-built D3 hex-error chỉ revert,
+`[BACKLOG UX sau G7]` Project Palette/Recent Colors — Phần D2 nguyên văn). KHÔNG sửa chữ ký
+hàm/node flow nào — merge nguyên văn as-built.
+✅ **Mục 7 đóng (cuhoang xác nhận số L):** `Rules/AI_Implementation_Rules.md` v2.16→v2.17 — thêm
+**L13** (bẫy `Const` trên Function Blueprint UMG, Phần F1) + **L14** (pure node đọc pin nhiều lần
+= chạy lại chuỗi, Phần F3), đặt ngay sau L12. F2 (dead-end pin qua K2Node export) — bỏ qua theo
+đúng chỉ định delta (đã có sẵn tinh thần trong `AI_Communication_Rules.md` mục Blueprint Export
+Method, không lặp lại).
 
 ---
 
