@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 14/09/2026 (tiếp — G7.0a SpikeGate InteriorColorPicker: Build.cs +Engine, tách project standalone để package)
+**Cập nhật:** 15/09/2026 (tiếp — fix `Bug-MaterialSlots-MissingInClipboard`: quy tắc Array input trống call-site vs SET-node)
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -1974,13 +1974,80 @@ Chi tiết đầy đủ: `Widgets/InteriorColorPicker.md`.
 | 3 | [DOC-FIX] Handoff phiên trước ghi sai "không tách được, build kèm FurnitureToolkit tự động" | As-built chứng minh ngược lại: tách hoàn toàn được, đó mới là đường đúng — khác Gate 1.5 (tool furniture bám 3 thứ project tổng nên khó tách; plugin này không coupling gì). |
 
 **Kết quả:** G7.0a = **GO (PASS)** — 3 primitive Slate sống packaged Shipping (10/10 case, ExitCode=0).
-Code thật hiện chỉ nằm ở project standalone — **CHƯA copy về `Lighting_Mnger`** (treo, chặn trước
-khi bắt đầu G7.1, xem `01_Session_State.md`).
+Code thật hiện chỉ nằm ở project standalone — ~~CHƯA copy về `Lighting_Mnger`~~ **✅ ĐÃ copy 15/09/2026**
+(build sạch, plugin enabled, PIE chạy được — xem `01_Session_State.md`).
 
 ✅ **Task card đã áp (cuhoang cung cấp file sau lượt merge đầu):**
 `Sprints/Sprint7/14-09-2026_G7.0_SpikeGate_TaskCard.md` v1.0→v1.1 — mục 2 (ghi chú `Engine`
 module), mục 3 (thêm dòng quyết định achromatic-S=0), mục 6 case #9 (sửa thành regression guard,
 tiền đề v1.0 sai — lẫn 2 đường SetColor/slider, không đường nào cứu Hue qua slider một mình).
+
+---
+
+## SPRINT 7 — 15/09/2026 — S7G7T1 as-built (`GetControlsForMaterial`) — as-built note
+
+**Nguồn:** `DELTA — S7G7T1 AS-BUILT + Backlog Static Switch` (Opus, 15/09/2026), Phần A5.
+`[CHỨA AS-BUILT]`. Chi tiết đầy đủ: `Data/MaterialSlotService_Reference.md` mục "UMaterialParamMap".
+
+**S7G7T1 ĐÓNG — PASS 4/4.** Không có deviation về API/scope so với plan. 1 as-built note:
+
+| # | Nội dung | Lý do |
+|---|---|---|
+| 1 | Cách so sánh chốt trong `GetControlsForMaterial` = **CON TRỎ** `GetBaseMaterial()` sau `LoadSynchronous`, KHÔNG path string (`GetPathName()` lẫn `GetFName()` — cả 2 option plan để ngỏ `[VERIFY]` đều bị loại) | Bằng chứng thật: so path string FAIL ở Case 3 (MID) — MID bọc quanh MI có path KHÁC path MI gốc → string không khớp. So con trỏ sau `LoadSynchronous` → cả MI tĩnh lẫn MID đều resolve về CÙNG 1 `UMaterial` base → `==` đúng |
+
+→ Giữ lại để future không quay lại dùng path string cho khóa tra material.
+
+---
+
+## [BACKLOG sau Sprint 7] Static Switch runtime toggle
+
+**Nguồn:** `DELTA — S7G7T1 AS-BUILT + Backlog Static Switch` (Opus, 15/09/2026) Phần B. Liên hệ
+**Đ1** (`Plans/Sprint7_MaterialEdit_Plan_v1.1.md` — static param → Plan B MI-swap).
+
+**Bối cảnh:** cuhoang xác nhận CÓ param Static Switch mà khách thật sự muốn tự bật/tắt. Hiện
+`ControlType` (S7G7T1) chỉ có Scalar/Color — chưa phủ true/false.
+
+**Luật cứng (kiến trúc UE, không cãi):** Static Switch nướng lúc compile shader → KHÔNG đổi
+runtime mà không **biên dịch lại shader**. "Dynamic switch" đổi thẳng static switch lúc chạy =
+không tồn tại.
+
+**3 hướng, xếp theo khuyến nghị:**
+
+| # | Hướng | Cơ chế | Giá phải trả |
+|---|---|---|---|
+| 1 | MI-swap (= Đ1 Plan B, sẵn có) | Làm sẵn 2 biến thể MI (`_ON`/`_OFF`), toggle đổi hẳn MI | Bùng nổ tổ hợp: n switch độc lập = 2ⁿ biến thể MI |
+| 2 | **Lerp + Scalar (KHUYẾN NGHỊ)** | Sửa MASTER: đổi Static Switch → node `Lerp` điều khiển bởi Scalar param (0/1) → rơi thẳng vào `SetSlotScalarParam` ĐÃ CÓ, không code mới, không nhân MI | Cả 2 nhánh tính trong shader (nặng GPU chút — chấp nhận với tool desktop). **PHẢI sửa master material.** |
+| 3 | Static Switch thật + chấp nhận khựng | Giữ static switch, khách bấm → khựng ~0.5–2s recompile shader lần đầu (sau cache) | Xấu UX. Không khuyến nghị. |
+
+**2 chặn thực tế (cuhoang quyết, không tự làm):**
+1. **Đụng master material của đồng nghiệp** — sửa Lerp+Scalar (cách 2) = đổi tài sản chung. Phải
+   bàn + duyệt trước (cùng loại "chưa chốt" với thỏa thuận combo mesh).
+2. **Ngoài Sprint 7** — chuyển static→dynamic là cụm việc riêng (sửa master + khảo sát param nào
+   đáng chuyển), ngang 1 gate nhỏ. Xếp SAU Sprint 7, KHÔNG nhét giữa T2–T5.
+
+**Chốt backlog 1 dòng:** *Static switch khách cần bật/tắt → ưu tiên hướng Lerp+Scalar (chuyển
+static→dynamic trên master, dùng lại `SetSlotScalarParam`); MI-swap là dự phòng khi ít switch;
+cách-3 recompile không dùng. Cần (a) duyệt đồng nghiệp sửa master (b) khảo sát param nào. SAU
+Sprint 7.*
+
+---
+
+## 15/09/2026 — as-built note: `Bug-MaterialSlots-MissingInClipboard` fix — quy tắc Array input trống
+
+**Nguồn:** `DELTA — Fix Bug-MaterialSlots-MissingInClipboard` (Opus chẩn đoán + cuhoang thực thi,
+15/09/2026) mục 2c. `[CHỨA AS-BUILT]`. Chi tiết đầy đủ: `Blueprints/Flows/CopyPaste_Flow.md` v2.2.
+
+Khi sửa `SpawnFurnitureCopy` (+input `MaterialSlots`) để fix bug clipboard mất material, phát hiện
+2 quy tắc khác nhau của Array input trống trong Blueprint (verify qua lỗi compile gặp giữa phiên):
+
+- Array input để trống tại **điểm GỌI hàm** (call-site, vd `SpawnComboByID`/`RestoreSnapshot` không
+  nối pin `MaterialSlots`) → **compile được**, tự nhận mảng rỗng làm default.
+- Array input để trống tại 1 node **SET biến bên trong thân hàm** (vd `SpawnFurnitureCopy` Step 2b:
+  `SET NewActorCopy.MaterialSlots = MaterialSlots`) → **KHÔNG compile được** — bắt buộc phải nối,
+  kể cả nối `Make Array` rỗng.
+
+→ Ghi lại để tránh nhầm lẫn tương lai khi thêm field Array mới vào chuỗi tương tự (khác hành vi
+`MaterialOverrides` cũ mà nhiều đoạn code cũ dựa vào).
 
 ---
 

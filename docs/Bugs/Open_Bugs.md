@@ -42,6 +42,12 @@ Step 4 gỡ `Call RestoreMyMaterialSlots` thừa, test regression Undo/Redo mate
 🟡 Trung bình] — `Event Tick` fallback single-click chưa đồng bộ group-aware (Sprint 4 T2.2 bỏ
 sót), phát hiện qua K2Node export đối chiếu `BP_FurnitureInputManager.OnLMBReleased`. Không chặn
 G6, chờ cuhoang quyết định ưu tiên fix.
+**Cập nhật (tiếp) 15/09/2026:** Đóng `Bug-MaterialSlots-MissingInClipboard` (phát hiện + fix +
+verify cùng phiên) — `S_ClipboardEntry` thiếu `MaterialSlots` (material sau S7.G2 ghi vào
+`MaterialSlots`, không còn `MaterialOverrides`) làm Copy/Paste/Duplicate mesh mất material. Lần
+thứ 3 pattern "struct migrate thiếu field", sau `Bug-RowNameLostOnUndo` + `Bug-RowName-MissingInClipboard`.
+Test 6/6 PASS. Không thuộc Sprint 7 (bug fix ngoài phạm vi gate). Xem
+`Blueprints/Flows/CopyPaste_Flow.md` v2.2, `DEVIATIONS.md`.
 
 ---
 
@@ -78,6 +84,7 @@ G6, chờ cuhoang quyết định ưu tiên fix.
 | Bug-SaveComboSilentBlock | [OPEN] Save Combo với <2 món bị chặn im lặng — không toast/log/dialog | 🟢 Thấp | Phát hiện lúc lập kế hoạch T3 (04/08). Không chặn Gate 2. Xem mục chi tiết dưới |
 | Bug-ComboCategoryHardcode | ✅ FIXED (08/08) — Mọi combo lưu ra đều có `category="MyCombo"` (hardcode, đáng lẽ rỗng) | — | Fix T5 D2 — xóa DefaultValue pin Category. Xem mục chi tiết dưới |
 | Bug-RowName-MissingInClipboard | ✅ FIXED (07/09) — `S_ClipboardEntry` (Copy/Paste/Duplicate) cùng thiếu `RowName` như `S_FurniturePlacement` từng thiếu (đã fix 03/08) | — | Verify đúng nghi vấn + fix. Xem mục chi tiết dưới |
+| Bug-MaterialSlots-MissingInClipboard | ✅ FIXED (15/09, phát hiện+đóng cùng phiên) — `S_ClipboardEntry` thiếu `MaterialSlots` → Copy/Paste/Duplicate mesh mất material đã đổi, quay về gốc | — | Lần thứ 3 pattern "struct migrate thiếu field". Test 6/6 PASS. Xem mục chi tiết dưới |
 | Bug-RestoreMyMaterialSlots-DeadEndLegacy | ✅ FIXED (07/09) — nhánh `False` Branch legacy trong `RestoreMyMaterialSlots` bị để trống (dead-end), vi phạm L2 | — | Phát hiện + fix cùng phiên S7.G3 Item 1. Xem mục chi tiết dưới |
 | Bug-LoadMeshAsync-RestoreRace | ✅ FIXED HOÀN TOÀN (08/09) — race `LoadMeshAsync` (async) vs gọi `RestoreMyMaterialSlots` ngay sau spawn (cùng frame, mesh chưa sẵn sàng) | — | Fix cho cả đường Combo (07/09) và `RestoreSnapshot`/Undo-Redo (08/09). Xem mục chi tiết dưới |
 | Bug-RowNameLostOnUndo | ✅ FIXED (03/08) — `S_FurniturePlacement` thiếu field `RowName`, Undo respawn actor mất danh tính | — | Xem `Blueprints/BP_UndoManager.md` v1.15, mục chi tiết dưới |
@@ -907,6 +914,51 @@ màu đúng, không chỉ Primary. PASS.
 ### Liên quan
 `Bug-RowNameLostOnUndo` (đã fix 03/08/2026) — cùng gốc lỗ hổng ở `S_FurniturePlacement`, struct
 khác nhưng cùng loại bug (struct migrate RowName-based thiếu field).
+
+---
+
+## Bug-MaterialSlots-MissingInClipboard — ✅ FIXED (15/09/2026) — clipboard thiếu MaterialSlots, mất material khi Copy/Paste/Duplicate
+
+**ID:** Bug-MaterialSlots-MissingInClipboard
+**Phát hiện + Đóng:** 15/09/2026 (cùng phiên — cuhoang báo triệu chứng, Opus chẩn đoán, cuhoang thực thi fix)
+**Ưu tiên:** — (đã đóng, không thuộc Sprint 7 — xử lý ngay theo yêu cầu cuhoang)
+
+### Triệu chứng
+Đổi material 1 actor → Ctrl+C/Ctrl+V hoặc Ctrl+D → actor mới **quay về material gốc** (mất
+thay đổi).
+
+### Nguyên nhân (xác nhận qua đọc code, không suy đoán)
+`MaterialOverrides` (Array String, cơ chế ghi material CŨ) đã bị khai tử từ **S7.G2 (05/09)** —
+mọi lệnh ghi material từ đó ghi vào `MaterialSlots` (Array `FMaterialSlotRecord`), không còn ghi
+`MaterialOverrides` nữa. Nhưng `S_ClipboardEntry` (clipboard của Copy/Paste/Duplicate MESH) chỉ
+mang `MaterialOverrides` — không có field `MaterialSlots`. `CopyMesh` chụp `MaterialOverrides`
+(rỗng) → `SpawnFurnitureCopy` không có gì để áp → actor mới hiện material gốc từ asset.
+
+### Fix (15/09/2026)
+`S_ClipboardEntry` +field `MaterialSlots : Array<FMaterialSlotRecord>`. `CopyMesh` +GET
+`MaterialSlots`. `SpawnFurnitureCopy` +input `MaterialSlots` (không default) + SET bên trong thân
+hàm (Step 2b, trước điểm chờ async nào). `PasteMesh`/`DuplicateMesh` nối `entry.MaterialSlots` vào
+lời gọi `SpawnFurnitureCopy` (KHÁC cách RowName — RowName SET sau khi hàm return, MaterialSlots
+truyền thẳng làm tham số spawn — quyết định của cuhoang, verify đúng). `SpawnComboByID`/
+`RestoreSnapshot` KHÔNG sửa — pin để trống (Array input trống tại call-site compile được, tự nhận
+rỗng), 2 hàm này tự SET `MaterialSlots` riêng ngay sau khi `SpawnFurnitureCopy` return. Xem
+`Blueprints/Flows/CopyPaste_Flow.md` v2.2.
+
+### Verify — 6/6 PASS
+1. Đổi material → Print JSON `MaterialSlots` có record.
+2. Ctrl+C → Ctrl+V → actor mới đúng material (không về gốc) + JSON khớp.
+3. Ctrl+D → tương tự.
+4. Multi-select 2 actor 2 material khác nhau → Copy → Paste → mỗi actor giữ đúng material riêng,
+   không lẫn.
+5. Multi-select cụm vừa paste → đổi material cả cụm → vẫn đổi hết (regression
+   `Bug-RowName-MissingInClipboard`, không tái phát).
+6. Ctrl+Z sau Paste → actor mới biến mất bình thường (undo không bị ảnh hưởng).
+
+### Liên quan
+Lần thứ 3 của pattern "struct migrate name-based thiếu field khi thêm call site mới":
+`Bug-RowNameLostOnUndo` (03/08, `S_FurniturePlacement`) → `Bug-RowName-MissingInClipboard` (07/09,
+field `RowName` — định danh món đồ, KHÔNG liên quan material, cuhoang từng nhớ nhầm 2 bug này là
+một) → bug này (15/09, field `MaterialSlots`).
 
 ---
 

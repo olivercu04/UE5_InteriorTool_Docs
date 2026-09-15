@@ -10,10 +10,11 @@
 **Last verified (tiếp):** 12/09/2026 — S7.G6 ĐÓNG HẲN. G6.1 (`NotifyViewportSlotClick` + `HighlightSwatchByIndex`) 6/6 PASS. G6.2 regression 8/8 PASS. Hook đặt ở `OnLMBReleased` (không phải Event Tick như plan gốc).
 **Last verified (tiếp):** 14/09/2026 — S7.G7.0a (SpikeGate InteriorColorPicker) ĐÓNG — **GO (PASS)**. 3 primitive Slate (`SColorWheel`+`SSimpleGradient`+`SSlider`) sống trong packaged Shipping, 10/10 case PASS, build ExitCode=0. Fallback Đ5 (preset swatch) không dùng tới. Mở G7.1.
 **Last verified (tiếp):** 15/09/2026 — Plugin copy về `Lighting_Mnger` DONE, build sạch, PIE chạy được. Opus giao execution plan S7G7T1-T5 (chỉ T1 có C++ mới). Đ5 đóng dấu `[HISTORICAL — OVERRIDE]`.
+**Last verified (tiếp):** 15/09/2026 — S7G7T1 ĐÓNG — PASS 4/4. `GetControlsForMaterial`+`DT_MaterialParamMap` chạy đúng, so CON TRỎ base material (không path string, FAIL với MID).
 
 ---
 
-Current: Sprint 7 (Material v1.2, 6/10 gate) — S7G7T0 ĐÓNG (GO). Đang vào S7G7T1 (`DT_MaterialParamMap`)
+Current: Sprint 7 (Material v1.2, 6/10 gate) — S7G7T1 ĐÓNG (15/09/2026). Next: S7G7T2
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -25,10 +26,10 @@ Current: Sprint 7 (Material v1.2, 6/10 gate) — S7G7T0 ĐÓNG (GO). Đang vào 
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | **S7G7T0** ĐÓNG — GO (14/09). Plugin đã copy về `Lighting_Mnger`, build sạch, PIE chạy được (xác nhận 15/09). Execution plan T1-T5 đã giao — xem `Sprints/Sprint7/15-09-2026_S7G7_T1-T5_ExecutionPlan.md`. Breakdown đầy đủ G7 (T0-T5): mục "G7 — breakdown task" phía trên. |
-| **Task Source** | `15-09-2026_S7G7_T1-T5_ExecutionPlan.md` (PLAN, chưa as-built — Opus, T1-T5). T0 as-built: `14-09-2026_G7.0_AsBuilt_Delta_FULL.md` + `Sprints/Sprint7/14-09-2026_G7.0_SpikeGate_TaskCard.md` v1.1. G6.1+G6.2 ĐÓNG: `12-09-2026_G6.1-G6.2_AsBuilt_Delta.md` |
-| **Next** | **S7G7T1** (`DT_MaterialParamMap` + `GetControlsForMaterial` — task duy nhất có C++ mới trong T1-T5). T2-T5 chỉ nối dây UMG vào `UMaterialSlotService` có sẵn (G1), không viết C++ mới. Undo T4 = 0 dòng code mới (đã có qua `CaptureSnapshot`/`ApplyParamsJsonToSlot`). |
-| **Blockers** | Không (S7G7T0 sub-phần G7.0b compat 5.6/5.7/5.8 chưa chạy nhưng KHÔNG chặn T1 — tách entry backlog riêng) |
+| **Current Task** | **S7G7T1** ĐÓNG — PASS 4/4 (15/09/2026). `GetControlsForMaterial`+`DT_MaterialParamMap` — class riêng `UMaterialParamMap`, so CON TRỎ base material (không path string). Chi tiết: `Data/MaterialSlotService_Reference.md` mục "UMaterialParamMap". |
+| **Task Source** | S7G7T1 as-built: `DELTA — S7G7T1 AS-BUILT + Backlog Static Switch` (Opus, 15/09/2026). Plan gốc T1-T5: `Sprints/Sprint7/15-09-2026_S7G7_T1-T5_ExecutionPlan.md`. T0 as-built: `14-09-2026_G7.0_AsBuilt_Delta_FULL.md` + `Sprints/Sprint7/14-09-2026_G7.0_SpikeGate_TaskCard.md` v1.1. |
+| **Next** | **S7G7T2** (`WBP_ParamScalarRow` + `WBP_ParamColorRow`, nhúng `UInteriorColorPickerWidget`). T2-T5 chỉ nối dây UMG vào `UMaterialSlotService` có sẵn (G1), không viết C++ mới. Undo T4 = 0 dòng code mới (đã có qua `CaptureSnapshot`/`ApplyParamsJsonToSlot`). |
+| **Blockers** | Không (S7G7T0 sub-phần G7.0b compat 5.6/5.7/5.8 chưa chạy nhưng KHÔNG chặn T2 — tách entry backlog riêng) |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
 (sau Gate 2: Backend B0→B5 — cloud, chợ combo)
@@ -62,8 +63,8 @@ ro đụng đồ đồng nghiệp.
 | Task ID | Tên | Trạng thái |
 |---|---|---|
 | **S7G7T0** | SpikeGate `InteriorColorPicker` (viability 3 primitive Slate) | ĐÓNG — GO (14/09). Plugin copy về `Lighting_Mnger` DONE (15/09). Sub G7.0b (compat 5.6/5.7/5.8) chưa chạy — backlog, không chặn T1. |
-| **S7G7T1** | `DT_MaterialParamMap` (row struct C++) + `GetControlsForMaterial` helper — **task DUY NHẤT có C++ mới trong T1-T5** | Chưa bắt đầu — **next** |
-| **S7G7T2** | `WBP_ParamScalarRow` + `WBP_ParamColorRow` (nhúng `UInteriorColorPickerWidget`) | Chưa bắt đầu |
+| **S7G7T1** | `DT_MaterialParamMap` (row struct C++) + `GetControlsForMaterial` helper — **task DUY NHẤT có C++ mới trong T1-T5** | ĐÓNG — PASS 4/4 (15/09). So con trỏ base material (không path). |
+| **S7G7T2** | `WBP_ParamScalarRow` + `WBP_ParamColorRow` (nhúng `UInteriorColorPickerWidget`) | Chưa bắt đầu — **next** |
 | **S7G7T3** | `WBP_MaterialParamPanel` (build rows, 2 nút Reset, panel-trống khi MI ngoài từ điển) | Chưa bắt đầu |
 | **S7G7T4** | ⭐ Nối `MaterialSlotService` (SetSlotParam, MID-on-demand, debounce 1 snapshot/lần nhả) — **INTEGRATION GATE**, rủi ro cao nhất còn lại | Chưa bắt đầu |
 | **S7G7T5** | Multi-select áp param cả cụm theo SlotName/ParamName + test từ điển tạm 2 dòng | Chưa bắt đầu |
@@ -73,19 +74,19 @@ Plan T1-T5 (PLAN, chưa as-built): `Sprints/Sprint7/15-09-2026_S7G7_T1-T5_Execut
 undo T4 tái dùng `CaptureSnapshot`/`ApplyParamsJsonToSlot` (Đ11), không cần đường undo riêng.
 T4 mà live-preview/undo không vững → **DỪNG, báo cuhoang, KHÔNG cắt sang T5.**
 
-**Next thật sự:** **S7G7T1** (copy plugin về `Lighting_Mnger` đã DONE 15/09, không còn chặn).
+**Next thật sự:** **S7G7T2** (`WBP_ParamScalarRow`+`WBP_ParamColorRow`). S7G7T1 ĐÓNG 15/09.
 
 ---
 
 ## Việc tiếp theo (chưa làm)
 
-1. **Next: S7G7T1** — `DT_MaterialParamMap` + `GetControlsForMaterial` (C++, task duy nhất có
-   code mới trong T1-T5). Plugin đã copy về `Lighting_Mnger` (15/09), không còn chặn. Xem
-   `Sprints/Sprint7/15-09-2026_S7G7_T1-T5_ExecutionPlan.md` mục 2.
-2. **S7G7T2-T5** — chỉ dựng UMG + nối dây vào `UMaterialSlotService` có sẵn, KHÔNG C++ mới.
+1. **Next: S7G7T2** — `WBP_ParamScalarRow` + `WBP_ParamColorRow` (nhúng
+   `UInteriorColorPickerWidget`). S7G7T1 ĐÓNG 15/09 — PASS 4/4. Xem
+   `Sprints/Sprint7/15-09-2026_S7G7_T1-T5_ExecutionPlan.md` mục 3.
+2. **S7G7T3-T5** — chỉ dựng UMG + nối dây vào `UMaterialSlotService` có sẵn, KHÔNG C++ mới.
    **S7G7T4** là integration gate rủi ro cao nhất còn lại của G7 — dừng báo cuhoang nếu
    live-preview/undo không vững, không cắt sang T5.
-3. **G7.0b** (compat UE 5.6/5.7/5.8) — chưa chạy, backlog riêng, không chặn T1.
+3. **G7.0b** (compat UE 5.6/5.7/5.8) — chưa chạy, backlog riêng, không chặn T2.
 4. **(Tùy chọn, không khẩn) Dọn `SaveComboFromSelection` Bước 5d** — xóa loop tính
    `MaterialOverrides_SaveCombo` (dư thừa, không ai đọc ở combo mới) — chỉ làm khi có thời gian
    rảnh, không phải ưu tiên.
@@ -124,6 +125,9 @@ T4 mà live-preview/undo không vững → **DỪNG, báo cuhoang, KHÔNG cắt 
 ## Recent changes (tối đa 5, mới nhất trên cùng)
 > Chỉ để định vị "vừa xong gì". Lịch sử đầy đủ → PROGRESS.md + Git.
 
+- 15/09 (tiếp) — **S7G7T1 ĐÓNG — PASS 4/4.** `GetControlsForMaterial`+`DT_MaterialParamMap` (class
+  riêng `UMaterialParamMap`, KHÔNG nhét vào `MaterialSlotService`). Chốt so CON TRỎ base material
+  (path string FAIL với MID). Xem `Data/MaterialSlotService_Reference.md`. Next: S7G7T2.
 - 15/09 — Plugin `InteriorColorPicker` copy về `Lighting_Mnger` xong (build sạch, PIE chạy được).
   Opus giao execution plan **S7G7T1-T5** (Material Param Panel) — chỉ T1 có C++ mới
   (`DT_MaterialParamMap`+`GetControlsForMaterial`), T2-T5 thuần wiring UMG vào
@@ -136,8 +140,6 @@ T4 mà live-preview/undo không vững → **DỪNG, báo cuhoang, KHÔNG cắt 
 - 12/09 — S7.G6 ĐÓNG HẲN. G6.1 (`NotifyViewportSlotClick`+`HighlightSwatchByIndex`, hook ở
   `OnLMBReleased` — KHÔNG phải Event Tick như plan gốc, G6.0 xác nhận) 6/6 PASS. G6.2 regression
   8/8 PASS. Nửa sau Sprint 7 (G4-G6) xong toàn bộ.
-- 11/09 (tiếp) — S7.G5.4 xong: dọn 3 chỗ debug scaffolding, regression 8/8 PASS. Phát hiện thêm
-  1 gap (kéo-thả material thiếu AddRecentMaterial) — đã fix + verify. GATE G5 ĐÓNG HẲN.
 - 11/09 — S7.G5.1-G5.3 ĐÓNG. Nguồn kéo (BP_DragDropOperation_Material) + engine on-actor
   (ApplyMaterialByRowName) + router (WBP_DragOverlay.On Drop nhánh material) chạy đúng end-to-end.
   4 bug thật tìm+fix trong phiên (xem DEVIATIONS.md mục SPRINT 7 11/09). Còn nợ G5.4 (dọn debug +

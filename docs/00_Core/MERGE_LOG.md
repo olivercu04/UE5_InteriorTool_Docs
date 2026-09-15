@@ -1,6 +1,6 @@
 # MERGE LOG — UE5 InteriorTool Docs
 **Mục đích:** Reviewer chỉ cần đọc file này để biết file nào cần soi kỹ.
-**Cập nhật:** 11/07/2026 13:14
+**Cập nhật:** 15/09/2026 (tiếp — SpawnFurnitureCopy viết lại theo K2Node export thật, 3 drift đóng)
 **Cập nhật (tiếp) 02/08/2026:** thêm mục "HISTORICAL stamps 02/08/2026" (banner [HISTORICAL] cho 8 file plan/Sprint cũ).
 **Cập nhật (tiếp) 02/08/2026 (b):** `Sprints/Sprint3/Regression_DualDispatcher_Log.md` — quyết định cuối KHÔNG đóng dấu (as-built phụ), thêm vào coverage như nguồn as-built phụ cho BP_FurnitureInputManager.md/BP_UndoManager.md.
 **Cập nhật (tiếp) 02/08/2026 (c):** thêm mục "AS-BUILT lẫn trong Plans/Sprints — 02/08/2026" — 6 file đóng dấu `📌 [CHỨA AS-BUILT]` (không di chuyển/đổi tên).
@@ -83,6 +83,44 @@ G4-G8 → `[HISTORICAL]`. Bản đồ gate mới G4-G10 vào `Session_State.md` 
 **Cập nhật (tiếp) 08/09/2026 (G4 ĐÓNG):** merge DELTA G4-ĐÓNG. Session_State Current/Next → G5,
 xóa "chờ duyệt" (G4 đã thực thi PASS). PROGRESS.md +1 dòng log. KHÔNG đụng Blueprints/Widgets
 (G4 không code mới, chỉ test qua swatch có sẵn — không có as-built node flow nào phát sinh).
+**Cập nhật (tiếp) 15/09/2026 (S7G7T1 ĐÓNG):** 📌 merge `DELTA — S7G7T1 AS-BUILT + Backlog Static
+Switch` (Opus). `[CHỨA AS-BUILT]` — Phần A (S7G7T1, PASS 4/4). `Data/MaterialSlotService_Reference.md`
+— APPEND mục "UMaterialParamMap" (enum `EMaterialParamControl`, struct `FMaterialParamControlRow`,
+hàm `GetControlsForMaterial` — chốt so CON TRỎ `GetBaseMaterial()`, không path string vì FAIL với
+MID). `01_Session_State.md`: Current/Next S7G7T0→S7G7T1 ĐÓNG, bảng breakdown G7 cập nhật, Recent
+changes +1 dòng (drop dòng cũ nhất giữ max 5). `PROGRESS.md`: +1 dòng log, bar Sprint 7 KHÔNG đổi
+tử số (đếm gate, G7 chưa đóng). `DEVIATIONS.md`: +1 as-built note (lý do chọn con trỏ thay path) +
+1 mục `[BACKLOG sau Sprint 7] Static Switch runtime toggle` (Phần B nguyên văn — 3 hướng, khuyến
+nghị Lerp+Scalar, 2 chặn cần duyệt đồng nghiệp + khảo sát param, liên hệ Đ1). Tiện thể sửa 1 dòng
+lỗi thời trong mục SPRINT 7 14/09 (`CHƯA copy về Lighting_Mnger` → đã copy xong 15/09, xác nhận từ
+"Tiền đề" của plan T1-T5 giao cùng ngày — không phải nội dung delta này nhưng cùng phiên nên sửa
+luôn để tránh 1 mâu thuẫn thừa). KHÔNG sửa chữ ký hàm/mô tả nào — merge nguyên văn as-built.
+⚠️ **Nợ MERGE_LOG:** các đợt merge G5/G6/G7.0a/S7G7T1-T5-plan (11/09→15/09) không có entry riêng ở
+đây — bỏ sót từ phiên trước, không backfill trong lượt này (ngoài phạm vi delta hiện tại), chỉ báo.
+**Cập nhật (tiếp) 15/09/2026 (Bug-MaterialSlots-MissingInClipboard):** 📌 merge `DELTA — Fix
+Bug-MaterialSlots-MissingInClipboard` (Opus chẩn đoán + cuhoang thực thi). `[CHỨA AS-BUILT]`.
+`Blueprints/Flows/CopyPaste_Flow.md` v2.1→v2.2: `S_ClipboardEntry` +field `MaterialSlots` (+section
+"Bug xác nhận CÓ THẬT", theo mẫu section `RowName` sẵn có), `CopyMesh` +GET, `SpawnFurnitureCopy`
++input `MaterialSlots` (không default) +Step 2b SET-trong-thân-hàm +ghi chú verify K2Node (an toàn
+với async load, không tái phát `Bug-LoadMeshAsync-RestoreRace`) +quy tắc Array-input-trống
+call-site-vs-SET-node, `PasteMesh`/`DuplicateMesh` nối `entry.MaterialSlots` tại lời gọi (khác
+RowName — không SET-sau-spawn). `Bugs/Open_Bugs.md`: entry mới `Bug-MaterialSlots-MissingInClipboard`
+✅ FIXED, phát hiện+đóng cùng phiên (bảng tổng quan + mục chi tiết + header changelog). `DEVIATIONS.md`:
++1 mục as-built note (quy tắc Array input, nguyên văn mục 2c). `PROGRESS.md`: +1 dòng log, ghi rõ
+KHÔNG thuộc Sprint 7. KHÔNG sửa chữ ký hàm/node flow nào khác ngoài phạm vi delta.
+✅ **Mâu thuẫn ở trên ĐÃ ĐÓNG (cùng phiên 15/09/2026):** cuhoang cung cấp K2Node export thật của
+`SpawnFurnitureCopy` trực tiếp trong hội thoại. Xác nhận 3 chỗ drift so với pseudo-code cũ (v2.0,
+04/06) — không phải 1: (1) load mesh = `Call NewActorCopy.LoadMeshAsync(MeshPath)` (async, hàm
+riêng trên `BP_FurnitureActor`), không phải `Load Asset Blocking`; (2) apply `MaterialOverrides` =
+gọi thẳng `Call NewActorCopy.LoadMaterialsAsync(Overrides, Index=0)` (`then_1`, nhánh legacy KHÔNG
+đụng bởi fix `MaterialSlots`), không phải ForEach+Create DMI+Set Material viết tay; (3) auto-select
+(`then_3`) = `DeselectMesh()`+`SelectActors(MakeArray(NewActorCopy))`, không phải 5 bước
+custom-depth/gizmo/OnMeshSelected viết tay (chưa xác nhận `SelectActors()` có tự làm các việc đó
+bên trong không — ghi đúng K2Node, không suy diễn thêm). Cũng phát hiện input `bAddToRecent`
+(liên quan `K3`) tồn tại từ trước nhưng chưa từng được liệt kê trong doc — bổ sung. Toàn bộ
+`SpawnFurnitureCopy` viết lại theo K2Node thật trong `Blueprints/Flows/CopyPaste_Flow.md` v2.2
+(đóng dấu `[ĐÃ K2Node VERIFY]`), giữ nguyên `MeshPath`/`DAPath`/Tags/GroupID (`then_0` phần đầu) và
+`PlacementSurfaceType`/`AddRecentMesh` (`then_2`) vì khớp bản cũ, không đổi.
 
 ---
 

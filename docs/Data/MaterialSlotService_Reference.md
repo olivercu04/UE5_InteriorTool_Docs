@@ -153,3 +153,64 @@ Build xanh xuyên suốt cả 4 lần thêm code (Việc 1→2→3→4), không 
 - Migration path (`BuildRecordsFromLegacy`) dùng lại `UComboSerializer::FindMaterialRowNameByPath` có sẵn — không viết lại reflection lookup.
 - Chưa có Blueprint debug chain nào được K2Node-export verify chính thức — xem
   `Blueprint_Logic_NodeFlow.md` mục L-NEW-7 cho bài học rút ra, KHÔNG phải node flow verified.
+
+---
+
+## UMaterialParamMap (S7G7T1, 15/09/2026)
+
+> 📌 **[CHỨA AS-BUILT]** — Nguồn: delta `DELTA — S7G7T1 AS-BUILT + Backlog Static Switch`
+> (Opus, 15/09/2026), plan gốc `Sprints/Sprint7/15-09-2026_S7G7_T1-T5_ExecutionPlan.md` mục 2.
+> **S7G7T1 ĐÓNG — PASS 4/4.** Class RIÊNG (`MaterialParamMap.h/.cpp`), KHÔNG nhét vào
+> `MaterialSlotService` — file reference này giờ phủ 2 class.
+
+### EMaterialParamControl (UENUM BlueprintType)
+```cpp
+enum class EMaterialParamControl : uint8 { Scalar, Color };   // Texture để G9 thêm
+```
+
+### FMaterialParamControlRow (USTRUCT BlueprintType : FTableRowBase) — 6 field
+| Field | Kiểu | Ý nghĩa |
+|---|---|---|
+| `BaseMaterial` | `TSoftObjectPtr<UMaterialInterface>` | Khóa tra — so bằng CON TRỎ sau `LoadSynchronous`, KHÔNG bằng path string (xem lý do dưới) |
+| `ParamName` | `FName` | Phải trùng tên param thật trên master. T1 KHÔNG kiểm tên — sai tên lộ ở T4 (`SetSlotScalarParam` trả `false`) |
+| `ControlType` | `EMaterialParamControl` | Mặc định `Scalar` |
+| `LabelVI` | `FText` | Nhãn tiếng Việt hiển thị trên row |
+| `MinValue` | `float` (default 0) | Scalar dùng, Color bỏ qua |
+| `MaxValue` | `float` (default 1) | Scalar dùng, Color bỏ qua |
+
+### GetControlsForMaterial(SlotMaterial, ParamMapDT) → Array\<FMaterialParamControlRow\>
+```cpp
+// class UMaterialParamMap : public UBlueprintFunctionLibrary
+static TArray<FMaterialParamControlRow> GetControlsForMaterial(
+    UMaterialInterface* SlotMaterial, UDataTable* ParamMapDT);
+```
+Gom mọi row trong `ParamMapDT` có `BaseMaterial` khớp `SlotMaterial->GetBaseMaterial()`. MI ngoài
+từ điển → mảng rỗng.
+
+**Cách so sánh chốt — CON TRỎ UObject, KHÔNG path string:**
+```cpp
+UMaterial* SlotBase = SlotMaterial->GetBaseMaterial();
+UMaterial* RowBase = Cast<UMaterial>(Row->BaseMaterial.LoadSynchronous());
+if (RowBase == SlotBase) OutRows.Add(*Row);
+```
+Lý do (bằng chứng thật): bản đầu so `GetPathName()` string → FAIL với MID (MID bọc quanh MI có
+path KHÁC path MI gốc). So con trỏ sau `LoadSynchronous` → cả MI tĩnh lẫn MID đều resolve về CÙNG
+1 `UMaterial` base → `==` đúng. Cả 2 option string (path lẫn `GetFName()`) đều bị loại.
+
+**Nợ nhẹ (không chặn T2):** gọi `LoadSynchronous` mỗi row trong loop — vô hại với từ điển 2 dòng.
+G8 (từ điển đầy 23 master × N param) + panel build thường xuyên → cân nhắc cache nếu thấy chậm.
+
+### DataTable `DT_MaterialParamMap`
+Vị trí: `/Game/cuong/UI/Data/DT_MaterialParamMap`. RowStruct = `MaterialParamControlRow` (C++).
+Row Name tùy ý — hàm tra bằng field `BaseMaterial`, KHÔNG bằng Row Name. Từ điển tạm 2 dòng
+(Scalar `Roughness Max` + Color `Tint`, cùng `MM_GenericMaterial`) — từ điển THẬT là G8.
+
+### Test S7G7T1 — 4/4 PASS (15/09/2026)
+| Case | Input | Kỳ vọng | Kết quả |
+|---|---|---|---|
+| 1 | MI thuộc `MM_GenericMaterial` | 2 row | ✅ |
+| 2 | MI ngoài từ điển | 0 row | ✅ |
+| 3 | **MID** tạo từ đúng MI Case 1 | 2 row | ✅ (chứng minh so con trỏ không bị MID đánh lừa) |
+| 4 | đọc field 2 row | LabelVI+ParamName đúng | ✅ |
+
+Q9: MIỄN (C++ thuần, không đụng `SelectedActors`).
