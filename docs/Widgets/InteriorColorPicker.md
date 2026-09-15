@@ -12,10 +12,13 @@ sẵn có trong engine (`SColorWheel`, `SSimpleGradient`, `SSlider`) — không 
 
 **Trạng thái G7.0a (SpikeGate):** ĐÓNG — GO (PASS). 3 widget xác nhận sống packaged Shipping
 (10/10 case, PIE + packaged Development + packaged Shipping, build ExitCode=0). Fallback Đ5
-(preset swatch) không dùng tới.
+(preset swatch) không dùng tới — Đ5 đóng dấu `[HISTORICAL — OVERRIDE]` trong
+`Plans/Sprint7_MaterialEdit_Plan_v1.1.md` v1.12.
 
-**Code thật hiện nằm ở project C++ standalone riêng (KHÔNG phải `Lighting_Mnger`) — xem mục
-"Quyết định kiến trúc". CHƯA copy về `Lighting_Mnger`, chặn trước khi bắt đầu G7.1.**
+**Plugin ĐÃ copy về `Lighting_Mnger` (xác nhận 15/09/2026)** — build compile sạch, plugin
+enabled, widget spike kéo lên PIE được. Code không còn nằm riêng ở project standalone. Xem mục
+"Quyết định kiến trúc" cho lý do project standalone chỉ dùng để package-test G7.0a (đã xong vai
+trò, bỏ sau).
 
 ## Files
 Tất cả dưới `Plugins/InteriorColorPicker/Source/InteriorColorPicker/`.
@@ -142,10 +145,11 @@ Case #9 (regression guard SetColor achromatic) sửa so với task card gốc v1
 14/09/2026.
 
 ## Việc còn treo
-1. **Copy 5+ file plugin ngược về `Lighting_Mnger`** — code thật đang ở project standalone. Làm
-   trước khi bắt đầu G7.1.
+1. ✅ **Copy 5+ file plugin ngược về `Lighting_Mnger`** — DONE, xác nhận 15/09/2026 (build compile
+   sạch, plugin enabled, widget spike kéo lên PIE được). Xem
+   `Sprints/Sprint7/15-09-2026_S7G7_T1-T5_ExecutionPlan.md` mục "Tiền đề".
 2. Trả lại packaging settings ở `Lighting_Mnger` nếu phiên nào đụng (List of Maps / Game Default Map).
-3. G7.0b compat (5.6/5.7/5.8) chưa chạy — tách entry backlog, không chặn G7.1.
+3. G7.0b compat (5.6/5.7/5.8) chưa chạy — tách entry backlog, không chặn G7.1/S7G7T1.
 
 ---
 
