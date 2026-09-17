@@ -1,12 +1,16 @@
 # Architecture Map — UE5 Interior Tool
 
-**Phiên bản:** 1.0 | **Tạo:** 28/08/2026 15:59 | **Cập nhật:** 17/09/2026 (S7G7T1-T3) — +6 asset mới
-(`InteriorColorPicker`, `WBP_ParamScalarRow`, `WBP_ParamColorRow`, `WBP_MaterialParamPanel`,
-`WBP_MaterialInspector`, `UMaterialParamMap`) vào Phần 0/1/2/3e/4. Sơ đồ 3e (Vật liệu) vẽ lại với
-2 cạnh `[DOC]` thật (`PCROW→ICP`, `PCROW→UMPM`) + 1 cạnh nội bộ node-verified (`MINSPECT→PPANEL`);
-cạnh `WBP_FurnitureInventory→WBP_MaterialInspector` **CHƯA vẽ** — chỉ khai báo biến, chưa SET
-(S7G7T3 T3.3 còn đang xây, xem ghi chú dưới sơ đồ 3e) | **Người dựng:** Claude Code (theo handoff
-Opus 22/08/2026)
+**Phiên bản:** 1.1 | **Tạo:** 28/08/2026 15:59 | **Cập nhật:** 18/09/2026 (S7G7T3.3+T3.4) — sơ đồ
+3e (Vật liệu): 4 cạnh mới `INV→UMPM`/`INV→MINSPECT`/`INV→PSROW`/`INV→PCROW` nâng
+**[K2 2026-09-18]** (`RefreshParamPanel()` build đầy đủ, K2Node export thật) — thay 2 cạnh
+"CHƯA WIRE" của v1.0; +1 cạnh mới `FA→INV` (`ApplyMaterialByRowName` X3, đường kéo-thả material
+đồng bộ panel, `[DOC]`) | **Người dựng:** Claude Code (theo handoff Opus 22/08/2026)
+
+> **v1.0 (17/09/2026, S7G7T1-T3):** +6 asset mới (`InteriorColorPicker`, `WBP_ParamScalarRow`,
+> `WBP_ParamColorRow`, `WBP_MaterialParamPanel`, `WBP_MaterialInspector`, `UMaterialParamMap`) vào
+> Phần 0/1/2/3e/4. Sơ đồ 3e vẽ lại với 2 cạnh `[DOC]` thật (`PCROW→ICP`, `PCROW→UMPM`) + 1 cạnh
+> nội bộ node-verified (`MINSPECT→PPANEL`); cạnh `WBP_FurnitureInventory→WBP_MaterialInspector`
+> CHƯA vẽ lúc đó (T3.3 còn đang xây).
 
 > **v0.9 (12/09/2026, G6.1):** +1 cạnh `IM→INV` (`NotifyViewportSlotClick`, click-vào-mesh chọn
 > slot) nâng `[K2 2026-09-12]`. GATE G6 ĐÓNG HẲN.
@@ -267,7 +271,7 @@ flowchart TB
         DRAGOV(["WBP_DragOverlay"])
     end
 
-    subgraph W_MATERIAL["Widgets — Material Param Panel (Sprint 7 G7, 15-17/09/2026)"]
+    subgraph W_MATERIAL["Widgets — Material Param Panel (Sprint 7 G7, 15-18/09/2026)"]
         MINSPECT(["WBP_MaterialInspector"])
         PPANEL(["WBP_MaterialParamPanel"])
         PSROW(["WBP_ParamScalarRow"])
@@ -647,7 +651,7 @@ flowchart TB
   MATCARD(["WBP_MaterialCard — chưa có doc"])
   SLOT(["WBP_SlotSwatch — chưa có doc"])
 
-  subgraph PARAMPANEL["Material Param Panel (Sprint 7 G7, 15-17/09/2026 — S7G7T1-T3)"]
+  subgraph PARAMPANEL["Material Param Panel (Sprint 7 G7, 15-18/09/2026 — S7G7T1-T3.4)"]
     MINSPECT(["WBP_MaterialInspector"])
     PPANEL(["WBP_MaterialParamPanel"])
     PSROW(["WBP_ParamScalarRow"])
@@ -672,8 +676,11 @@ flowchart TB
   PCROW -.->|"nhúng picker, gọi SetColor/GetColor + nghe 3 dispatcher · InteriorColorPicker (UInteriorColorPickerWidget)"| ICP
   PCROW -.->|"parse hex khi commit ô Hex · HexToLinearColor()"| UMPM
 
-  INV -.->|"[CHƯA WIRE — T3.3 đang xây] khai báo tham chiếu, CHƯA SET · MaterialInspectorRef"| MINSPECT
-  INV -.->|"[CHƯA WIRE — T3.3 đang xây] khai báo DataTable, CHƯA SET · DT_ParamMap"| UMPM
+  INV ==>|"tra từ điển param theo material · GetControlsForMaterial(SlotMaterial, DT_ParamMap)"| UMPM
+  INV ==>|"build/xóa danh sách row + empty-state · ClearParamRows()/AddParamRow()/ShowParamEmptyState(), SetVisibility"| MINSPECT
+  INV ==>|"tạo row Scalar + seed giá trị (Cast MID→fallback MinValue) · Create WBP_ParamScalarRow → Setup()"| PSROW
+  INV ==>|"tạo row Color + seed giá trị (Cast MID→fallback trắng) · Create WBP_ParamColorRow → Setup()"| PCROW
+  FA -.->|"đồng bộ slot chọn + highlight + refresh panel sau kéo-thả · SET SelectedSlotIndex/Name, HighlightSwatchByIndex(), RefreshParamPanel()"| INV
 
   classDef bp fill:#e8eef7,stroke:#33415c;
   classDef wbp fill:#f7efe8,stroke:#5c4633;
@@ -684,17 +691,18 @@ flowchart TB
 ```
 
 **Kiểm chứng K2:** `DETAIL→IM` (24/07) · `INV→MSS` (`LoadAndApplyMaterial`/`ApplyLoadedMaterialToSlot`,
-K2Node export thật, S7.G2 Việc 2+3, 05/09) — **[K2 2026-09-05]**. Còn lại: theo doc (as-built +
-test PASS, KHÔNG phải raw K2 dump — giữ nét đứt theo quy ước strict của map).
+K2Node export thật, S7.G2 Việc 2+3, 05/09) — **[K2 2026-09-05]** · `INV→UMPM`, `INV→MINSPECT`,
+`INV→PSROW`, `INV→PCROW` (toàn bộ `RefreshParamPanel()`, K2Node export thật, S7G7T3.3, 18/09) —
+**[K2 2026-09-18]**. Còn lại (`FA→INV`, `MINSPECT→PPANEL`, `PCROW→ICP`, `PCROW→UMPM`): theo doc
+(as-built + test PASS, KHÔNG phải raw K2 dump — giữ nét đứt theo quy ước strict của map).
 
-> **2 cạnh CHƯA wire (không phải mâu thuẫn — S7G7T3 đang xây, xem `01_Session_State.md`):**
-> `WBP_FurnitureInventory.MaterialInspectorRef`/`DT_ParamMap` là biến class ĐÃ khai báo (17/09,
-> `Widgets/WBP_FurnitureInventory.md` mục Variables) nhưng CHƯA có node SET nào — `RefreshParamPanel()`
-> (hàm sẽ nối 2 biến này vào `WBP_MaterialInspector`/`UMaterialParamMap`) đang xây dở (T3.3). KHÔNG
-> vẽ 2 cạnh này như communication thật — chỉ ghi chú tồn tại của biến, đợi T3.3 xong mới nâng cấp.
-> `WBP_MaterialParamPanel.AddRow(Row:UserWidget)` nhận tham số generic — KHÔNG tạo cạnh type-specific
-> tới `WBP_ParamScalarRow`/`WBP_ParamColorRow` (ai gọi `AddRow` với instance nào là quyết định của
-> caller, tức `RefreshParamPanel` — chưa build).
+> **4 delegate handler RỖNG (T4, chưa build thân):** `RefreshParamPanel` bind
+> `Handle_ScalarPreview`/`Handle_ScalarCommit`/2 handler Color vào dispatcher của `PSROW`/`PCROW`,
+> nhưng thân 4 handler này RỖNG — chưa nối `PSROW`/`PCROW` → `MSS` (SetSlotParam) như plan T4. KHÔNG
+> vẽ cạnh `PSROW→MSS`/`PCROW→MSS` cho tới khi T4 build xong (xem `01_Session_State.md`).
+> `WBP_MaterialParamPanel.AddRow(Row:UserWidget)` nhận tham số generic — KHÔNG tạo cạnh
+> type-specific `PPANEL→PSROW`/`PPANEL→PCROW` (việc gọi `AddRow` với instance cụ thể là
+> `MaterialInspectorRef.AddParamRow` forward xuống, nội bộ `WBP_MaterialInspector`).
 
 ---
 

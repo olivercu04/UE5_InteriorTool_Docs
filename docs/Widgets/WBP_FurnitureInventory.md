@@ -547,11 +547,11 @@ Function RefreshParamPanel()
                         TargetFurnitureActor đã khai kiểu BP_FurnitureActor_C sẵn, Cast là dư
                         (UE5.5 chặn compile: "already a BP Furniture Actor")
                      ▶→ Branch( SlotNames.Length == 0 )
-                          True  ▶→ ParamPanelRef.ShowEmptyState(True, "...không có vật liệu...")
+                          True  ▶→ MaterialInspectorRef.ShowParamEmptyState(True, "...không có vật liệu...")
                           False ▶→ Branch( SelectedSlotIndex>=0 AND SelectedSlotIndex<SlotNames.Length )
                                    False → (xử lý như chưa chọn slot)
                                    True  ▶→ GetControlsForMaterial(SlotMaterial, DT_ParamMap) ●→ Controls
-                                          ▶→ ClearParamRows()
+                                          ▶→ MaterialInspectorRef.ClearParamRows()
                                           ▶→ ForEach Controls (Control):
                                                Switch on Control.ControlType:
                                                  Scalar → Cast SlotMaterial → MaterialInstanceDynamic (bSuccess)
@@ -560,16 +560,23 @@ Function RefreshParamPanel()
                                                     ▶→ Create WBP_ParamScalarRow → Setup(...) →
                                                        Bind OnPreviewChanged→Handle_ScalarPreview,
                                                        Bind OnEditCommitted→Handle_ScalarCommit
-                                                    ▶→ AddParamRow(Row)
+                                                    ▶→ MaterialInspectorRef.AddParamRow(Row)
                                                  Color  → Cast SlotMaterial → MaterialInstanceDynamic (bSuccess)
                                                     True  → GetVectorParameterValue(Control.ParamName) ●→ SeedV
                                                     False → SeedV = (1,1,1,1)   ← fallback trắng
                                                     ▶→ Create WBP_ParamColorRow → Setup(...) →
                                                        Bind OnPreviewChanged→Handle_ColorPreview,
                                                        Bind OnEditCommitted→Handle_ColorCommit
-                                                    ▶→ AddParamRow(Row)
+                                                    ▶→ MaterialInspectorRef.AddParamRow(Row)
                                              Completed ▶→ Return
 ```
+> ⚠️ **Tự sửa 1 chỗ nhất quán tên biến (18/09/2026, phát hiện lúc đối chiếu cho Architecture_Map):**
+> bản merge đầu tiên viết `ParamPanelRef.ShowEmptyState(...)` — SAI, `ParamPanelRef` là biến NỘI BỘ
+> của `WBP_MaterialInspector` (xem `Widgets/WBP_MaterialInspector.md`), `WBP_FurnitureInventory`
+> không truy cập trực tiếp được. Sửa lại thành `MaterialInspectorRef.ShowParamEmptyState(...)` —
+> đúng tên hàm pass-through công khai trên `WBP_MaterialInspector`. Đây là lỗi diễn giải của
+> Claude Code khi merge, KHÔNG phải nội dung delta gốc sai (delta gốc chỉ viết tắt "ShowParamEmptyState"
+> không ghi rõ Target, Claude Code từng suy ra nhầm object).
 
 **Đã xác nhận hands-on (as-built thật, 18/09/2026):**
 - `Get Scalar/Vector Parameter Value` KHÔNG nhận `Material Interface` làm Target — chỉ `Material
