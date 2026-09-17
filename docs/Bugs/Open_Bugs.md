@@ -48,6 +48,10 @@ verify cùng phiên) — `S_ClipboardEntry` thiếu `MaterialSlots` (material sa
 thứ 3 pattern "struct migrate thiếu field", sau `Bug-RowNameLostOnUndo` + `Bug-RowName-MissingInClipboard`.
 Test 6/6 PASS. Không thuộc Sprint 7 (bug fix ngoài phạm vi gate). Xem
 `Blueprints/Flows/CopyPaste_Flow.md` v2.2, `DEVIATIONS.md`.
+**Cập nhật (tiếp) 18/09/2026:** Thêm `Bug-MaterialEdit-EnableState` [OPEN, 🟡 Trung bình] —
+`BTN_MaterialEdit` vẫn bấm được dù chưa chọn slot vật liệu, chặn đóng seam #1/#2/#3 của S7G7T3.4.
+Nghi seam #3 (`OnMeshSelected`) không chạy khi actor chọn trước lúc đổi tab Material. Chưa xác
+nhận root cause — bước tiếp theo là Print A đầu phiên 19/09.
 
 ---
 
@@ -97,6 +101,7 @@ Test 6/6 PASS. Không thuộc Sprint 7 (bug fix ngoài phạm vi gate). Xem
 | Bug-MaterialSkip-Cook | ✅ CLOSED (25/08) — Bản packaged: nhiều material bấm Replace không đổi trên mesh, mesh giữ material cũ, không toast | — | 43 MI dưới `DatabaseProjectMaster/Material/MaterialInstances/Surface/` bị cook skip (chỉ ref động qua path runtime, không ai ref cứng). Fix: thêm `Material` vào Additional Asset Directories to Cook. Xem mục chi tiết dưới |
 | Bug-CookFail-10Errors | ✅ CLOSED (25/08) — 10 cook error phát sinh ngay sau khi mở rộng scope cook thêm folder Material/ | — | 3 nhóm: EUW_RDMtiles Geometry Script editor-only (5 lỗi, fix Directories to never cook), texture CMYK 2 file (2 lỗi, convert RGB+reimport), FTargetSettings/UniversalCameraPlugin vô hại giống lần cook 19/08 thành công (3 lỗi, không sửa). Xem mục chi tiết dưới |
 | Bug-TickFallback-GroupNotExpanded | [OPEN] `Event Tick` nhánh fallback single-click vẫn gọi `SelectSingleActor` (không group-aware) — Sprint 4 T2.2 định đồng bộ nhưng chưa từng thực thi | 🟡 Trung bình (tần suất cực hiếm) | Phát hiện G6.0 VERIFY (12/09). KHÔNG chặn G6. Xem mục chi tiết dưới |
+| Bug-MaterialEdit-EnableState | [OPEN] `BTN_MaterialEdit` vẫn bấm được dù chưa chọn slot vật liệu (chọn mesh ở tab Furniture → chuyển Material → không slot nào highlight nhưng nút vẫn enable) | 🟡 Trung bình (chặn đóng seam #1/#2/#3) | Phát hiện 18/09 test tay. Nghi seam #3 (`OnMeshSelected`) không chạy khi actor được chọn TRƯỚC lúc đổi tab. Xem mục chi tiết dưới |
 
 ---
 
@@ -1395,6 +1400,37 @@ bằng:
 
 ### Trạng thái
 - **Open.** Không tự sửa — chờ cuhoang quyết định ưu tiên fix ngay hay defer.
+
+---
+
+## Bug-MaterialEdit-EnableState — `BTN_MaterialEdit` vẫn bấm được khi chưa chọn slot
+
+**ID:** Bug-MaterialEdit-EnableState
+**Phát hiện:** 18/09/2026, test tay (S7G7T3.4).
+**Ưu tiên:** 🟡 Trung bình — chặn đóng seam #1/#2/#3 (`Widgets/WBP_FurnitureInventory.md` mục
+"S7G7T3").
+
+### Triệu chứng
+Chọn mesh ở tab Furniture → chuyển tab sang Material → `HB_SwatchList` hiện 2 slot, KHÔNG slot nào
+highlight, NHƯNG `BTN_MaterialEdit` vẫn enable, mở được `WBP_MaterialInspector` (hiện empty-state
+"chọn một vùng vật liệu"). Kỳ vọng: nút phải disable tới khi có slot được chọn.
+
+### Nghi vấn (CHƯA xác nhận root cause)
+Actor được chọn TRƯỚC khi vào Material mode → seam #3 (`OnMeshSelected` nhánh Material, gate
+`CurrentInventoryMode==Material`) KHÔNG chạy lúc đó → bước `BTN_MaterialEdit.SetIsEnabled(False)`
+của seam #3 không được gọi. `SwitchInventoryMode` set `TargetFurnitureActor` bằng đường riêng,
+không tự disable nút.
+
+### Đã thử (chưa fix xong)
+Thêm `Branch(SelectedSlotIndex>=0) → SetIsEnabled` vào cuối nhánh Material của
+`SwitchInventoryMode` → VẪN như cũ. Chưa rõ nhánh không chạy, hay `SetIsEnabled` không chặn được
+click (nghi `BTN_MaterialEdit` có thể không phải `Button` chuẩn).
+
+### Bước tiếp theo (19/09/2026)
+Print A tại `Branch` mới — in `SelectedSlotIndex` + đánh dấu nhánh có chạy tới không.
+
+### Trạng thái
+- **Open.** Không tự sửa — chờ phiên sau debug tiếp bằng Print A.
 
 ---
 

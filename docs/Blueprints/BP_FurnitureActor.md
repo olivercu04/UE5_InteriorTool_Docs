@@ -1,5 +1,7 @@
 # BP_FurnitureActor
 **Tách từ:** `BP_FurnitureActor_SceneManager.md` (phần Actor)
+**Phiên bản:** 2.5 | **Cập nhật:** 18/09/2026 (S7G7T3) — `ApplyMaterialByRowName` X3 mở rộng: đường kéo-thả material đồng bộ slot đang chọn + highlight + `RefreshParamPanel()` (lỗ hổng task card rev6 không liệt kê, vá riêng). Test PASS | Parent: StaticMeshActor | Interface: EMSActorSaveInterface
+
 **Phiên bản:** 2.4 | **Cập nhật:** 11/09/2026 (G5.4) — `ApplyMaterialByRowName` +khối `AddRecentMaterial` (fix bug #5 — kéo-thả thiếu ghi Recent). Xóa thật `Debug_TestApplyMaterial` (scaffolding, dọn xong). Regression 8/8 PASS. GATE G5 ĐÓNG HẲN | Parent: StaticMeshActor | Interface: EMSActorSaveInterface
 
 **Phiên bản:** 2.3 | **Cập nhật:** 11/09/2026 — S7.G5.2: thêm Custom Event `ApplyMaterialByRowName` (engine kéo-thả material, DT lookup → async load → apply → capture → refresh swatch) + 3 biến `Apply_Pending*`. 2 bug fix trong phiên (Branch thừa chặn nhánh Row Not Found; X3 refresh swatch sai lớp + so sánh sai kiểu). ⚠️ Code thật còn 1 chỗ debug scaffolding (`Debug_TestApplyMaterial`) CHƯA xóa, chờ G5.4 | Parent: StaticMeshActor | Interface: EMSActorSaveInterface
@@ -223,12 +225,26 @@ Event ApplyMaterialByRowName (SlotName : String, SlotIndex : Integer, RowName : 
 ```
 
 **X3 (refresh swatch panel) — nối tiếp sau `CaptureSnapshot("ApplyMaterial")`:**
+
+> ⚠️ **[AS-BUILT 18/09/2026, S7G7T3]** Nhánh True/True mở rộng thêm 4 bước (SET slot đang chọn +
+> `HighlightSwatchByIndex` + `RefreshParamPanel`) — nguồn: test PASS phiên 18/09
+> (`Sprints/Sprint7/18-09-2026_S7G7_T3-T4_ASBUILT_delta.md` mục "LỖ HỔNG rev6: đường drag-drop
+> material"). Đây là lỗ hổng task card `17-09-2026_S7G7_T3-T5_TaskCards_v6.md` KHÔNG liệt kê —
+> đường kéo-thả material không nằm trong 5 seam của `WBP_FurnitureInventory` (xem
+> `Widgets/WBP_FurnitureInventory.md` mục "S7G7T3"), phải vá riêng ở đây.
+
 ```
 ▶→ Get All Actors Of Class(BP_FurnitureSceneManager) → Get(0)
    → IsValid(FurnitureInventoryRef)
         True  ▶→ GET TargetFurnitureActor
                 → Branch(Self == TargetFurnitureActor)     [Self = chính actor đang chạy event này]
-                     True  ▶→ FurnitureInventoryRef.RefreshSlotSwatches()
+                     True  ▶→ SET FurnitureInventoryRef.SelectedSlotIndex = Apply_PendingSlotIndex
+                             ▶→ SET FurnitureInventoryRef.SelectedSlotName  = Apply_PendingSlotName
+                             ▶→ FurnitureInventoryRef.RefreshSlotSwatches()
+                             ▶→ FurnitureInventoryRef.HighlightSwatchByIndex(Apply_PendingSlotIndex)
+                                  ← PHẢI sau RefreshSlotSwatches (hàm đó ClearChildren+rebuild toàn
+                                    bộ swatch — highlight set TRƯỚC sẽ bị xóa theo)
+                             ▶→ FurnitureInventoryRef.RefreshParamPanel()
                      False ▶→ (dead-end — actor này không hiện panel)
         False ▶→ (dead-end)
 ```
@@ -295,3 +311,4 @@ False → Branch: Overrides[Index] != ""
 | 2.2 | 07/09/2026 | S7.G3 Item 1+2: `ActorLoaded` reroute sang `Call RestoreMyMaterialSlots` (xóa ForEachLoop MaterialOverrides cũ; sửa luôn lỗi doc "có ADD Tags" — thực tế không có). `LoadMeshAsync` +Branch gọi restore khi mesh sẵn sàng (fix race async). Merge lần đầu `RestoreMyMaterialSlots`/`Rst_LoadNextSlot` (đã PASS từ G2/2B) + fix dead-end nhánh `False` Branch legacy (bug phát sinh 07/09, đã fix) + 2 biến `Rst_SlotIdx`/`Rst_CurRecord` |
 | 2.3 | 11/09/2026 | S7.G5.2 (kéo-thả material, engine on-actor): thêm Custom Event `ApplyMaterialByRowName(SlotName, SlotIndex, RowName)` + 3 biến `Apply_Pending*`. 2 bug fix trong phiên: Branch thừa chặn nhánh "Row Not Found" của `Get Data Table Row`; khối X3 (refresh swatch) sai lớp (Router thay vì Engine) + so sánh sai kiểu (`FurnitureMesh` Component thay vì `Self`). Test PASS 4/4. ⚠️ Còn 1 chỗ debug scaffolding thật trong code (`Debug_TestApplyMaterial`, Call In Editor) CHƯA xóa — chờ G5.4. Nguồn: `11-09-2026_S7G5_G5.1-G5.3_AsBuilt_Delta.md` |
 | 2.4 | 11/09/2026 (G5.4) | Fix bug #5: `ApplyMaterialByRowName` +khối `AddRecentMaterial(Apply_PendingRowName)` sau `CaptureSnapshot` (kéo-thả material trước đó không ghi Recent). Xóa thật `Debug_TestApplyMaterial` (scaffolding, dọn xong theo G5.4). Regression 8/8 PASS. GATE G5 ĐÓNG HẲN. Nguồn: `11-09-2026_S7G5_G5.4_AsBuilt_Addendum.md` |
+| 2.5 | 18/09/2026 (S7G7T3) | `ApplyMaterialByRowName` X3 mở rộng — nhánh True/True (Self==TargetFurnitureActor) thêm 4 bước sau `RefreshSlotSwatches()` cũ: SET `SelectedSlotIndex`/`SelectedSlotName` = `Apply_Pending*`, `HighlightSwatchByIndex(Apply_PendingSlotIndex)` (PHẢI sau `RefreshSlotSwatches` — hàm đó rebuild toàn bộ swatch, highlight set trước sẽ mất), `RefreshParamPanel()`. Lỗ hổng: đường kéo-thả material KHÔNG nằm trong 5 seam của `WBP_FurnitureInventory` (task card `17-09-2026_S7G7_T3-T5_TaskCards_v6.md` không liệt kê) — trước fix này, kéo-thả material không đồng bộ panel param mới. Test PASS. Nguồn: `Sprints/Sprint7/18-09-2026_S7G7_T3-T4_ASBUILT_delta.md`. |

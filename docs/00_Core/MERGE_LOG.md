@@ -1,6 +1,6 @@
 # MERGE LOG — UE5 InteriorTool Docs
 **Mục đích:** Reviewer chỉ cần đọc file này để biết file nào cần soi kỹ.
-**Cập nhật:** 17/09/2026 (tiếp — S7G7T3 ĐANG DỞ: WBP_MaterialInspector PASS, WBP_MaterialParamPanel gap cảnh báo, RefreshParamPanel chưa xong)
+**Cập nhật:** 18/09/2026 (S7G7T3.3+T3.4 PASS: RefreshParamPanel đầy đủ, lifecycle+5 seam, bug mới Bug-MaterialEdit-EnableState)
 **Cập nhật (tiếp) 02/08/2026:** thêm mục "HISTORICAL stamps 02/08/2026" (banner [HISTORICAL] cho 8 file plan/Sprint cũ).
 **Cập nhật (tiếp) 02/08/2026 (b):** `Sprints/Sprint3/Regression_DualDispatcher_Log.md` — quyết định cuối KHÔNG đóng dấu (as-built phụ), thêm vào coverage như nguồn as-built phụ cho BP_FurnitureInputManager.md/BP_UndoManager.md.
 **Cập nhật (tiếp) 02/08/2026 (c):** thêm mục "AS-BUILT lẫn trong Plans/Sprints — 02/08/2026" — 6 file đóng dấu `📌 [CHỨA AS-BUILT]` (không di chuyển/đổi tên).
@@ -166,6 +166,27 @@ hands-on), +cảnh báo bẫy context-sensitive search (không numbered, chỉ n
 báo "xong" giữa chuỗi bước con).
 KHÔNG sửa chữ ký hàm/node flow nào ngoài đúng nội dung delta — mọi phần thiếu ground truth đều ghi
 banner cảnh báo, không tự suy diễn.
+**Cập nhật (tiếp) 18/09/2026 (S7G7T3.3+T3.4 PASS):** 📌 merge
+`Sprints/Sprint7/18-09-2026_S7G7_T3-T4_ASBUILT_delta.md` (Sonnet). `[CHỨA AS-BUILT]`.
+`Widgets/WBP_FurnitureInventory.md` v3.29→v3.30: `RefreshParamPanel()` build đầy đủ (thay trạng
+thái "đang xây"), +`UpdateInspectorVisibility`/`OpenMaterialInspector`/`CloseMaterialInspector`/
+`Handle_InspectorCloseRequested`/`Handle_ResetSlotRequested` (PASS) + `Handle_ResetParamsRequested`
+(stub T4), Event Construct/Destruct +lifecycle, 5 seam APPEND vào routine có sẵn. 4 var S7G7T3 nay
+có chỗ SET thật (bảng Variables cập nhật). `Blueprints/BP_FurnitureActor.md` v2.4→v2.5:
+`ApplyMaterialByRowName` X3 mở rộng 4 bước (đồng bộ slot chọn + highlight + `RefreshParamPanel` —
+lỗ hổng task card rev6 không liệt kê, đường kéo-thả material độc lập 5 seam Inventory).
+`Bugs/Open_Bugs.md`: entry mới `Bug-MaterialEdit-EnableState` [OPEN] (bảng tổng quan + mục chi
+tiết + header changelog). `00_Core/PROGRESS.md`: +1 dòng log. `Rules/AI_Implementation_Rules.md`
+v2.18→v2.19: nâng `Get Scalar/Vector Parameter Value` lên build+compile sạch, +4 node xác nhận
+(`GetMaterialSlotNames`/`Switch on Enum`/`Break <Struct>`/`Set Background Color`, kèm cảnh báo
+`SetHighlight` không tồn tại). `01_Session_State.md`: Current/Next → T4, bảng breakdown G7 T3→ĐÓNG,
+Active bugs +`Bug-MaterialEdit-EnableState`, Recent changes +1 dòng.
+⚠️ **3 mâu thuẫn báo lại (không tự sửa nội dung gốc, chỉ đóng dấu `[HISTORICAL]`):**
+`Sprints/Sprint7/17-09-2026_S7G7_T3-T5_TaskCards_v6.md` — (1) `SetHighlight` trên `BTN_MaterialEdit`
+(hàm không tồn tại, as-built dùng `Set Background Color`); (2) `Cast → BP_FurnitureActor` trong
+`RefreshParamPanel` (dư, biến đã khai kiểu sẵn, UE5.5 chặn compile); (3) seam #5 đặt ĐẦU hàm
+`SwitchInventoryMode` (as-built phải CUỐI nhánh Material, nếu không highlight fail im lặng vì
+swatch chưa Visible). Banner đầu file + 3 ghi chú inline đã thêm, nội dung gốc GIỮ NGUYÊN.
 
 ---
 

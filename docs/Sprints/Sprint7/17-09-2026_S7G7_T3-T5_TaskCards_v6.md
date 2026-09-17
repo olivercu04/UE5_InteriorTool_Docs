@@ -1,6 +1,16 @@
 # DELTA — S7G7 T3·T4·T4b·T5 TASK CARDS (Material Inspector — wiring)
 
 **Tác giả:** Sonnet (senior) | **Ngày:** 17/09/2026 | **Loại:** PLAN — chưa as-built
+
+> ⚠️ **[T3.3+T3.4 ĐÃ AS-BUILT 18/09/2026 — 3 chỗ trong file này SAI, xem `[HISTORICAL]` inline]**
+> Nguồn as-built thật: `Sprints/Sprint7/18-09-2026_S7G7_T3-T4_ASBUILT_delta.md`, merge vào
+> `Widgets/WBP_FurnitureInventory.md` v3.30, `Blueprints/BP_FurnitureActor.md` v2.5. 3 chỗ plan SAI
+> so với as-built thật: (1) `SetHighlight` trên `BTN_MaterialEdit` — hàm không tồn tại, as-built
+> dùng `Set Background Color`; (2) `Cast → BP_FurnitureActor` trong `RefreshParamPanel` — dư, biến
+> `TargetFurnitureActor` đã khai kiểu `BP_FurnitureActor_C` sẵn, UE5.5 chặn compile; (3) seam #5
+> (`SwitchInventoryMode`) đặt "CUỐI nhánh Material" — plan để Ở ĐẦU hàm, gây highlight fail im lặng
+> vì swatch chưa Visible. Seam #6/#7 (`EndParamSession`, T4b) trong file này **CHƯA build** — vẫn
+> còn giá trị làm plan cho T4b. GIỮ nguyên nội dung gốc bên dưới để tra lý do đã từng quyết vậy.
 > **rev6 (17/09):** áp review kiến trúc vòng 2 (phản biện ngoài) — 6 sửa + 1 giữ-có-bằng-chứng:
 > - **#1 GIỮ suppress theo Material mode, sửa MÔ TẢ SAI của rev5.** Ground-truth verify:
 >   `SwitchInventoryMode` Collapse `HB_SlotSwatches` mỗi lần đổi mode, chỉ hiện lại ở Material; nhánh
@@ -173,7 +183,9 @@ Function RefreshParamPanel()
         False ▶→ SetHeader("") · SetResetEnabled(false)
               ▶→ ShowParamEmptyState(true, "Chọn một đối tượng để chỉnh vật liệu") ▶→ Return
         True:
-          Cast → BP_FurnitureActor (bSuccess)
+          Cast → BP_FurnitureActor (bSuccess)   ← [HISTORICAL — SAI, xem banner đầu file] as-built
+                                                    18/09 KHÔNG Cast (biến đã khai kiểu sẵn, Cast dư
+                                                    → UE5.5 chặn compile)
           bSuccess=False ▶→ SetHeader("") · SetResetEnabled(false)
                          ▶→ ShowParamEmptyState(true, "Đối tượng này không có vật liệu chỉnh sửa được") ▶→ Return
           True:
@@ -247,6 +259,8 @@ T4; `OnResetSlotRequested`→`Handle_ResetSlotRequested`).
 Function UpdateInspectorVisibility():   MaterialInspectorRef.SetVisibility( IsInspectorVisible() ? Visible : Collapsed )
 Function OpenMaterialInspector():   SET bInspectorOpen=True · BTN_MaterialEdit.SetHighlight(true) · UpdateInspectorVisibility() · RefreshParamPanel()
 Function CloseMaterialInspector():  SET bInspectorOpen=False · BTN_MaterialEdit.SetHighlight(false) · UpdateInspectorVisibility()
+   ← [HISTORICAL — SAI, xem banner đầu file] `SetHighlight` KHÔNG tồn tại trên `BTN_MaterialEdit`.
+     As-built 18/09 dùng `Set Background Color(BTN_MaterialEdit, ColorButtonChoose/ColorButtonDefault)`.
 BTN_MaterialEdit.OnClicked:  Branch(bInspectorOpen): True→Close ; False→Open
 Handle_InspectorCloseRequested():  Call CloseMaterialInspector()
 Handle_ResetSlotRequested():   Branch(IsValid Target AND idx>=0): True → Cast→Mesh → ResetSlotToAssetDefault(...) → CaptureSnapshot("ResetSlot") → RefreshSlotSwatches → RefreshParamPanel
@@ -260,7 +274,7 @@ Handle_ResetParamsRequested():  STUB T3.4 (Print), thân thật T4
 | 2 | `NotifyViewportSlotClick` (G6) | sau `HighlightSwatchByIndex`: y hệt #1 |
 | 3 | `OnMeshSelected` nhánh Material | cạnh `RefreshSlotSwatches`: enable/disable nút theo có slot · `RefreshParamPanel()` · **`UndoManagerRef.EndParamSession()`** (#6) · KHÔNG đóng Inspector |
 | 4 | `LoadAndApplyMaterial` Completed | `RefreshParamPanel()` |
-| 5 | `SwitchInventoryMode` | đầu hàm: **SET bInspectorSuppressed = (NewMode != Material)** · `UpdateInspectorVisibility()` · Branch(NewMode==Material AND IsInspectorVisible): True→`RefreshParamPanel()` (rebuild khi hiện lại) |
+| 5 | `SwitchInventoryMode` | đầu hàm: **SET bInspectorSuppressed = (NewMode != Material)** · `UpdateInspectorVisibility()` · Branch(NewMode==Material AND IsInspectorVisible): True→`RefreshParamPanel()` (rebuild khi hiện lại) — ⚠️ **[HISTORICAL — SAI vị trí, xem banner đầu file]** cụm `RefreshParamPanel`/highlight PHẢI đặt CUỐI nhánh Material (sau khi `HB_SlotSwatches` đã Visible), KHÔNG phải đầu hàm — as-built 18/09 đã sửa, đặt đầu hàm gây highlight fail im lặng vì swatch chưa dựng xong |
 | 6 | `OnSceneRestored` (T4) | sau SET Target: `RefreshParamPanel()` |
 | 7 | `OnMeshSelected` (đầu, mọi nhánh) | **`UndoManagerRef.EndParamSession()`** (#6 — selection đổi = ranh giới session) — có thể gộp với #3 |
 
