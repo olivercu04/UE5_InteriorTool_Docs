@@ -1,6 +1,6 @@
 # Hệ thống học UE5 — Cá nhân hóa
 **Nguồn:** `import_raw/Learning_System.md`
-**Phiên bản:** 1.4 | **Cập nhật:** 14/09/2026 — thêm "Điều chỉnh quy trình" phiên G7.0a SpikeGate (C++ Slate) | Mentor: Claude | Học viên: Cuhoang
+**Phiên bản:** 1.5 | **Cập nhật:** 17/09/2026 — thêm "Điều chỉnh quy trình" phiên S7G7T3 (hỏi lại phạm vi khi báo "xong" giữa chuỗi bước con) | Mentor: Claude | Học viên: Cuhoang
 
 ---
 
@@ -223,6 +223,23 @@ khác hẳn nhịp Blueprint quen thuộc. Ghi lại pattern quy trình xác nh�
 3. **Kiểm hiểu bài sau mỗi bước KHÔNG skip dù đang chuỗi dài.** cuhoang tick đúng phần lớn; 1 câu
    sai (case wheel/slider vì sao khác) là do gợi ý Claude đưa SAI hướng — Claude nhận lỗi, giảng
    lại, không tick khống. Giữ nhịp kiểm tra này kể cả khi task đang chạy nhanh.
+
+---
+
+## Điều chỉnh quy trình — 17/09/2026 (phiên S7G7T3, nhầm lẫn thứ tự Scalar/Color)
+
+Bối cảnh: build `RefreshParamPanel` (`WBP_FurnitureInventory`) gồm nhiều bước con liên tiếp
+(nhánh Scalar rồi nhánh Color của cùng 1 Switch). Có 1 lần nhầm lẫn thứ tự: cuhoang báo "xong" khi
+đang nói tới nhánh Color trong lúc thực tế còn đang dở nhánh Scalar (Switch chưa build hết).
+
+**Bài học phối hợp (ca cụ thể, không phải rule mới):** khi 1 chỉ thị gồm nhiều bước con liên tiếp
+(vd Scalar rồi Color), và người dùng báo "xong rồi" mà không nêu rõ đang nói tới bước nào / kết quả
+test cụ thể → PHẢI hỏi lại xác nhận phạm vi trước khi coi là hoàn thành bước đó, không suy đoán
+theo thứ tự dự kiến của mình. Rule nền "Xong rồi mà chưa rõ → hỏi lại" đã có sẵn — đây chỉ là ví dụ
+cụ thể để nhớ khi task có nhiều sub-step cùng tên loại (switch/branch nhiều nhánh).
+
+Hệ quả trực tiếp trong phiên: `S7G7T3` phải ghi rõ trạng thái "ĐANG DỞ" thay vì "xong" — xem
+`01_Session_State.md`, `Widgets/WBP_FurnitureInventory.md` mục "S7G7T3".
 
 ---
 

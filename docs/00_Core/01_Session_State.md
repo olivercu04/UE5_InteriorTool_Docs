@@ -12,10 +12,11 @@
 **Last verified (tiếp):** 15/09/2026 — Plugin copy về `Lighting_Mnger` DONE, build sạch, PIE chạy được. Opus giao execution plan S7G7T1-T5 (chỉ T1 có C++ mới). Đ5 đóng dấu `[HISTORICAL — OVERRIDE]`.
 **Last verified (tiếp):** 15/09/2026 — S7G7T1 ĐÓNG — PASS 4/4. `GetControlsForMaterial`+`DT_MaterialParamMap` chạy đúng, so CON TRỎ base material (không path string, FAIL với MID).
 **Last verified (tiếp):** 15/09/2026 — S7G7T2 ĐÓNG — PASS. `WBP_ParamScalarRow`+`WBP_ParamColorRow` xong, +`HexToLinearColor` (C++). `Bug-MaterialSlots-MissingInClipboard` cũng đóng trong ngày (ngoài Sprint 7).
+**Last verified (tiếp):** 17/09/2026 — S7G7T3 **ĐANG DỞ**, KHÔNG ĐÓNG. T3.1 (`WBP_MaterialParamPanel`) PASS, T3.2 (`WBP_MaterialInspector`) PASS. T3.3 (`RefreshParamPanel`, tích hợp vào `WBP_FurnitureInventory`) đang xây: nhánh Scalar built-chưa-verify-test, nhánh Color chưa build, phần đầu hàm chưa as-built.
 
 ---
 
-Current: Sprint 7 (Material v1.2, 6/10 gate) — S7G7T2 ĐÓNG (15/09/2026). Next: S7G7T3
+Current: Sprint 7 (Material v1.2, 6/10 gate) — S7G7T3 ĐANG DỞ (17/09/2026, T3.1+T3.2 PASS, T3.3 đang xây). Next: hoàn thiện T3.3
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -27,9 +28,9 @@ Current: Sprint 7 (Material v1.2, 6/10 gate) — S7G7T2 ĐÓNG (15/09/2026). Nex
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | **S7G7T2** ĐÓNG — PASS toàn bộ (15/09/2026). `WBP_ParamScalarRow` + `WBP_ParamColorRow` — 2 bug fix trong phiên (SpinBox init, dead-end OnPreviewChanged), 3 quyết định kiến trúc (`CurrentColor` single-source-of-truth, bỏ preset tĩnh, hex-error chỉ revert). +`HexToLinearColor` (C++, cùng class `UMaterialParamMap`). Chi tiết: `Widgets/WBP_ParamScalarRow.md`, `Widgets/WBP_ParamColorRow.md`. |
-| **Task Source** | S7G7T2 as-built: `DELTA — S7G7T2 AS-BUILT + Bài học phiên` (Opus+Sonnet, 15/09/2026). S7G7T1 as-built: `DELTA — S7G7T1 AS-BUILT + Backlog Static Switch`. Plan gốc T1-T5: `Sprints/Sprint7/15-09-2026_S7G7_T1-T5_ExecutionPlan.md`. |
-| **Next** | **S7G7T3** (`WBP_MaterialParamPanel`) — nối `GetControlsForMaterial` (T1) với 2 row widget (T2), build danh sách theo slot đang chọn, seam refresh qua G6, 2 nút Reset. T2-T5 chỉ nối dây UMG vào `UMaterialSlotService` có sẵn (G1), không viết C++ mới. Undo T4 = 0 dòng code mới (đã có qua `CaptureSnapshot`/`ApplyParamsJsonToSlot`). |
+| **Current Task** | **S7G7T3 — ĐANG DỞ, CHƯA ĐÓNG (17/09/2026).** T3.1 `WBP_MaterialParamPanel` PASS + T3.2 `WBP_MaterialInspector` PASS 7/7. **T3.3 `RefreshParamPanel` (tích hợp vào `WBP_FurnitureInventory`) đang xây** — xem `Widgets/WBP_FurnitureInventory.md` mục "S7G7T3 — Material Inspector Integration" cho trạng thái chi tiết từng nhánh. |
+| **Task Source** | `GỬI CLAUDE CODE — Phân phối as-built S7G7T3` (Opus+Sonnet, 17/09/2026). Task card gốc: `Sprints/Sprint7/17-09-2026_S7G7_T3-T5_TaskCards_v6.md`. S7G7T2 as-built: `DELTA — S7G7T2 AS-BUILT + Bài học phiên` (15/09/2026). |
+| **Next** | Hoàn thiện `RefreshParamPanel`: (1) verify lại nhánh Scalar đã build tới đâu, (2) build phần đầu hàm (guard `IsInspectorVisible`, actor-invalid, 0-slot, bounds), (3) build nhánh Color, (4) nối `ForEach.Completed`→`Return`, (5) chạy đủ 5 case test T3.3. PASS 5/5 mới sang T3.4 (toggle `BTN_MaterialEdit` + lifecycle + 7 seam + 2 handler stub). |
 | **Blockers** | Không (S7G7T0 sub-phần G7.0b compat 5.6/5.7/5.8 chưa chạy nhưng KHÔNG chặn T3 — tách entry backlog riêng) |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
@@ -66,7 +67,7 @@ ro đụng đồ đồng nghiệp.
 | **S7G7T0** | SpikeGate `InteriorColorPicker` (viability 3 primitive Slate) | ĐÓNG — GO (14/09). Plugin copy về `Lighting_Mnger` DONE (15/09). Sub G7.0b (compat 5.6/5.7/5.8) chưa chạy — backlog, không chặn T1. |
 | **S7G7T1** | `DT_MaterialParamMap` (row struct C++) + `GetControlsForMaterial` helper — **task DUY NHẤT có C++ mới trong T1-T5** | ĐÓNG — PASS 4/4 (15/09). So con trỏ base material (không path). |
 | **S7G7T2** | `WBP_ParamScalarRow` + `WBP_ParamColorRow` (nhúng `UInteriorColorPickerWidget`) | ĐÓNG — PASS toàn bộ (15/09). +`HexToLinearColor` (C++). |
-| **S7G7T3** | `WBP_MaterialParamPanel` (build rows, 2 nút Reset, panel-trống khi MI ngoài từ điển) | Chưa bắt đầu — **next** |
+| **S7G7T3** | `WBP_MaterialParamPanel` (T3.1) + `WBP_MaterialInspector` (T3.2) + tích hợp `RefreshParamPanel` (T3.3) | **ĐANG DỞ (17/09)** — T3.1 PASS, T3.2 PASS 7/7, T3.3 đang xây (chưa 5/5 test). **KHÔNG ĐÓNG.** |
 | **S7G7T4** | ⭐ Nối `MaterialSlotService` (SetSlotParam, MID-on-demand, debounce 1 snapshot/lần nhả) — **INTEGRATION GATE**, rủi ro cao nhất còn lại | Chưa bắt đầu |
 | **S7G7T5** | Multi-select áp param cả cụm theo SlotName/ParamName + test từ điển tạm 2 dòng | Chưa bắt đầu |
 
@@ -75,15 +76,17 @@ Plan T1-T5 (PLAN, chưa as-built): `Sprints/Sprint7/15-09-2026_S7G7_T1-T5_Execut
 undo T4 tái dùng `CaptureSnapshot`/`ApplyParamsJsonToSlot` (Đ11), không cần đường undo riêng.
 T4 mà live-preview/undo không vững → **DỪNG, báo cuhoang, KHÔNG cắt sang T5.**
 
-**Next thật sự:** **S7G7T3** (`WBP_MaterialParamPanel`). S7G7T2 ĐÓNG 15/09.
+**Next thật sự:** Hoàn thiện **S7G7T3.3** (`RefreshParamPanel`) — xem `Widgets/WBP_FurnitureInventory.md`
+mục "S7G7T3" cho danh sách việc còn thiếu cụ thể. T3.1+T3.2 đã PASS 17/09, KHÔNG được coi S7G7T3
+là ĐÓNG cho tới khi T3.3 chạy đủ 5/5 test.
 
 ---
 
 ## Việc tiếp theo (chưa làm)
 
-1. **Next: S7G7T3** — `WBP_MaterialParamPanel`. S7G7T2 ĐÓNG 15/09 — PASS toàn bộ
-   (`WBP_ParamScalarRow`+`WBP_ParamColorRow`+`HexToLinearColor`). Xem
-   `Sprints/Sprint7/15-09-2026_S7G7_T1-T5_ExecutionPlan.md` mục 4.
+1. **Next: hoàn thiện S7G7T3.3 (`RefreshParamPanel`)** — ĐANG DỞ, xem
+   `Widgets/WBP_FurnitureInventory.md` mục "S7G7T3" cho danh sách việc còn thiếu (phần đầu hàm,
+   nhánh Color, nối Return, 5 case test). T3.1+T3.2 đã PASS 17/09.
 2. **S7G7T4-T5** — chỉ dựng UMG + nối dây vào `UMaterialSlotService` có sẵn, KHÔNG C++ mới.
    **S7G7T4** là integration gate rủi ro cao nhất còn lại của G7 — dừng báo cuhoang nếu
    live-preview/undo không vững, không cắt sang T5.
@@ -126,11 +129,15 @@ T4 mà live-preview/undo không vững → **DỪNG, báo cuhoang, KHÔNG cắt 
 ## Recent changes (tối đa 5, mới nhất trên cùng)
 > Chỉ để định vị "vừa xong gì". Lịch sử đầy đủ → PROGRESS.md + Git.
 
+- 17/09 — **S7G7T3 ĐANG DỞ, KHÔNG ĐÓNG.** T3.1 `WBP_MaterialParamPanel` (tạo mới, cuhoang xác
+  nhận chưa từng build trước đó) PASS + T3.2 `WBP_MaterialInspector` PASS 7/7 (2 widget mới).
+  T3.3 `RefreshParamPanel` (tích hợp) đang xây — nhánh Scalar built-chưa-verify-test, nhánh Color
+  chưa build, phần đầu hàm chưa as-built. Xem `Widgets/WBP_FurnitureInventory.md` mục "S7G7T3".
 - 15/09 (tiếp 2) — **S7G7T2 ĐÓNG — PASS toàn bộ.** `WBP_ParamScalarRow`+`WBP_ParamColorRow` +
   `HexToLinearColor` (C++). 2 bug fix (SpinBox init, dead-end OnPreviewChanged) + 3 quyết định
   kiến trúc (`CurrentColor` single-source-of-truth, bỏ preset tĩnh, hex-error chỉ revert). Cùng
   ngày: `Bug-MaterialSlots-MissingInClipboard` đóng (ngoài Sprint 7), `SpawnFurnitureCopy` viết lại
-  theo K2Node thật. Next: S7G7T3.
+  theo K2Node thật.
 - 15/09 (tiếp) — **S7G7T1 ĐÓNG — PASS 4/4.** `GetControlsForMaterial`+`DT_MaterialParamMap` (class
   riêng `UMaterialParamMap`, KHÔNG nhét vào `MaterialSlotService`). Chốt so CON TRỎ base material
   (path string FAIL với MID). Xem `Data/MaterialSlotService_Reference.md`.
@@ -143,13 +150,6 @@ T4 mà live-preview/undo không vững → **DỪNG, báo cuhoang, KHÔNG cắt 
   (`SColorWheel`+`SSimpleGradient`+`SSlider`) sống packaged Shipping, 10/10 case PASS. Package thử
   ở project standalone riêng (né precompiled-manifest lỗi kiểu Gate 1.5). Xem
   `Widgets/InteriorColorPicker.md`, `DEVIATIONS.md`.
-- 12/09 — S7.G6 ĐÓNG HẲN. G6.1 (`NotifyViewportSlotClick`+`HighlightSwatchByIndex`, hook ở
-  `OnLMBReleased` — KHÔNG phải Event Tick như plan gốc, G6.0 xác nhận) 6/6 PASS. G6.2 regression
-  8/8 PASS. Nửa sau Sprint 7 (G4-G6) xong toàn bộ.
-  regression 8 case).
-  G5.0] trace-on-drop PASS 3/3 — phát hiện deviation `TraceSlotUnderCursor` cần thêm param
-  `ScreenPosition` (Slate drag giữ quyền input chuột, PC không tự deproject được). Đánh đổi phạm
-  vi kéo-thả Hướng A chốt (áp 1 slot dưới con trỏ, không đọc SelectedActors). Chờ execute G5.1.
 
 ---
 

@@ -86,8 +86,11 @@ T3.1(PASS) → T3.2 → T3.3 → T3.4 → T4 ⭐GATE → T4b → T5
 T3.5 (collapse Library) = độc lập, làm khi thuận tiện, KHÔNG block T4
 ```
 
-### 0.6 Nodes chờ xác nhận
-`Get Scalar/Vector Parameter Value` (Material Instance) — T3.3 seed. Test 1 phút trước dùng.
+### 0.6 Node đọc seed giá trị — ĐÃ XÁC NHẬN 17/09 (hands-on, không còn "chờ")
+`Material Interface` (kiểu `MI`) KHÔNG có getter trực tiếp. Phải **Cast MI → Material Instance
+Dynamic** trước, rồi gọi `Get Scalar/Vector Parameter Value` trên kết quả Cast. Cast fail (slot
+chưa từng chỉnh, chưa có MID theo Đ4) → fallback: Scalar=`Ctrl.MinValue`, Color=trắng `(1,1,1,1)`.
+Đã vào node flow T3.3 chính thức.
 
 ---
 
@@ -194,20 +197,28 @@ Function RefreshParamPanel()
                                False ▶→ ShowParamEmptyState(false, "")
                                     ▶→ ForEach Controls (Ctrl):
                                          Switch Ctrl.ControlType:
-                                           Scalar: Create WBP_ParamScalarRow ●→ RowS
-                                                   Get Scalar Parameter Value(MI, Ctrl.ParamName) ●→ SeedF  [node chờ xác nhận]
+                                           Scalar: Cast MI → Material Instance Dynamic (bSuccess)
+                                                     True  ▶→ Get Scalar Parameter Value(Target=CastResult, Ctrl.ParamName) ●→ SeedF
+                                                     False ▶→ SET SeedF = Ctrl.MinValue        ← slot chưa từng chỉnh (chưa có MID, Đ4)
+                                                   Create WBP_ParamScalarRow ●→ RowS
                                                    RowS.Setup(Ctrl.LabelVI, Ctrl.ParamName, Ctrl.MinValue, Ctrl.MaxValue, SeedF)
                                                    Bind RowS.OnPreviewChanged → Handle_ScalarPreview (T4)
                                                    Bind RowS.OnEditCommitted  → Handle_ScalarCommit (T4)
                                                    AddParamRow(RowS)
-                                           Color:  Create WBP_ParamColorRow ●→ RowC
-                                                   Get Vector Parameter Value(MI, Ctrl.ParamName) ●→ SeedV  [node chờ xác nhận]
+                                           Color:  Cast MI → Material Instance Dynamic (bSuccess)
+                                                     True  ▶→ Get Vector Parameter Value(Target=CastResult, Ctrl.ParamName) ●→ SeedV
+                                                     False ▶→ SET SeedV = LinearColor(1,1,1,1)  ← trắng, slot chưa từng chỉnh
+                                                   Create WBP_ParamColorRow ●→ RowC
                                                    RowC.Setup(Ctrl.LabelVI, Ctrl.ParamName, SeedV)
                                                    Bind RowC.OnPreviewChanged → Handle_ColorPreview (T4)
                                                    Bind RowC.OnEditCommitted  → Handle_ColorCommit (T4)
                                                    AddParamRow(RowC)
                                        Completed ▶→ Return
 ```
+> **[VERIFY XÁC NHẬN 17/09 — hands-on]** `Material Interface` (kiểu của `MI`) KHÔNG có getter trực
+> tiếp — chỉ `Material Instance Dynamic` mới có `Get Scalar/Vector Parameter Value` runtime-safe.
+> Cast tường minh bắt buộc (Blueprint không tự downcast kiểu cha→con). Cast fail = slot CHƯA từng
+> chỉnh (chưa có MID theo Đ4) → ca BÌNH THƯỜNG, không phải lỗi — dùng fallback đã định sẵn.
 > **Invariant #2:** breadcrumb + footer LUÔN khớp nội dung: không actor→header trống+reset off ·
 > actor 0 slot→tên actor+reset off · chưa slot→tên actor+reset off · slot hợp lệ→"actor · slot"+reset on.
 > KHÔNG bao giờ để breadcrumb giữ slot cũ khi placeholder.
@@ -337,11 +348,15 @@ Seam #6: `OnSceneRestored` → APPEND `RefreshParamPanel()`.
 ## BP_UndoManager
 ```
 [Biến] ParamSession_Active:bool(F,no SaveGame) · ParamSession_Key:String
-[End Play] SET Active=False
-[CaptureSnapshot] +1 sau guard bIsRestoring: SET ParamSession_Active=False
-[RestoreSnapshot] +1 cạnh SET bIsRestoring=True: SET ParamSession_Active=False
 
-[Function MỚI] EndParamSession():  SET ParamSession_Active=False          ← #6, gọi từ Inventory OnMeshSelected
+[Function MỚI] EndParamSession():                    ← nơi DUY NHẤT đóng phiên, mọi chỗ khác GỌI hàm này
+  SET ParamSession_Active = False
+  SET ParamSession_Key    = ""                       ← clear cả 2, không chỉ Active (dọn sạch, tránh đọc nhầm key cũ)
+
+[End Play]         Call EndParamSession()
+[CaptureSnapshot]  +1 dòng sau guard bIsRestoring: Call EndParamSession()
+[RestoreSnapshot]  +1 dòng cạnh SET bIsRestoring=True: Call EndParamSession()
+[Inventory]        OnMeshSelected/seam #3,#7: Call UndoManagerRef.EndParamSession()   ← #6
 
 [Custom Event MỚI] CaptureParamSnapshot(ActionName:String, ParamKey:String)
 ▶→ Branch(bIsRestoring): True→Return                                      ← #9a guard đầu
@@ -413,8 +428,11 @@ không aliasing · X7 Toast luôn hiện · X9 mỗi actor qua 3 guard: slot-tê
 
 **TEST T5:**
 1. 3 ghế cùng master → chỉnh màu → cả 3 + "3/3".
-2. **Layout slot ĐẢO** (ghế B `[0]Legs [1]Seat`) chọn cùng ghế A `[0]Seat [1]Seat`... — chỉnh Seat →
-   ghế B áp đúng **Seat** (không nhầm Legs) — test trực tiếp #5.
+2. **[REGRESSION CỐ ĐỊNH — giữ lâu dài, không phải test 1 lần]** Layout slot ĐẢO: Actor A
+   `[0]Seat [1]Legs`, Actor B `[0]Legs [1]Seat` (2 mesh khác thứ tự slot). Multi-select A+B, Primary=A,
+   chỉnh param trên **Seat** → Actor B phải áp đúng **Seat** của nó (index 1), KHÔNG áp nhầm sang
+   **Legs** (index 0) chỉ vì trùng số index với Primary. Đây là test bắt trực tiếp bug #5 (đọc MI
+   actor phụ bằng index Primary) — đưa vào bộ regression test T5, chạy lại mỗi khi sửa code multi-apply.
 3. Trộn ghế master khác NHƯNG có control cùng tên+loại → **vẫn đổi** (theo control).
 4. Trộn ghế material không có control này (hoặc có tên nhưng khác loại: Scalar vs Color) → skip, "X/Y".
 5. Tất cả skip → "Không có đồ nào...", `Length` KHÔNG tăng.

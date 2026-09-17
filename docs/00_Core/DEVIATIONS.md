@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 15/09/2026 (tiếp — S7G7T2: CurrentColor single-source-of-truth, hex-error chỉ revert, backlog Project Palette/Recent Colors)
+**Cập nhật:** 17/09/2026 (tiếp — S7G7T3 [CHỜ DUYỆT]: pattern state-render đồng bộ, chưa chốt chính thức)
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -2093,6 +2093,22 @@ Preset tĩnh 8 màu cố định không phục vụ đúng nhu cầu nào trong 
 lại khi Project Palette/Recent Colors có dữ liệu thật để suggest (sau G7, chưa có ETA). Đây là
 insight sản phẩm cụ thể từ cuhoang — **giữ nguyên văn khi lập kế hoạch Project Palette / Recent
 Colors sau này, không diễn giải lại khác đi.**
+
+---
+
+## 17/09/2026 — [CHỜ DUYỆT — ứng viên pattern] State-render đồng bộ (từ S7G7T3, chưa chốt chính thức)
+
+**Nguồn:** `GỬI CLAUDE CODE — Phân phối as-built S7G7T3` (17/09/2026) mục 3. Claude Code chỉ ghi lại
+nguyên văn — KHÔNG tự phán đây có phải pattern chính thức hay không, để cuhoang duyệt.
+
+`RefreshParamPanel` (`WBP_FurnitureInventory`, xem file đó mục "S7G7T3" — ĐANG XÂY) thiết kế theo
+state-render-sạch: mọi nhánh phải đồng bộ CẢ 3 thứ cùng lúc — breadcrumb, empty-state message,
+enable/disable action buttons — thay vì sửa từng phần riêng lẻ (tránh bug 2 vùng UI "đá nhau" khi
+context đổi, phát hiện qua review kiến trúc bên ngoài 2 vòng liên tiếp).
+
+Đề xuất (chưa chốt): đáng làm thành pattern chuẩn cho MỌI panel/inspector tương tự dựng sau này
+trong dự án. Tương tự tinh thần pattern `CurrentColor` single-source-of-truth đã chốt ở S7G7T2 (mục
+phía trên) — nhưng pattern này CHƯA được cuhoang xác nhận chính thức, chỉ ghi lại làm ứng viên.
 
 ---
 

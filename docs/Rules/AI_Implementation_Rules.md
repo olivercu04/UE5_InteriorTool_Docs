@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.17 | **Cập nhật:** 15/09/2026 — thêm L13 (bẫy `Const` Function UMG), L14 (pure node đọc nhiều lần), từ phiên S7G7T2 | 2.16 (14/09/2026) — thêm mục C1-C9 (gotcha C++/Slate, từ Spike G7.0a `InteriorColorPicker`), đặt sau L12, trước L-DOC
+**Phiên bản:** 2.18 | **Cập nhật:** 17/09/2026 — refine L1 (self-owned vs external param), thêm node `Get Scalar/Vector Parameter Value` (chỉ Material Instance Dynamic) + cảnh báo bẫy context-sensitive search, từ phiên S7G7T3 | 2.17 (15/09/2026) — thêm L13 (bẫy `Const` Function UMG), L14 (pure node đọc nhiều lần), từ phiên S7G7T2 | 2.16 (14/09/2026) — thêm mục C1-C9 (gotcha C++/Slate, từ Spike G7.0a `InteriorColorPicker`), đặt sau L12, trước L-DOC
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -79,6 +79,10 @@ Mọi logic mới đối chiếu `Rules/Performance.md`:
 Trước khi GET/Cast/gọi function trên object → IsValid check
 Tránh "Accessed None" crash
 ```
+> **Refine (17/09/2026, từ S7G7T3):** phân biệt 2 loại object khi cân nhắc IsValid. Widget
+> SELF-OWNED (bound sẵn trong Designer của chính class, vd `VB_ParamRows` trong
+> `WBP_MaterialParamPanel`) → KHÔNG cần IsValid, luôn tồn tại khi widget đang chạy. Tham số nhận
+> TỪ NGOÀI (vd `Row` trong `AddRow(Row)`) → CẦN IsValid, caller có thể truyền None.
 
 ### L2 — Tất cả nhánh Branch merge về cuối
 ```
@@ -600,6 +604,13 @@ Dùng đúng tên này, KHÔNG bịa tên khác:
 | `ForEachLoopWithBreak` | ForEach có thêm Break output pin để thoát sớm. Dùng để tìm node theo FolderPath. ✅ C5.2 27/06 | ForEach (thiếu Break) |
 | `Remove Item(Array, Item)` | Xóa 1 element khỏi array theo value. Dùng để loại self ra khỏi SiblingNames. ✅ C5.2 27/06 | |
 | `To Text (Float)` | Ép số thập phân về đúng N chữ số trước khi ghép vào `Format Text` (Format Text tự convert float→text mặc định nếu không ép trước, có thể ra quá nhiều chữ số lẻ). Params: Rounding Mode (default Half to Even), Always Sign, Use Grouping, Minimum/Maximum Integral/Fractional Digits. ✅ xác nhận qua screenshot editor thật 22/07/2026 — Field Kích thước Combo Card | |
+| `Get Scalar/Vector Parameter Value` | Đọc giá trị param runtime trên material. Getter này **CHỈ tồn tại trên `Material Instance Dynamic`** — KHÔNG nhận `Material Interface` (kiểu trả về của `GetMaterial(Index)`) làm Target. Luôn `Cast MI → Material Instance Dynamic` tường minh trước khi đọc. Cast fail là ca BÌNH THƯỜNG (slot chưa từng bị chỉnh, chưa có MID theo Đ4 MID-on-demand), không phải lỗi — cần fallback giá trị mặc định. ✅ xác nhận hands-on 17/09/2026 — S7G7T3 `RefreshParamPanel` | `Get Scalar/Vector Parameter Value` trên `Material Interface` trực tiếp (không có pin này) |
+
+⚠️ **Bẫy context-sensitive search (17/09/2026):** tìm node trong Blueprint có thể trả về NHIỀU node
+trùng tên hiển thị (vd 4+ "Get Scalar Parameter Value" khi gõ tìm). Phải phân biệt bằng
+`Target`/input/output thật qua tooltip, KHÔNG chọn theo dòng đang được highlight sẵn (highlight
+mặc định có thể rơi vào nhóm không liên quan, vd hệ thống import Datasmith/Interchange — không
+phải runtime material).
 
 ⚠️ Khi gặp node mới chưa có trong bảng → cuhoang xác nhận, rồi thêm vào bảng này.
 

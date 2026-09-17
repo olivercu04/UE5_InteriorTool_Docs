@@ -1,6 +1,15 @@
 # Architecture Map — UE5 Interior Tool
 
-**Phiên bản:** 0.9 | **Tạo:** 28/08/2026 15:59 | **Cập nhật:** 12/09/2026 (G6.1) — +1 cạnh `IM→INV` (`NotifyViewportSlotClick`, click-vào-mesh chọn slot) nâng `[K2 2026-09-12]`. GATE G6 ĐÓNG HẲN | **Người dựng:** Claude Code (theo handoff Opus 22/08/2026)
+**Phiên bản:** 1.0 | **Tạo:** 28/08/2026 15:59 | **Cập nhật:** 17/09/2026 (S7G7T1-T3) — +6 asset mới
+(`InteriorColorPicker`, `WBP_ParamScalarRow`, `WBP_ParamColorRow`, `WBP_MaterialParamPanel`,
+`WBP_MaterialInspector`, `UMaterialParamMap`) vào Phần 0/1/2/3e/4. Sơ đồ 3e (Vật liệu) vẽ lại với
+2 cạnh `[DOC]` thật (`PCROW→ICP`, `PCROW→UMPM`) + 1 cạnh nội bộ node-verified (`MINSPECT→PPANEL`);
+cạnh `WBP_FurnitureInventory→WBP_MaterialInspector` **CHƯA vẽ** — chỉ khai báo biến, chưa SET
+(S7G7T3 T3.3 còn đang xây, xem ghi chú dưới sơ đồ 3e) | **Người dựng:** Claude Code (theo handoff
+Opus 22/08/2026)
+
+> **v0.9 (12/09/2026, G6.1):** +1 cạnh `IM→INV` (`NotifyViewportSlotClick`, click-vào-mesh chọn
+> slot) nâng `[K2 2026-09-12]`. GATE G6 ĐÓNG HẲN.
 
 > **v0.8 (12/09/2026, G6.0 VERIFY):** +5 cạnh Selection/Click Resolution nâng `[K2 2026-09-12]` —
 > xem delta "G6.0 As-Built: Click Resolution Flow (K2-Verified)" cùng ngày.
@@ -70,6 +79,11 @@ Chỉ liệt kê asset THẬT (có canonical doc riêng hoặc version history).
 | `WBP_MoveToFolderDialog` | Dialog modal chọn folder cha đích khi move folder |
 | `WBP_MoveFolderRow` | **[SUPERSEDED]** bởi `WBP_FolderPickerRow` — file giữ tham chiếu lịch sử |
 | `WBP_Toast` | Toast global — truy cập qua `Foff_GameInstance.ToastRef` |
+| `InteriorColorPicker` | *(C++ UWidget, KHÔNG UMG-authored — plugin `InteriorColorPicker`)* Color picker wheel H/S + slider V, compose từ `SColorWheel`+`SSimpleGradient`+`SSlider` (Sprint 7 G7.0a, 14/09/2026) |
+| `WBP_ParamScalarRow` | Row Scalar param (Slider+SpinBox → 3 dispatcher chuẩn hóa) trong Material Param Panel (S7G7T2, 15/09/2026) |
+| `WBP_ParamColorRow` | Row Color param — nhúng `InteriorColorPicker` + ô Hex, hub `SyncCurrentColor` (S7G7T2, 15/09/2026) |
+| `WBP_MaterialParamPanel` | Panel build danh sách row param (`ClearRows`/`AddRow`/`ShowEmptyState`), nhúng trong `WBP_MaterialInspector` (S7G7T3.1, 17/09/2026) |
+| `WBP_MaterialInspector` | Panel phải — header (breadcrumb) + `WBP_MaterialParamPanel` + footer (2 nút Reset) (S7G7T3.2, 17/09/2026) |
 
 ### 0.3 — C++ Services có reference doc (4) — KHÔNG phải Blueprint
 
@@ -81,6 +95,7 @@ Giữ vì có trách nhiệm domain / data boundary / performance boundary hoặ
 | `UComboThumbnail` | Capture/load thumbnail PNG (SSAA 2× + temporal accumulation N=24) | `Data/ComboSerializer_Reference.md` |
 | `UFurnitureFilterLibrary` | Filter DataTable → Array<Name> (FilterFurnitureRows / FilterMaterialItems / GetDistinctFolderPaths) | `Data/FurnitureFilterLibrary_Reference.md` |
 | `MaterialSlotService` (`UMaterialSlotService`) | Slot-by-name API cho Material Edit (Sprint 7 G1, as-built 27/08/2026) | `Data/MaterialSlotService_Reference.md` |
+| `UMaterialParamMap` | Từ điển param (`GetControlsForMaterial`, `HexToLinearColor`) — class RIÊNG, cùng file reference với `MaterialSlotService` (Sprint 7 G7 S7G7T1/T2, 15/09/2026) | `Data/MaterialSlotService_Reference.md` |
 
 ### 0.4 — Asset thật, CHƯA có canonical doc riêng — GIỮ trong bản đồ (chờ doc + K2)
 
@@ -148,12 +163,20 @@ cuhoang xác nhận 28/08/2026. Các node này vào Phần 2 (subgraph tương �
 │   ├── WBP_SaveComboDialog
 │   ├── WBP_MoveToFolderDialog
 │   ├── WBP_MoveFolderRow   [SUPERSEDED]
-│   └── WBP_Toast
+│   ├── WBP_Toast
+│   ├── WBP_ParamScalarRow
+│   ├── WBP_ParamColorRow
+│   ├── WBP_MaterialParamPanel
+│   └── WBP_MaterialInspector
+│
+├── Plugin InteriorColorPicker (C++ UWidget, riêng khỏi FurnitureToolkit)
+│   └── InteriorColorPicker
 │
 └── C++  (plugin FurnitureToolkit)  ── path source chưa ghi trong doc
     ├── UComboSerializer / UComboThumbnail
     ├── UFurnitureFilterLibrary
-    └── MaterialSlotService
+    ├── MaterialSlotService
+    └── UMaterialParamMap
 ```
 
 **Data locations có ghi trong doc** (là path DỮ LIỆU, không phải path asset BP/Widget — nguồn: `WBP_FurnitureInventory.md`):
@@ -244,11 +267,20 @@ flowchart TB
         DRAGOV(["WBP_DragOverlay"])
     end
 
+    subgraph W_MATERIAL["Widgets — Material Param Panel (Sprint 7 G7, 15-17/09/2026)"]
+        MINSPECT(["WBP_MaterialInspector"])
+        PPANEL(["WBP_MaterialParamPanel"])
+        PSROW(["WBP_ParamScalarRow"])
+        PCROW(["WBP_ParamColorRow"])
+        ICP(["InteriorColorPicker (C++ UWidget)"])
+    end
+
     subgraph CPP["C++ Services"]
         SERZ[["UComboSerializer"]]
         THUMB[["UComboThumbnail"]]
         FFL[["UFurnitureFilterLibrary"]]
         MSS[["MaterialSlotService"]]
+        UMPM[["UMaterialParamMap"]]
     end
 
     subgraph EXT["EXTERNAL / project tổng"]
@@ -261,8 +293,8 @@ flowchart TB
     classDef svc fill:#eef7ee,stroke:#356335;
     classDef ext fill:#f2f2f2,stroke:#888,stroke-dasharray:3 2;
     class IM,UNDO,COMBO,SCENE,PREFS,GIZMO,FA,PIVOT,GHOST,TPAWN,GROUPS,UPS,CIV,FIV,DDCOMBO,DDFURN,PC bp;
-    class INV,MESHCTRL,RESIZE,BOXSEL,FCARD,CCARD,TREENODE,CHIPTAG,CHIPROW,FPROW,MFROW,CONFIRM,SAVECOMBO,MOVEDLG,DETAIL,EDITLABEL,FTPICKER,LIBCTX,CTX,CTXITEM,TOAST,DRAGOV wbp;
-    class SERZ,THUMB,FFL,MSS svc;
+    class INV,MESHCTRL,RESIZE,BOXSEL,FCARD,CCARD,TREENODE,CHIPTAG,CHIPROW,FPROW,MFROW,CONFIRM,SAVECOMBO,MOVEDLG,DETAIL,EDITLABEL,FTPICKER,LIBCTX,CTX,CTXITEM,TOAST,DRAGOV,MINSPECT,PPANEL,PSROW,PCROW,ICP wbp;
+    class SERZ,THUMB,FFL,MSS,UMPM svc;
     class GI,SGMENU ext;
 ```
 
@@ -604,7 +636,7 @@ config:
 ---
 flowchart TB
   INV(["WBP_FurnitureInventory"])
-  MSS[["MaterialSlotService — quản lý slot vật liệu (Sprint 7)"]]
+  MSS[["MaterialSlotService"]]
   FFL[["UFurnitureFilterLibrary"]]
   FA["BP_FurnitureActor"]
   COMBO["BP_ComboManager"]
@@ -615,8 +647,18 @@ flowchart TB
   MATCARD(["WBP_MaterialCard — chưa có doc"])
   SLOT(["WBP_SlotSwatch — chưa có doc"])
 
+  subgraph PARAMPANEL["Material Param Panel (Sprint 7 G7, 15-17/09/2026 — S7G7T1-T3)"]
+    MINSPECT(["WBP_MaterialInspector"])
+    PPANEL(["WBP_MaterialParamPanel"])
+    PSROW(["WBP_ParamScalarRow"])
+    PCROW(["WBP_ParamColorRow"])
+    ICP(["InteriorColorPicker (C++ UWidget)"])
+    UMPM[["UMaterialParamMap"]]
+  end
+
   INV -.->|"lọc vật liệu · FilterMaterialItems() (C++)"| FFL
-  INV -.->|"đọc/gán slot theo tên · slot-by-name API (Sprint 7, chưa nối thật)"| MSS
+  INV ==>|"reset param / reset về mặc định · ResetSlotToAssetDefault() / ResetAllSlotsToAssetDefault()"| MSS
+  INV ==>|"gán vật liệu vào slot (kéo-thả G5) · ApplyLoadedMaterialToSlot() → LoadAndApplyMaterial"| MSS
   INV -.->|"gán MI theo slot cho đồ · TargetFurnitureActor"| FA
   INV -.->|"đổ thẻ vật liệu vào lưới · TileView entry"| MATCARD
   INV -.->|"tạo + nghe ô màu slot · Create WBP_SlotSwatch, Bind OnSwatchClicked"| SLOT
@@ -626,15 +668,33 @@ flowchart TB
   DETAIL -.->|"chỉnh scale đồ đang chọn · SelectedFurnitureActor"| FA
   COMBO -.->|"gán vật liệu khi spawn combo · F_ApplyMaterialOverrides()"| FA
 
+  MINSPECT -.->|"forward 5 hàm xuống panel con · SetHeader/ClearParamRows/AddParamRow/ShowParamEmptyState/SetResetEnabled → ParamPanelRef"| PPANEL
+  PCROW -.->|"nhúng picker, gọi SetColor/GetColor + nghe 3 dispatcher · InteriorColorPicker (UInteriorColorPickerWidget)"| ICP
+  PCROW -.->|"parse hex khi commit ô Hex · HexToLinearColor()"| UMPM
+
+  INV -.->|"[CHƯA WIRE — T3.3 đang xây] khai báo tham chiếu, CHƯA SET · MaterialInspectorRef"| MINSPECT
+  INV -.->|"[CHƯA WIRE — T3.3 đang xây] khai báo DataTable, CHƯA SET · DT_ParamMap"| UMPM
+
   classDef bp fill:#e8eef7,stroke:#33415c;
   classDef wbp fill:#f7efe8,stroke:#5c4633;
   classDef svc fill:#eef7ee,stroke:#356335;
   class FA,COMBO,IM,UNDO bp;
-  class INV,DETAIL,MESHCTRL,MATCARD,SLOT wbp;
-  class MSS,FFL svc;
+  class INV,DETAIL,MESHCTRL,MATCARD,SLOT,MINSPECT,PPANEL,PSROW,PCROW,ICP wbp;
+  class MSS,FFL,UMPM svc;
 ```
 
-**Kiểm chứng K2:** `DETAIL→IM` (24/07). Còn lại: theo doc.
+**Kiểm chứng K2:** `DETAIL→IM` (24/07) · `INV→MSS` (`LoadAndApplyMaterial`/`ApplyLoadedMaterialToSlot`,
+K2Node export thật, S7.G2 Việc 2+3, 05/09) — **[K2 2026-09-05]**. Còn lại: theo doc (as-built +
+test PASS, KHÔNG phải raw K2 dump — giữ nét đứt theo quy ước strict của map).
+
+> **2 cạnh CHƯA wire (không phải mâu thuẫn — S7G7T3 đang xây, xem `01_Session_State.md`):**
+> `WBP_FurnitureInventory.MaterialInspectorRef`/`DT_ParamMap` là biến class ĐÃ khai báo (17/09,
+> `Widgets/WBP_FurnitureInventory.md` mục Variables) nhưng CHƯA có node SET nào — `RefreshParamPanel()`
+> (hàm sẽ nối 2 biến này vào `WBP_MaterialInspector`/`UMaterialParamMap`) đang xây dở (T3.3). KHÔNG
+> vẽ 2 cạnh này như communication thật — chỉ ghi chú tồn tại của biến, đợi T3.3 xong mới nâng cấp.
+> `WBP_MaterialParamPanel.AddRow(Row:UserWidget)` nhận tham số generic — KHÔNG tạo cạnh type-specific
+> tới `WBP_ParamScalarRow`/`WBP_ParamColorRow` (ai gọi `AddRow` với instance nào là quyết định của
+> caller, tức `RefreshParamPanel` — chưa build).
 
 ---
 
@@ -672,10 +732,16 @@ flowchart TB
 | `WBP_MoveToFolderDialog` | Dialog modal chọn folder đích khi move folder | `Widgets/WBP_MoveToFolderDialog.md` | `[chưa rà L-DOC]` |
 | `WBP_MoveFolderRow` | **[SUPERSEDED]** bởi WBP_FolderPickerRow | `Widgets/WBP_MoveFolderRow.md` | `[chưa rà L-DOC]` |
 | `WBP_Toast` | Toast global — Foff_GameInstance.ToastRef | `Widgets/WBP_Toast.md` | `[chưa rà L-DOC]` |
+| `InteriorColorPicker` | C++ UWidget — color picker wheel H/S + slider V (Sprint 7 G7.0a) | `Widgets/InteriorColorPicker.md` | `[chưa rà L-DOC]` |
+| `WBP_ParamScalarRow` | Row Scalar param — Slider+SpinBox (Sprint 7 S7G7T2) | `Widgets/WBP_ParamScalarRow.md` | `[chưa rà L-DOC]` |
+| `WBP_ParamColorRow` | Row Color param — nhúng InteriorColorPicker + Hex (Sprint 7 S7G7T2) | `Widgets/WBP_ParamColorRow.md` | `[chưa rà L-DOC]` |
+| `WBP_MaterialParamPanel` | Panel build danh sách row param (Sprint 7 S7G7T3.1) | `Widgets/WBP_MaterialParamPanel.md` | `[chưa rà L-DOC]` |
+| `WBP_MaterialInspector` | Panel phải — header+panel+footer (Sprint 7 S7G7T3.2) | `Widgets/WBP_MaterialInspector.md` | `[chưa rà L-DOC]` |
 | `UComboSerializer` | C++ — combo save/load JSON + folder ops | `Data/ComboSerializer_Reference.md` | `[chưa rà L-DOC]` |
 | `UComboThumbnail` | C++ — capture/load thumbnail PNG (SSAA + temporal accum) | `Data/ComboSerializer_Reference.md` | `[chưa rà L-DOC]` |
 | `UFurnitureFilterLibrary` | C++ — FilterFurnitureRows / FilterMaterialItems / GetDistinctFolderPaths | `Data/FurnitureFilterLibrary_Reference.md` | `[chưa rà L-DOC]` |
 | `MaterialSlotService` | C++ — slot-by-name API (Sprint 7 G1) | `Data/MaterialSlotService_Reference.md` | `[chưa rà L-DOC]` |
+| `UMaterialParamMap` | C++ — từ điển param, GetControlsForMaterial/HexToLinearColor (Sprint 7 S7G7T1/T2) | `Data/MaterialSlotService_Reference.md` | `[chưa rà L-DOC]` |
 
 ---
 

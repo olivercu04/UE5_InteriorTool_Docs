@@ -1,6 +1,6 @@
 # MERGE LOG — UE5 InteriorTool Docs
 **Mục đích:** Reviewer chỉ cần đọc file này để biết file nào cần soi kỹ.
-**Cập nhật:** 15/09/2026 (tiếp — S7G7T2 ĐÓNG: WBP_ParamScalarRow/WBP_ParamColorRow, chờ xác nhận L-rule mới)
+**Cập nhật:** 17/09/2026 (tiếp — S7G7T3 ĐANG DỞ: WBP_MaterialInspector PASS, WBP_MaterialParamPanel gap cảnh báo, RefreshParamPanel chưa xong)
 **Cập nhật (tiếp) 02/08/2026:** thêm mục "HISTORICAL stamps 02/08/2026" (banner [HISTORICAL] cho 8 file plan/Sprint cũ).
 **Cập nhật (tiếp) 02/08/2026 (b):** `Sprints/Sprint3/Regression_DualDispatcher_Log.md` — quyết định cuối KHÔNG đóng dấu (as-built phụ), thêm vào coverage như nguồn as-built phụ cho BP_FurnitureInputManager.md/BP_UndoManager.md.
 **Cập nhật (tiếp) 02/08/2026 (c):** thêm mục "AS-BUILT lẫn trong Plans/Sprints — 02/08/2026" — 6 file đóng dấu `📌 [CHỨA AS-BUILT]` (không di chuyển/đổi tên).
@@ -137,6 +137,35 @@ hàm/node flow nào — merge nguyên văn as-built.
 = chạy lại chuỗi, Phần F3), đặt ngay sau L12. F2 (dead-end pin qua K2Node export) — bỏ qua theo
 đúng chỉ định delta (đã có sẵn tinh thần trong `AI_Communication_Rules.md` mục Blueprint Export
 Method, không lặp lại).
+**Cập nhật (tiếp) 17/09/2026 (S7G7T3 — ĐANG DỞ, KHÔNG ĐÓNG):** 📌 merge `GỬI CLAUDE CODE — Phân
+phối as-built S7G7T3` (Opus+Sonnet). `[CHỨA AS-BUILT]` mục T3.1/T3.2 PASS; **T3.3 KHÔNG đóng dấu
+as-built — ghi đúng trạng thái dở dang** theo yêu cầu tường minh của delta.
+**Tạo mới** `Widgets/WBP_MaterialInspector.md` (Hierarchy, 3 dispatcher, 5 function pass-through,
+test 7/7 PASS).
+**Tạo mới** `Widgets/WBP_MaterialParamPanel.md` — ban đầu flag mâu thuẫn (delta ghi "CẬP NHẬT" ngụ
+ý file đã tồn tại, nhưng không có trong canonical). **cuhoang xác nhận (17/09, lượt sau):** panel
+chưa từng build trước phiên này — chữ "CẬP NHẬT" trong delta chỉ nói tới chữ ký `ShowEmptyState`,
+không có base cũ khác. Viết lại file v1.0 (bỏ banner cảnh báo): `ShowEmptyState(bEmpty, Message)`,
+`ClearRows()`, `AddRow(Row)` — TOÀN BỘ những gì đã build cho panel tới nay. Đồng bộ lại
+`PROGRESS.md` dòng 17/09 (bỏ chữ "xem cảnh báo gap trong file").
+`Widgets/WBP_FurnitureInventory.md` v3.28→v3.29 — thêm 4 class var (khai báo, CHƯA SET thật),
+`IsInspectorVisible()` (node-verified), mục mới "S7G7T3 — Material Inspector Integration" ghi
+`RefreshParamPanel()` **ĐANG XÂY** (liệt kê chính xác từng phần đã/chưa build, theo đúng yêu cầu
+KHÔNG đánh dấu T3.3 hoàn thành).
+`01_Session_State.md`: Current/Next → "S7G7T3 ĐANG DỞ" (KHÔNG ghi "ĐÓNG"), bảng breakdown G7 +
+Recent changes cập nhật (tiện thể dọn 4 dòng debris mồ côi sót lại từ 1 edit trước đó trong Recent
+changes — không thuộc nội dung delta này nhưng sửa luôn vì đang chạm đúng section).
+`PROGRESS.md`: +1 dòng log, ghi rõ "ĐANG DỞ — KHÔNG ĐÓNG".
+`DEVIATIONS.md`: +1 mục `[CHỜ DUYỆT — ứng viên pattern]` state-render đồng bộ (Claude Code CHỈ ghi,
+không tự phán chính thức hay không, theo đúng chỉ định delta).
+`Rules/AI_Implementation_Rules.md` v2.17→v2.18: refine L1 (self-owned vs external-param IsValid),
++1 row node table (`Get Scalar/Vector Parameter Value` chỉ Material Instance Dynamic, ✅ xác nhận
+hands-on), +cảnh báo bẫy context-sensitive search (không numbered, chỉ note — theo đúng phạm vi
+"CHỈ ghi, không tự phán" của mục F1/gotcha, khác mục L13/L14 lượt trước vốn CÓ cuhoang xác nhận số).
+`Rules/Learning_System.md` v1.4→v1.5: +"Điều chỉnh quy trình 17/09" (bài học hỏi lại phạm vi khi
+báo "xong" giữa chuỗi bước con).
+KHÔNG sửa chữ ký hàm/node flow nào ngoài đúng nội dung delta — mọi phần thiếu ground truth đều ghi
+banner cảnh báo, không tự suy diễn.
 
 ---
 
