@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.19 | **Cập nhật:** 18/09/2026 — S7G7T3.3+T3.4: nâng `Get Scalar/Vector Parameter Value` lên build+compile sạch; +4 node mới xác nhận (`GetMaterialSlotNames`, `Switch on Enum`, `Break <Struct>`, `Set Background Color` — kèm cảnh báo `SetHighlight` không tồn tại) | 2.18 (17/09/2026) — refine L1 (self-owned vs external param), thêm node `Get Scalar/Vector Parameter Value` (chỉ Material Instance Dynamic) + cảnh báo bẫy context-sensitive search, từ phiên S7G7T3 | 2.17 (15/09/2026) — thêm L13 (bẫy `Const` Function UMG), L14 (pure node đọc nhiều lần), từ phiên S7G7T2 | 2.16 (14/09/2026) — thêm mục C1-C9 (gotcha C++/Slate, từ Spike G7.0a `InteriorColorPicker`), đặt sau L12, trước L-DOC
+**Phiên bản:** 2.20 | **Cập nhật:** 18/09/2026 (tiếp) — thêm mục **Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit)**, đặt NGAY TRƯỚC Q9 — cổng bắt buộc rà producer/consumer của 1 state TOÀN PROJECT trước khi lập task card, khi feature đụng state đã tồn tại. Nguồn: bug thật S7G7T3 cùng ngày (`RefreshSlotSwatches` không tự `HighlightSwatchByIndex`; `BTN_ResetSlot`/`BTN_ResetAll` không gọi `RefreshParamPanel` — cả 2 vì entry point CŨ không được rà lại khi seam MỚI ra đời) | 2.19 (18/09/2026) — S7G7T3.3+T3.4: nâng `Get Scalar/Vector Parameter Value` lên build+compile sạch; +4 node mới xác nhận (`GetMaterialSlotNames`, `Switch on Enum`, `Break <Struct>`, `Set Background Color` — kèm cảnh báo `SetHighlight` không tồn tại) | 2.18 (17/09/2026) — refine L1 (self-owned vs external param), thêm node `Get Scalar/Vector Parameter Value` (chỉ Material Instance Dynamic) + cảnh báo bẫy context-sensitive search, từ phiên S7G7T3 | 2.17 (15/09/2026) — thêm L13 (bẫy `Const` Function UMG), L14 (pure node đọc nhiều lần), từ phiên S7G7T2
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -373,6 +373,76 @@ Hai loại anchor làm hai việc khác nhau, đều qua representation test:
 
 Không mirror body → không tạo canonical thứ hai. (M2 rút NodeFlow thành compressed orchestration
 + anchor; luật này lo chuẩn ghi từng flow trong canonical. Bổ sung nhau.)
+
+---
+
+## ⭐ Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit — TRƯỚC khi lập implementation plan)
+
+> Feature correctness không đủ. Phải chứng minh flow coverage. Một chức năng chỉ tích hợp đúng khi
+> cùng một state/user-intent tạo ra invariant nhất quán qua TẤT CẢ known entry point, không riêng
+> flow vừa viết.
+
+**Vấn đề giải quyết:** code từng cục đúng riêng lẻ nhưng sản phẩm mất nhất quán vì thiếu seam giữa
+các luồng — thêm 1 entry point mới (hoặc phản ứng với 1 state đã tồn tại) mà không rà lại toàn bộ
+producer/consumer CŨ của state đó. Nguồn: S7G7T3 (18/09/2026) — `RefreshSlotSwatches()` rebuild list
+không tự `HighlightSwatchByIndex`; `BTN_ResetSlot`/`BTN_ResetAll` không gọi `RefreshParamPanel`. Cả 2
+vì entry point CŨ (viết trước khi Inspector tồn tại) không được rà lại khi seam MỚI ra đời.
+
+### 10.1 Khi nào bắt buộc
+
+| Tình huống | Q10 |
+|---|---|
+| Thêm/sửa UI hoặc feature phản ứng với 1 state ĐÃ TỒN TẠI | **BẮT BUỘC** |
+| Thêm entry point mới ghi/đổi 1 state đã có consumer | **BẮT BUỘC** |
+| Đổi ownership/controller của 1 state | **BẮT BUỘC** |
+| Thêm undo/save/load/restore cho 1 state đã có | **BẮT BUỘC** |
+| Feature + state hoàn toàn mới, chưa ai đọc/ghi | MIỄN |
+| Sửa chính tả, đổi tên biến, chỉnh layout | MIỄN |
+
+### 10.2 Ai chịu trách nhiệm
+
+| Vai | Nghĩa vụ |
+|---|---|
+| **Opus** | Chạy Q10, viết block CROSS-FLOW IMPACT AUDIT vào task card TRƯỚC khi cắt task. Thiếu block = không phát hành. |
+| **Sonnet** | Task card thuộc diện bắt buộc mà thiếu block → TỪ CHỐI execute, hỏi ngược Opus. Code gặp producer/consumer KHÔNG có trong block → DỪNG, báo cuhoang (KP1) — không tự suy diễn, không tự sửa luôn (KP2/KP3). |
+| **cuhoang** | Chỉ cần nói: "đưa Cross-Flow Audit trước khi lên task card". Hàng nào `[VERIFY]` thì trả lời hoặc để Sonnet verify. KHÔNG cần tự đi tìm producer/consumer. |
+
+### 10.3 Quy trình (viết VISIBLE, không ghi "đã audit" suông)
+
+1. **Canonical state bị tác động** — tên biến/state thật, KHÔNG phải tên widget.
+2. **Bản đồ Producer → State → Consumer** — search TOÀN PROJECT theo TÊN STATE (không chỉ tên
+   feature mới). Mỗi dòng gắn nhãn: `[K2]` verify qua export thật · `[DOC]` chỉ có trong canonical,
+   chưa re-verify · `[VERIFY]` chưa biết, PHẢI verify trước khi quyết — không đoán.
+3. **Impact Matrix** — MỖI producer (kể cả entry point CŨ) có đúng 1 quyết định, không để trống:
+   `UPDATE` / `NO CHANGE` / `SUPPRESS` / `REFRESH` / `INVALIDATE` / `VERIFY`. Còn hàng `VERIFY` →
+   CHƯA đủ điều kiện qua gate.
+4. **Invariant xuyên luồng** — hỏi "state đổi từ BẤT KỲ producer nào thì cái gì luôn phải đúng theo
+   sau", không hỏi riêng "flow mới có chạy không".
+
+### 10.4 Định dạng trong task card
+
+```
+CROSS-FLOW IMPACT AUDIT
+Canonical state: <tên biến>
+Known producers: <FlowName> [K2|DOC|VERIFY] ...
+Known consumers: <FlowName> ...
+Persistence/restore: <Snapshot/Undo/EMS nếu có>
+Impact decision: <Producer> → UPDATE/NO CHANGE/SUPPRESS/REFRESH/INVALIDATE/VERIFY ...
+```
+
+### 10.5 Quan hệ với Q9/Q8 (3 tầng khác nhau, không thay thế nhau)
+
+- **Q10** — sớm nhất, lúc XÁC ĐỊNH PHẠM VI, quét producer/consumer 1 state qua TOÀN dự án.
+- **Q9** — lúc LẬP TASK CARD, riêng state `SelectedActors`, ma trận theo tổ hợp trạng thái mesh.
+- **Q8** — lúc VIẾT NODE, self-check cho từng node flow cụ thể.
+
+Q10 PASS không miễn Q9 nếu đụng `SelectedActors`; Q9 PASS không miễn Q8.
+
+### 10.6 Giới hạn
+
+Q10 không đảm bảo hết bug — chỉ đảm bảo không BỎ SÓT đường cần xét. `[VERIFY]` verify sai vẫn có
+thể bug, nhưng được NHÌN THẤY trước khi code, không phải phát hiện tình cờ qua test tay (như
+`Bug-MaterialEdit-EnableState` + param-panel-not-refresh, 18/09/2026 — nguồn của rule này).
 
 ---
 
@@ -896,3 +966,5 @@ Sau khi 1 sprint/task lớn xong:
 | 2.13 | 22/07/2026 (tiếp) | Thêm `Get Local Bounds` (StaticMeshComponent) vào "Nodes chờ xác nhận" — Dimension Fix `CalculateComboBoundingExtent` (`BP_ComboManager.md`), thay `Get Actor Bounds` (World AABB) để tránh phồng khi actor tự xoay tại chỗ. |
 | 2.14 | 02/08/2026 | Thêm mục **Q9 — S-MATRIX GATE**, đặt NGAY TRƯỚC Q8: TẦNG 1 bảng S-Scan (S0-S9), TẦNG 2 X-Check (X1-X10 + 4 kho persistence + 4 trục ngữ cảnh B/C/D/E), test kể cả ô N/A, giới hạn thực tế của luật (~80% bắt lúc plan). Nguồn: phiên bàn kiến trúc với Opus, phát hiện qua bug thật C9 Replace Combo. Xem `DEVIATIONS.md` mục "Q9 S-Matrix Gate + 3 bug Surface — 02/08/2026". |
 | 2.15 | 22/08/2026 | Thêm mục **L-DOC — Ghi & đọc canonical Blueprint flow (hai biên khóa)**, đặt sau L12 cuối phần Key Learnings: L-DOC-WRITE (coverage-check K2 trước khi đóng dấu `[K2 dd/mm]`), L-DOC-READ (kéo trọn block canonical START→END trước khi reasoning/sửa node), mốc neo Entry/End + trạng thái verify, quy tắc cross-flow (Call node = boundary hợp lệ, anchor 3 điều kiện, dispatcher/delegate không có callee duy nhất), wording coverage chuẩn, quan hệ với M2. Chống failure mode "thấy 80% flow → bịa 20%". Nguồn: Opus + ChatGPT (3 vòng phản biện), Cuhoang chuyển lời. Luật áp cho flow ghi/đọc TỪ ĐÂY, KHÔNG hồi tố lên canonical cũ. |
+| 2.16-2.19 | 14-18/09/2026 | (Xem dòng **Cập nhật** đầu file — chưa backfill đủ chi tiết vào bảng này, để nguyên khi sửa 2.20, không mở rộng phạm vi ngoài task.) |
+| 2.20 | 18/09/2026 | Thêm mục **Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit)**, đặt NGAY TRƯỚC Q9: 10.1 khi nào bắt buộc, 10.2 phân vai Opus/Sonnet/cuhoang, 10.3 quy trình 4 bước (canonical state → bản đồ Producer/State/Consumer gắn nhãn `[K2]`/`[DOC]`/`[VERIFY]` → Impact Matrix `UPDATE/NO CHANGE/SUPPRESS/REFRESH/INVALIDATE/VERIFY` → invariant xuyên luồng), 10.4 định dạng task card, 10.5 quan hệ Q10≠Q9≠Q8 (3 tầng khác nhau), 10.6 giới hạn. Nguồn: cuhoang đề xuất sau khi bắt 2 bug liên tiếp cùng gốc trong phiên debug `Bug-MaterialEdit-EnableState` (18/09/2026) — `RefreshSlotSwatches` không tự `HighlightSwatchByIndex`, `BTN_ResetSlot`/`BTN_ResetAll` không gọi `RefreshParamPanel` — cả 2 vì entry point cũ không được rà lại khi seam mới ra đời. Xem `Bugs/Open_Bugs.md` mục `Bug-MaterialEdit-EnableState`. |
