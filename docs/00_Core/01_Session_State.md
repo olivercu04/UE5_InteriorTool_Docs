@@ -15,7 +15,7 @@
 **Last verified (tiếp):** 17/09/2026 — S7G7T3 **ĐANG DỞ**, KHÔNG ĐÓNG. T3.1 (`WBP_MaterialParamPanel`) PASS, T3.2 (`WBP_MaterialInspector`) PASS. T3.3 (`RefreshParamPanel`, tích hợp vào `WBP_FurnitureInventory`) đang xây: nhánh Scalar built-chưa-verify-test, nhánh Color chưa build, phần đầu hàm chưa as-built.
 **Last verified (tiếp):** 18/09/2026 — **S7G7T3.3 + T3.4 PASS.** `RefreshParamPanel()` build đầy đủ + lifecycle Inspector + 5 seam APPEND (seam #5 sửa vị trí so với task card rev6) + vá lỗ hổng đường kéo-thả material. Treo mới: `Bug-MaterialEdit-EnableState` [OPEN].
 
----
+--- hôm này là ngày thứ 6, sau vài ngày mưa tầm tã, hôm nay là ngày đẹp trời
 
 Current: Sprint 7 (Material v1.2, 6/10 gate) — S7G7T3.3+T3.4 PASS (18/09/2026). Next: T4 (4 delegate handler thật) + seam #6/#7 (T4b) + fix Bug-MaterialEdit-EnableState
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
