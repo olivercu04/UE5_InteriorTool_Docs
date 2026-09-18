@@ -1,6 +1,9 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
-**Phiên bản:** 3.30 | **Cập nhật:** 18/09/2026 — S7G7T3.3+T3.4 PASS: `RefreshParamPanel()` build đầy đủ (nhánh Scalar+Color, fallback MID, empty-state, bounds) thay trạng thái "đang xây" 17/09. Thêm `UpdateInspectorVisibility()`, `OpenMaterialInspector()`/`CloseMaterialInspector()` (dùng `Set Background Color`, KHÔNG phải `SetHighlight` như rev6 ghi sai), `Handle_InspectorCloseRequested`/`Handle_ResetSlotRequested` (PASS) + `Handle_ResetParamsRequested` (stub, chờ T4). Event Construct/Destruct +lifecycle inspector. 5 seam APPEND (seam #5 sửa vị trí — CUỐI nhánh Material, KHÔNG phải ĐẦU hàm như rev6 ghi sai). Vá lỗ hổng đường kéo-thả material (`BP_FurnitureActor.ApplyMaterialByRowName` X3, xem file đó v2.5) — rev6 không liệt kê seam này. Bug mới treo: `Bug-MaterialEdit-EnableState`.
+**Phiên bản:** 3.32 | **Cập nhật:** 18/09/2026 (tiếp 2) — **S7G7T4 GATE ĐÓNG — PASS.** Thân thật 5 handler: `Handle_ScalarPreview`/`Handle_ScalarCommit` (`SetSlotScalarParam`, live/snapshot), `Handle_ColorPreview`/`Handle_ColorCommit` (`SetSlotVectorParam`), `Handle_ResetParamsRequested` (thay STUB — `ClearSlotParams`+snapshot+RefreshParamPanel). 4 handler bind qua dispatcher 2-input `(ParamName, Value)` — xem `WBP_ParamScalarRow`/`WBP_ParamColorRow` v1.1 (dispatcher +`ParamName`). Snapshot chỉ khi service `ok=true` (nhất quán 5 handler). **Giới hạn chấp nhận (Hướng 1):** undo/redo VALUE đúng, nhưng slot-highlight mất sau undo do Undo = destroy+respawn actor (`SelectedSlotIndex`/`Name` là widget-state, không sống qua respawn) → Inspector về placeholder, user click lại slot. Root cause + hướng fix proper: `00_Core/DEVIATIONS.md` mục "Param-Undo slot-context" + `Bugs/Open_Bugs.md` backlog. 2 fix undo phụ (Equal-guard `OnMeshSelected` [K2 18/09] + `ApplyRestoredActor`) build kèm — inert cho undo path (respawn actor) nhưng đúng cho reselect-same-actor thường. Seam #6 (`RefreshParamPanel` ở `ApplyRestoredActor`) DONE. Seam #7 (`EndParamSession`, T4b) CHƯA. **CHƯA đóng dấu `[CHỨA AS-BUILT]`** — đã merge thẳng canonical.
+**Phiên bản:** 3.31 | **Cập nhật:** 18/09/2026 (tiếp) — **Đóng `Bug-MaterialEdit-EnableState`.** Root cause thật: 2 lỗi cộng dồn, cả 2 đều "entry point cũ không rà lại khi seam mới ra đời" — (1) `RefreshSlotSwatches()` rebuild list không tự gọi `HighlightSwatchByIndex` → thêm 1 dòng `Completed ▶→ HighlightSwatchByIndex(SelectedSlotIndex)` cuối hàm; (2) `BTN_ResetSlot`/`BTN_ResetAll` (S7.G2, có trước Inspector) không gọi `RefreshParamPanel()` → thêm 1 dòng cuối mỗi nhánh. Seam #5 (`SwitchInventoryMode`) thêm `Branch(SelectedSlotIndex>=0)→SetIsEnabled(BTN_MaterialEdit)` — chèn TRƯỚC `Branch(IsInspectorVisible())` đã có, đúng vị trí "CUỐI nhánh Material". Cả 3 test PASS. Nguồn rule mới `AI_Implementation_Rules.md` Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit), viết từ chính 2 bug này.
+
+**Phiên bản:** 3.30 | **Cập nhật:** 18/09/2026 — S7G7T3.3+T3.4 PASS: `RefreshParamPanel()` build đầy đủ (nhánh Scalar+Color, fallback MID, empty-state, bounds) thay trạng thái "đang xây" 17/09. Thêm `UpdateInspectorVisibility()`, `OpenMaterialInspector()`/`CloseMaterialInspector()` (dùng `Set Background Color`, KHÔNG phải `SetHighlight` như rev6 ghi sai), `Handle_InspectorCloseRequested`/`Handle_ResetSlotRequested` (PASS) + `Handle_ResetParamsRequested` (stub, chờ T4). Event Construct/Destruct +lifecycle inspector. 5 seam APPEND (seam #5 sửa vị trí — CUỐI nhánh Material, KHÔNG phải ĐẦU hàm như rev6 ghi sai). Vá lỗ hổng đường kéo-thả material (`BP_FurnitureActor.ApplyMaterialByRowName` X3, xem file đó v2.5) — rev6 không liệt kê seam này. Bug mới treo: `Bug-MaterialEdit-EnableState` (ĐÃ ĐÓNG, xem v3.31).
 
 **Phiên bản:** 3.29 | **Cập nhật:** 17/09/2026 — S7G7T3 (Material Inspector Integration): thêm 4 class var (`MaterialInspectorRef`/`DT_ParamMap`/`bInspectorOpen`/`bInspectorSuppressed`, khai báo, CHƯA có chỗ SET thật), `IsInspectorVisible()` (node-verified). `RefreshParamPanel()` **ĐANG XÂY, CHƯA ĐÓNG** — ghi đúng trạng thái dở dang, không đánh dấu hoàn thành. T3.1/T3.2 PASS (xem `Widgets/WBP_MaterialParamPanel.md`, `Widgets/WBP_MaterialInspector.md`), T3.3 chưa xong.
 
@@ -445,12 +448,21 @@ trộn RowName (combo dị loại) → chỉ Primary đổi + Toast cảnh báo;
 không Toast; Undo sau case multi cùng loại → khôi phục đúng; Undo sau case trộn loại → khôi phục
 đúng. Đóng `Bug-MaterialPrimaryOnly` (xem `Bugs/Open_Bugs.md`).
 
-### RefreshSlotSwatches — v1.1
+### RefreshSlotSwatches — v1.2 — SỬA 18/09/2026 (đóng `Bug-MaterialEdit-EnableState`, phần 1/2)
 ```
 ClearChildren(HB_SwatchList)
 GET TargetFurnitureActor → FurnitureMesh → GetStaticMesh → GetMaterialSlotNames
 ForLoop → Create WBP_SlotSwatch → Bind OnSwatchClicked → AddChild
+   Completed ▶→ Call HighlightSwatchByIndex(SelectedSlotIndex)     ← MỚI 18/09
 ```
+> **Root cause:** hàm này CHỈ rebuild list, không tự đồng bộ lại swatch nào đang `SetSelected`.
+> `BTN_ResetSlot`/`BTN_ResetAll`/`Handle_ResetSlotRequested` gọi hàm này SAU KHI `SelectedSlotIndex`
+> vẫn còn >=0 (Reset không đổi selection) → mất highlight visual dù data đúng, `BTN_MaterialEdit`
+> vẫn đúng theo data nên KHÔNG disable — nhìn như bug "nút bấm được dù chưa chọn slot". 3 caller
+> còn lại (`OnMeshSelected`, `OpenMaterialModeForActor`, `ApplyRestoredActor`) đều SET
+> `SelectedSlotIndex=-1` NGAY TRƯỚC khi gọi hàm này → `HighlightSwatchByIndex(-1)` vô hại (không
+> `child.SlotIndex` nào == -1). Test PASS: Reset slot/Reset all khi Inspector đang mở → highlight
+> + panel vẫn khớp đúng slot. Nguồn nguyên tắc chung: `Rules/AI_Implementation_Rules.md` Q10.
 
 ### NotifyViewportSlotClick(ClickedActor : BP_FurnitureActor, ScreenPos : Vector2D) — Custom Event MỚI (S7.G6.1, 12/09/2026)
 
@@ -513,14 +525,15 @@ sang B. **GATE G6 ĐÓNG HẲN.**
 > `Sprints/Sprint7/18-09-2026_S7G7_T3-T4_ASBUILT_delta.md`. Biến class liên quan: xem mục Variables
 > "— S7G7T3 Material Inspector —".
 >
-> ⚠️ **Bug mở còn treo (KHÔNG chặn merge doc, đã ghi `Bugs/Open_Bugs.md`):**
-> `Bug-MaterialEdit-EnableState` — `BTN_MaterialEdit` vẫn bấm được dù chưa chọn slot trong 1 số
-> đường vào Material mode. Nghi vấn seam #3 (`OnMeshSelected`) không chạy khi actor đã được chọn
-> TRƯỚC lúc đổi sang tab Material. Xem chi tiết trong Open_Bugs.md, chưa xác nhận root cause.
+> ✅ **`Bug-MaterialEdit-EnableState` — ĐÃ ĐÓNG 18/09/2026** (cùng ngày, sau khi merge doc lần đầu).
+> Root cause + fix: xem mục `RefreshSlotSwatches` (v1.2) và seam #5 dưới đây, cùng
+> `Bugs/Open_Bugs.md` (Closed). Root cause chung với 1 lỗi khác vừa lộ ra ngày này
+> (`BTN_ResetSlot`/`BTN_ResetAll` không gọi `RefreshParamPanel`) → sinh rule mới
+> `Rules/AI_Implementation_Rules.md` Q10 — FLOW COVERAGE GATE.
 >
-> ⚠️ **Còn thiếu (T4/T4b, CHƯA build):** seam #6 (`OnSceneRestored`), seam #7 (`EndParamSession` —
-> hàm chưa tồn tại), 4 delegate handler thật (`Handle_ScalarPreview`/`Handle_ScalarCommit`/2 handler
-> Color — hiện RỖNG), `Handle_ResetParamsRequested` (hiện STUB Print).
+> ✅ **[T4 DONE 18/09]** 4 delegate handler + `Handle_ResetParamsRequested` đã có thân thật (mục dưới).
+> Seam #6 (`RefreshParamPanel` ở `ApplyRestoredActor`) DONE. **Còn CHƯA build:** seam #7
+> (`EndParamSession` — hàm chưa tồn tại, thuộc T4b coalescing undo).
 
 ### IsInspectorVisible() → Boolean — Function, ĐÃ XÁC NHẬN qua K2Node export thật (17/09/2026)
 ```
@@ -570,6 +583,10 @@ Function RefreshParamPanel()
                                                     ▶→ MaterialInspectorRef.AddParamRow(Row)
                                              Completed ▶→ Return
 ```
+> **[T4 18/09]** 4 dispatcher (`OnPreviewChanged`/`OnEditCommitted` của cả 2 row) nay mang 2 input
+> `(ParamName:Name, Value)` — xem `WBP_ParamScalarRow`/`WBP_ParamColorRow` v1.1. Node `Bind` KHÔNG đổi
+> (bind theo tên dispatcher), nhưng 4 handler đích giờ nhận thêm pin `ParamName` — thân thật xem mục
+> "4 delegate handler (T4)" dưới.
 > ⚠️ **Tự sửa 1 chỗ nhất quán tên biến (18/09/2026, phát hiện lúc đối chiếu cho Architecture_Map):**
 > bản merge đầu tiên viết `ParamPanelRef.ShowEmptyState(...)` — SAI, `ParamPanelRef` là biến NỘI BỘ
 > của `WBP_MaterialInspector` (xem `Widgets/WBP_MaterialInspector.md`), `WBP_FurnitureInventory`
@@ -657,10 +674,62 @@ Test PASS.
      False → (dead-end)
 ```
 
-### `Handle_ResetParamsRequested()` — STUB, chờ T4
+### 4 delegate handler param (T4) — AS-BUILT 18/09/2026, test PASS
+> Bind trong `RefreshParamPanel` (ForEach Controls). Đều là **Custom Event** ở Event Graph (KHÔNG
+> tạo được trong Function — L9). Nhận payload từ dispatcher 2-input `(ParamName:Name, Value)`.
+> Mẫu chung: guard `IsValid Target AND idx>=0` → GET Mesh (KHÔNG Cast) → gọi service. Preview = live,
+> KHÔNG snapshot (mỗi khấc kéo gọi cả trăm lần/giây, snapshot ở đây → history nát). Commit = đọc `ok`
+> → `Branch(ok)` True mới snapshot (nhất quán rule "snapshot chỉ khi service thành công").
+
 ```
-▶→ Print (Dev) "TODO T4: ResetParams chưa build"
+Handle_ScalarPreview(ParamName, Value)          ← Value: Float
+▶→ Branch( IsValid(TargetFurnitureActor) AND SelectedSlotIndex >= 0 )
+     True  ▶→ GET TargetFurnitureActor.FurnitureMesh
+             ▶→ SetSlotScalarParam(Mesh, MaterialSlots [ref], SelectedSlotName, SelectedSlotIndex,
+                                     ParamName, Value)     ← LIVE, không snapshot
+     False → (dead-end)
+
+Handle_ScalarCommit(ParamName, Value)           ← Value: Float
+▶→ Branch( IsValid(TargetFurnitureActor) AND SelectedSlotIndex >= 0 )
+     True  ▶→ GET FurnitureMesh
+             ▶→ SetSlotScalarParam(...) ●→ ok
+             ▶→ Branch(ok): True ▶→ UndoManagerRef.CaptureSnapshot("Chỉnh " + Conv_NameToString(ParamName))
+                            False → (dead-end)
+     False → (dead-end)
+
+Handle_ColorPreview(ParamName, Value)           ← Value: LinearColor
+▶→ Branch( IsValid(TargetFurnitureActor) AND SelectedSlotIndex >= 0 )
+     True  ▶→ GET FurnitureMesh ▶→ SetSlotVectorParam(..., ParamName, Value)   ← LIVE
+     False → (dead-end)
+
+Handle_ColorCommit(ParamName, Value)            ← Value: LinearColor
+▶→ Branch( IsValid(TargetFurnitureActor) AND SelectedSlotIndex >= 0 )
+     True  ▶→ GET FurnitureMesh ▶→ SetSlotVectorParam(...) ●→ ok
+             ▶→ Branch(ok): True ▶→ UndoManagerRef.CaptureSnapshot("Đổi màu " + Conv_NameToString(ParamName))
+                            False → (dead-end)
+     False → (dead-end)
 ```
+> `UndoManagerRef` = biến class cache từ Event Construct (KHÔNG `Get All Actors Of Class` như
+> `Handle_ResetSlotRequested` — tránh query world lặp). `Conv_NameToString` vì `ParamName` kiểu `Name`
+> không cộng chuỗi trực tiếp. **[BUG B3 phía row]** lần đầu build, `Handle_ColorPreview` nhận `ParamName=None`
+> do sót wire ở row → live-preview màu hỏng ngầm; fix ở `WBP_ParamColorRow` v1.1, không phải ở handler này.
+
+### `Handle_ResetParamsRequested()` — AS-BUILT 18/09/2026 (thay STUB), test PASS
+```
+▶→ Branch( IsValid(TargetFurnitureActor) AND SelectedSlotIndex >= 0 )
+     True  ▶→ GET TargetFurnitureActor.FurnitureMesh
+             ▶→ ClearSlotParams(Mesh, TargetFurnitureActor.MaterialSlots [ref],
+                                  SelectedSlotName, SelectedSlotIndex) ●→ ok    ← reset MỨC 1: xóa param override, GIỮ MI
+             ▶→ Branch(ok):
+                  True  ▶→ UndoManagerRef.CaptureSnapshot("Reset thông số vật liệu")
+                        ▶→ RefreshParamPanel()      ← rebuild rows đọc seed = default material
+                  False → (dead-end)
+     False → (dead-end)
+```
+> Dùng `ClearSlotParams` (giữ MI), KHÁC `BTN_ResetSlot`→`ResetSlotToAssetDefault` (xóa cả record MI).
+> Có `RefreshParamPanel()` sau snapshot (reset đổi seed rows → phải rebuild); 2 handler Commit không
+> cần vì row tự cập nhật giá trị đang kéo. Test PASS: reset về default, mesh đổi, breadcrumb giữ slot,
+> undo/redo value đúng.
 
 ### 5 seam APPEND vào routine có sẵn (T3.4, PASS 18/09/2026)
 > Task card rev6 (`Sprints/Sprint7/17-09-2026_S7G7_T3-T5_TaskCards_v6.md`) ghi 7 seam — chỉ 5
@@ -700,11 +769,23 @@ Test PASS.
 ▶→ UpdateInspectorVisibility()
 
 CUỐI nhánh Material (SAU khi PopulateTreeColumn chạy xong, HB_SlotSwatches đã Visible):
+▶→ Branch( SelectedSlotIndex >= 0 )                         ← MỚI 18/09, đóng Bug-MaterialEdit-EnableState
+     True  ▶→ SetIsEnabled(BTN_MaterialEdit, true)  ──┐
+     False ▶→ SetIsEnabled(BTN_MaterialEdit, false) ──┤ (2 nhánh merge lại 1 điểm)
+                                                        ▼
 ▶→ Branch( IsInspectorVisible() )
      True  ▶→ RefreshParamPanel()
              ▶→ HighlightSwatchByIndex(SelectedSlotIndex)
      False → (dead-end)
 ```
+> **K2Node-verified 18/09/2026** — export thật khớp 100% wiring trên (`Branch(SelectedSlotIndex>=0)`
+> True/False đều nối chung vào `Branch(IsInspectorVisible())`). Đóng `Bug-MaterialEdit-EnableState`:
+> trước đây tab Material không tự disable `BTN_MaterialEdit` khi actor được chọn TRƯỚC lúc đổi tab
+> (do seam #3 của `OnMeshSelected` không chạy khi đó — guard `CurrentInventoryMode==Material` fail).
+> Branch mới này đọc trực tiếp `SelectedSlotIndex` tại đúng thời điểm tab đổi, không phụ thuộc seam
+> #3 có chạy trước đó hay không. Test PASS: chọn mesh ở Furniture → đổi Material → nút disable
+> đúng; chọn slot → nút enable đúng.
+>
 > ⚠️ **Lệch quan trọng so với rev6:** rev6 đặt cụm "CUỐI nhánh Material" này Ở ĐẦU hàm — **SAI**.
 > Nếu chạy ở đầu hàm, `HB_SlotSwatches` chưa tồn tại/chưa Visible khi `HighlightSwatchByIndex` chạy
 > → highlight fail im lặng (không crash, chỉ không hiện). Đã sửa đặt ở CUỐI nhánh Material, sau
@@ -728,6 +809,7 @@ BTN_ResetSlot:
                                      SelectedSlotName, SelectedSlotIndex)
            ▶→ CaptureSnapshot("ResetSlot")
            ▶→ Call RefreshSlotSwatches()
+           ▶→ Call RefreshParamPanel()                      ← MỚI 18/09
 
 BTN_ResetAll:
   IsValid(TargetFurnitureActor)
@@ -736,7 +818,14 @@ BTN_ResetAll:
            ▶→ CLEAR TargetFurnitureActor.MaterialSlots     ← BẮT BUỘC làm tay
            ▶→ CaptureSnapshot("ResetAll")
            ▶→ Call RefreshSlotSwatches()                    ← ĐÃ CÓ SẴN, không đổi
+           ▶→ Call RefreshParamPanel()                      ← MỚI 18/09
 ```
+> **SỬA 18/09/2026 (đóng `Bug-MaterialEdit-EnableState`, phần 2/2):** 2 nút này có từ 05/09/2026
+> (S7.G2), TRƯỚC khi Material Inspector tồn tại — khi T3.4 (18/09) nối `RefreshParamPanel()` vào
+> 5 seam mới, không rà lại 2 nút cũ này vì nằm ngoài danh sách 5 seam. Hệ quả: Inspector đang mở
+> mà Reset thì panel không refresh, hiện giá trị cũ. `RefreshParamPanel()` tự guard
+> `Branch(IsInspectorVisible())` ở đầu hàm nên gọi vô điều kiện an toàn. Test PASS: mở Inspector,
+> Reset NGAY LÚC Inspector còn mở → panel tự cập nhật, không cần đóng/mở lại.
 
 `ResetSlotToAssetDefault` nhận `Records` → tự xóa Record đúng slot, không cần thao tác tay thêm.
 `RefreshSlotSwatches()` thay cho chuỗi cũ (`GetObjectName→GetDataTableRow→UpdateThumbnail` trên 1
@@ -835,17 +924,31 @@ Branch
 > quan tới Replace (`OnMeshSelected`, `OnSceneRestored`, `BTN_Close` — cả 3 dưới đây — và
 > `WBP_ComboCard.OnListItemObjectSet`, xem file đó).
 
-**Nhánh MATERIAL (v1.1 + v2.4 guard):**
+**Nhánh MATERIAL (v1.1 + v2.4 guard + T4 Equal-guard 18/09):**
 ```
 Branch CurrentInventoryMode == Material:
   T →
     Branch IsValid(SelectedActor):                          ← v2.4: guard (OnSelectionChanged fire None khi deselect)
-      T → SET TargetFurnitureActor = SelectedActor
-          → Visible HB_SlotSwatches → SET SelectedSlotIndex = -1
+      T → Branch( SelectedActor == TargetFurnitureActor )    ← MỚI T4 18/09 (K2-verified, xem file 6adf2603)
+            True  → (actor KHÔNG đổi — GIỮ NGUYÊN SelectedSlotIndex + SelectedSlotName)
+            False → SET SelectedSlotIndex = -1
+                  → SET SelectedSlotName = ""
+          (2 nhánh merge về 1 điểm)
+          → SET TargetFurnitureActor = SelectedActor
+          → Visible HB_SlotSwatches
           → RefreshSlotSwatches → Update thumbnails từ MaterialOverrides
       F → SET TargetFurnitureActor = None                  ← thay thế handler OnMeshDeselected cũ
-          → Collapsed HB_SlotSwatches → SET SelectedSlotIndex = -1
+          → Collapsed HB_SlotSwatches → SET SelectedSlotIndex = -1 → SET SelectedSlotName = ""
 ```
+> **[T4 18/09 — Equal-guard]** Trước T4, nhánh True reset `SelectedSlotIndex`/`Name` VÔ ĐIỀU KIỆN.
+> Thêm `Branch(SelectedActor==TargetFurnitureActor)`: click lại đúng actor đang chọn → giữ slot (không
+> reset oan). **K2-verified 18/09** (export `6adf2603`): `VariableSet(TargetFurnitureActor)` nhận execute
+> từ CẢ 2 nguồn — nhánh True (bỏ qua) + `VariableSet(SelectedSlotName).then` (nhánh False sau reset) →
+> merge đúng 1 điểm, không dead-end.
+> ⚠️ **Guard này KHÔNG cứu được undo/redo** — vì Undo = destroy+respawn actor (con trỏ mới), nên lúc
+> undo `Equal:false` (actor restore khác actor cũ) → vẫn reset → slot-highlight mất. Đây là giới hạn
+> kiến trúc chấp nhận (Hướng 1), xem `DEVIATIONS.md`. Guard chỉ có tác dụng cho reselect-same-actor
+> trong dùng thường, KHÔNG cho undo.
 
 ### OnMeshDeselected — ĐÃ XÓA (v2.4)
 > Logic collapse material giờ ở nhánh material False (IsValid=False) của `OnMeshSelected`, kích hoạt qua `OnSelectionChanged` khi Primary = None.
@@ -961,14 +1064,26 @@ mode + refresh theo actor restore. Lý do: undo thuộc lịch sử scene, actor
 không còn liên quan gì tới target đang định thay — giữ mode dễ tạo trạng thái UI lệch scene thật
 (kiểu aliasing dự án hay gặp). Xem `DEVIATIONS.md` mục "Replace UX Fix P0→P5 — 02/08/2026".
 
-### ApplyRestoredActor — v1.1
+### ApplyRestoredActor — v1.2 (T4 18/09: Equal-guard + seam #6 RefreshParamPanel)
 ```
 Branch CurrentInventoryMode == Material:
-  T → SET TargetFurnitureActor = PendingRestoredActor
-      Branch IsValid:
-        T → Visible + SET SelectedSlotIndex=-1 + RefreshSlotSwatches + Update thumbnails MaterialOverrides
+  T → Branch( PendingRestoredActor == TargetFurnitureActor )   ← MỚI T4 18/09
+        True  → (actor không đổi — bỏ qua, giữ SelectedSlotIndex/Name)
+        False → SET TargetFurnitureActor = PendingRestoredActor
+               → SET SelectedSlotIndex = -1 → SET SelectedSlotName = ""
+      (2 nhánh merge)
+      Branch IsValid(TargetFurnitureActor):
+        T → Visible + RefreshSlotSwatches + Update thumbnails MaterialOverrides
+          → RefreshParamPanel()                              ← seam #6 (T4) — rebuild Inspector theo actor restore
         F → Collapsed
 ```
+> **[T4 18/09]** 2 thay đổi: (1) Equal-guard giống `OnMeshSelected` — lớp chặn dự phòng nếu có đường
+> gọi `ApplyRestoredActor` không qua `OnMeshSelected` trước. Trong luồng undo thường, `OnMeshSelected`
+> chạy TRƯỚC (0.1s) đã set `TargetFurnitureActor` → ở đây `Equal:true` → no-op, harmless. (2) seam #6
+> `RefreshParamPanel()` — task card rev6 ghi seam #6 ở `OnSceneRestored` là SAI vị trí: `OnSceneRestored`
+> chỉ set `PendingRestoredActor` rồi hẹn Timer 0.1s; `TargetFurnitureActor` chỉ thật sự set ở ĐÂY
+> (`ApplyRestoredActor`) → `RefreshParamPanel` phải đặt ở đây mới đọc đúng actor.
+> ⚠️ Cùng giới hạn Hướng 1: sau undo actor bị respawn → slot-highlight mất dù có guard (xem `DEVIATIONS.md`).
 
 ---
 
@@ -2372,3 +2487,5 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.25 | 10/08/2026 — C11.3 (Import combo) DONE, C11 ĐÓNG HOÀN TOÀN | Custom Event mới `CB_ImportCombo` (bound `BTN_ImportCombo.OnClicked`) — quyết định UX: nút riêng, KHÔNG gắn context menu combo card (Import không thao tác lên 1 combo cụ thể, sai ngữ cảnh nếu gắn menu chuột-phải-trên-combo). Gọi `ImportAllFromExportsDir` → `OutImported`/`OutFailed` → nếu có combo mới: `CallDelegate ComboManagerRef.OnComboLibraryChanged` (⚠ Target PHẢI là `ComboManagerRef`, KHÔNG phải `self` — lỗi compile "Target must have a connection" nếu để `self`, xem `DEVIATIONS.md`) + `RefreshComboFolderUI()` + toast theo 4 nhánh (có lỗi/không lỗi × có nhập được/không). Test PASS 4/4 case (xóa+nhập lại ID mới, file dọn sang `Imported/`, nhập trùng nội dung → 2 ID khác nhau, file rác → toast lỗi không crash không move). Nguồn: session 10/08/2026. |
 | 3.29 | 17/09/2026 — S7G7T3 Material Inspector Integration (ĐANG XÂY) | Thêm 4 class var `MaterialInspectorRef`/`DT_ParamMap`/`bInspectorOpen`/`bInspectorSuppressed` (khai báo, CHƯA có chỗ SET thật, chờ T3.4). Function mới `IsInspectorVisible()` — node-verified qua K2Node export thật: `Return AND(bInspectorOpen, NOT bInspectorSuppressed)`. Function `RefreshParamPanel()` **ĐANG XÂY, CHƯA ĐÓNG** — nhánh Scalar built (Cast MI→MID + fallback MinValue) nhưng chưa verify test; nhánh Color chưa build; phần đầu hàm (guard IsInspectorVisible, actor-invalid, 0-slot, bounds) chưa as-built. **KHÔNG coi S7G7T3/T3.3 là xong** — T3.1 (`WBP_MaterialParamPanel`)/T3.2 (`WBP_MaterialInspector`) PASS riêng, xem 2 file widget mới đó. Nguồn: `GỬI CLAUDE CODE — Phân phối as-built S7G7T3` (17/09/2026), task card `Sprints/Sprint7/17-09-2026_S7G7_T3-T5_TaskCards_v6.md`. |
 | 3.30 | 18/09/2026 — S7G7T3.3+T3.4 PASS | `RefreshParamPanel()` build đầy đủ (nhánh Scalar+Color, fallback MID trắng/MinValue, empty-state, bounds, `ForEach.Completed→Return`) — thay trạng thái "đang xây" v3.29. 4 var S7G7T3 nay đều có chỗ SET thật. Function mới: `UpdateInspectorVisibility`, `OpenMaterialInspector`/`CloseMaterialInspector` (dùng `Set Background Color` — task card rev6 ghi nhầm `SetHighlight`, hàm không tồn tại), `Handle_InspectorCloseRequested`, `Handle_ResetSlotRequested` (PASS); `Handle_ResetParamsRequested` (stub, chờ T4). Event Construct/Destruct +lifecycle inspector (R4). 5 seam APPEND vào routine có sẵn (`OnSlotSwatchClicked`/`NotifyViewportSlotClick`/`OnMeshSelected`/`LoadAndApplyMaterial`/`SwitchInventoryMode`) — seam #5 sửa vị trí: CUỐI nhánh Material (rev6 ghi ĐẦU hàm là SAI, gây highlight fail im lặng vì swatch chưa Visible). rev6 seam #6/#7 (`OnSceneRestored`/`EndParamSession`) CHƯA build — T4/T4b. Bug mới `Bug-MaterialEdit-EnableState` [OPEN] — nút Material Edit không disable đúng lúc, nghi seam #3. Nguồn: `Sprints/Sprint7/18-09-2026_S7G7_T3-T4_ASBUILT_delta.md`. |
+| 3.31 | 18/09/2026 (tiếp) — Đóng `Bug-MaterialEdit-EnableState` | Root cause thật (K2-verified) khác nghi vấn ban đầu: KHÔNG phải seam #3 không chạy — mà 2 lỗi "entry point cũ không rà lại khi seam mới ra đời": (1) `RefreshSlotSwatches()` v1.2 thêm `Completed ▶→ HighlightSwatchByIndex(SelectedSlotIndex)`; (2) `BTN_ResetSlot`/`BTN_ResetAll` thêm `RefreshParamPanel()` cuối mỗi nhánh; (3) seam #5 `SwitchInventoryMode` thêm `Branch(SelectedSlotIndex>=0)→SetIsEnabled(BTN_MaterialEdit)` chèn TRƯỚC `Branch(IsInspectorVisible())` đã có (cuối nhánh Material). Cả 3 test PASS. Sinh rule mới `Rules/AI_Implementation_Rules.md` Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit), đặt trước Q9. |
+| 3.32 | 18/09/2026 (tiếp 2) — **S7G7T4 GATE ĐÓNG** | Thân thật 5 handler: `Handle_ScalarPreview`/`Commit` (`SetSlotScalarParam`), `Handle_ColorPreview`/`Commit` (`SetSlotVectorParam`), `Handle_ResetParamsRequested` (`ClearSlotParams`+snapshot+RefreshParamPanel, thay STUB). Dispatcher 2 row nâng 2-input `(ParamName,Value)` (xem `WBP_ParamScalarRow`/`WBP_ParamColorRow` v1.1). Snapshot chỉ khi `ok=true`. Live-preview + undo/redo VALUE PASS. Bug B3 (sót wire ParamName → preview màu hỏng ngầm) fix ở row. 2 fix undo phụ: Equal-guard `OnMeshSelected` [K2 `6adf2603`] + `ApplyRestoredActor` v1.2 (+seam #6 RefreshParamPanel). **Giới hạn Hướng 1:** undo value đúng nhưng mất slot-highlight (Undo=destroy+respawn actor) — xem `DEVIATIONS.md` + `Open_Bugs.md` backlog Hướng 3. Seam #7 (`EndParamSession`) CHƯA (T4b). |

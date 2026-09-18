@@ -1,4 +1,5 @@
 # WBP_ParamColorRow
+**Version:** 1.1 | **Cập nhật:** 18/09/2026 — **S7G7T4:** dispatcher `OnPreviewChanged`/`OnEditCommitted` thêm `ParamName:Name` (như `WBP_ParamScalarRow` v1.1). **+ Bug B3 (bắt qua log):** lần đầu nối `GET ParamName` chỉ vào `OnEditCommitted`, SÓT node `OnPreviewChanged` trong `OnColorChanged` → preview broadcast `ParamName=None` → `SetSlotVectorParam(None)` fail im lặng → **live-preview màu hỏng ngầm** (mesh chỉ nhảy màu lúc thả, không đổi live). Fix: nối `GET ParamName` vào cả node preview + node hex-commit. Test PASS (màu + hex đều LIVE). Xem B3 dưới.
 **Version:** 1.0 | **Ngày:** 15/09/2026 | **Tạo mới — S7G7T2, đóng PASS**
 
 ## Vai trò
@@ -24,8 +25,9 @@ Border_RowRoot
 ## Variables + Event Dispatchers
 ```
 ParamName : Name · CurrentColor : LinearColor       ← CurrentColor = nguồn sự thật DUY NHẤT
-OnEditBegin() · OnPreviewChanged(Value:LinearColor) · OnEditCommitted(Value:LinearColor)
+OnEditBegin() · OnPreviewChanged(ParamName:Name, Value:LinearColor) · OnEditCommitted(ParamName:Name, Value:LinearColor)
 ```
+> **[v1.1 18/09]** `ParamName` là input MỚI (v1.0 chỉ có `Value`) — cùng lý do `WBP_ParamScalarRow` v1.1: 1 handler T4 chung cho mọi row Color.
 
 ## Function `SyncCurrentColor(NewColor:LinearColor)` — hub đồng bộ duy nhất
 ```
@@ -50,18 +52,18 @@ InteriorColorPicker.OnInteractionBegin ▶→ Call OnEditBegin
 
 InteriorColorPicker.OnColorChanged(NewColor)
 ▶→ Call SyncCurrentColor(NewColor)
-▶→ Call OnPreviewChanged(Value = GET CurrentColor)   ← GET lại, KHÔNG dùng output pin của SET
-                                                         (2 lời gọi hàm tách biệt, không cùng chuỗi exec)
+▶→ Call OnPreviewChanged(GET ParamName, Value = GET CurrentColor)   ← v1.1: +GET ParamName (đây là node từng SÓT gây B3)
+                                                         (GET lại, KHÔNG dùng output pin của SET — 2 lời gọi hàm tách biệt)
 
 InteriorColorPicker.OnInteractionEnd(NewColor)
 ▶→ Call SyncCurrentColor(NewColor)
-▶→ Call OnEditCommitted(Value = GET CurrentColor)
+▶→ Call OnEditCommitted(GET ParamName, Value = GET CurrentColor)    ← v1.1: +GET ParamName
 
 EditableTextBox_Hex.OnTextCommitted(Text, CommitMethod)
 ▶→ Conv_TextToString(Text) → HexToLinearColor(...) ●→ bSuccess, OutColor
 ▶→ Branch(bSuccess):
      True  ▶→ Call SyncCurrentColor(OutColor)
-            ▶→ Call OnEditBegin ▶→ Call OnEditCommitted(Value = GET CurrentColor)
+            ▶→ Call OnEditBegin ▶→ Call OnEditCommitted(GET ParamName, Value = GET CurrentColor)   ← v1.1: +GET ParamName
      False ▶→ EditableTextBox_Hex.SetText( Conv_StringToText( ToHex_LinearColor(GET CurrentColor) ) )
             ← REVERT LẶNG LẼ, KHÔNG bắn dispatcher nào (quyết định D3)
 ```
@@ -102,6 +104,22 @@ chỉ trong Custom Event, ở đây tránh hẳn không cần).
 
 Q9: MIỄN (standalone, không đụng `SelectedActors`).
 
+## Bug B3 — Live-preview màu hỏng ngầm do sót wire ParamName (18/09/2026, S7G7T4)
+**Triệu chứng:** kéo bánh xe màu, mesh KHÔNG đổi màu live; chỉ nhảy màu đúng lúc thả tay.
+**Log bắt được:**
+```
+Warning: SetSlotVectorParam|...|Param 'None' không tồn tại trên material   ← preview, FAIL
+         SetSlotVectorParam|...|OK Tint                                     ← commit, OK
+```
+**Root cause:** khi nâng dispatcher lên 2 input (v1.1), đã nối `GET ParamName` vào node `OnEditCommitted`
+nhưng SÓT node `OnPreviewChanged` (trong `OnColorChanged`) → pin `ParamName` rỗng → broadcast `None`
+→ `SetSlotVectorParam(None)` guard-fail, no-op. Commit (Tint) đúng nên undo value vẫn chạy → dễ tưởng ổn.
+**Cách phát hiện:** đọc log `Warning ... None` rồi `OK Tint` — suy ra commit-path OK, preview-path None →
+đúng 1 node sót wire. KHÔNG đoán mò, khớp bằng chứng.
+**Fix:** nối `GET ParamName` vào node `OnPreviewChanged` + node `OnEditCommitted` nhánh hex-commit. Test PASS.
+**Bài học:** khi thêm pin vào dispatcher có NHIỀU điểm broadcast (Scalar 3, Color 3), phải audit ĐỦ mọi
+node `Call` — sót 1 node = 1 đường im lặng hỏng. Cùng họ bug B2 (dead-end pin) của v1.0.
+
 ## Nợ nhẹ (chưa sửa, không chặn T3)
 `HexToLinearColor` trong `OnTextCommitted` bị đọc pin 2 lần (`ReturnValue` cho Branch, `OutColor`
 cho `SyncCurrentColor`) → UE chạy lại toàn bộ chuỗi `Conv_TextToString→HexToLinearColor` 2 lần. Vô
@@ -115,3 +133,4 @@ G8/G9.
 | Ngày | Version | Nội dung |
 |------|---------|----------|
 | 15/09/2026 | 1.0 | Tạo mới — S7G7T2. `SyncCurrentColor` hub duy nhất + `Setup` + event flow (Picker/Hex → 3 dispatcher chuẩn hóa). 3 quyết định kiến trúc: D1 single-source-of-truth, D2 bỏ preset tĩnh (backlog Project Palette/Recent Colors), D3 hex-error chỉ revert không Timer. Test PASS toàn bộ. Nguồn: `DELTA — S7G7T2 AS-BUILT` (Opus+Sonnet, 15/09/2026). |
+| 18/09/2026 | 1.1 | **S7G7T4:** dispatcher `OnPreviewChanged`/`OnEditCommitted` +`ParamName:Name`. Bug B3: sót wire ParamName ở node preview → live-preview màu hỏng ngầm (bắt qua log `Param 'None'`), fix nối đủ 3 chỗ. Test PASS (màu + hex LIVE + undo value đúng). |

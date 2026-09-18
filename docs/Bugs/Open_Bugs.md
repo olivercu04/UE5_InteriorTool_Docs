@@ -52,6 +52,19 @@ Test 6/6 PASS. Không thuộc Sprint 7 (bug fix ngoài phạm vi gate). Xem
 `BTN_MaterialEdit` vẫn bấm được dù chưa chọn slot vật liệu, chặn đóng seam #1/#2/#3 của S7G7T3.4.
 Nghi seam #3 (`OnMeshSelected`) không chạy khi actor chọn trước lúc đổi tab Material. Chưa xác
 nhận root cause — bước tiếp theo là Print A đầu phiên 19/09.
+**Cập nhật (tiếp) 18/09/2026 (cùng ngày):** **Đóng `Bug-MaterialEdit-EnableState`.** Print A xác
+nhận nghi vấn seam #3 SAI — `SelectedSlotIndex` đọc đúng `-1` khi actor chọn trước lúc đổi tab
+(seam #3 chạy đúng). Root cause thật là 2 lỗi cộng dồn kiểu "entry point cũ không rà lại khi seam
+mới ra đời": `RefreshSlotSwatches()` rebuild list không tự `HighlightSwatchByIndex`, và
+`BTN_ResetSlot`/`BTN_ResetAll` không gọi `RefreshParamPanel()`. Cả 2 fix + test PASS, xem
+`Widgets/WBP_FurnitureInventory.md` v3.31. Sinh rule mới `Rules/AI_Implementation_Rules.md` Q10 —
+FLOW COVERAGE GATE (Cross-Flow Impact Audit).
+**Cập nhật (tiếp) 18/09/2026 (T4 GATE đóng):** Thêm `Bug-ParamUndo-SlotContextLost` [OPEN, 🟡 Trung
+bình — backlog Hướng 3]. Undo/redo material-param: VALUE về đúng nhưng slot-highlight mất, Inspector
+về placeholder. Root cause KIẾN TRÚC: Undo = destroy+respawn actor → `SelectedSlotIndex`/`Name`
+(widget-state) không sống qua respawn. Đã chốt Hướng 1 (chấp nhận, đủ cho T4 GATE); Hướng 3 (undo
+riêng cho param) làm ở phiên redesign undo — cuhoang chốt "sẵn sàng đập xây lại". Chi tiết:
+`00_Core/DEVIATIONS.md` mục "Param-Undo slot-context". KHÔNG chặn T4b/T5.
 
 ---
 
@@ -59,6 +72,7 @@ nhận root cause — bước tiếp theo là Print A đầu phiên 19/09.
 
 | # | Bug | Ưu tiên | Sprint/Gate xử lý |
 |---|---|---|---|
+| Bug-ParamUndo-SlotContextLost | Undo/redo material-param: value đúng nhưng mất slot-highlight → Inspector về placeholder. Kiến trúc: Undo=destroy+respawn actor, slot là widget-state không sống qua respawn | 🟡 Trung bình (backlog) | Hướng 1 chấp nhận (T4, 18/09). Hướng 3 (undo riêng cho param) — phiên redesign undo. Xem `DEVIATIONS.md` "Param-Undo slot-context" |
 | B1 | ✅ FIXED (16/06) — Undo lần 2 không restore group state | — | Đóng Gate 1, xem BP_UndoManager.md v1.9-1.10 |
 | B-gizmo | Gizmo ẩn sau undo trong edit mode (pre-existing) | 🟢 Thấp | Known issue, chưa có timeline |
 | B-folder | ✅ FIXED (17/06, D.T6) — Replace folder sai khi group nhiều mesh khác folder | — | OnMeshSelected nay đọc RowName→DT, không cần load DAPath. Xem WBP_FurnitureInventory.md v2.5 |
@@ -101,7 +115,7 @@ nhận root cause — bước tiếp theo là Print A đầu phiên 19/09.
 | Bug-MaterialSkip-Cook | ✅ CLOSED (25/08) — Bản packaged: nhiều material bấm Replace không đổi trên mesh, mesh giữ material cũ, không toast | — | 43 MI dưới `DatabaseProjectMaster/Material/MaterialInstances/Surface/` bị cook skip (chỉ ref động qua path runtime, không ai ref cứng). Fix: thêm `Material` vào Additional Asset Directories to Cook. Xem mục chi tiết dưới |
 | Bug-CookFail-10Errors | ✅ CLOSED (25/08) — 10 cook error phát sinh ngay sau khi mở rộng scope cook thêm folder Material/ | — | 3 nhóm: EUW_RDMtiles Geometry Script editor-only (5 lỗi, fix Directories to never cook), texture CMYK 2 file (2 lỗi, convert RGB+reimport), FTargetSettings/UniversalCameraPlugin vô hại giống lần cook 19/08 thành công (3 lỗi, không sửa). Xem mục chi tiết dưới |
 | Bug-TickFallback-GroupNotExpanded | [OPEN] `Event Tick` nhánh fallback single-click vẫn gọi `SelectSingleActor` (không group-aware) — Sprint 4 T2.2 định đồng bộ nhưng chưa từng thực thi | 🟡 Trung bình (tần suất cực hiếm) | Phát hiện G6.0 VERIFY (12/09). KHÔNG chặn G6. Xem mục chi tiết dưới |
-| Bug-MaterialEdit-EnableState | [OPEN] `BTN_MaterialEdit` vẫn bấm được dù chưa chọn slot vật liệu (chọn mesh ở tab Furniture → chuyển Material → không slot nào highlight nhưng nút vẫn enable) | 🟡 Trung bình (chặn đóng seam #1/#2/#3) | Phát hiện 18/09 test tay. Nghi seam #3 (`OnMeshSelected`) không chạy khi actor được chọn TRƯỚC lúc đổi tab. Xem mục chi tiết dưới |
+| Bug-MaterialEdit-EnableState | ✅ FIXED (18/09, phát hiện+đóng cùng phiên) — `BTN_MaterialEdit` vẫn bấm được dù chưa chọn slot; root cause thật KHÔNG phải seam #3 (đã verify Print A đúng) mà là `RefreshSlotSwatches`/`BTN_ResetSlot`/`BTN_ResetAll` thiếu đồng bộ highlight+panel | — | Sinh rule `AI_Implementation_Rules.md` Q10 — FLOW COVERAGE GATE. Xem mục chi tiết dưới |
 
 ---
 
@@ -1403,11 +1417,11 @@ bằng:
 
 ---
 
-## Bug-MaterialEdit-EnableState — `BTN_MaterialEdit` vẫn bấm được khi chưa chọn slot
+## Bug-MaterialEdit-EnableState — `BTN_MaterialEdit` vẫn bấm được khi chưa chọn slot — ✅ FIXED
 
 **ID:** Bug-MaterialEdit-EnableState
-**Phát hiện:** 18/09/2026, test tay (S7G7T3.4).
-**Ưu tiên:** 🟡 Trung bình — chặn đóng seam #1/#2/#3 (`Widgets/WBP_FurnitureInventory.md` mục
+**Phát hiện:** 18/09/2026, test tay (S7G7T3.4). **Đóng:** 18/09/2026 (cùng phiên).
+**Ưu tiên lúc mở:** 🟡 Trung bình — chặn đóng seam #1/#2/#3 (`Widgets/WBP_FurnitureInventory.md` mục
 "S7G7T3").
 
 ### Triệu chứng
@@ -1415,22 +1429,34 @@ Chọn mesh ở tab Furniture → chuyển tab sang Material → `HB_SwatchList`
 highlight, NHƯNG `BTN_MaterialEdit` vẫn enable, mở được `WBP_MaterialInspector` (hiện empty-state
 "chọn một vùng vật liệu"). Kỳ vọng: nút phải disable tới khi có slot được chọn.
 
-### Nghi vấn (CHƯA xác nhận root cause)
-Actor được chọn TRƯỚC khi vào Material mode → seam #3 (`OnMeshSelected` nhánh Material, gate
-`CurrentInventoryMode==Material`) KHÔNG chạy lúc đó → bước `BTN_MaterialEdit.SetIsEnabled(False)`
-của seam #3 không được gọi. `SwitchInventoryMode` set `TargetFurnitureActor` bằng đường riêng,
-không tự disable nút.
+### Nghi vấn ban đầu — SAI, đã loại qua Print A
+Nghi Actor được chọn TRƯỚC khi vào Material mode → seam #3 (`OnMeshSelected` nhánh Material, gate
+`CurrentInventoryMode==Material`) KHÔNG chạy lúc đó. **Print A xác nhận nghi vấn này SAI:**
+`SelectedSlotIndex=-1` đúng như kỳ vọng khi actor chọn trước lúc đổi tab — seam #3 chạy đúng, biến
+không bị stale. `Branch(SelectedSlotIndex>=0) → SetIsEnabled` (đã thêm trước đó, tưởng "không ăn")
+thật ra ĐÃ hoạt động đúng — bug nằm ở chỗ khác, bị nhìn lẫn qua 1 thao tác test riêng (Reset).
 
-### Đã thử (chưa fix xong)
-Thêm `Branch(SelectedSlotIndex>=0) → SetIsEnabled` vào cuối nhánh Material của
-`SwitchInventoryMode` → VẪN như cũ. Chưa rõ nhánh không chạy, hay `SetIsEnabled` không chặn được
-click (nghi `BTN_MaterialEdit` có thể không phải `Button` chuẩn).
+### Root cause thật — 2 bug khác gộp lại, phát hiện qua test tay tiếp
+Khi test kỹ hơn (chọn slot → mở Inspector → đóng → `BTN_ResetAll`/`BTN_ResetSlot` → mở lại
+Inspector), lộ ra: **swatch mất highlight sau Reset dù data đúng**, và **Inspector không refresh
+theo Reset khi đang mở**. Cả 2 cùng 1 dạng lỗi — "entry point cũ không rà lại khi seam mới ra đời":
+1. `RefreshSlotSwatches()` chỉ rebuild list (`ClearChildren`+`ForLoop`), không tự gọi
+   `HighlightSwatchByIndex` để đồng bộ lại swatch đang chọn.
+2. `BTN_ResetSlot`/`BTN_ResetAll` (có từ 05/09, TRƯỚC khi Inspector tồn tại) không gọi
+   `RefreshParamPanel()` — T3.4 (18/09) chỉ nối `RefreshParamPanel` vào 5 seam mới, không rà lại
+   2 nút cũ này.
 
-### Bước tiếp theo (19/09/2026)
-Print A tại `Branch` mới — in `SelectedSlotIndex` + đánh dấu nhánh có chạy tới không.
+### Fix (test PASS)
+- `RefreshSlotSwatches()` v1.2: thêm `Completed ▶→ HighlightSwatchByIndex(SelectedSlotIndex)`.
+- `BTN_ResetSlot`/`BTN_ResetAll`: thêm `RefreshParamPanel()` cuối mỗi nhánh.
+- Seam #5 `SwitchInventoryMode`: `Branch(SelectedSlotIndex>=0)→SetIsEnabled(BTN_MaterialEdit)`
+  chèn TRƯỚC `Branch(IsInspectorVisible())` đã có — K2-verified, giữ nguyên vị trí "CUỐI nhánh
+  Material". Xem `Widgets/WBP_FurnitureInventory.md` v3.31.
 
 ### Trạng thái
-- **Open.** Không tự sửa — chờ phiên sau debug tiếp bằng Print A.
+- **Closed (18/09/2026).** Sinh rule mới `Rules/AI_Implementation_Rules.md` Q10 — FLOW COVERAGE
+  GATE (Cross-Flow Impact Audit) — để bắt loại lỗi "entry point cũ không rà lại" này SỚM HƠN, ở
+  lúc lập plan, thay vì tình cờ phát hiện qua test tay.
 
 ---
 

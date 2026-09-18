@@ -1,6 +1,6 @@
 # Hệ thống học UE5 — Cá nhân hóa
 **Nguồn:** `import_raw/Learning_System.md`
-**Phiên bản:** 1.5 | **Cập nhật:** 17/09/2026 — thêm "Điều chỉnh quy trình" phiên S7G7T3 (hỏi lại phạm vi khi báo "xong" giữa chuỗi bước con) | Mentor: Claude | Học viên: Cuhoang
+**Phiên bản:** 1.6 | **Cập nhật:** 18/09/2026 — thêm "Điều chỉnh quy trình" phiên S7G7T4 (đoán sai giả định cơ chế qua undo 3 lượt; đọc ground truth sớm; cuhoang kéo lên tầng kiến trúc) | Mentor: Claude | Học viên: Cuhoang
 
 ---
 
@@ -240,6 +240,48 @@ cụ thể để nhớ khi task có nhiều sub-step cùng tên loại (switch/b
 
 Hệ quả trực tiếp trong phiên: `S7G7T3` phải ghi rõ trạng thái "ĐANG DỞ" thay vì "xong" — xem
 `01_Session_State.md`, `Widgets/WBP_FurnitureInventory.md` mục "S7G7T3".
+
+---
+
+## Điều chỉnh quy trình — 18/09/2026 (phiên S7G7T4, đoán sai cơ chế undo)
+
+Bối cảnh: sau khi T4 chạy, undo/redo chỉnh param mất slot-highlight. Claude dựng **3 fix liên tiếp**
+(guard `Equal(Object)` ở `OnMeshSelected`, rồi `ApplyRestoredActor`, rồi thêm `SelectedSlotName`) —
+**cả 3 đều dựa trên giả định "actor KHÔNG đổi qua undo"** mà CHƯA đọc `BP_UndoManager` để verify cơ
+chế. Đọc ra mới biết: Undo = **destroy + respawn actor** (con trỏ mới) → mọi fix so-con-trỏ vô hiệu.
+
+**Bài học chính (áp dụng từ đây):**
+
+1. **Vấn đề chạm cơ chế mình CHƯA đọc trong phiên → đọc ground truth TRƯỚC khi dựng fix, không dựng
+   fix trên giả định về cơ chế.** Lẽ ra đọc `BP_UndoManager.RestoreSnapshot` ngay lượt đầu (nó là
+   "code hiện tại chạy sao" — canonical thắng), không phải sau 3 lượt patch. Dấu hiệu nhận biết:
+   fix dựa trên 1 câu "chắc là X hoạt động thế này" mà chưa mở file X ra xem → DỪNG, đọc X trước.
+   Đây là biến thể của luật "test 1 phút bằng mắt / đi lấy bằng chứng" — ở đây bằng chứng là 1 file
+   canonical, không phải editor.
+
+2. **Debug-guess-first giữ tốt (không đổi):** mỗi lượt Claude đều mời cuhoang đoán trước + dùng
+   Print String tại điểm nghi ngờ (`Equal(Object)`, `SelectedSlotIndex` tại các mốc) rồi mới kết
+   luận. Nhờ đó lượt 3 log lật thẳng giả thuyết (`Equal:false` + `sel=4`) — bằng chứng cứu, không cãi.
+
+3. **cuhoang kéo lên tầng kiến trúc đúng lúc (ghi nhận nhịp phối hợp mới):** khi Claude sa vào
+   patch-từng-node, cuhoang nói thẳng "tao nghĩ đến tầng thiết kế kiến trúc còn thiếu" + nhắc lại
+   chính câu Claude từng nói (`SelectedSlotIndex` không nằm trong snapshot). Đó là điểm bẻ lái đúng.
+   → Khi 1 vấn đề đã sửa ≥2 lượt không trúng, TỰ Claude phải nghi "đây là tầng kiến trúc, không phải
+   bug node" và lùi lại — không đợi cuhoang kéo. Đúng tinh thần "tái đánh giá bản chất vấn đề bằng
+   toàn bộ context" (Custom Instructions mục 2).
+
+4. **Q10 (rule lập sáng cùng ngày) validate 2 lần trong 1 phiên** — bug dispatcher thiếu `ParamName`
+   (producer contract không phủ consumer T4) + bug undo cross-flow đều đúng loại Q10 bắt. Rule mới
+   dùng được ngay, không phải lý thuyết suông.
+
+**Nợ kiểm tra hiểu (KHÔNG tick khống):** phiên này chạy nhanh để đóng T4 GATE, Claude KHÔNG dừng hỏi
+1-2 câu kiểm hiểu bài sau mỗi handler (vi phạm nhẹ rule dạy học, giống bài học Sprint 5). Kiến thức
+xuất hiện đáng verify khi gặp lại: (a) **Dispatcher payload** — vì sao `ParamName` phải đi trong
+payload chứ không bind sẵn được (liên quan mục ⏳ "Bind Event matching signature" trong bảng Nợ
+Sprint 5, phiên này cuhoang ĐÃ tự tạo 4 custom event từ bind signature — thực hành đúng nhưng CHƯA
+hỏi lại nguyên nhân); (b) **Live vs Commit** — vì sao preview KHÔNG snapshot, commit mới snapshot;
+(c) **Undo = respawn** — vì sao widget-state không sống qua undo. Hỏi 1 câu đúng lúc khi 3 chủ đề này
+tái xuất ở phiên redesign undo / T4b.
 
 ---
 

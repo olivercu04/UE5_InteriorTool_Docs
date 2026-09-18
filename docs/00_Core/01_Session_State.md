@@ -14,10 +14,12 @@
 **Last verified (tiếp):** 15/09/2026 — S7G7T2 ĐÓNG — PASS. `WBP_ParamScalarRow`+`WBP_ParamColorRow` xong, +`HexToLinearColor` (C++). `Bug-MaterialSlots-MissingInClipboard` cũng đóng trong ngày (ngoài Sprint 7).
 **Last verified (tiếp):** 17/09/2026 — S7G7T3 **ĐANG DỞ**, KHÔNG ĐÓNG. T3.1 (`WBP_MaterialParamPanel`) PASS, T3.2 (`WBP_MaterialInspector`) PASS. T3.3 (`RefreshParamPanel`, tích hợp vào `WBP_FurnitureInventory`) đang xây: nhánh Scalar built-chưa-verify-test, nhánh Color chưa build, phần đầu hàm chưa as-built.
 **Last verified (tiếp):** 18/09/2026 — **S7G7T3.3 + T3.4 PASS.** `RefreshParamPanel()` build đầy đủ + lifecycle Inspector + 5 seam APPEND (seam #5 sửa vị trí so với task card rev6) + vá lỗ hổng đường kéo-thả material. Treo mới: `Bug-MaterialEdit-EnableState` [OPEN].
+**Last verified (tiếp):** 18/09/2026 (cùng ngày) — **Đóng `Bug-MaterialEdit-EnableState`.** Root cause thật khác nghi vấn ban đầu (seam #3 chạy đúng) — 2 lỗi "entry point cũ không rà lại": `RefreshSlotSwatches` thiếu `HighlightSwatchByIndex`, `BTN_ResetSlot`/`BTN_ResetAll` thiếu `RefreshParamPanel`. Fix+test PASS cả 3 chỗ (xem `WBP_FurnitureInventory.md` v3.31). Sinh rule mới `AI_Implementation_Rules.md` Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit), đặt trước Q9. Không còn nợ nào chặn G7 trước T4.
+**Last verified (tiếp):** 18/09/2026 (tiếp 2) — **S7G7T4 GATE ĐÓNG — PASS.** 5 handler thật (`Handle_ScalarPreview`/`Commit`, `Handle_ColorPreview`/`Commit`, `Handle_ResetParamsRequested`) nối `MaterialSlotService`; live-preview + undo/redo VALUE PASS. Dispatcher 2 row nâng 2-input `(ParamName,Value)` (row v1.1). Bug B3 (sót wire ParamName → preview màu hỏng ngầm) fix. **Giới hạn Hướng 1 chốt:** undo mất slot-highlight (Undo=destroy+respawn actor) — `Bug-ParamUndo-SlotContextLost` backlog, `DEVIATIONS.md`. cuhoang chốt: **phiên sau đập-xây-lại hệ undo (Hướng 3)** — ưu tiên cao. Doc T4 đã merge canonical (WBP_FurnitureInventory v3.32, 2 row v1.1, DEVIATIONS, Open_Bugs).
 
 --- hôm này là ngày thứ 6, sau vài ngày mưa tầm tã, hôm nay là ngày đẹp trời
 
-Current: Sprint 7 (Material v1.2, 6/10 gate) — S7G7T3.3+T3.4 PASS (18/09/2026). Next: T4 (4 delegate handler thật) + seam #6/#7 (T4b) + fix Bug-MaterialEdit-EnableState
+Current: Sprint 7 (Material v1.2, 6/10 gate) — **S7G7T4 GATE ĐÓNG** (18/09/2026). Next: **phiên mới — redesign undo (Hướng 3, param-undo riêng)** [ưu tiên], rồi T4b (coalescing) + T5 (multi-apply)
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -29,10 +31,10 @@ Current: Sprint 7 (Material v1.2, 6/10 gate) — S7G7T3.3+T3.4 PASS (18/09/2026)
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
 | **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | **S7G7T3.3 + T3.4 PASS (18/09/2026).** `RefreshParamPanel()` build đầy đủ (nhánh Scalar+Color, fallback MID, empty-state, bounds) + lifecycle Inspector (Construct/Destruct/Open/Close) + 5 seam APPEND + vá lỗ hổng đường kéo-thả material (`BP_FurnitureActor.ApplyMaterialByRowName`). Xem `Widgets/WBP_FurnitureInventory.md` mục "S7G7T3", `Blueprints/BP_FurnitureActor.md` v2.5. |
-| **Task Source** | `Sprints/Sprint7/18-09-2026_S7G7_T3-T4_ASBUILT_delta.md` (Sonnet, 18/09/2026). Task card gốc: `Sprints/Sprint7/17-09-2026_S7G7_T3-T5_TaskCards_v6.md` (3 chỗ `[HISTORICAL]` — SAI so với as-built, xem banner đầu file đó). |
-| **Next** | **T4** — thân thật cho 4 delegate handler rỗng (`Handle_ScalarPreview`/`Handle_ScalarCommit`/2 handler Color) + `Handle_ResetParamsRequested` thật (đang stub). **T4b** — seam #6 (`OnSceneRestored`)/#7 (`EndParamSession`, hàm chưa tồn tại). Song song: debug `Bug-MaterialEdit-EnableState` (Print A đầu phiên, xem `Bugs/Open_Bugs.md`). |
-| **Blockers** | `Bug-MaterialEdit-EnableState` [OPEN, 🟡] — nghi seam #3 không chạy khi actor chọn trước lúc đổi tab Material. Không chặn merge doc, nhưng chặn coi seam #1/#2/#3 là đóng hẳn. (S7G7T0 sub-phần G7.0b compat 5.6/5.7/5.8 chưa chạy — KHÔNG chặn T4, tách backlog riêng) |
+| **Current Task** | **S7G7T4 GATE ĐÓNG — PASS (18/09/2026).** 5 handler + dispatcher 2-input + live-preview + undo VALUE. Xem `Widgets/WBP_FurnitureInventory.md` v3.32 (mục "4 delegate handler (T4)" + `Handle_ResetParamsRequested`), `WBP_ParamScalarRow`/`WBP_ParamColorRow` v1.1. |
+| **Task Source** | Task card gốc: `Sprints/Sprint7/17-09-2026_S7G7_T3-T5_TaskCards_v6.md` (mục S7G7T4). As-built T4 merge thẳng canonical (không tạo delta file riêng phiên này). |
+| **Next** | **1. Phiên mới — REDESIGN UNDO (Hướng 3)** [ưu tiên cao, cuhoang chốt "đập xây lại"]: param-undo riêng (command-pattern old/new value), không đi qua full scene snapshot. Bối cảnh: `Bug-ParamUndo-SlotContextLost` (`Open_Bugs.md`) + `DEVIATIONS.md` mục "Param-Undo slot-context" + `BP_UndoManager.md` v1.10 (`RestoreSnapshot`=destroy+respawn). **2. T4b** — coalescing undo (gộp nhiều lần kéo→1 entry) + seam #7 `EndParamSession`. **3. T5** — multi-select apply. |
+| **Blockers** | Không còn bug chặn. Giới hạn Hướng 1 (slot-context mất sau undo) đã chấp nhận, KHÔNG chặn T4b/T5. (G7.0b compat 5.6/5.7/5.8 vẫn backlog riêng.) |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
 (sau Gate 2: Backend B0→B5 — cloud, chợ combo)
@@ -68,8 +70,9 @@ ro đụng đồ đồng nghiệp.
 | **S7G7T0** | SpikeGate `InteriorColorPicker` (viability 3 primitive Slate) | ĐÓNG — GO (14/09). Plugin copy về `Lighting_Mnger` DONE (15/09). Sub G7.0b (compat 5.6/5.7/5.8) chưa chạy — backlog, không chặn T1. |
 | **S7G7T1** | `DT_MaterialParamMap` (row struct C++) + `GetControlsForMaterial` helper — **task DUY NHẤT có C++ mới trong T1-T5** | ĐÓNG — PASS 4/4 (15/09). So con trỏ base material (không path). |
 | **S7G7T2** | `WBP_ParamScalarRow` + `WBP_ParamColorRow` (nhúng `UInteriorColorPickerWidget`) | ĐÓNG — PASS toàn bộ (15/09). +`HexToLinearColor` (C++). |
-| **S7G7T3** | `WBP_MaterialParamPanel` (T3.1) + `WBP_MaterialInspector` (T3.2) + tích hợp `RefreshParamPanel`+lifecycle+5 seam (T3.3+T3.4) | **ĐÓNG — PASS (18/09).** T3.1/T3.2/T3.3/T3.4 đều PASS. Treo: `Bug-MaterialEdit-EnableState` [OPEN] không chặn merge doc nhưng chặn coi seam #1/#2/#3 đóng hẳn. |
-| **S7G7T4** | ⭐ Thân thật 4 delegate handler (Scalar/Color Preview+Commit) → `MaterialSlotService` (SetSlotParam, MID-on-demand, debounce 1 snapshot/lần nhả) — **INTEGRATION GATE**, rủi ro cao nhất còn lại. Gồm **T4b** con (seam #6/#7, `EndParamSession`/`ParamSession_*` trên `BP_UndoManager` — ranh giới Undo session khi đổi selection). | Chưa bắt đầu |
+| **S7G7T3** | `WBP_MaterialParamPanel` (T3.1) + `WBP_MaterialInspector` (T3.2) + tích hợp `RefreshParamPanel`+lifecycle+5 seam (T3.3+T3.4) | **ĐÓNG HẲN — PASS (18/09).** T3.1/T3.2/T3.3/T3.4 đều PASS. `Bug-MaterialEdit-EnableState` cũng ĐÓNG cùng ngày — seam #1/#2/#3 coi như đóng hẳn. |
+| **S7G7T4** | ⭐ Thân thật 4 delegate handler (Scalar/Color Preview+Commit) + `Handle_ResetParamsRequested` → `MaterialSlotService`. **INTEGRATION GATE.** | **ĐÓNG — PASS (18/09).** Live-preview + undo/redo VALUE đúng. Dispatcher 2-input `(ParamName,Value)`. Lộ giới hạn Hướng 1 (mất slot-context sau undo, chấp nhận). seam #6 DONE. seam #7 (`EndParamSession`) tách sang T4b. |
+| **S7G7T4b** | Coalescing undo (gộp nhiều lần kéo→1 entry) + `EndParamSession`/`ParamSession_*` trên `BP_UndoManager` (ranh giới Undo session khi đổi selection). | Chưa bắt đầu. **LƯU Ý:** phiên redesign undo (Hướng 3) đi TRƯỚC — có thể đổi cả cách tiếp cận T4b. |
 | **S7G7T5** | Multi-select áp param cả cụm theo SlotName/ParamName + test từ điển tạm 2 dòng | Chưa bắt đầu |
 
 Plan T1-T5 (PLAN, chưa as-built): `Sprints/Sprint7/15-09-2026_S7G7_T1-T5_ExecutionPlan.md`. Task
@@ -79,25 +82,26 @@ card T3·T4·T4b·T5 (rev6, PLAN — 3 chỗ `[HISTORICAL]` sau as-built 18/09, 
 undo T4 tái dùng `CaptureSnapshot`/`ApplyParamsJsonToSlot` (Đ11), không cần đường undo riêng.
 T4 mà live-preview/undo không vững → **DỪNG, báo cuhoang, KHÔNG cắt sang T5.**
 
-**Next thật sự:** **T4** (thân thật 4 delegate handler) song song debug `Bug-MaterialEdit-EnableState`.
-S7G7T3 ĐÓNG 18/09 — PASS toàn bộ T3.1-T3.4.
+**Next thật sự:** **Phiên mới — redesign undo (Hướng 3)** [cuhoang chốt ưu tiên], rồi T4b + T5.
+S7G7T4 GATE ĐÓNG 18/09 — 5 handler PASS, live-preview + undo VALUE đúng. Giới hạn slot-context
+sau undo = lý do làm Hướng 3 trước.
 
 ---
 
 ## Việc tiếp theo (chưa làm)
 
-1. **Next: T4** — thân thật cho 4 delegate handler rỗng (`Handle_ScalarPreview`/`Handle_ScalarCommit`/
-   2 handler Color) → nối `MaterialSlotService` (SetSlotParam, MID-on-demand, debounce). S7G7T3
-   (T3.1-T3.4) ĐÓNG 18/09.
-2. **Debug `Bug-MaterialEdit-EnableState`** [OPEN, 🟡] song song T4 — Print A tại
-   `SwitchInventoryMode` để xác định seam #3 có chạy không. Xem `Bugs/Open_Bugs.md`.
-3. **T4b** (seam #6/#7 — `OnSceneRestored`/`EndParamSession`) sau T4. **T4** là integration gate
-   rủi ro cao nhất còn lại của G7 — dừng báo cuhoang nếu live-preview/undo không vững, không cắt
-   sang T5.
-4. **G7.0b** (compat UE 5.6/5.7/5.8) — chưa chạy, backlog riêng, không chặn T4.
+1. **[ƯU TIÊN] Phiên mới — REDESIGN UNDO (Hướng 3).** Param-undo riêng (command-pattern old/new
+   value per slot-param), KHÔNG đi qua full scene snapshot. Mục tiêu: undo param → đảo đúng 1 giá
+   trị, giữ nguyên actor + selection + slot-highlight + Inspector. Bối cảnh phải đọc trước:
+   `Bug-ParamUndo-SlotContextLost` (`Open_Bugs.md`), `DEVIATIONS.md` mục "Param-Undo slot-context",
+   `BP_UndoManager.md` v1.10 (`RestoreSnapshot`=DeselectAll+destroy+respawn+reselect — đây là gốc
+   vấn đề). cuhoang chốt "sẵn sàng đập xây lại" — không bị ràng giữ nguyên hệ undo hiện tại.
+2. **T4b** — coalescing undo (gộp nhiều lần kéo→1 entry) + seam #7 `EndParamSession`. LƯU Ý: Hướng 3
+   có thể đổi cả cách làm T4b → làm Hướng 3 trước.
+3. **T5** — multi-select áp param cả cụm (resolve-by-name per-actor, xem task card rev6).
+4. **G7.0b** (compat UE 5.6/5.7/5.8) — chưa chạy, backlog riêng.
 5. **(Tùy chọn, không khẩn) Dọn `SaveComboFromSelection` Bước 5d** — xóa loop tính
-   `MaterialOverrides_SaveCombo` (dư thừa, không ai đọc ở combo mới) — chỉ làm khi có thời gian
-   rảnh, không phải ưu tiên.
+   `MaterialOverrides_SaveCombo` (dư thừa) — chỉ làm khi rảnh.
 
 ---
 
@@ -107,9 +111,6 @@ S7G7T3 ĐÓNG 18/09 — PASS toàn bộ T3.1-T3.4.
 - **Bug-ComboRoot-MixedLooseGroup** 🔴 — chặn ĐẦU SPRINT 6 (không phải Sprint 7). Chạm kiến trúc
   combo: `SaveComboFromSelection` nên LUÔN tạo 1 wrapper root group. Ghi ở đây để không quên khi
   Sprint 7 xong chuyển sang Sprint 6. `Bugs/Open_Bugs.md`.
-- **Bug-MaterialEdit-EnableState** 🟡 — `BTN_MaterialEdit` vẫn bấm được dù chưa chọn slot. Nghi
-  seam #3 (`OnMeshSelected`) không chạy khi actor chọn trước lúc đổi tab Material. Không chặn T4,
-  nhưng chặn coi seam #1/#2/#3 đóng hẳn. Bước tiếp theo: Print A. `Bugs/Open_Bugs.md`.
 
 ---
 
@@ -136,29 +137,23 @@ S7G7T3 ĐÓNG 18/09 — PASS toàn bộ T3.1-T3.4.
 ## Recent changes (tối đa 5, mới nhất trên cùng)
 > Chỉ để định vị "vừa xong gì". Lịch sử đầy đủ → PROGRESS.md + Git.
 
+- 18/09 (tiếp 2) — **S7G7T4 GATE ĐÓNG — PASS.** 5 handler thật nối `MaterialSlotService`
+  (Scalar/Color Preview+Commit + ResetParams). Dispatcher 2 row nâng 2-input `(ParamName,Value)` (v1.1).
+  Live-preview + undo/redo VALUE PASS. Bug B3 (sót wire ParamName → preview màu hỏng ngầm) fix. **Lộ
+  giới hạn kiến trúc Hướng 1:** undo mất slot-highlight (Undo=destroy+respawn actor) — `Bug-ParamUndo-
+  SlotContextLost` backlog, cuhoang chốt phiên sau **đập-xây-lại hệ undo (Hướng 3)**. Merge: `WBP_
+  FurnitureInventory.md` v3.32, 2 row v1.1, `DEVIATIONS.md`, `Open_Bugs.md`. Bài học phiên: đoán sai
+  giả định object-identity qua undo 3 lượt → xem `Rules/Learning_System.md`.
+- 18/09 (tiếp) — **Đóng `Bug-MaterialEdit-EnableState` + sinh rule Q10.** 2 lỗi "entry point cũ không
+  rà lại khi seam mới ra đời" (`RefreshSlotSwatches` thiếu `HighlightSwatchByIndex`, `BTN_ResetSlot`/
+  `BTN_ResetAll` thiếu `RefreshParamPanel`). Elevate thành rule `AI_Implementation_Rules.md` Q10 —
+  FLOW COVERAGE GATE, đặt TRƯỚC Q9. Merge: `WBP_FurnitureInventory.md` v3.31, `Open_Bugs.md`, `AI_Impl` v2.20.
 - 18/09 — **S7G7T3.3 + T3.4 PASS.** `RefreshParamPanel()` build đầy đủ (Scalar+Color, fallback MID,
-  empty-state, bounds) + lifecycle Inspector (Construct/Destruct/Open/Close, dùng `Set Background
-  Color` — task card rev6 ghi nhầm `SetHighlight`) + 5 seam APPEND (seam #5 sửa vị trí: CUỐI nhánh
-  Material, không phải ĐẦU hàm như rev6) + vá lỗ hổng đường kéo-thả material
-  (`BP_FurnitureActor.ApplyMaterialByRowName` X3). Bug mới `Bug-MaterialEdit-EnableState` [OPEN].
-  Next: T4 (4 delegate handler thật). Xem `Widgets/WBP_FurnitureInventory.md` mục "S7G7T3".
-- 17/09 — **S7G7T3 ĐANG DỞ, KHÔNG ĐÓNG.** T3.1 `WBP_MaterialParamPanel` (tạo mới, cuhoang xác
-  nhận chưa từng build trước đó) PASS + T3.2 `WBP_MaterialInspector` PASS 7/7 (2 widget mới).
-- 15/09 (tiếp 2) — **S7G7T2 ĐÓNG — PASS toàn bộ.** `WBP_ParamScalarRow`+`WBP_ParamColorRow` +
-  `HexToLinearColor` (C++). 2 bug fix (SpinBox init, dead-end OnPreviewChanged) + 3 quyết định
-  kiến trúc (`CurrentColor` single-source-of-truth, bỏ preset tĩnh, hex-error chỉ revert). Cùng
-  ngày: `Bug-MaterialSlots-MissingInClipboard` đóng (ngoài Sprint 7), `SpawnFurnitureCopy` viết lại
-  theo K2Node thật.
-- 15/09 (tiếp) — **S7G7T1 ĐÓNG — PASS 4/4.** `GetControlsForMaterial`+`DT_MaterialParamMap` (class
-  riêng `UMaterialParamMap`, KHÔNG nhét vào `MaterialSlotService`). Chốt so CON TRỎ base material
-  (path string FAIL với MID). Xem `Data/MaterialSlotService_Reference.md`.
-- 15/09 — Plugin `InteriorColorPicker` copy về `Lighting_Mnger` xong (build sạch, PIE chạy được).
-  Opus giao execution plan **S7G7T1-T5** (Material Param Panel) — chỉ T1 có C++ mới
-  (`DT_MaterialParamMap`+`GetControlsForMaterial`), T2-T5 thuần wiring UMG vào
-  `UMaterialSlotService` có sẵn. Đ5 (fallback preset swatch) đóng dấu `[HISTORICAL — OVERRIDE]` —
-  bánh xe màu là control chính. Xem `Sprints/Sprint7/15-09-2026_S7G7_T1-T5_ExecutionPlan.md`.
-  ở project standalone riêng (né precompiled-manifest lỗi kiểu Gate 1.5). Xem
-  `Widgets/InteriorColorPicker.md`, `DEVIATIONS.md`.
+  empty-state, bounds) + lifecycle Inspector (dùng `Set Background Color` — rev6 ghi nhầm `SetHighlight`)
+  + 5 seam APPEND (seam #5 CUỐI nhánh Material) + vá lỗ hổng kéo-thả material. Xem `WBP_FurnitureInventory.md` "S7G7T3".
+- 17/09 — **S7G7T3 ĐANG DỞ.** T3.1 `WBP_MaterialParamPanel` PASS + T3.2 `WBP_MaterialInspector` PASS 7/7 (2 widget mới).
+- 15/09 (tiếp 2) — **S7G7T2 ĐÓNG — PASS.** `WBP_ParamScalarRow`+`WBP_ParamColorRow` + `HexToLinearColor` (C++).
+  3 quyết định kiến trúc (`CurrentColor` single-source, bỏ preset, hex-error chỉ revert). `Bug-MaterialSlots-MissingInClipboard` đóng.
 
 ---
 

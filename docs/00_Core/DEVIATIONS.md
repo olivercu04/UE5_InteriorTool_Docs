@@ -1,6 +1,6 @@
 # DEVIATIONS — Lệch khỏi plan gốc (plan_v3)
 **HỢP NHẤT TỪ 3 file:** 07-06_DEVIATIONS.md (Sprint 1+2) + DEVIATIONS.md (12/06, Sprint 3+4) + Sprint4BugFix_additions.md (15/06)
-**Cập nhật:** 17/09/2026 (tiếp — S7G7T3 [CHỜ DUYỆT]: pattern state-render đồng bộ, chưa chốt chính thức)
+**Cập nhật:** 18/09/2026 (S7G7T4 — Param-Undo slot-context limitation, Hướng 1 [SCOPE])
 
 > File này ghi mọi deviation so với plan gốc (plan_v3/04_Sprint_Details.md).
 > Không phải tất cả deviation đều xấu — một số là fix đúng, một số là scope cut có chủ ý.
@@ -33,6 +33,38 @@ KHÔNG hồi tố entry cũ — chỉ áp cho entry mới từ 04/07/2026.
 
 Ví dụ: fallback MeshPath cho save cũ — ceiling: chỉ cover save tạo trước RowName
 migration. trigger: Gate 2 packaged build → không còn save cũ cần giữ thì xóa fallback.
+
+---
+
+## [18/09/2026] S7G7T4 — Param-Undo mất slot-context (Hướng 1) [SCOPE]
+
+**Lệch so với:** kỳ vọng UX ngầm "undo chỉnh param → giữ nguyên slot đang chọn + Inspector mở".
+
+**Nội dung lệch:** Chấp nhận sau khi undo/redo 1 thao tác material-param: **giá trị param về đúng**
+(dữ liệu toàn vẹn), nhưng **slot-highlight mất** → `WBP_MaterialInspector` về placeholder "chọn một
+vùng vật liệu...". User phải click lại slot swatch để chỉnh tiếp.
+
+**Root cause (ground truth từ `Blueprints/BP_UndoManager.md` v1.10 `RestoreSnapshot`):** Undo trong
+tool này KHÔNG "đảo thao tác" — nó **DeselectAll → destroy toàn bộ actor → spawn lại (SpawnFurnitureCopy)
+→ SelectActors → re-fire OnSelectionChanged**. Con ghế sau undo là **UObject MỚI**. `SelectedSlotIndex`/
+`SelectedSlotName` là **widget-state** trỏ vào slot của actor CŨ (đã destroy) → sau respawn vô nghĩa,
+reset `-1` là đúng. Mọi đường select-emulation (`OnMeshSelected`, `ApplyRestoredActor`) reset slot vì
+chúng thiết kế cho "chọn actor MỚI". Param-edit (thao tác micro in-place trên 1 slot của actor đang
+chọn) bị ép đi qua cơ chế "rebuild cả scene" → mất slot-context là hệ quả tất yếu.
+
+**Đã thử & loại (3 lượt, KHÔNG chạy):** guard `Equal(Object)` ở `OnMeshSelected` + `ApplyRestoredActor`
+(so con trỏ actor) — vô hiệu vì actor bị respawn, con trỏ mới ≠ con trỏ cũ (log `Equal:false` lúc undo).
+2 guard GIỮ LẠI (harmless, đúng cho reselect-same-actor thường), KHÔNG gỡ.
+
+**ceiling:** chấp nhận cho tới hết G7. Param VALUE undo/redo đúng là đủ cho T4 GATE.
+**trigger:** phiên redesign undo (chat mới, cuhoang đã chốt "sẵn sàng đập xây lại") — làm Hướng 3
+(command-pattern undo riêng cho param, không đi qua full scene snapshot). Backlog: `Bugs/Open_Bugs.md`
+`Bug-ParamUndo-SlotContextLost`.
+
+**Lý do chọn Hướng 1 (không phải Hướng 2/3 ngay):** Hướng 2 (lưu SlotName vào snapshot + re-derive
+sau respawn) đụng lõi `CaptureSnapshot`/`RestoreSnapshot` — vùng lịch sử đầy bug stale/race, rủi ro cao
+cho lợi ích UX nhỏ. Hướng 3 (undo riêng) là proper nhưng lớn, làm sau khi G7 đóng. T4 GATE mục tiêu là
+param data + live-preview + undo VALUE — đã đạt.
 
 ---
 
