@@ -25,7 +25,7 @@
 
 --- hôm này là ngày thứ 6, sau vài ngày mưa tầm tã, hôm nay là ngày đẹp trời
 
-Current: Sprint 7 tạm DỪNG ở G7 — đang xây **Undo Architecture Foundation** (T0→U1→U2→U3, xem `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md`). **T0 ĐÓNG. U1 ĐÓNG (21/09/2026, 21:27)** — U1.0→U1.5 PASS toàn bộ, §11 comprehension check PASS. Next: Opus lập task card U2. Task card U1: `Sprints/Sprint7/21-09-2026_U1_PersistentIdentity_TaskCard.md`.
+Current: Sprint 7 tạm DỪNG ở G7 — đang xây **Undo Architecture Foundation** (T0→U1→U2→U3, xem `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md`). **T0 ĐÓNG. U1 ĐÓNG (21/09/2026, 21:27)** — U1.0→U1.5 PASS toàn bộ, §11 comprehension check PASS. **U2 task card LẬP XONG (21/09, tối, Opus) — chờ Sonnet execute** (hướng B additive; U2.0 backup preU2 trước). Task card U2: `Sprints/Sprint7/21-09-2026_U2_HistoryMutationBoundary_TaskCard.md`.
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -37,9 +37,9 @@ Current: Sprint 7 tạm DỪNG ở G7 — đang xây **Undo Architecture Foundat
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) — **tạm rẽ nhánh xây Undo Architecture Foundation trước khi quay lại Sprint 7** |
 | **Milestone** | Undo Architecture Foundation (T0→U1→U2→U3) — chuẩn bị nền cho Sprint 7 G8-G10 + mọi continuous-edit sau này (transform gizmo...) |
-| **Current Task** | **U1 — Persistent Identity + Resolver — ĐÓNG (21/09/2026, 21:27).** U1.0→U1.5 xong toàn bộ (C++ EntityIdLibrary + Spec test, BP var + 4 producer ensure, struct capture/inject Undo, ResolveByPersistentId, EMS save/load manual) — PIE PASS ID-01→ID-07, §11 comprehension check PASS. Task card: `Sprints/Sprint7/21-09-2026_U1_PersistentIdentity_TaskCard.md`. Chờ Opus lập task card **U2** (History/Mutation Boundary). |
+| **Current Task** | **U2 — History đa hình + Mutation Boundary + Param Command — task card LẬP XONG (21/09, tối), chưa execute.** Hướng B (additive hybrid): command entry kèm full snapshot, undo command targeted qua Resolver (U1), KHÔNG viết lại snapshot core (hoãn trụ E sang SUBTRACT sau U3). 8 sub-gate U2.0→U2.7, PARITY GATE ở U2.3, câu hỏi nhị phân ở U2.5. Có mục History-UI readiness (scaffolding cửa sổ History kiểu Photoshop). Task card: `Sprints/Sprint7/21-09-2026_U2_HistoryMutationBoundary_TaskCard.md`. Chờ Sonnet execute. |
 | **Task Source** | `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md` (delta, chưa merge canonical — merge từng phần khi mỗi gate as-built). |
-| **Next** | (1) Opus lập task card **U2** (History/Mutation Boundary), xem `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md` §5,§7,§8. (2) U1.6 (Functional Test, TUỲ CHỌN) — bỏ qua, không chặn. Sau U2 → U3 (Context/ChangeSet) → quay lại Sprint 7 G8-G10. |
+| **Next** | (1) **Sonnet execute U2** theo task card `Sprints/Sprint7/21-09-2026_U2_HistoryMutationBoundary_TaskCard.md` — U2.0 backup preU2 → U2.1 C++ types+Spec → U2.2 struct → **U2.3 PARITY GATE** (regression cũ) → U2.4 session → U2.5 câu hỏi nhị phân → U2.6 History-UI → U2.7 doc. (2) Sau U2 → U3 (Context/ChangeSet, đóng `Bug-ParamUndo-SlotContextLost`) → quay lại Sprint 7 G8-G10. |
 | **Blockers** | Không. Sprint 7 G8-G10 **tạm hoãn có chủ đích** (không phải bị chặn) — chờ nền Undo mới xong để tránh xây thêm trên kiến trúc sắp thay. `Bug-ParamUndo-SlotContextLost` đóng khi U3 PASS. `S7G7T4b` đã xác định **absorbed by architecture**, không còn là task riêng. |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
