@@ -6,8 +6,20 @@
 
 ## Variables
 ```
-SaveGameMenuRef : SaveGameMenu (Object Reference)
+SaveGameMenuRef        : SaveGameMenu (Object Reference)
+FurnitureInventoryRef  : WBP_FurnitureInventory (Object Reference)
+ToastRef               : WBP_Toast (Object Reference)
 ```
+> **[ĐÍNH CHÍNH 21/09/2026 — doc-drift]** `FurnitureInventoryRef` thực tế nằm ở đây, không phải
+> thiếu trong BP thật — doc này trước giờ chỉ chưa liệt kê. Đích đã xác nhận 2 lần độc lập qua
+> K2Node export thật (11/09/2026 S7.G5, 12/09/2026 G6.1) — KHÔNG phải `Foff_GameInstance` như
+> `Planning/Architecture_Overview.md` v1.2 ghi trước đây (xem doc debt ở đó + `DEVIATIONS.md` #2).
+> Widget/Actor khác lấy ref này qua `GetAllActorsOfClass(BP_FurnitureSceneManager)`, không qua
+> GameInstance. Dùng ở: `RefreshSlotSwatches/HighlightSwatchByIndex/RefreshParamPanel` (từ
+> `BP_FurnitureActor`), `ExitReplaceMode` (từ `BP_FurnitureInputManager`, `WBP_MeshControls`),
+> Copy/Paste material (`Features/Material_CopyPaste.md`). `ToastRef` cùng đợt đính chính, cùng
+> đích — `WBP_Toast` gọi qua `.ShowToast()` (doc gốc `Widgets/WBP_Toast.md` ghi trên
+> `Foff_GameInstance`, cũng là doc debt tương tự).
 
 ---
 
@@ -59,8 +71,36 @@ Get Current Save Slot → Set Current Save Slot → Load Game Actors (Level Only
 
 ---
 
+## ResolveByPersistentId(Id : String) → (OutActor : BP_FurnitureActor, bFound : Bool)
+**[✓K2 export 21/09/2026]** — verify từ K2Node export thật, khớp 100% spec thiết kế (U1.4).
+
+```
+Entry(Id)
+▶→ Branch(Id == "")                          [EqualEqual_StrStr(A=Id, B="")]
+     True  ▶→ SET OutActorLocalVar = None    (unconnected → default)
+           ▶→ SET bFoundLocalVar = false     (literal)
+           ▶→ Return(OutActor=OutActorLocalVar, bFound=bFoundLocalVar)
+
+     False ▶→ Get All Actors With Tag("FurnitureSpawned")
+           ▶→ ForEachLoopWithBreak(Array=OutActors)
+                LoopBody ▶→ Cast To BP_FurnitureActor(ArrayElement)
+                    Success ▶→ SET AsActor = AsBPFurnitureActor
+                              ▶→ Branch(AsActor.PersistentID == Id)   [EqualEqual_StrStr]
+                                   True  ▶→ SET OutActorLocalVar = AsActor
+                                         ▶→ SET bFoundLocalVar = true (literal)
+                                         ▶→ (exec → pin Break của macro)
+                                   False → (dead-end, hợp lệ — nằm trong LoopBody, macro tự next)
+                    Failed  → (dead-end, hợp lệ — tương tự)
+                Completed ▶→ Return(OutActor=OutActorLocalVar, bFound=bFoundLocalVar)
+```
+Q8: Function (pure resolver) | Cast tự guard AsActor (không cần IsValid riêng) | L2: cả 2 Return
+đều có đích, dead-end trong LoopBody hợp lệ vì macro tự resume | No Latent | 6A: N/A (đọc thuần).
+
+---
+
 ## Lịch sử cập nhật
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 05/05/2026 | Logic gốc — Event Tick rebind SaveGameMenu, OnLoadButtonClicked destroy + reload, Save/Load functions |
 | 1.1 | 24/08/2026 | +mục Components — Post Process Component (Unbound=True, M_SelectionOutline) thay PostProcessVolume actor (không còn đặt sẵn trong level project tổng, Volume actor cần brush). Verify PASS trong Editor. |
+| 1.2 | 21/09/2026 | +Function `ResolveByPersistentId` (U1.4, PersistentIdentity) — full node flow, verify từ K2 export thật. |

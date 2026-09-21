@@ -1,5 +1,7 @@
 # WBP_FurnitureCard (+ WBP_DragOverlay) — Drag & Drop + Replace Mesh
 **HỢP NHẤT TỪ 3 file:** v1.3 base (25/05) → v1.4 base (10/06) + Blueprint_Logic GroupID fix (12/06) + v1.5_patch (15/06)
+**Phiên bản:** 1.11 | **Cập nhật:** 21/09/2026 (U1.2, PersistentIdentity) — `On Drop` (nhánh Furniture) +ensure `PreviewActorRef.PersistentID` ngay sau `Cast PreviewActorRef → BP_FurnitureActor` — producer thứ 4 của PersistentID (kéo-thả card KHÔNG đi qua `SpawnFurnitureCopy`, phát hiện Q10 gap khi làm task card U1). PIE PASS. Xem `Sprints/Sprint7/21-09-2026_U1_PersistentIdentity_TaskCard.md`
+
 **Phiên bản:** 1.10 | **Cập nhật:** 11/09/2026 (G5.4) — `On Drop` xóa thật `Sequence` debug artifact G5.1, chain sạch hoàn toàn. Regression 8/8 PASS. GATE G5 ĐÓNG HẲN
 
 **Phiên bản:** 1.9 | **Cập nhật:** 11/09/2026 — S7.G5.3: `On Drop` thêm nhánh material (trace slot + lọc loại actor + gọi `BP_FurnitureActor.ApplyMaterialByRowName`), chèn trong `CastFailed(ComboCard)`. Fix bug dead-code thiếu `Remove From Parent` trước `Return false`. Test PASS 5/5. ⚠️ Code thật còn 1 `Sequence` debug ở đầu `On Drop` CHƯA xóa, chờ G5.4
@@ -236,6 +238,10 @@ Entry
       → Branch(Hit):
           True →
             Cast PreviewActorRef → BP_FurnitureActor
+            SET PreviewActorRef.PersistentID = EnsurePersistentId(GET PreviewActorRef.PersistentID)
+                                                 ← [MỚI 21/09/2026, U1.2] producer thứ 4 —
+                                                   drag-drop KHÔNG qua SpawnFurnitureCopy nên cần
+                                                   ensure riêng ở đây (Q10 gap fix)
             Get Data Table Row(DT_FurnitureCatalog, PendingRowName) → Row Found → Break S_FurnitureData
               → Static Mesh ●→ Load Asset Blocking .Asset → Return Value (StaticMesh)
             → GET FurnitureMesh(PreviewActorRef) → Set Static Mesh
@@ -344,3 +350,5 @@ không đổi · thả chỗ trống → không lỗi · Furniture card + Combo 
 | 1.8 | 25/06/2026 — ghost offset fix (C4 100%) | On Drag Over: CastFailed BP_FurnitureActor → Cast To BP_ComboGhostActor → GET GhostExtentZ → Set Actor Location = HitLocation+(0,0,GhostExtentZ) (Approach B, đáy cube khớp sàn). On Drop combo: GetActorLocation − (0,0,GhostExtentZ) = SpawnLocation floor. C4/C8 → 100% DONE. |
 | 1.9 | 11/09/2026 — S7.G5.3 | `On Drop` +nhánh material: trace slot dưới điểm thả (`TraceSlotUnderCursor` + `ScreenPosition`) → lọc loại actor (Cast `BP_FurnitureActor`, trúng kiến trúc → Toast) → gọi `ApplyMaterialByRowName`. Chèn trong `CastFailed(ComboCard)`, không đụng 2 nhánh cũ. Fix bug: `CastFailed(ComboCard)` thiếu `Remove From Parent` trước `Return false` (overlay full-screen kẹt sau miss đầu tiên). Test PASS 5/5. Còn 1 `Sequence` debug đầu `On Drop` chưa xóa (G5.4). |
 | 1.10 | 11/09/2026 — S7.G5.4 | `On Drop` xóa thật `Sequence` debug artifact G5.1 (Cast Material debug + Print RowName) — chain sạch hoàn toàn, `FunctionEntry.then` nối thẳng vào `Cast To BP_DragDropOperation_FurnitureCard`. Regression 8/8 PASS. GATE G5 ĐÓNG HẲN. Nguồn: `11-09-2026_S7G5_G5.4_AsBuilt_Addendum.md` |
+
+| 1.11 | 21/09/2026 | U1.2 (PersistentIdentity) — `On Drop` (Furniture) +ensure `PreviewActorRef.PersistentID` sau Cast → BP_FurnitureActor. Producer thứ 4 (Q10 gap fix). PIE PASS. |

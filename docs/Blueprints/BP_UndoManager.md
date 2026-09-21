@@ -1,5 +1,7 @@
 # BP_UndoManager
 **HỢP NHẤT TỪ 6 file:** v1.2 (16/05) → v1.4 (04/06) → v1.5 (07/06) → **v1.6 base** (10/06) + v1.7_patch (12/06) + v1.8_patch (15/06)
+**Phiên bản:** 1.18 | **Cập nhật:** 21/09/2026 (U1.3, PersistentIdentity) — `S_FurniturePlacement` +field `PersistentID:String`; `CaptureSnapshot` Step 3 +capture; `RestoreSnapshot` Step 4 +inject có guard (`Placement.PersistentID != ""`, merge — không dead-end). PIE PASS ID-02 (ID sống qua Move+Undo). Regression Undo/Redo material PASS, không hồi quy. Xem `Sprints/Sprint7/21-09-2026_U1_PersistentIdentity_TaskCard.md`
+
 **Phiên bản:** 1.17 | **Cập nhật:** 08/09/2026 | `RestoreSnapshot` Step 4 gỡ dòng `Call RestoreMyMaterialSlots` thừa (đóng nợ từ 07/09) — chỉ còn SET MaterialSlots, restore tự chạy qua `LoadMeshAsync.Completed`. Test regression Undo/Redo material PASS. `Bug-LoadMeshAsync-RestoreRace` đóng hoàn toàn
 
 **Phiên bản:** 1.16 | **Cập nhật:** 07/09/2026 | Merge nợ từ G2/Việc 2B (03/09): `S_FurniturePlacement` +field `MaterialSlots : Array<FMaterialSlotRecord>` (đã code+test PASS từ 03/09, canonical doc chưa từng ghi). `RestoreSnapshot` Step 4 dòng `Call RestoreMyMaterialSlots` thừa VẪN CÒN TREO, chưa sửa trong phiên này
@@ -64,8 +66,10 @@ EditModeStackSnapshot   : Array of String      ← v1.8 (Version 4): stack Group
 - V3: Groups (Sprint 3)
 - **V4: Groups + EditModeStackSnapshot (Sprint 4 Bug Fix A12, 15/06/2026)**
 
-**S_FurniturePlacement** (v1.6 thêm `GroupID`; v1.14 thêm `RowName`; v1.16 thêm `MaterialSlots`):
-`UniqueID(String), MeshPath, DAPath, Location, Rotation, Scale, ActorTag, MaterialPaths(Array<String>), GroupID(String), RowName(Name), MaterialSlots(Array<FMaterialSlotRecord>)`.
+**S_FurniturePlacement** (v1.6 thêm `GroupID`; v1.14 thêm `RowName`; v1.16 thêm `MaterialSlots`; v1.18 thêm `PersistentID`):
+`UniqueID(String), MeshPath, DAPath, Location, Rotation, Scale, ActorTag, MaterialPaths(Array<String>), GroupID(String), RowName(Name), MaterialSlots(Array<FMaterialSlotRecord>), PersistentID(String)`.
+`PersistentID` (v1.18, 21/09/2026, U1.3) — mang GUID-string qua respawn Undo/Redo. Default "" (snapshot cũ
+trước U1 không có field này, tương thích ngược — `RestoreSnapshot` guard `!= ""` trước khi inject).
 ✓K2 03/08/2026 — export Make/Break struct thật xác nhận field `RowName` kiểu **Name** (khớp
 `BP_FurnitureActor.RowName : Name`, xem `Blueprints/BP_FurnitureActor.md`).
 
@@ -162,6 +166,8 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Length → Branch > 0:
       GroupID       = GET BP_FurnitureActor.GroupID          ← v1.6
       RowName       = GET BP_FurnitureActor.RowName          ← v1.14 (03/08/2026) ✓K2 — node
                                                                  flow y hệt GroupID đứng cạnh
+      PersistentID  = GET BP_FurnitureActor.PersistentID     ← v1.18 (21/09/2026, U1.3) — node
+                                                                 flow y hệt GroupID/RowName đứng cạnh
     ADD to TempMeshes
 
 4.  ← v1.4: Build mảng index các đồ ĐANG CHỌN:
@@ -282,7 +288,12 @@ xóa** — sửa lại cho khớp thực tế bên dưới.
                                                   trong param SpawnFurnitureCopy, phải SET riêng
                                                   sau khi actor đã spawn, TRƯỚC SET GroupID
    SET NewActor.GroupID = Placement.GroupID    ← v1.6 (restore quan hệ group)
-   ADD NewActor to SpawnedActors
+   Branch(Placement.PersistentID != "")        ← v1.18 (21/09/2026, U1.3) — guard tương thích ngược
+     True  ▶→ SET NewActor.PersistentID = Placement.PersistentID
+     False → [merge, KHÔNG dead-end — snapshot cũ trước U1 không có field này, NewActor giữ ID
+               tươi mà SpawnFurnitureCopy vừa Ensure-sinh cho nó (không rác/leak — String value,
+               không phải Object Reference, ghi đè bình thường)]
+   [merge] → ADD NewActor to SpawnedActors
    ← SpawnFurnitureCopy tự lo toàn bộ: Spawn Actor, Load Mesh/Material Async, ADD tag
      "FurnitureSpawned", áp MaterialOverrides — KHÔNG còn code inline riêng (Spawn Actor From
      Class / Load Asset Blocking / Set Static Mesh / ForEach MaterialPaths thủ công đã XÓA, xem
@@ -437,3 +448,5 @@ Event End Play →
 | 1.15 | 04/08/2026 11:05 | **Fix Bug-RowNameLostOnUndo (03/08)** — struct `S_FurniturePlacement` thiếu field `RowName` kể từ khi migrate RowName-based (Sprint D.T6, 17/06) — chỉ `CaptureSnapshot`/`RestoreSnapshot` dùng struct này chưa được cập nhật theo. Nâng dấu 3 chỗ (struct field, Step 3, Step 4) từ "chốt theo lời cuhoang" lên `✓K2 03/08/2026` (export Make/Break struct thật xác nhận). Đính chính type: `RowName` là **Name** (khớp `BP_FurnitureActor.RowName`), không phải `String` như ghi nhầm ở v1.14. |
 | 1.16 | 07/09/2026 | **Merge nợ từ S7.G2/Việc 2B (03/09/2026, chưa merge từ trước).** `S_FurniturePlacement` +field `MaterialSlots : Array<FMaterialSlotRecord>` — đã code+test PASS 03/09, canonical doc đứng ở v1.15 chưa từng ghi field này. ⚠️ `RestoreSnapshot` Step 4 dòng `Call NewActor.RestoreMyMaterialSlots` (nghi dính race giống `LoadMeshAsync` đã fix ở `BP_FurnitureActor.md` 07/09) — CHƯA SỬA trong phiên này, vẫn còn treo. Nguồn: `07-09-2026_S7G3_Item1-4_Delta.md` mục B2. |
 | 1.17 | 08/09/2026 | **Đóng nợ từ v1.16.** `RestoreSnapshot` Step 4 gỡ dòng `Call NewActor.RestoreMyMaterialSlots` thừa — chỉ còn `SET NewActor.MaterialSlots`, restore tự chạy qua `LoadMeshAsync.Completed` (cùng pattern Combo). Test regression Undo/Redo material PASS. `Bug-LoadMeshAsync-RestoreRace` đóng hoàn toàn (Combo + Undo/Redo). |
+
+| 1.18 | 21/09/2026 | U1.3 (PersistentIdentity) — `S_FurniturePlacement` +field `PersistentID`. `CaptureSnapshot` Step 3 +capture. `RestoreSnapshot` Step 4 +inject (guard != "", merge False — không dead-end). PIE PASS ID-02. Regression material PASS. |

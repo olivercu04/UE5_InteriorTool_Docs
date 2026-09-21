@@ -1,4 +1,6 @@
 # BP_FurnitureInputManager
+**Phiên bản:** 3.8 | **Cập nhật:** 21/09/2026 (U1.2, PersistentIdentity) — `SpawnFurnitureCopy` FULL NODE FLOW đưa vào doc canonical lần đầu (✓K2 export thật) + đính chính task card giả định sai (không có IsValid(NewActor) nào bọc spawn); Then0 +ensure `NewActorCopy.PersistentID = EnsurePersistentId(...)` ngay sau SET NewActorCopy. PIE PASS (ID-01, ID-03). Xem `Sprints/Sprint7/21-09-2026_U1_PersistentIdentity_TaskCard.md` | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
+
 **Phiên bản:** 3.7 | **Cập nhật:** 12/09/2026 (G6.1) — `OnLMBReleased` Then 2 APPEND hook slot-pick sau `SET PendingClickActor=None` (guard `SelectedActors.Length==1` → `NotifyViewportSlotClick`). G6.1 (6/6) + G6.2 regression (8/8) PASS. GATE G6 ĐÓNG HẲN | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 > **v3.6 (12/09/2026, G6.0 VERIFY):** K2Node export thật — mục "TƯƠNG TÁC 3 ĐIỂM" + khối
@@ -1184,6 +1186,56 @@ GizmoController → OnMouseReleased
   - **NewActorCopy:** local variable (không phải class var từ v2.1) — tránh aliasing khi RestoreSnapshot gọi SpawnFurnitureCopy trong ForEach
   - **Add Recent Mesh:** parse MeshPath (không phải DAPath) — DAPath rỗng với đồ Sprint D
 
+### SpawnFurnitureCopy(...) → NewActorCopy — FULL NODE FLOW ([✓K2 export 21/09/2026] — U1 prep + [✓ensure PersistentID chèn 21/09/2026, U1.2])
+
+Toàn hàm là **1 Sequence 4 nhánh** ngay từ đầu (không phải chuỗi tuyến tính đơn giản). Mỗi nhánh
+chạy hết TOÀN BỘ chuỗi của nó rồi Sequence mới fire nhánh kế — nên Then0 xong hoàn toàn trước
+khi Then1 bắt đầu, v.v.
+
+```
+FunctionEntry ▶→ Sequence
+
+  Then0 ▶→ Spawn Actor From Class(BP_FurnitureActor) ●→ ReturnValue
+       ▶→ SET NewActorCopy (local var) = ReturnValue          ← actor CÓ THỂ TRUY CẬP từ đây
+       ▶→ SET NewActorCopy.PersistentID = EnsurePersistentId(GET NewActorCopy.PersistentID)
+                                            ← [MỚI 21/09/2026, U1.2] actor mới spawn → PersistentID
+                                              rỗng → Ensure sinh GUID mới. PIE PASS (ID-01/ID-03).
+       ▶→ Call NewActorCopy.LoadMeshAsync(MeshPath)             [async — bắn xong đi tiếp luôn]
+       ▶→ SET NewActorCopy.MeshPath = MeshPath
+       ▶→ SET NewActorCopy.DAPath = DAPath
+       ▶→ Call NewActorCopy.SetActorScale3D(SpawnScale)
+       ▶→ SET NewActorCopy.MaterialSlots = MaterialSlots
+       ▶→ Call Array_Add(NewActorCopy.Tags, "FurnitureSpawned")
+       ▶→ SET NewActorCopy.Tags = (mảng vừa add)
+       ▶→ Branch(GetCurrentEditScope() != "")
+            True  ▶→ SET NewActorCopy.GroupID = Scope
+            False → (dead-end — HỢP LỆ, trong Sequence.Then nên Sequence tự fire Then kế)
+
+  Then1 ▶→ SET NewActorCopy.MaterialOverrides = MaterialOverrides
+       ▶→ Call NewActorCopy.LoadMaterialsAsync(Overrides=MaterialOverrides, Index=0)   [async]
+
+  Then2 ▶→ SET NewActorCopy.PlacementSurfaceType = SurfaceType
+       ▶→ Get All Actors Of Class(BP_FurnitureUserPrefsManager) → Get(0)
+       ▶→ Branch(Valid?)
+            True  ▶→ Call AddRecentMesh(MeshPath)
+            False → (dead-end)
+
+  Then3 ▶→ Branch(bAutoSelect)
+            True  ▶→ Call DeselectMesh
+                  ▶→ Call SelectActors(Make Array(NewActorCopy))
+                  ▶→ Return NewActorCopy
+            False ▶→ Return NewActorCopy      (2 nhánh đổ về CÙNG 1 Return Node)
+```
+
+**⚠️ Đính chính so với `21-09-2026_U1_PersistentIdentity_TaskCard.md` §4.3/Q8:** task card giả định
+*"IsValid(NewActor) đã có sẵn trong hàm (spawn thành công)"* — **KHÔNG ĐÚNG**. Export thật cho thấy
+`SET NewActorCopy = ReturnValue` chạy thẳng, KHÔNG có `Branch(IsValid(NewActorCopy))` nào bọc quanh
+— `Spawn Actor From Class`'s `ReturnValue` được dùng ngay không null-check. Toàn hàm hiện tại không
+có guard này ở đâu cả (pattern nhất quán, không phải lỗi riêng của node nào). Chèn `EnsurePersistentId`
+theo đúng pattern hiện có (không thêm IsValid mới ngoài phạm vi U1 — KP3).
+
+**Biến local đúng tên: `NewActorCopy`** (không phải `NewActor` generic như task card viết tắt).
+
 ---
 
 ## Event End Play (chống VRAM leak) — v1.5
@@ -1588,3 +1640,5 @@ từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 | 3.2 | 04/08/2026 11:05 | **`StartReplaceMode` — thêm 1 dòng chú, KHÔNG sửa node flow.** Nhánh False (`RowName` rỗng → `LoadAsset DAPath`) từng dead-end vì actor sau Undo có `RowName=None` — gốc rễ ở `BP_UndoManager` (`Bug-RowNameLostOnUndo`, fix 03/08, xem `BP_UndoManager.md` v1.15 — `S_FurniturePlacement` thiếu field `RowName` từ khi migrate RowName-based Sprint D.T6 17/06), không phải lỗi tại `StartReplaceMode`. |
 | 3.3 | 04/08/2026 12:00 | **Save As/Save đè T2 DONE.** Thêm `ShouldRouteReplaceToCombo(Actor)` (✓K2 03/08/2026) — guard `EditScope` trước khi hỏi `GetComboRootOfActor`, đóng `Bug-ReplaceInCombo-TabJump`. Call site xác nhận: `WBP_FurnitureInventory.OnMeshSelected` (thay `ResolveSelectedComboRoot()` cũ). Test PASS 6/6 (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 6b.5). ⚠️ **KHÔNG xác nhận được** claim "call site thứ 2 = `CB_Replace`" — section `CB_Replace` hiện tại (không đổi trong lượt này) gọi thẳng `StartReplaceMode` không qua bất kỳ hàm route combo nào; không có node flow/K2Node export nào cho 1 thay đổi ở đó — ghi nhận mâu thuẫn, không tự sửa. Xem ghi chú trong mục hàm. |
 | 3.4 | 04/08/2026 13:15 | **`CB_Replace` re-export ✓K2 03/08/2026 — đóng caveat v3.3.** Bản mô tả cũ (✓K2 24/07) đọc lúc CHƯA re-export sau T2 — SUPERSEDED, giữ lại làm lịch sử (không xóa). Bản mới: nhánh BẬT thêm `ShouldRouteReplaceToCombo(Actor=PrimarySelectedActor)` → `Branch(bRouteToCombo)` → `StartReplaceComboMode`/`StartReplaceMode` (node CŨ giữ nguyên ở nhánh False); nhánh TẮT thêm `SET ComboRootGroupIDToReplace=""` (thiếu ở bản cũ). Xác nhận: đủ 2 call site T2 (`OnMeshSelected` + `CB_Replace`), test 2 trial chuột phải PASS 03/08. Bug fix Branch dư (24/07) không bị cuốn lại. |
+
+| 3.8 | 21/09/2026 | U1.2 (PersistentIdentity) — `SpawnFurnitureCopy` FULL NODE FLOW vào doc canonical lần đầu (✓K2 export thật) + đính chính task card (không có IsValid(NewActor) guard). Then0 +ensure `PersistentID`. PIE PASS (ID-01, ID-03). |

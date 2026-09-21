@@ -1,6 +1,6 @@
 # Rules — Testing (Automated)
 
-**Phiên bản:** 1.0 | **Tạo:** 21/09/2026 (T0 PASS) | **Nguồn thiết kế:** `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md` §6
+**Phiên bản:** 1.1 | **Cập nhật:** 21/09/2026 (tiếp) — U1 EntityIdTests xác nhận protocol lặp lại được (xem §9) | **Tạo:** 21/09/2026 (T0 PASS) | **Nguồn thiết kế:** `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md` §6
 
 > File này chỉ được tạo SAU KHI T0 (Automation Harness Gate) PASS — đúng luật đã ghi trong task
 > card (§8.8). Từ đây, mọi test C++ mới trong dự án tuân theo file này thay vì lặp lại lý luận
@@ -145,3 +145,4 @@ là ASCII. Mã invariant `[UNDO-xx-nn]` đặt đầu chuỗi để dễ tra ng�
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 21/09/2026 | Tạo file — T0 (Undo Architecture Harness Gate) PASS. `[UNDO-T0-01]` xanh, `[UNDO-T0-02]` (negative control) đỏ đúng ở lần chạy đầu rồi sửa xanh ở lần 2 — cuhoang tự chạy được không cần hỏi đường bấm. Nguồn: `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md` §6, §8. |
+| 1.1 | 21/09/2026 (tiếp) | **U1 (PersistentIdentity) — lần dùng thứ 2, xác nhận protocol lặp lại được ngoài T0.** Spec `FurnitureTool.Undo.U1_Identity` (3 test: `[UNDO-ID-01]`, `[UNDO-ID-07]`, `[UNDO-ID-01b]`) chạy đủ 5 bước (Contract→Red→Green→Negative Control→Restore) — negative control: đổi `EnsurePersistentId` thành `return Current;` → `[UNDO-ID-01]` ĐỎ đúng kỳ vọng → khôi phục → 3/3 xanh lại. Nguồn: `Data/EntityIdLibrary_Reference.md`, `Sprints/Sprint7/21-09-2026_U1_PersistentIdentity_TaskCard.md`. |

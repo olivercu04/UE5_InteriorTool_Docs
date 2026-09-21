@@ -2,6 +2,7 @@
 
 **Tác giả:** Opus 4.8 (kiến trúc sư) | **Ngày:** 21/09/2026 | **Loại:** PLAN — chưa as-built
 **Thực thi:** Sonnet 5 + cuhoang | **Gate:** U1 (trong `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md`)
+**Trạng thái:** U1 ĐÓNG — PASS (21/09/2026, 21:27). U1.0→U1.5 xanh, §11 comprehension check PASS.
 
 > **KHÔNG đóng dấu `[CHỨA AS-BUILT]`.** File này 100% thiết kế. Sau khi thực thi xong, as-built
 > merge vào canonical (`BP_FurnitureActor.md`, `BP_UndoManager.md`, `Data_Structures.md`,
@@ -38,7 +39,8 @@ chưa nối UI). Bảng producer — mọi đường sinh/gán ID, KHÔNG đư�
 
 | Producer (đường actor ra đời / phục hồi) | Nhãn | Hành vi ID | Ghi chú |
 |---|---|---|---|
-| `SpawnFurnitureCopy` (card-drag, paste, combo spawn) | `[DOC]` v1.10 | **ENSURE** — rỗng thì sinh mới | Chokepoint mọi spawn runtime |
+| `SpawnFurnitureCopy` (paste, duplicate, combo spawn) | `[DOC]` v1.10 | **ENSURE** — rỗng thì sinh mới | Chokepoint mọi spawn runtime |
+| `On Drop` (`WBP_DragOverlay_FurnitureCard`, card-drag) | `[SỬA 21/09/2026]` | **ENSURE** — rỗng thì sinh mới | ⚠️ **Producer thứ 4, KHÔNG có trong plan gốc.** Đính chính: card-drag KHÔNG qua `SpawnFurnitureCopy` (đã bị gộp nhầm) — có đường spawn riêng qua `PreviewActorRef` (spawn ở `On Drag Detected`, finalize ở `On Drop`). Phát hiện lúc PIE test U1.2 (drag không in ra PersistentID). Xem `AI_Implementation_Rules.md` dòng cảnh báo "Drag-drop KHÔNG gọi SpawnFurnitureCopy". |
 | `Event ActorLoaded` (EMS, load từ save) | `[DOC]` v2.2 | **ENSURE** — save cũ (rỗng) sinh mới 1 lần; save mới giữ nguyên | Đường RIÊNG, KHÔNG qua SpawnFurnitureCopy |
 | `RestoreSnapshot` Step 4 (undo/redo respawn) | `[DOC]` v1.17 | **INJECT** — SET = Placement.PersistentID (ghi đè ID tạm) | Cùng chỗ SET RowName/GroupID đã có |
 | `Event BeginPlay` | `[DOC]` v2.5 | **KHÔNG ĐỤNG** — chỉ add tag | Sinh ID ở đây = vi phạm ID-08 (respawn cũng chạy BeginPlay) |
@@ -234,9 +236,9 @@ Function ResolveByPersistentId(Id : String) → (OutActor : BP_FurnitureActor, b
                                          False → (continue)
               Completed ▶→ Return (OutActor, bFound)
 ```
-> `[VERIFY V4]` — nếu có actor đặt tay trong level (không spawn/load), chúng cũng cần ID. Kiểm
-> trong Outliner có BP_FurnitureActor đặt sẵn không. Nếu có → chúng đi qua BeginPlay nhưng KHÔNG
-> qua SpawnFurnitureCopy/ActorLoaded → cần bàn thêm (báo Opus). Tool runtime này khả năng cao KHÔNG có.
+> `[VERIFY V4 — ✓ 21/09/2026]` — cuhoang xác nhận: khi Play PIE, KHÔNG có `BP_FurnitureActor`
+> nào đặt sẵn trong Level/Outliner. Không có producer thứ 5 ngoài 4 cửa đã cover (ActorLoaded,
+> SpawnFurnitureCopy, On Drop card-drag, RestoreSnapshot). Không cần hook thêm.
 
 **Q8:** Function | IsValid qua Cast (Success mới đọc) | For Each WITH BREAK (không duyệt thừa) |
 Branch Id=="" có đích (Return) | không latent | 6A: N/A (đọc thuần).
@@ -257,53 +259,59 @@ Branch Id=="" có đích (Return) | không latent | 6A: N/A (đọc thuần).
 
 ### U1.1 — C++ `EnsurePersistentId` + Spec test (PURE, không PIE)
 ```
-[ ] Tạo EntityIdLibrary.h/.cpp (§3)
-[ ] Tạo Tests/EntityIdTests.cpp (§6 dưới)
-[ ] Compile sạch
-[ ] Session Frontend → Automation → filter "FurnitureTool.Undo.U1" → chạy
-[ ] 3 test XANH
-[ ] NEGATIVE CONTROL: sửa EnsurePersistentId thành `return Current;` (bỏ nhánh sinh) → chạy lại →
-    [UNDO-ID-01] phải ĐỎ (input rỗng ra rỗng). Thấy đỏ → khôi phục → xanh lại.
+[x] Tạo EntityIdLibrary.h/.cpp (§3)
+[x] Tạo Tests/EntityIdTests.cpp (§6 dưới)
+[x] Compile sạch
+[x] Session Frontend → Automation → filter "FurnitureTool.Undo.U1" → chạy
+[x] 3 test XANH
+[x] NEGATIVE CONTROL: sửa EnsurePersistentId thành `return Current;` (bỏ nhánh sinh) → chạy lại →
+    [UNDO-ID-01] phải ĐỎ (input rỗng ra rỗng). Thấy đỏ → khôi phục → xanh lại. — CONFIRMED ĐỎ rồi khôi phục xanh lại (3/3)
 ```
 CHECKPOINT: policy sinh/giữ ID đúng, test biết kêu. → sang U1.2.
 
 ### U1.2 — BP var + 2 ensure point (§4.1, 4.2, 4.3)
 ```
-[ ] Thêm PersistentID:String (SaveGame) vào BP_FurnitureActor
-[ ] Chèn ensure vào ActorLoaded (§4.2) + SpawnFurnitureCopy (§4.3)
-[ ] Compile
-[ ] PIE: kéo 1 card furniture vào scene → Print String(PersistentID) → CHUỖI KHÔNG RỖNG (ID-01)
+[x] Thêm PersistentID:String (SaveGame) vào BP_FurnitureActor
+[x] Chèn ensure vào ActorLoaded (§4.2) + SpawnFurnitureCopy (§4.3) + On Drop/WBP_DragOverlay_FurnitureCard (producer thứ 4, thêm 21/09/2026)
+[x] Compile
+[x] PIE: kéo 1 card furniture vào scene → Print String(PersistentID) → CHUỖI KHÔNG RỖNG (ID-01) — PASS
 ```
 CHECKPOINT: actor mới có ID. → U1.3.
 
 ### U1.3 — Struct + capture/inject (§4.4, 4.5) — ĐỤNG UNDO CORE, cẩn thận
 ```
-[ ] Thêm PersistentID vào S_FurniturePlacement
-[ ] CaptureSnapshot Step 3: capture PersistentID
-[ ] RestoreSnapshot Step 4: inject (có guard != "")
-[ ] Compile
-[ ] PIE: spawn actor → Print ID (ghi lại) → Move actor → Ctrl+Z (Undo) → Print ID → GIỐNG ID cũ (ID-02)
-[ ] REGRESSION: chạy lại test Undo/Redo material cũ (round-trip material) → KHÔNG hồi quy
+[x] Thêm PersistentID vào S_FurniturePlacement
+[x] CaptureSnapshot Step 3: capture PersistentID
+[x] RestoreSnapshot Step 4: inject (có guard != "")
+[x] Compile
+[x] PIE: spawn actor → Print ID (ghi lại) → Move actor → Ctrl+Z (Undo) → Print ID → GIỐNG ID cũ (ID-02) — PASS (2F2591944E2B31AE861E7A9D6D601A77 khớp cả 2 lần)
+[x] REGRESSION: chạy lại test Undo/Redo material cũ (round-trip material) → KHÔNG hồi quy — PASS
 ```
 CHECKPOINT: ID sống qua respawn + không phá undo cũ. → U1.4. Nếu regression fail → DỪNG, báo.
 
 ### U1.4 — Resolve function (§4.6)
 ```
-[ ] Tạo ResolveByPersistentId trên BP_FurnitureSceneManager
-[ ] PIE (dùng 1 nút debug Call-In-Editor hoặc Print tạm):
-    - spawn 2 actor A,B → resolve(A.id) ra A, resolve(B.id) ra B (ID-05)
-    - Duplicate/Paste A → actor mới có ID KHÁC A (ID-03) [xác nhận V5: clipboard không mang ID]
-    - Destroy A → resolve(A.id) → bFound=false (ID-04)
-    - spawn → Undo → resolve(id cũ) ra actor MỚI (khác con trỏ cũ) (ID-02+ID-05 end-to-end = CÂU HỎI GATE)
+[x] Tạo ResolveByPersistentId trên BP_FurnitureSceneManager — verify khớp 100% qua K2 export
+    thật (21/09/2026, xem `Blueprints/BP_FurnitureSceneManager.md`)
+[x] PIE (Print tạm, xem chi tiết log dưới):
+    - spawn 2 actor A,B → resolve(A.id) ra A, resolve(B.id) ra B (ID-05) — PASS
+      (59060B7C.. → BP_FurnitureActor0 | 00D826BC.. → BP_FurnitureActor1)
+    - Duplicate/Paste A → actor mới có ID KHÁC A (ID-03) [xác nhận V5: clipboard không mang ID] — PASS
+      (D709F912.. ≠ 59060B7C..)
+    - Destroy A → resolve(A.id) → bFound=false (ID-04) — PASS (59060B7C.. → NOT FOUND)
+    - spawn → Undo → resolve(id cũ) ra actor MỚI (khác con trỏ cũ) (ID-02+ID-05 end-to-end = CÂU HỎI GATE) — PASS
+      (81EB3929.. → FOUND, actor=BP_FurnitureActor5 — RestoreSnapshot luôn SpawnActorFromClass
+      lại toàn bộ mảng, nên actor sau Undo chắc chắn là instance mới, không cần so tên riêng)
 ```
 CHECKPOINT: câu hỏi nhị phân của U1 = XANH.
 
 ### U1.5 — EMS save/load (MANUAL — không tự động hoá được plugin bên thứ ba)
 ```
-[ ] PIE: spawn actor → Print ID → EMS Save → EMS Load → Print ID → GIỐNG (ID-06)
-[ ] Nếu có save CŨ (trước U1): Load → Print ID → có ID (đã sinh) → Save → Load lại → Print → GIỐNG
-    lần trước (ID-07: sinh 1 lần rồi ổn định, KHÔNG đổi mỗi lần load)
-    (Không có save cũ để thử → ghi "N/A: không có save cũ", policy đã Spec-test ở U1.1)
+[x] PIE: spawn actor → Print ID → EMS Save → EMS Load → Print ID → GIỐNG (ID-06) — PASS (21/09/2026 21:09, cuhoang confirm PIE — 2 giá trị trước Save và sau Load khớp nhau)
+[x] Nếu có save CŨ (trước U1): Load → Print ID → có ID (đã sinh) → Save → Load lại → Print → GIỐNG
+    lần trước (ID-07: sinh 1 lần rồi ổn định, KHÔNG đổi mỗi lần load) — PASS (21/09/2026 21:27,
+    cuhoang confirm PIE — save cũ chưa có field → Ensure sinh ID lần đầu → Save → Load lại → Print
+    → ID giống hệt, không sinh lại lần 2)
 ```
 
 ### U1.6 — (TUỲ CHỌN) Functional Test gói U1.3/U1.4 vào `L_Test_UndoArchitecture`
@@ -379,6 +387,7 @@ void FU1IdentitySpec::Define()
 |---|---|
 | `BP_FurnitureActor.md` | +biến `PersistentID` (SaveGame); ActorLoaded +ensure; version bump |
 | `BP_FurnitureInputManager.md` | SpawnFurnitureCopy +ensure |
+| `Widgets/WBP_DragOverlay_FurnitureCard.md` | On Drop +ensure (producer thứ 4, thêm 21/09/2026) |
 | `BP_UndoManager.md` | S_FurniturePlacement +field; CaptureSnapshot Step 3 +capture; RestoreSnapshot Step 4 +inject (guard); version bump |
 | `BP_FurnitureSceneManager.md` | +hàm ResolveByPersistentId |
 | `Data/MaterialSlotService_Reference.md` HOẶC lib doc mới | `UEntityIdLibrary` (2 hàm) — cân nhắc tách file reference riêng |
@@ -393,11 +402,11 @@ void FU1IdentitySpec::Define()
 
 | Mã | Cần kiểm | Ảnh hưởng |
 |---|---|---|
-| V1 | `SpawnFurnitureCopy` là Function hay Custom Event? | Cách chèn node ensure |
+| V1 | `SpawnFurnitureCopy` là Function hay Custom Event? | ✓ Function (xác nhận qua K2 export 21/09/2026) |
 | V2 | EMS restore SaveGame String vars TRƯỚC `Event ActorLoaded` fire? | Nếu KHÔNG → ActorLoaded đọc "" sai → phải dời ensure. (Tin là CÓ) |
-| V4 | Có BP_FurnitureActor đặt tay trong level (Outliner)? | Nếu có → cần hook ID riêng, báo Opus |
-| V5 | `S_ClipboardEntry` (Copy/Paste) có capture field nào thành PersistentID? | Phải KHÔNG → paste nhận ID mới (ID-03) |
-| V8 | Tên macro API module (`FURNITURETOOLKIT_API`?) — copy từ MaterialParamMap.h | Compile C++ |
+| V4 | Có BP_FurnitureActor đặt tay trong level (Outliner)? | ✓ Không có (21/09/2026, cuhoang confirm PIE) — không cần hook riêng |
+| V5 | `S_ClipboardEntry` (Copy/Paste) có capture field nào thành PersistentID? | ✓ KHÔNG (xác nhận PIE ID-03, 21/09/2026 — paste ra ID mới D709F912.. ≠ gốc) |
+| V8 | Tên macro API module (`FURNITURETOOLKIT_API`?) — copy từ MaterialParamMap.h | ✓ Đúng, compile sạch |
 
 ---
 
@@ -422,6 +431,25 @@ void FU1IdentitySpec::Define()
 2. Khi Undo, `SpawnFurnitureCopy` sinh 1 ID tươi rồi `RestoreSnapshot` ghi đè bằng ID cũ. ID tươi bị
    bỏ đi. Vì sao điều này KHÔNG gây rác/leak?
 3. Vì sao chọn scan thay vì registry `TMap` — lý do nào liên quan trực tiếp tới `ID-04` (actor đã xoá)?
+
+**KẾT QUẢ (21/09/2026, ~21:05):** Cả 3 câu PASS — cuhoang tự sửa qua các vòng hỏi dẫn dắt (Socratic),
+không đúng ngay lần đầu, cần bẻ nhỏ + chỉ ra chỗ lệch mới ra được câu đúng. Tóm tắt câu trả lời cuối:
+
+1. Field `PersistentID` còn RỖNG lúc BeginPlay (EMS chưa kịp nạp SaveGame) → nếu Ensure chạy ở đó,
+   nó thấy rỗng và SINH ID MỚI đè lên chỗ lẽ ra phải giữ ID cũ → actor lạc khỏi các thuộc tính đã
+   lưu trước đó theo ID cũ. `Event ActorLoaded` đảm bảo chạy SAU khi EMS nạp xong nên an toàn.
+2. `PersistentID` là **String (value type)**, không phải Object Reference — ghi đè chỉ là gán lại
+   giá trị, không ai "cầm" giá trị cũ để mà rò rỉ. Khác hẳn mối lo VRAM leak của R2/R4 (hard-ref
+   tới Object/Actor).
+3. Registry (`TMap<Guid,Actor>`) cần code dọn tay ở MỌI chỗ actor có thể biến mất (Delete, Undo...)
+   — quên 1 chỗ là có entry lạc (dangling reference). Tag-scan (`GetAllActorsWithTag`) không lưu gì
+   cả — mỗi lần gọi hỏi thẳng engine "actor nào ĐANG tồn tại", nên actor bị Destroy (bởi code xoá
+   khác, không phải do `Resolve`) tự động biến mất khỏi kết quả quét lần sau — "tự sửa mình miễn
+   phí". Đây chính là lý do `ID-04` (actor đã xoá → `Resolve` trả `NOT FOUND`) chạy đúng mà không
+   cần code xử lý riêng cho trường hợp đó.
+
+**§11 GATE: CLEAR.** U1.5 cũng PASS (ID-06 21:09, ID-07 21:27) — **U1 ĐÓNG (21/09/2026, 21:27).**
+U1.6 (Functional Test, TUỲ CHỌN) — không bắt buộc, bằng chứng manual U1.3/U1.4/U1.5 đã đủ đóng gate.
 
 ---
 

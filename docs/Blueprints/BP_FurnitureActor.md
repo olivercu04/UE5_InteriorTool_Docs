@@ -1,5 +1,7 @@
 # BP_FurnitureActor
 **Tách từ:** `BP_FurnitureActor_SceneManager.md` (phần Actor)
+**Phiên bản:** 2.6 | **Cập nhật:** 21/09/2026 (U1.2, PersistentIdentity) — +biến `PersistentID:String` (SaveGame); `Event ActorLoaded` Flow MỚI +ensure `PersistentID` ngay trước `LoadAsset_Blocking` (Branch MeshPath!="" True). Verify PIE PASS (ID-01, ID-02). Xem `Sprints/Sprint7/21-09-2026_U1_PersistentIdentity_TaskCard.md` | Parent: StaticMeshActor | Interface: EMSActorSaveInterface
+
 **Phiên bản:** 2.5 | **Cập nhật:** 18/09/2026 (S7G7T3) — `ApplyMaterialByRowName` X3 mở rộng: đường kéo-thả material đồng bộ slot đang chọn + highlight + `RefreshParamPanel()` (lỗ hổng task card rev6 không liệt kê, vá riêng). Test PASS | Parent: StaticMeshActor | Interface: EMSActorSaveInterface
 
 **Phiên bản:** 2.4 | **Cập nhật:** 11/09/2026 (G5.4) — `ApplyMaterialByRowName` +khối `AddRecentMaterial` (fix bug #5 — kéo-thả thiếu ghi Recent). Xóa thật `Debug_TestApplyMaterial` (scaffolding, dọn xong). Regression 8/8 PASS. GATE G5 ĐÓNG HẲN | Parent: StaticMeshActor | Interface: EMSActorSaveInterface
@@ -15,6 +17,8 @@
 ## Variables
 ```
 MeshPath              : String    ← SaveGame
+PersistentID           : String   ← SaveGame (U1.2, 21/09/2026) — GUID-string ổn định qua Undo/Redo + EMS Save/Load;
+                                     sinh/giữ qua `UEntityIdLibrary::EnsurePersistentId` (ensure-not-regenerate). "" = chưa sinh (save cũ)
 DAPath                : String    ← SaveGame (giữ làm fallback cho save cũ — xem Branch RowName == "" trong load path)
 RowName               : Name      ← SaveGame (v1.2 Sprint D) — khóa tra DT_FurnitureCatalog; "" = chưa set (save cũ)
 MaterialOverrides     : Array of String ← SaveGame (v1.1) — package path MI theo slot index
@@ -70,17 +74,24 @@ Event ActorLoaded (EMSActorSaveInterface) ▶→
                                     có ADD Tags "FurnitureSpawned" ở đây, THỰC TẾ KHÔNG CÓ)
 ```
 
-**Flow MỚI (07/09/2026 — S7.G3 Item 2):**
+**Flow MỚI NHẤT (21/09/2026 — U1.2, +ensure PersistentID; kế thừa Flow 07/09/2026 S7.G3 Item 2):**
 ```
 Event ActorLoaded (EMSActorSaveInterface) ▶→
   AsyncWaitForOperation(CheckType=CT_Load)
   OnCompleted ▶→ Branch(MeshPath != "")
     False ▶→ Destroy Actor (Self)
-    True ▶→ LoadAsset_Blocking(MakeSoftObjectPath(MeshPath)) ●→ Cast StaticMesh
+    True ▶→ SET PersistentID = EnsurePersistentId(GET PersistentID)   ← [MỚI 21/09/2026, U1.2]
+                                lý do đặt SAU Branch(MeshPath!="") chứ không ở BeginPlay: BeginPlay
+                                chạy TRƯỚC khi EMS nạp xong SaveGame field, ActorLoaded thì đảm bảo
+                                SAU — tránh sinh ID mới đè lên ID cũ đã lưu (vi phạm ID-08)
+           ▶→ LoadAsset_Blocking(MakeSoftObjectPath(MeshPath)) ●→ Cast StaticMesh
            CastFailed → (dead-end — giữ nguyên, xác nhận đúng ý thiết kế)
            True ▶→ SetStaticMesh(FurnitureMesh, AsStaticMesh)
-                ▶→ Call RestoreMyMaterialSlots     ← [MỚI] thay toàn bộ khối ForEachLoop cũ
+                ▶→ Call RestoreMyMaterialSlots     ← thay toàn bộ khối ForEachLoop cũ (07/09/2026)
 ```
+Q8: Event (EMS interface handler) | Không cần IsValid riêng (Self context) | L2: cả 2 nhánh Branch
+đều có đích (Destroy hoặc tiếp tục chuỗi) | No Latent thêm (Ensure là pure) | 6A: N/A (bootstrap ID,
+không phải action cần undo).
 
 ---
 
@@ -303,6 +314,7 @@ False → Branch: Overrides[Index] != ""
 ## Lịch sử cập nhật
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
+| 2.6 | 21/09/2026 | U1.2 (PersistentIdentity) — +biến `PersistentID:String` (SaveGame); `Event ActorLoaded` Flow MỚI +ensure `PersistentID` trước `LoadAsset_Blocking`. PIE PASS (ID-01, ID-02). |
 | 1.0 | 22/04/2026 | Logic gốc — BeginPlay SET FurnitureSpawned tag, ActorLoaded restore mesh |
 | 1.1 | 22/05/2026 | Thêm MaterialOverrides + MaterialParams (SaveGame v1.1) |
 | 1.2 | 17/06/2026 — Sprint D.T6 | Thêm RowName : Name (SaveGame) — key DT_FurnitureCatalog. DAPath giữ fallback save cũ. GroupID [?] giải quyết: String SaveGame (Sprint 3 T2). |

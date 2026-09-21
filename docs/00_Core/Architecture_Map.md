@@ -1,5 +1,13 @@
 # Architecture Map — UE5 Interior Tool
 
+**Phiên bản:** 1.2 | **Tạo:** 28/08/2026 15:59 | **Cập nhật:** 21/09/2026 (U1, PersistentIdentity)
+— +1 asset mới `UEntityIdLibrary` (§0.3, gia phả §2, `[[C++]]` shape) — GUID-string ổn định cho
+actor. Sơ đồ 3c (Inventory): +1 cạnh `DRAGOV→EIL` (`On Drop` producer thứ 4). Sơ đồ 3d (Save·Undo):
++2 cạnh mới `FA→EIL`/`IM→EIL` (`EnsurePersistentId`) + mở rộng nhãn cạnh `UNDO→FA` có sẵn (thêm
+`SET PersistentID`, guarded inject). `IM→EIL` nâng `[K2 2026-09-21]` (SpawnFurnitureCopy export
+thật); còn lại `[DOC]`/PIE-verify. `BP_FurnitureSceneManager` +hàm `ResolveByPersistentId`
+(✓K2 21/09) — CHƯA có caller, không vẽ cạnh (dự kiến nối U3).
+
 **Phiên bản:** 1.1 | **Tạo:** 28/08/2026 15:59 | **Cập nhật:** 18/09/2026 (S7G7T3.3+T3.4) — sơ đồ
 3e (Vật liệu): 4 cạnh mới `INV→UMPM`/`INV→MINSPECT`/`INV→PSROW`/`INV→PCROW` nâng
 **[K2 2026-09-18]** (`RefreshParamPanel()` build đầy đủ, K2Node export thật) — thay 2 cạnh
@@ -100,6 +108,7 @@ Giữ vì có trách nhiệm domain / data boundary / performance boundary hoặ
 | `UFurnitureFilterLibrary` | Filter DataTable → Array<Name> (FilterFurnitureRows / FilterMaterialItems / GetDistinctFolderPaths) | `Data/FurnitureFilterLibrary_Reference.md` |
 | `MaterialSlotService` (`UMaterialSlotService`) | Slot-by-name API cho Material Edit (Sprint 7 G1, as-built 27/08/2026) | `Data/MaterialSlotService_Reference.md` |
 | `UMaterialParamMap` | Từ điển param (`GetControlsForMaterial`, `HexToLinearColor`) — class RIÊNG, cùng file reference với `MaterialSlotService` (Sprint 7 G7 S7G7T1/T2, 15/09/2026) | `Data/MaterialSlotService_Reference.md` |
+| `UEntityIdLibrary` | GUID-string ổn định cho actor (`EnsurePersistentId`, `IsValidPersistentId`) — nền cho Undo Architecture U1 (PersistentIdentity, 21/09/2026) | `Data/EntityIdLibrary_Reference.md` |
 
 ### 0.4 — Asset thật, CHƯA có canonical doc riêng — GIỮ trong bản đồ (chờ doc + K2)
 
@@ -180,7 +189,8 @@ cuhoang xác nhận 28/08/2026. Các node này vào Phần 2 (subgraph tương �
     ├── UComboSerializer / UComboThumbnail
     ├── UFurnitureFilterLibrary
     ├── MaterialSlotService
-    └── UMaterialParamMap
+    ├── UMaterialParamMap
+    └── UEntityIdLibrary
 ```
 
 **Data locations có ghi trong doc** (là path DỮ LIỆU, không phải path asset BP/Widget — nguồn: `WBP_FurnitureInventory.md`):
@@ -285,6 +295,7 @@ flowchart TB
         FFL[["UFurnitureFilterLibrary"]]
         MSS[["MaterialSlotService"]]
         UMPM[["UMaterialParamMap"]]
+        EIL[["UEntityIdLibrary"]]
     end
 
     subgraph EXT["EXTERNAL / project tổng"]
@@ -298,7 +309,7 @@ flowchart TB
     classDef ext fill:#f2f2f2,stroke:#888,stroke-dasharray:3 2;
     class IM,UNDO,COMBO,SCENE,PREFS,GIZMO,FA,PIVOT,GHOST,TPAWN,GROUPS,UPS,CIV,FIV,DDCOMBO,DDFURN,PC bp;
     class INV,MESHCTRL,RESIZE,BOXSEL,FCARD,CCARD,TREENODE,CHIPTAG,CHIPROW,FPROW,MFROW,CONFIRM,SAVECOMBO,MOVEDLG,DETAIL,EDITLABEL,FTPICKER,LIBCTX,CTX,CTXITEM,TOAST,DRAGOV,MINSPECT,PPANEL,PSROW,PCROW,ICP wbp;
-    class SERZ,THUMB,FFL,MSS,UMPM svc;
+    class SERZ,THUMB,FFL,MSS,UMPM,EIL svc;
     class GI,SGMENU ext;
 ```
 
@@ -522,6 +533,7 @@ flowchart TB
     DETAIL(["WBP_DetailPopup"])
   end
   FFL[["UFurnitureFilterLibrary — lọc danh sách (C++)"]]
+  EIL[["UEntityIdLibrary — sinh/giữ GUID ổn định (C++)"]]
   IM["BP_FurnitureInputManager"]
   UNDO["BP_UndoManager"]
   PC["BP_FoffPlayerController"]
@@ -552,6 +564,7 @@ flowchart TB
   FCARD ==>|"lấy tham chiếu manager · GetAllActorsOfClass (F_ExecuteReplace)"| IM
   DRAGOV -.->|"đặt loại bề mặt cho đồ · Cast + SET PlacementSurfaceType"| FA
   DRAGOV -.->|"tắt gizmo khi thả · GizmoControllerRef.DeactivateGizmo()"| IM
+  DRAGOV -.->|"sinh ID cho đồ kéo-thả (producer thứ 4, U1.2 21/09) · EnsurePersistentId()"| EIL
   TREENODE -.->|"nhúng + nghe nhãn sửa tên · EditableLabel_Name, Bind OnLabelRenameCommitted"| EDITLABEL
   CHIPTAG -.->|"nhúng nhãn sửa tên · EditLabel_ChipTag"| EDITLABEL
   FTPICKER ==>|"tạo + nghe từng hàng folder · Create WBP_FolderPickerRow, Bind OnRow…"| FPROW
@@ -564,11 +577,11 @@ flowchart TB
   classDef ext fill:#f2f2f2,stroke:#888,stroke-dasharray:3 2;
   class FIV,DDFURN,FA,IM,UNDO,PC,PREFS bp;
   class INV,FCARD,DRAGOV,TREENODE,CHIPTAG,CHIPROW,FPROW,FTPICKER,EDITLABEL,MOVEDLG,CONFIRM,DETAIL wbp;
-  class FFL svc;
+  class FFL,EIL svc;
   class GI ext;
 ```
 
-**Kiểm chứng K2:** `INV→IM` (03/08) · `FCARD→INV`, `FCARD→IM` (24/07) · `FTPICKER→FPROW` (12/07) · `FPROW→EDITLABEL` (11/07). Còn lại: theo doc.
+**Kiểm chứng K2:** `INV→IM` (03/08) · `FCARD→INV`, `FCARD→IM` (24/07) · `FTPICKER→FPROW` (12/07) · `FPROW→EDITLABEL` (11/07). Còn lại: theo doc. `DRAGOV→EIL` PIE-verify (21/09, ID-03 test), chưa K2 export riêng cho cạnh này.
 
 ### 3d — Save · Undo · khởi động
 
@@ -590,6 +603,7 @@ flowchart TB
     GIZMO["BP_GizmoController"]
   end
   FA["BP_FurnitureActor"]
+  EIL[["UEntityIdLibrary"]]
   GROUPS["BP_GroupsContainer"]
   PC["BP_FoffPlayerController"]
   INV(["WBP_FurnitureInventory"])
@@ -606,8 +620,10 @@ flowchart TB
   TOOLDEMO -.->|"tạo toast + gắn vào GameInstance · Create + SET GI.ToastRef"| TOAST
   TOOLDEMO -.->|"lưu mốc đầu tiên · CaptureSnapshot(Initial)"| UNDO
   TOOLDEMO -.->|"mở inventory khi bấm nút · Open widget"| INV
-  UNDO -.->|"tạo lại đồ khi Undo + đặt lại mã · SpawnFurnitureCopy(), SET RowName"| FA
+  UNDO -.->|"tạo lại đồ khi Undo + đặt lại mã + giữ nguyên PersistentID (guard) · SpawnFurnitureCopy(), SET RowName, SET PersistentID"| FA
   UNDO -.->|"chọn lại / bỏ chọn sau khôi phục · SelectActors() / DeselectAll()"| IM
+  FA -.->|"sinh/giữ ID lúc actor tải xong (Event ActorLoaded) · EnsurePersistentId()"| EIL
+  IM -.->|"sinh ID cho đồ mới (Duplicate/Paste) · SpawnFurnitureCopy: EnsurePersistentId()"| EIL
   UNDO -.->|"báo tin: khôi phục xong · Broadcast OnRestoreCompleted"| INV
   COMBO -.->|"quay lui khi đổi combo lỗi · RestoreCurrentSnapshot()"| UNDO
   GIZMO -.->|"lưu mốc sau khi kéo · CaptureSnapshot(Move/Rotate/Scale)"| UNDO
@@ -622,12 +638,14 @@ flowchart TB
   classDef bp fill:#e8eef7,stroke:#33415c;
   classDef wbp fill:#f7efe8,stroke:#5c4633;
   classDef ext fill:#f2f2f2,stroke:#888,stroke-dasharray:3 2;
+  classDef svc fill:#eef7ee,stroke:#356335;
   class IM,UNDO,COMBO,SCENE,PREFS,GIZMO,FA,GROUPS,PC bp;
   class TOOLDEMO,INV,TOAST wbp;
+  class EIL svc;
   class GI,SGMENU,UPS ext;
 ```
 
-**Kiểm chứng K2:** `UNDO→FA` (mã RowName, 03/08). Còn lại: theo doc. ⚠ Nguồn spawn manager: doc ghi cả `WBP_FOFF_ToolDemo` lẫn "Level BP" — chưa chốt.
+**Kiểm chứng K2:** `UNDO→FA` (mã RowName, 03/08) · `IM→EIL` (SpawnFurnitureCopy, ✓K2 export 21/09) · `SCENE` giờ có thêm hàm `ResolveByPersistentId` (✓K2 export 21/09) — đọc `FA.PersistentID` qua Tag scan, CHƯA có caller nào gọi hàm này (dự kiến nối ở U3, không vẽ cạnh vì chưa có quan hệ thật). Còn lại: theo doc / PIE-verify (`FA→EIL` qua ActorLoaded, `UNDO→FA` phần PersistentID — ID-02 PIE test 21/09, chưa K2 riêng). ⚠ Nguồn spawn manager: doc ghi cả `WBP_FOFF_ToolDemo` lẫn "Level BP" — chưa chốt.
 
 ### 3e — Vật liệu (Material)
 
@@ -750,6 +768,7 @@ K2Node export thật, S7.G2 Việc 2+3, 05/09) — **[K2 2026-09-05]** · `INV�
 | `UFurnitureFilterLibrary` | C++ — FilterFurnitureRows / FilterMaterialItems / GetDistinctFolderPaths | `Data/FurnitureFilterLibrary_Reference.md` | `[chưa rà L-DOC]` |
 | `MaterialSlotService` | C++ — slot-by-name API (Sprint 7 G1) | `Data/MaterialSlotService_Reference.md` | `[chưa rà L-DOC]` |
 | `UMaterialParamMap` | C++ — từ điển param, GetControlsForMaterial/HexToLinearColor (Sprint 7 S7G7T1/T2) | `Data/MaterialSlotService_Reference.md` | `[chưa rà L-DOC]` |
+| `UEntityIdLibrary` | C++ — GUID-string ổn định cho actor (EnsurePersistentId/IsValidPersistentId), nền Undo Architecture U1 | `Data/EntityIdLibrary_Reference.md` | `[K2 2026-09-21]` (SpawnFurnitureCopy, ResolveByPersistentId) |
 
 ---
 
