@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.20 | **Cập nhật:** 18/09/2026 (tiếp) — thêm mục **Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit)**, đặt NGAY TRƯỚC Q9 — cổng bắt buộc rà producer/consumer của 1 state TOÀN PROJECT trước khi lập task card, khi feature đụng state đã tồn tại. Nguồn: bug thật S7G7T3 cùng ngày (`RefreshSlotSwatches` không tự `HighlightSwatchByIndex`; `BTN_ResetSlot`/`BTN_ResetAll` không gọi `RefreshParamPanel` — cả 2 vì entry point CŨ không được rà lại khi seam MỚI ra đời) | 2.19 (18/09/2026) — S7G7T3.3+T3.4: nâng `Get Scalar/Vector Parameter Value` lên build+compile sạch; +4 node mới xác nhận (`GetMaterialSlotNames`, `Switch on Enum`, `Break <Struct>`, `Set Background Color` — kèm cảnh báo `SetHighlight` không tồn tại) | 2.18 (17/09/2026) — refine L1 (self-owned vs external param), thêm node `Get Scalar/Vector Parameter Value` (chỉ Material Instance Dynamic) + cảnh báo bẫy context-sensitive search, từ phiên S7G7T3 | 2.17 (15/09/2026) — thêm L13 (bẫy `Const` Function UMG), L14 (pure node đọc nhiều lần), từ phiên S7G7T2
+**Phiên bản:** 2.21 | **Cập nhật:** 21/09/2026 — T0 (Undo Architecture, `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md`) ĐÓNG — PASS. Thêm mục **"C++ Automation API đã xác nhận (T0)"**: `EAutomationTestFlags::EditorContext` compile sạch ngay lần đầu (không cần fallback `ApplicationContextMask`); đường bấm thật UE5.5 là `Tools → Session Frontend → tab Automation` (KHÔNG phải `Window → Developer Tools` như một số bản cũ) | 2.20 (18/09/2026 tiếp) — thêm mục **Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit)**, đặt NGAY TRƯỚC Q9 — cổng bắt buộc rà producer/consumer của 1 state TOÀN PROJECT trước khi lập task card, khi feature đụng state đã tồn tại. Nguồn: bug thật S7G7T3 cùng ngày (`RefreshSlotSwatches` không tự `HighlightSwatchByIndex`; `BTN_ResetSlot`/`BTN_ResetAll` không gọi `RefreshParamPanel` — cả 2 vì entry point CŨ không được rà lại khi seam MỚI ra đời) | 2.19 (18/09/2026) — S7G7T3.3+T3.4: nâng `Get Scalar/Vector Parameter Value` lên build+compile sạch; +4 node mới xác nhận (`GetMaterialSlotNames`, `Switch on Enum`, `Break <Struct>`, `Set Background Color` — kèm cảnh báo `SetHighlight` không tồn tại) | 2.18 (17/09/2026) — refine L1 (self-owned vs external param), thêm node `Get Scalar/Vector Parameter Value` (chỉ Material Instance Dynamic) + cảnh báo bẫy context-sensitive search, từ phiên S7G7T3 | 2.17 (15/09/2026) — thêm L13 (bẫy `Const` Function UMG), L14 (pure node đọc nhiều lần), từ phiên S7G7T2
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -945,6 +945,20 @@ Sau khi 1 sprint/task lớn xong:
 
 ---
 
+## C++ Automation API đã xác nhận (T0, 21/09/2026)
+
+> Nguồn: `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md` §8 (task card T0). Xác nhận thật qua
+> compile + chạy trên máy cuhoang, UE 5.5.4. Dùng đúng tên/đường này, KHÔNG bịa khác.
+
+| Điểm `[VERIFY]` trong task card | Kết quả thật |
+|---|---|
+| `EAutomationTestFlags` — flag nào compile được | `EditorContext \| EngineFilter` compile sạch NGAY LẦN ĐẦU. KHÔNG cần fallback `ApplicationContextMask` |
+| Đường bấm Session Frontend | **`Tools → Session Frontend`** (KHÔNG phải `Window → Developer Tools` — Epic đã dời chỗ này ở 5.5). Trong cửa sổ Session Frontend: tab **`Automation`** (không phải tab mặc định `Trace Control`) |
+| Vị trí file test | `Plugins/FurnitureToolkit/Source/FurnitureToolkit/Private/Tests/FurnitureToolkitTests.cpp` — build sạch không cần sửa `Build.cs` (`Core`/`Misc/AutomationTest.h` đã là dependency sẵn có) |
+| `BEGIN_DEFINE_SPEC` / `Describe` / `It` / `TestEqual` | Chạy đúng như task card viết, hiện tên test kèm mã `[UNDO-T0-xx]` rõ trong Session Frontend |
+
+---
+
 ## Lịch sử cập nhật
 
 | Phiên bản | Ngày | Nội dung |
@@ -968,3 +982,4 @@ Sau khi 1 sprint/task lớn xong:
 | 2.15 | 22/08/2026 | Thêm mục **L-DOC — Ghi & đọc canonical Blueprint flow (hai biên khóa)**, đặt sau L12 cuối phần Key Learnings: L-DOC-WRITE (coverage-check K2 trước khi đóng dấu `[K2 dd/mm]`), L-DOC-READ (kéo trọn block canonical START→END trước khi reasoning/sửa node), mốc neo Entry/End + trạng thái verify, quy tắc cross-flow (Call node = boundary hợp lệ, anchor 3 điều kiện, dispatcher/delegate không có callee duy nhất), wording coverage chuẩn, quan hệ với M2. Chống failure mode "thấy 80% flow → bịa 20%". Nguồn: Opus + ChatGPT (3 vòng phản biện), Cuhoang chuyển lời. Luật áp cho flow ghi/đọc TỪ ĐÂY, KHÔNG hồi tố lên canonical cũ. |
 | 2.16-2.19 | 14-18/09/2026 | (Xem dòng **Cập nhật** đầu file — chưa backfill đủ chi tiết vào bảng này, để nguyên khi sửa 2.20, không mở rộng phạm vi ngoài task.) |
 | 2.20 | 18/09/2026 | Thêm mục **Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit)**, đặt NGAY TRƯỚC Q9: 10.1 khi nào bắt buộc, 10.2 phân vai Opus/Sonnet/cuhoang, 10.3 quy trình 4 bước (canonical state → bản đồ Producer/State/Consumer gắn nhãn `[K2]`/`[DOC]`/`[VERIFY]` → Impact Matrix `UPDATE/NO CHANGE/SUPPRESS/REFRESH/INVALIDATE/VERIFY` → invariant xuyên luồng), 10.4 định dạng task card, 10.5 quan hệ Q10≠Q9≠Q8 (3 tầng khác nhau), 10.6 giới hạn. Nguồn: cuhoang đề xuất sau khi bắt 2 bug liên tiếp cùng gốc trong phiên debug `Bug-MaterialEdit-EnableState` (18/09/2026) — `RefreshSlotSwatches` không tự `HighlightSwatchByIndex`, `BTN_ResetSlot`/`BTN_ResetAll` không gọi `RefreshParamPanel` — cả 2 vì entry point cũ không được rà lại khi seam mới ra đời. Xem `Bugs/Open_Bugs.md` mục `Bug-MaterialEdit-EnableState`. |
+| 2.21 | 21/09/2026 | **T0 (Undo Architecture) ĐÓNG — PASS.** Thêm mục "C++ Automation API đã xác nhận (T0)": `EAutomationTestFlags::EditorContext` OK ngay lần đầu, đường bấm thật `Tools → Session Frontend → tab Automation` (5.5 đã dời khỏi `Window → Developer Tools`). Nguồn: `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md` §8. Chi tiết đầy đủ (invariant `UNDO-T0-01/02`, kết quả test) → `Rules/Testing.md` (mới tạo cùng phiên). |

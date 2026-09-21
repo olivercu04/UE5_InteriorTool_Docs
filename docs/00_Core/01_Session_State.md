@@ -17,9 +17,12 @@
 **Last verified (tiếp):** 18/09/2026 (cùng ngày) — **Đóng `Bug-MaterialEdit-EnableState`.** Root cause thật khác nghi vấn ban đầu (seam #3 chạy đúng) — 2 lỗi "entry point cũ không rà lại": `RefreshSlotSwatches` thiếu `HighlightSwatchByIndex`, `BTN_ResetSlot`/`BTN_ResetAll` thiếu `RefreshParamPanel`. Fix+test PASS cả 3 chỗ (xem `WBP_FurnitureInventory.md` v3.31). Sinh rule mới `AI_Implementation_Rules.md` Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit), đặt trước Q9. Không còn nợ nào chặn G7 trước T4.
 **Last verified (tiếp):** 18/09/2026 (tiếp 2) — **S7G7T4 GATE ĐÓNG — PASS.** 5 handler thật (`Handle_ScalarPreview`/`Commit`, `Handle_ColorPreview`/`Commit`, `Handle_ResetParamsRequested`) nối `MaterialSlotService`; live-preview + undo/redo VALUE PASS. Dispatcher 2 row nâng 2-input `(ParamName,Value)` (row v1.1). Bug B3 (sót wire ParamName → preview màu hỏng ngầm) fix. **Giới hạn Hướng 1 chốt:** undo mất slot-highlight (Undo=destroy+respawn actor) — `Bug-ParamUndo-SlotContextLost` backlog, `DEVIATIONS.md`. cuhoang chốt: **phiên sau đập-xây-lại hệ undo (Hướng 3)** — ưu tiên cao. Doc T4 đã merge canonical (WBP_FurnitureInventory v3.32, 2 row v1.1, DEVIATIONS, Open_Bugs).
 
+**Last verified (tiếp):** 18/09/2026 (tiếp 3) — **Kiến trúc Undo mới CHỐT** sau phiên họp 3 bên (cuhoang ↔ Opus 5 ↔ ChatGPT, 5 vòng brief). 6 trụ A-F (Identity+Resolver · Typed History · Mutation Boundary · ChangeSet · Reversible Snapshot · Interaction≠Document State) + Interactive Edit Session (giải live-preview slider) + migration policy additive→parity→subtractive. Doc: `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md` (PLAN, chưa as-built). Backup toàn project + git plugin FurnitureToolkit làm trước khi đụng code (đường lùi — project chưa có git). `S7G7T4b` xác định **absorbed by architecture** (Interactive Edit Session tự sinh đúng 1 command lúc Commit, thay coalescing thủ công).
+**Last verified (tiếp):** 21/09/2026 — **T0 (Automation Harness Gate) ĐÓNG — PASS.** File test đầu tiên `Plugins/FurnitureToolkit/Source/FurnitureToolkit/Private/Tests/FurnitureToolkitTests.cpp` chạy qua `Tools → Session Frontend → tab Automation` (đường bấm thật UE5.5, khác doc gốc đoán). `[UNDO-T0-01]` xanh, `[UNDO-T0-02]` (negative control) đỏ đúng ở lần chạy đầu → sửa lại → xanh lần 2. `Rules/Testing.md` MỚI TẠO (3 tầng verification + luật ngân sách PIE + protocol RED/GREEN). `AI_Implementation_Rules.md` v2.21 ghi API đã xác nhận. Next: **U1 — Persistent Identity + Resolver**.
+
 --- hôm này là ngày thứ 6, sau vài ngày mưa tầm tã, hôm nay là ngày đẹp trời
 
-Current: Sprint 7 (Material v1.2, 6/10 gate) — **S7G7T4 GATE ĐÓNG** (18/09/2026). Next: **phiên mới — redesign undo (Hướng 3, param-undo riêng)** [ưu tiên], rồi T4b (coalescing) + T5 (multi-apply)
+Current: Sprint 7 tạm DỪNG ở G7 — đang xây **Undo Architecture Foundation** (T0→U1→U2→U3, xem `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md`). **T0 ĐÓNG 21/09/2026.** Next: **U1 — Persistent Identity + Resolver** (§7 trong doc kiến trúc). Sau U1→U2→U3 mới quay lại Sprint 7 G8/G9/G10.
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -29,12 +32,12 @@ Current: Sprint 7 (Material v1.2, 6/10 gate) — **S7G7T4 GATE ĐÓNG** (18/09/2
 | | |
 |---|---|
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
-| **Phase** | Hướng Gate 2 (bản packaged Shipping thật) |
-| **Milestone** | Sprint 7 — Material v1.2 (edit vật liệu runtime) |
-| **Current Task** | **S7G7T4 GATE ĐÓNG — PASS (18/09/2026).** 5 handler + dispatcher 2-input + live-preview + undo VALUE. Xem `Widgets/WBP_FurnitureInventory.md` v3.32 (mục "4 delegate handler (T4)" + `Handle_ResetParamsRequested`), `WBP_ParamScalarRow`/`WBP_ParamColorRow` v1.1. |
-| **Task Source** | Task card gốc: `Sprints/Sprint7/17-09-2026_S7G7_T3-T5_TaskCards_v6.md` (mục S7G7T4). As-built T4 merge thẳng canonical (không tạo delta file riêng phiên này). |
-| **Next** | **1. Phiên mới — REDESIGN UNDO (Hướng 3)** [ưu tiên cao, cuhoang chốt "đập xây lại"]: param-undo riêng (command-pattern old/new value), không đi qua full scene snapshot. Bối cảnh: `Bug-ParamUndo-SlotContextLost` (`Open_Bugs.md`) + `DEVIATIONS.md` mục "Param-Undo slot-context" + `BP_UndoManager.md` v1.10 (`RestoreSnapshot`=destroy+respawn). **2. T4b** — coalescing undo (gộp nhiều lần kéo→1 entry) + seam #7 `EndParamSession`. **3. T5** — multi-select apply. |
-| **Blockers** | Không còn bug chặn. Giới hạn Hướng 1 (slot-context mất sau undo) đã chấp nhận, KHÔNG chặn T4b/T5. (G7.0b compat 5.6/5.7/5.8 vẫn backlog riêng.) |
+| **Phase** | Hướng Gate 2 (bản packaged Shipping thật) — **tạm rẽ nhánh xây Undo Architecture Foundation trước khi quay lại Sprint 7** |
+| **Milestone** | Undo Architecture Foundation (T0→U1→U2→U3) — chuẩn bị nền cho Sprint 7 G8-G10 + mọi continuous-edit sau này (transform gizmo...) |
+| **Current Task** | **T0 (Automation Harness Gate) ĐÓNG — PASS (21/09/2026).** Harness test C++ chạy thật, xác nhận qua RED→GREEN. Xem `Rules/Testing.md` (mới), `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md` §8. |
+| **Task Source** | `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md` (delta, chưa merge canonical — merge từng phần khi mỗi gate as-built). |
+| **Next** | **U1 — Persistent Identity + Resolver** (doc kiến trúc §7, gate map). Câu hỏi nhị phân đóng gate: sau undo scene, `Resolve(ID cũ)` có ra đúng actor mới không? Bao gồm cả đường save cũ (`UNDO-ID-06/07`). Sau U1 mới sang U2 (History/Mutation Boundary) → U3 (Context/ChangeSet) → quay lại Sprint 7 G8-G10. |
+| **Blockers** | Không. Sprint 7 G8-G10 **tạm hoãn có chủ đích** (không phải bị chặn) — chờ nền Undo mới xong để tránh xây thêm trên kiến trúc sắp thay. `Bug-ParamUndo-SlotContextLost` đóng khi U3 PASS. `S7G7T4b` đã xác định **absorbed by architecture**, không còn là task riêng. |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
 (sau Gate 2: Backend B0→B5 — cloud, chợ combo)
@@ -161,9 +164,11 @@ sau undo = lý do làm Hướng 3 trước.
 
 | Cần gì | Đọc |
 |---|---|
-| Plan Sprint 7 | `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` |
+| **Kiến trúc Undo mới (T0→U1→U2→U3)** | `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md` |
+| **Luật test tự động (Spec/Functional/luật PIE)** | `Rules/Testing.md` |
+| Plan Sprint 7 (tạm hoãn, chờ Undo Architecture) | `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` |
 | Material v1.1 nền (đổi vật liệu đã chạy) | `Features/ChangeMaterial.md` |
-| Rule Blueprint (Q8/Q9/L1-L11/bảng node) | `Rules/AI_Implementation_Rules.md` |
+| Rule Blueprint (Q8/Q9/Q10/L1-L14/bảng node) | `Rules/AI_Implementation_Rules.md` |
 | Kỷ luật thực thi + luật doc | `Rules/Execution_Discipline.md` |
 | Bug đang mở | `Bugs/Open_Bugs.md` |
 | Deviation + ceiling | `DEVIATIONS.md` |
