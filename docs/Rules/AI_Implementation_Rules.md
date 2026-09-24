@@ -1,6 +1,6 @@
 # 09 — Bộ Quy Tắc Thực Thi cho AI (Sonnet 4.6)
 **Nguồn:** `import_raw/28-05-2026_09_AI_Implementation_Rules.md` (base v1.0) + `import_raw/09_AI_Implementation_Rules_patch_v2.md` (v2.0, 14/06/2026) + `import_raw/AI_Communication_Rules_update_15jun2026.md` (v2.1, 15/06/2026)
-**Phiên bản:** 2.22 | **Cập nhật:** 21/09/2026 (tiếp) — U1 (PersistentIdentity) mục "C++ Entity Identity API đã xác nhận (U1)": kết quả V1/V4/V5/V8, V2 còn treo chờ U1.5. | 2.21 (21/09/2026) — T0 (Undo Architecture, `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md`) ĐÓNG — PASS. Thêm mục **"C++ Automation API đã xác nhận (T0)"**: `EAutomationTestFlags::EditorContext` compile sạch ngay lần đầu (không cần fallback `ApplicationContextMask`); đường bấm thật UE5.5 là `Tools → Session Frontend → tab Automation` (KHÔNG phải `Window → Developer Tools` như một số bản cũ) | 2.20 (18/09/2026 tiếp) — thêm mục **Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit)**, đặt NGAY TRƯỚC Q9 — cổng bắt buộc rà producer/consumer của 1 state TOÀN PROJECT trước khi lập task card, khi feature đụng state đã tồn tại. Nguồn: bug thật S7G7T3 cùng ngày (`RefreshSlotSwatches` không tự `HighlightSwatchByIndex`; `BTN_ResetSlot`/`BTN_ResetAll` không gọi `RefreshParamPanel` — cả 2 vì entry point CŨ không được rà lại khi seam MỚI ra đời) | 2.19 (18/09/2026) — S7G7T3.3+T3.4: nâng `Get Scalar/Vector Parameter Value` lên build+compile sạch; +4 node mới xác nhận (`GetMaterialSlotNames`, `Switch on Enum`, `Break <Struct>`, `Set Background Color` — kèm cảnh báo `SetHighlight` không tồn tại) | 2.18 (17/09/2026) — refine L1 (self-owned vs external param), thêm node `Get Scalar/Vector Parameter Value` (chỉ Material Instance Dynamic) + cảnh báo bẫy context-sensitive search, từ phiên S7G7T3 | 2.17 (15/09/2026) — thêm L13 (bẫy `Const` Function UMG), L14 (pure node đọc nhiều lần), từ phiên S7G7T2
+**Phiên bản:** 2.23 | **Cập nhật:** 24/09/2026 16:10 — U2.4/U2.5: +L15 (hàm toggle), +L16 (dispatcher signature), +C10 (UWidget setter trước khi dựng), +4 node xác nhận (`Set members in <Struct>`, `Select Float/LinearColor`, `Is No Op Command`, `Get Slot Scalar/Vector Param`); note `Get Scalar/Vector Parameter Value` trỏ sang reader C++ cho MI. | 2.22 | **Cập nhật:** 21/09/2026 (tiếp) — U1 (PersistentIdentity) mục "C++ Entity Identity API đã xác nhận (U1)": kết quả V1/V4/V5/V8, V2 còn treo chờ U1.5. | 2.21 (21/09/2026) — T0 (Undo Architecture, `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md`) ĐÓNG — PASS. Thêm mục **"C++ Automation API đã xác nhận (T0)"**: `EAutomationTestFlags::EditorContext` compile sạch ngay lần đầu (không cần fallback `ApplicationContextMask`); đường bấm thật UE5.5 là `Tools → Session Frontend → tab Automation` (KHÔNG phải `Window → Developer Tools` như một số bản cũ) | 2.20 (18/09/2026 tiếp) — thêm mục **Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit)**, đặt NGAY TRƯỚC Q9 — cổng bắt buộc rà producer/consumer của 1 state TOÀN PROJECT trước khi lập task card, khi feature đụng state đã tồn tại. Nguồn: bug thật S7G7T3 cùng ngày (`RefreshSlotSwatches` không tự `HighlightSwatchByIndex`; `BTN_ResetSlot`/`BTN_ResetAll` không gọi `RefreshParamPanel` — cả 2 vì entry point CŨ không được rà lại khi seam MỚI ra đời) | 2.19 (18/09/2026) — S7G7T3.3+T3.4: nâng `Get Scalar/Vector Parameter Value` lên build+compile sạch; +4 node mới xác nhận (`GetMaterialSlotNames`, `Switch on Enum`, `Break <Struct>`, `Set Background Color` — kèm cảnh báo `SetHighlight` không tồn tại) | 2.18 (17/09/2026) — refine L1 (self-owned vs external param), thêm node `Get Scalar/Vector Parameter Value` (chỉ Material Instance Dynamic) + cảnh báo bẫy context-sensitive search, từ phiên S7G7T3 | 2.17 (15/09/2026) — thêm L13 (bẫy `Const` Function UMG), L14 (pure node đọc nhiều lần), từ phiên S7G7T2
 **Mục đích:** Guardrail để AI bám sát kế hoạch, đưa logic code chính xác, không hallucinate node UE5.5.
 
 ⚠️ **AI ĐỌC FILE NÀY ĐẦU TIÊN mỗi session thực thi, TRƯỚC khi làm bất kỳ task nào.**
@@ -188,6 +188,24 @@ HexToLinearColor` chạy lại 2 lần. Vô hại nếu chuỗi rẻ (như case 
 đắt (async, DB lookup, loop lớn) — nếu vậy SET kết quả vào local var 1 lần rồi đọc lại var,
 đừng đọc thẳng pin pure node nhiều chỗ.
 
+### L15 — Hàm dạng công tắc: LUÔN Deactivate trước Activate (24/09/2026)
+```
+Hàm "Activate" mà bên trong đảo trạng thái (bật↔tắt theo 1 bool) → gọi 2 lần liên tiếp = TẮT.
+Mọi đường có thể gọi 2 lần (re-fire selection, restore, refresh) sẽ tắt oan.
+→ Trước MỌI lời gọi Activate kiểu toggle: gọi Deactivate trước. Hàm trở nên idempotent.
+```
+Bug thật: B-gizmo (treo 15/06→24/09). `UpdateGizmo` nhánh >=2 đã vá 03/06, nhánh ==1 bị sót 3 tháng — vá 1
+nhánh phải rà các nhánh anh em cùng gọi hàm đó.
+
+### L16 — Bind dispatcher không chọn được handler = soi signature (24/09/2026)
+```
+"Bind Event to X" chỉ liệt kê Custom Event KHỚP 100% signature dispatcher (số pin + kiểu).
+Lệch → handler biến mất khỏi danh sách, KHÔNG báo lỗi.
+→ Mở dispatcher (My Blueprint → Event Dispatchers → Details → Inputs), so với handler.
+```
+Nếu 1 handler dùng chung cho nhiều widget con → payload dispatcher PHẢI mang danh tính (vd `ParamName`) — đây là
+Q10 producer-contract (xảy ra 2 lần: T4 18/09 `OnPreviewChanged`, U2.4 24/09 `OnEditBegin`).
+
 ## C1-C9 — Gotcha C++/Slate (từ Spike G7.0a `InteriorColorPicker`, 14/09/2026)
 > Khác L1-L12 (Blueprint node) — mục này riêng cho phần code C++ thuần (plugin Slate/UMG), áp
 > dụng khi task đụng `.Build.cs`, `SWidget`/`UWidget` custom, hoặc packaged test.
@@ -230,6 +248,15 @@ tin cậy cao (gate) → đóng Editor build sạch, đừng tin Live Coding pat
 Project tổng (`Lighting_Mnger`) kéo theo nhiều plugin marketplace precompiled → package dễ dính
 "missing precompiled manifest". Plugin C++ độc lập (không coupling code project tổng) tách sang
 project rỗng để package = né lỗi này hoàn toàn (xem `Widgets/InteriorColorPicker.md`).
+
+### C10 — Setter UWidget C++ phải lưu biến TRƯỚC, đẩy xuống Slate SAU (24/09/2026)
+```cpp
+void UMyWidget::SetX(T V) { StoredX = V; if (MySlate.IsValid()) MySlate->SetX(V); }   // ĐÚNG
+void UMyWidget::SetX(T V) { if (MySlate.IsValid()) MySlate->SetX(V); }                // SAI — gọi trước khi dựng = mất
+```
+Slate chỉ được dựng (`RebuildWidget`) khi widget được gắn vào cây hiển thị. Caller hay gọi Setup TRƯỚC AddChild →
+bản SAI bỏ im lặng. `RebuildWidget` phải đọc `StoredX`. Handler nhận giá trị từ user cũng cập nhật `StoredX` để
+dựng lại (ẩn/hiện) không quay về giá trị cũ. Bug thật: `InteriorColorPicker.SetColor` (U2.5).
 
 ## L-DOC — Ghi & đọc canonical Blueprint flow (hai biên khóa)
 
@@ -679,6 +706,11 @@ Dùng đúng tên này, KHÔNG bịa tên khác:
 | `Switch on Enum` (vd `EMaterialParamControl`) | Branch theo giá trị enum — mỗi case 1 nhánh exec riêng, không cần chuỗi Branch lồng. Dùng phân luồng Scalar/Color trong `RefreshParamPanel`. ✅ xác nhận compile sạch + test PASS 18/09/2026 — S7G7T3 | Chuỗi `Branch(ControlType==Scalar)` lồng nhau (dùng được nhưng `Switch on Enum` gọn hơn khi ≥3 case) |
 | `Break <Struct>` (vd `Break MaterialParamControlRow`) | Tách struct thành các pin field riêng để đọc (`ParamName`, `ControlType`, `MinValue`...). Dùng trong `ForEach Controls` của `RefreshParamPanel`. ✅ xác nhận compile sạch + test PASS 18/09/2026 — S7G7T3 | |
 | `Set Background Color` (trên `Button`) | Đổi màu nền button runtime — dùng cho toggle highlight `BTN_MaterialEdit` (Open/Close Inspector). ✅ xác nhận hoạt động đúng 18/09/2026 — S7G7T3, KHÔNG dính bug Tint Alpha=0 từng gặp ở nút tim Favorite | `SetHighlight` (hàm KHÔNG tồn tại trên `Button` — nhầm lẫn đã gặp trong task card, xem `DEVIATIONS.md`) |
+
+| `Set members in <Struct>` (vd `Set members in MaterialParamCommand`, `Set members in S_SceneSnapshot`) | Đổi 1 vài field của struct, giữ nguyên field khác — tick field trong Details để hiện pin. Biến struct: `GET → Set members in → SET`. Pin output của hàm: nối thẳng vào input. ✅ U2.4 24/09 | ~~"SET field" trực tiếp~~ (không tồn tại); `Make <Struct>` (tạo mới, xóa field khác) |
+| `Select Float` / `Select LinearColor` | Chọn 1 trong 2 giá trị theo Bool (Pick A). Dùng chọn Before/After, giá trị thật / fallback. ✅ U2.4 24/09 | |
+| `Is No Op Command` (C++ Pure, `UParamCommandLibrary`) | Cắm thẳng vào `Condition` của Branch — Pure, không exec pin. ✅ U2.5 24/09 | |
+| `Get Slot Scalar Param` / `Get Slot Vector Param` (C++, `MaterialSlotService`) | Đọc param trên vật liệu HIỆN TẠI của slot — MID hoặc MI gốc (từ 24/09). CÓ exec pin. Out `Out Value` + `Return Value` (false = param không tồn tại). **Thay** `Get Scalar/Vector Parameter Value` khi slot có thể chưa có MID. ✅ U2.5 24/09 | Cast MI→MID + fallback hằng số (sai cho slot chưa chỉnh) |
 
 ⚠️ **Bẫy context-sensitive search (17/09/2026):** tìm node trong Blueprint có thể trả về NHIỀU node
 trùng tên hiển thị (vd 4+ "Get Scalar Parameter Value" khi gõ tìm). Phải phân biệt bằng

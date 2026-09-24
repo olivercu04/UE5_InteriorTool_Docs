@@ -1,4 +1,5 @@
 # WBP_ParamColorRow
+**Version:** 1.2 | **Cập nhật:** 24/09/2026 16:10 — **U2.4:** `OnEditBegin` +input `ParamName:Name` (đối xứng `WBP_ParamScalarRow` v1.2); 2 chỗ `Call OnEditBegin` nối `GET ParamName`. W3 bên Color XÁC NHẬN qua PIE: `OnInteractionBegin` → BEGIN bắn đúng 1 lần/lần chỉnh. + bánh xe màu nay khớp màu seed nhờ fix C++ `InteriorColorPicker.SetColor` (xem `InteriorColorPicker.md`) — row KHÔNG phải sửa gì cho fix đó.
 **Version:** 1.1 | **Cập nhật:** 18/09/2026 — **S7G7T4:** dispatcher `OnPreviewChanged`/`OnEditCommitted` thêm `ParamName:Name` (như `WBP_ParamScalarRow` v1.1). **+ Bug B3 (bắt qua log):** lần đầu nối `GET ParamName` chỉ vào `OnEditCommitted`, SÓT node `OnPreviewChanged` trong `OnColorChanged` → preview broadcast `ParamName=None` → `SetSlotVectorParam(None)` fail im lặng → **live-preview màu hỏng ngầm** (mesh chỉ nhảy màu lúc thả, không đổi live). Fix: nối `GET ParamName` vào cả node preview + node hex-commit. Test PASS (màu + hex đều LIVE). Xem B3 dưới.
 **Version:** 1.0 | **Ngày:** 15/09/2026 | **Tạo mới — S7G7T2, đóng PASS**
 
@@ -25,7 +26,7 @@ Border_RowRoot
 ## Variables + Event Dispatchers
 ```
 ParamName : Name · CurrentColor : LinearColor       ← CurrentColor = nguồn sự thật DUY NHẤT
-OnEditBegin() · OnPreviewChanged(ParamName:Name, Value:LinearColor) · OnEditCommitted(ParamName:Name, Value:LinearColor)
+OnEditBegin(ParamName:Name) · OnPreviewChanged(ParamName:Name, Value:LinearColor) · OnEditCommitted(ParamName:Name, Value:LinearColor)
 ```
 > **[v1.1 18/09]** `ParamName` là input MỚI (v1.0 chỉ có `Value`) — cùng lý do `WBP_ParamScalarRow` v1.1: 1 handler T4 chung cho mọi row Color.
 
@@ -36,6 +37,9 @@ SET CurrentColor = NewColor
 ▶→ EditableTextBox_Hex.SetText( Conv_StringToText( ToHex_LinearColor(CurrentColor) ) )
 ▶→ InteriorColorPicker.SetColor(CurrentColor)     ← an toàn: no-op nếu picker đang bIsInteracting
 ```
+> **[v1.2 — 24/09]** `Setup` gọi `SyncCurrentColor` → `SetColor` TRƯỚC khi row được `AddParamRow` (Slate picker chưa
+> dựng). Trước fix C++ 24/09, `SetColor` lúc đó bị bỏ im lặng → bánh xe + thanh sáng đứng ở trắng dù ô màu/hex đúng
+> (hex là TextBox UMG, tự giữ text dù chưa dựng). Từ khi seed luôn trắng thì lỗi bị che — lộ khi seed đọc đúng MI.
 Mọi nguồn đổi màu (Picker kéo, Hex gõ, sau này Reset/Undo) đều PHẢI gọi qua hàm này — không đường
 nào được ghi `CurrentColor` hay update UI con trực tiếp bên ngoài `SyncCurrentColor`.
 
@@ -48,7 +52,7 @@ SET ParamName = InParamName
 
 ## Event flow (xác nhận qua K2Node export thật — `OnColorChanged` + `Setup` + `OnTextCommitted`)
 ```
-InteriorColorPicker.OnInteractionBegin ▶→ Call OnEditBegin
+InteriorColorPicker.OnInteractionBegin ▶→ Call OnEditBegin(GET ParamName)     ← v1.2
 
 InteriorColorPicker.OnColorChanged(NewColor)
 ▶→ Call SyncCurrentColor(NewColor)
@@ -63,7 +67,7 @@ EditableTextBox_Hex.OnTextCommitted(Text, CommitMethod)
 ▶→ Conv_TextToString(Text) → HexToLinearColor(...) ●→ bSuccess, OutColor
 ▶→ Branch(bSuccess):
      True  ▶→ Call SyncCurrentColor(OutColor)
-            ▶→ Call OnEditBegin ▶→ Call OnEditCommitted(GET ParamName, Value = GET CurrentColor)   ← v1.1: +GET ParamName
+            ▶→ Call OnEditBegin(GET ParamName) ▶→ Call OnEditCommitted(GET ParamName, Value = GET CurrentColor)   ← v1.1: +GET ParamName
      False ▶→ EditableTextBox_Hex.SetText( Conv_StringToText( ToHex_LinearColor(GET CurrentColor) ) )
             ← REVERT LẶNG LẼ, KHÔNG bắn dispatcher nào (quyết định D3)
 ```
@@ -134,3 +138,4 @@ G8/G9.
 |------|---------|----------|
 | 15/09/2026 | 1.0 | Tạo mới — S7G7T2. `SyncCurrentColor` hub duy nhất + `Setup` + event flow (Picker/Hex → 3 dispatcher chuẩn hóa). 3 quyết định kiến trúc: D1 single-source-of-truth, D2 bỏ preset tĩnh (backlog Project Palette/Recent Colors), D3 hex-error chỉ revert không Timer. Test PASS toàn bộ. Nguồn: `DELTA — S7G7T2 AS-BUILT` (Opus+Sonnet, 15/09/2026). |
 | 18/09/2026 | 1.1 | **S7G7T4:** dispatcher `OnPreviewChanged`/`OnEditCommitted` +`ParamName:Name`. Bug B3: sót wire ParamName ở node preview → live-preview màu hỏng ngầm (bắt qua log `Param 'None'`), fix nối đủ 3 chỗ. Test PASS (màu + hex LIVE + undo value đúng). |
+| 24/09/2026 | 1.2 | **U2.4:** `OnEditBegin` +`ParamName:Name`, 2 chỗ Call nối `GET ParamName`. W3 Color PASS. Ghi chú thời điểm `SetColor` trong `Setup` (fix nằm ở C++ picker). |

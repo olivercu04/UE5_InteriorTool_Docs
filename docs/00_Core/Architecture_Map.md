@@ -1,6 +1,12 @@
 # Architecture Map — UE5 Interior Tool
 
-**Phiên bản:** 1.2 | **Tạo:** 28/08/2026 15:59 | **Cập nhật:** 21/09/2026 (U1, PersistentIdentity)
+**Phiên bản:** 1.3 | **Tạo:** 28/08/2026 15:59 | **Cập nhật:** 24/09/2026 16:10 (U2.4/U2.5, Interactive Edit Session)
+— Sơ đồ 3d: +`INV→UNDO` (Begin/Commit/Cancel session), +`UNDO→SCENE` (`ResolveByPersistentId` — Resolver U1 có
+caller THẬT đầu tiên), +`UNDO→INV` (`Broadcast OnHistoryChanged`), +`INV→UNDO` bind `OnHistoryChanged`, +`UNDO→MSS`
+(đọc Before/After + áp command). Sơ đồ 3e: seed row đổi nguồn sang `MSS.GetSlot*Param`, +cạnh `OnEditBegin`
+row→INV. Tất cả `[DOC]` + PIE-verify, CHƯA K2.
+
+**Phiên bản:** 1.2 | **Cập nhật:** 21/09/2026 (U1, PersistentIdentity)
 — +1 asset mới `UEntityIdLibrary` (§0.3, gia phả §2, `[[C++]]` shape) — GUID-string ổn định cho
 actor. Sơ đồ 3c (Inventory): +1 cạnh `DRAGOV→EIL` (`On Drop` producer thứ 4). Sơ đồ 3d (Save·Undo):
 +2 cạnh mới `FA→EIL`/`IM→EIL` (`EnsurePersistentId`) + mở rộng nhãn cạnh `UNDO→FA` có sẵn (thêm
@@ -604,6 +610,7 @@ flowchart TB
   end
   FA["BP_FurnitureActor"]
   EIL[["UEntityIdLibrary"]]
+  MSS[["MaterialSlotService"]]
   GROUPS["BP_GroupsContainer"]
   PC["BP_FoffPlayerController"]
   INV(["WBP_FurnitureInventory"])
@@ -634,6 +641,11 @@ flowchart TB
   SCENE -.->|"yêu cầu bỏ chọn · DeselectMesh()"| IM
   PREFS -.->|"ghi/đọc danh sách combo Gần đây · RecentComboIDs (SaveGame)"| UPS
   IM -.->|"ghi số đếm nhóm để lưu · GroupNameCounter, Groups"| GROUPS
+  INV -.->|"mở / chốt / hủy phiên chỉnh param (U2.4-2.5) · BeginInteractiveEdit() / CommitInteractiveEdit() / CancelInteractiveEdit()"| UNDO
+  UNDO -.->|"tìm lại đồ theo ID khi undo/chốt param — caller đầu tiên của Resolver · ResolveByPersistentId()"| SCENE
+  UNDO -.->|"đọc giá trị trước/sau + đảo 1 thông số · GetSlot*Param() / SetSlot*Param() (qua ApplyParamCommand)"| MSS
+  UNDO -.->|"báo lịch sử vừa đổi (undo/redo param) · Broadcast OnHistoryChanged"| INV
+  INV -.->|"nghe lịch sử đổi → refresh panel · Bind OnHistoryChanged → RefreshParamPanel()"| UNDO
 
   classDef bp fill:#e8eef7,stroke:#33415c;
   classDef wbp fill:#f7efe8,stroke:#5c4633;
@@ -641,11 +653,11 @@ flowchart TB
   classDef svc fill:#eef7ee,stroke:#356335;
   class IM,UNDO,COMBO,SCENE,PREFS,GIZMO,FA,GROUPS,PC bp;
   class TOOLDEMO,INV,TOAST wbp;
-  class EIL svc;
+  class EIL,MSS svc;
   class GI,SGMENU,UPS ext;
 ```
 
-**Kiểm chứng K2:** `UNDO→FA` (mã RowName, 03/08) · `IM→EIL` (SpawnFurnitureCopy, ✓K2 export 21/09) · `SCENE` giờ có thêm hàm `ResolveByPersistentId` (✓K2 export 21/09) — đọc `FA.PersistentID` qua Tag scan, CHƯA có caller nào gọi hàm này (dự kiến nối ở U3, không vẽ cạnh vì chưa có quan hệ thật). Còn lại: theo doc / PIE-verify (`FA→EIL` qua ActorLoaded, `UNDO→FA` phần PersistentID — ID-02 PIE test 21/09, chưa K2 riêng). ⚠ Nguồn spawn manager: doc ghi cả `WBP_FOFF_ToolDemo` lẫn "Level BP" — chưa chốt.
+**Kiểm chứng K2:** `UNDO→FA` (mã RowName, 03/08) · `IM→EIL` (SpawnFurnitureCopy, ✓K2 export 21/09) · `SCENE` giờ có thêm hàm `ResolveByPersistentId` (✓K2 export 21/09) — đọc `FA.PersistentID` qua Tag scan. **[24/09] Đã có caller thật: `UNDO` (`ApplyParamCommand`/`Begin`/`Commit`) — sớm hơn plan (U3), QĐ6.** 5 cạnh U2.4/U2.5 mới: `[DOC]` + PIE PASS, chưa K2. Còn lại: theo doc / PIE-verify (`FA→EIL` qua ActorLoaded, `UNDO→FA` phần PersistentID — ID-02 PIE test 21/09, chưa K2 riêng). ⚠ Nguồn spawn manager: doc ghi cả `WBP_FOFF_ToolDemo` lẫn "Level BP" — chưa chốt.
 
 ### 3e — Vật liệu (Material)
 
@@ -696,8 +708,12 @@ flowchart TB
 
   INV ==>|"tra từ điển param theo material · GetControlsForMaterial(SlotMaterial, DT_ParamMap)"| UMPM
   INV ==>|"build/xóa danh sách row + empty-state · ClearParamRows()/AddParamRow()/ShowParamEmptyState(), SetVisibility"| MINSPECT
-  INV ==>|"tạo row Scalar + seed giá trị (Cast MID→fallback MinValue) · Create WBP_ParamScalarRow → Setup()"| PSROW
-  INV ==>|"tạo row Color + seed giá trị (Cast MID→fallback trắng) · Create WBP_ParamColorRow → Setup()"| PCROW
+  INV ==>|"tạo row Scalar · Create WBP_ParamScalarRow → Setup()"| PSROW
+  INV ==>|"tạo row Color · Create WBP_ParamColorRow → Setup()"| PCROW
+  INV -.->|"seed giá trị row = giá trị THẬT trên MID/MI (U2.5, thay Cast MID+fallback) · GetSlotScalarParam() / GetSlotVectorParam()"| MSS
+  PSROW -.->|"báo bắt đầu / đang kéo / thả · OnEditBegin(ParamName) → Handle_ScalarBegin, OnPreviewChanged, OnEditCommitted"| INV
+  PCROW -.->|"báo bắt đầu / đang chỉnh / thả · OnEditBegin(ParamName) → Handle_ColorBegin, OnPreviewChanged, OnEditCommitted"| INV
+  INV -.->|"mở/chốt/hủy phiên chỉnh (chi tiết ở 3d) · Begin/Commit/CancelInteractiveEdit()"| UNDO
   FA -.->|"đồng bộ slot chọn + highlight + refresh panel sau kéo-thả · SET SelectedSlotIndex/Name, HighlightSwatchByIndex(), RefreshParamPanel()"| INV
 
   classDef bp fill:#e8eef7,stroke:#33415c;
@@ -714,6 +730,8 @@ K2Node export thật, S7.G2 Việc 2+3, 05/09) — **[K2 2026-09-05]** · `INV�
 **[K2 2026-09-18]**. Còn lại (`FA→INV`, `MINSPECT→PPANEL`, `PCROW→ICP`, `PCROW→UMPM`): theo doc
 (as-built + test PASS, KHÔNG phải raw K2 dump — giữ nét đứt theo quy ước strict của map).
 
+> **[SUPERSEDED — T4 18/09 + U2.5 24/09]** Ghi chú dưới là trạng thái 17/09: 4 handler nay đã có thân (T4) và
+> nối session undo (U2.5) — cạnh `INV→MSS`/`INV→UNDO` đã vẽ. Giữ đoạn cũ làm lịch sử.
 > **4 delegate handler RỖNG (T4, chưa build thân):** `RefreshParamPanel` bind
 > `Handle_ScalarPreview`/`Handle_ScalarCommit`/2 handler Color vào dispatcher của `PSROW`/`PCROW`,
 > nhưng thân 4 handler này RỖNG — chưa nối `PSROW`/`PCROW` → `MSS` (SetSlotParam) như plan T4. KHÔNG

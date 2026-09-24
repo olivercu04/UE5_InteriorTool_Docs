@@ -1,6 +1,8 @@
 # BP_UndoManager
 **HỢP NHẤT TỪ 6 file:** v1.2 (16/05) → v1.4 (04/06) → v1.5 (07/06) → **v1.6 base** (10/06) + v1.7_patch (12/06) + v1.8_patch (15/06)
-**Phiên bản:** 1.20 | **Cập nhật:** 25/09/2026 (U2.3 PARITY GATE — PASS) — tách `CaptureSnapshot` thành `BuildSceneSnapshotBase(ActionName)→S_SceneSnapshot` + `AppendEntry(Entry)`; `CaptureSnapshot` còn 2 node gọi 2 helper (chữ ký không đổi, 10 caller cũ nguyên). `UndoLastAction`/`RedoLastAction` +nhánh dispatch `EntryKind==ParamCommand` (nhánh command CHƯA chạy — chưa có caller sinh command entry, đúng thiết kế). Sửa doc gap: D-2 (Step 3 THẬT 2 tầng cast), D-3 (`RestoreSnapshot` +input `PreviousActor`). Redo ghi as-built GET-sau-SET. **W7 PASS** (`CurrentIndex=Len−1`, luôn trỏ entry hiện tại) + **REG-01..05 PASS toàn bộ** (parity thuần-snapshot y hệt v1.19). Deviations: `DEVIATIONS.md` D-1..D-4. Task card §5.1b/5.1c/5.7/5.8, §8 U2.3.
+**Phiên bản:** 1.21 | **Cập nhật:** 24/09/2026 16:10 (U2.4 + U2.5 — ĐÓNG, PASS) — Interactive Edit Session: +enum `E_ParamSessionPhase` (None|Previewing) · +3 session var `Sess_Active`/`Sess_Cmd`/`Sess_Phase` + var tạm `CommitEdit_Label` · `ApplyParamCommand` (thân đã có từ U2.3, D-4 K2-reviewed — U2.4 rà lại theo cùng spec; lần đầu CHẠY THẬT) · +`CommitInteractiveEdit`/`BeginInteractiveEdit`/`CancelInteractiveEdit` (Custom Event) · `UndoLastAction`/`RedoLastAction` +`CancelInteractiveEdit()` node đầu (SESS-07) +`Broadcast OnHistoryChanged` cuối nhánh Command · Event End Play +`SET Sess_Active=False`. **Câu hỏi nhị phân U2 = XANH:** undo param → đảo đúng giá trị, KHÔNG respawn, slot/Inspector/gizmo còn nguyên; redo áp lại đúng. **Mức bằng chứng:** build theo node flow Sonnet dẫn + cuhoang xác nhận compile xanh + PIE (log Print) — **CHƯA soi K2 export** phiên này. Deviations D-5..D-12 (`DEVIATIONS.md`). Task card §5.2–5.8, §8 U2.4/U2.5.
+
+**Phiên bản:** 1.20 | **Cập nhật:** 24/09/2026 (U2.3 PARITY GATE — PASS) — tách `CaptureSnapshot` thành `BuildSceneSnapshotBase(ActionName)→S_SceneSnapshot` + `AppendEntry(Entry)`; `CaptureSnapshot` còn 2 node gọi 2 helper (chữ ký không đổi, 10 caller cũ nguyên). `UndoLastAction`/`RedoLastAction` +nhánh dispatch `EntryKind==ParamCommand` (nhánh command CHƯA chạy — chưa có caller sinh command entry, đúng thiết kế). Sửa doc gap: D-2 (Step 3 THẬT 2 tầng cast), D-3 (`RestoreSnapshot` +input `PreviousActor`). Redo ghi as-built GET-sau-SET. **W7 PASS** (`CurrentIndex=Len−1`, luôn trỏ entry hiện tại) + **REG-01..05 PASS toàn bộ** (parity thuần-snapshot y hệt v1.19). Deviations: `DEVIATIONS.md` D-1..D-4. Task card §5.1b/5.1c/5.7/5.8, §8 U2.3.
 
 **Phiên bản:** 1.19 | **Cập nhật:** 22/09/2026 (U2.2, Undo Architecture) — `S_SceneSnapshot` +field `EntryKind:E_HistoryEntryKind` (default Snapshot) +field `ParamCmd:FMaterialParamCommand` (default rỗng); `Version` 4→5. Struct-only, KHÔNG đụng logic node (BuildSceneSnapshotBase/AppendEntry tách riêng ở U2.3). Compile sạch, smoke PIE (Move→Undo) PASS, không hồi quy. Xem `Sprints/Sprint7/21-09-2026_U2_HistoryMutationBoundary_TaskCard.md` §5.1b/§8 U2.2.
 
@@ -47,6 +49,14 @@ TempEditModeStack   : Array of String             ← đệm giống TempGroups,
 
 ← v1.10 (G1.T2):
 RestoreInputMgr     : BP_FurnitureInputManager    ← cache 1 lần trước ForEach trong RestoreSnapshot Step 4, tránh Get All Actors Of Class lặp trong loop. Hard ref — ⚠️ KHÔNG thấy clear ở Event End Play (xem mục dưới), khác quy ước các hard ref khác trong file này — chưa xác nhận có phải thiếu sót hay không, ngoài phạm vi K3.
+
+← v1.21 (U2.4, Interactive Edit Session — task card §5.1):
+Sess_Active         : Boolean (default False)          ← có session chỉnh param đang mở không
+Sess_Cmd            : FMaterialParamCommand (C++)      ← danh tính (EntityID/SlotName/SlotHintIndex/ParamName/Type) + Before điền lúc Begin, After điền lúc Commit
+Sess_Phase          : E_ParamSessionPhase (default None) ← enum BP MỚI: None | Previewing
+CommitEdit_Label    : String                           ← biến tạm CHỈ CommitInteractiveEdit dùng: gộp label từ 2 nhánh Scalar/Color về 1 pin
+                                                          (Custom Event không có Local Var — L9; 1 pin input chỉ nhận 1 dây)
+                                                          Không phải hard ref → không cần clear ở End Play.
 ```
 
 ---
@@ -101,6 +111,11 @@ OnRestoreCompleted(RestoredSelectedActor : BP_FurnitureActor)
   ← Broadcast cuối RestoreSnapshot, sau khi spawn actors xong
   ← WBP_FurnitureInventory bind để update TargetFurnitureActor
   ← Multi-restore: truyền PrimarySelectedActor (đồ primary trong nhóm)
+
+OnHistoryChanged()                                   ← v1.21 (U2.5, seam #6) — 0 input
+  ← Broadcast HIỆN CHỈ ở cuối nhánh Command của UndoLastAction/RedoLastAction (D-10)
+  ← WBP_FurnitureInventory bind ở Event Construct → Handle_HistoryChanged → RefreshParamPanel
+  ← Broadcast ở Capture/Commit/Jump (đủ bộ HISTUI-03) = việc của U2.6
 ```
 
 ---
@@ -149,7 +164,7 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Length → Branch > 0:
 
 ---
 
-## BuildSceneSnapshotBase(ActionName) → S_SceneSnapshot — Function MỚI (U2.3, 25/09/2026)
+## BuildSceneSnapshotBase(ActionName) → S_SceneSnapshot — Function MỚI (U2.3, 24/09/2026)
 
 > **U2.3:** tách toàn bộ phần "quét scene → dựng nội dung 1 entry" khỏi `CaptureSnapshot`.
 > `CaptureSnapshot` VÀ `CommitInteractiveEdit` (U2.5, chưa build) đều gọi hàm này — 1 nguồn build
@@ -213,7 +228,7 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Length → Branch > 0:
 
 ---
 
-## AppendEntry(Entry : S_SceneSnapshot) — Function MỚI (U2.3, 25/09/2026)
+## AppendEntry(Entry : S_SceneSnapshot) — Function MỚI (U2.3, 24/09/2026)
 
 > **U2.3:** gộp phần "quản lý stack" cũ: resize redo-stack (Step 1 cũ) + trim MaxSteps (Step 5 cũ) + ADD +
 > tăng `CurrentIndex`. Độc lập biến với `BuildSceneSnapshotBase` (không đụng Temp*). Thứ tự **build trước,
@@ -244,15 +259,131 @@ Custom Event CaptureSnapshot(ActionName) ▶→
 
 ---
 
+## E_ParamSessionPhase (enum BP MỚI, v1.21 — U2.4)
+`None` | `Previewing`. Tách riêng khỏi `E_HistoryEntryKind` (loại entry ≠ trạng thái session).
+> Gotcha lúc tạo: thêm var `Sess_Phase` (kiểu enum này) ngay sau `Sess_Cmd` (struct C++) → compile báo
+> `Can't parse default value '(EntityID=...)' ... Property: Sess_Phase` (chuỗi default là của STRUCT, không phải enum
+> — cache default lệch 1 property). Fix: xóa `Sess_Phase` → tạo lại → xanh. Lỗi editor tạm, KHÔNG phải sai thiết kế.
+
+---
+
+## ApplyParamCommand(Cmd, bUseBefore) → ok — Function (thân build U2.3 — D-4; lần đầu chạy thật ở U2.5)
+> Đảo/áp 1 command. Là đường ngược của command (undo = `bUseBefore=True`, redo = `False`) và là đường rollback của
+> `CancelInteractiveEdit`. Thân build sớm ở U2.3 (D-4, K2 export đối chiếu §5.6 — đúng). ⚠ Phiên 24/09 Sonnet KHÔNG đọc D-4
+> trước, tưởng là stub và giao "Việc 2 — build thân" — cuhoang báo "xong"; flow dưới = spec §5.6, trùng bản U2.3. Nếu
+> lần đó có dựng lại thì phải khớp flow này; nghi ngờ → soi K2.
+> **Inputs:** `Cmd : FMaterialParamCommand` · `bUseBefore : Boolean` · **Output:** `ok : Boolean` · Local var: không.
+```
+Entry ▶→ Get All Actors Of Class(BP_FurnitureSceneManager) → Get(0)      ← KHÔNG Cast (pin tự type theo class)
+         → Call .ResolveByPersistentId(Cmd.EntityID) → (Actor, bFound)    ← caller THẬT đầu tiên của Resolver U1 (QĐ6)
+     ▶→ Branch(bFound)
+          False → Return(ok = False)
+          True  ▶→ GET Actor.FurnitureMesh → Mesh
+                 ▶→ Branch(Cmd.Type == Scalar)      [Equal Enum]
+                      True  ▶→ Select Float(bUseBefore ? Cmd.BeforeScalar : Cmd.AfterScalar) → V
+                             ▶→ SetSlotScalarParam(Mesh, Actor.MaterialSlots [ref], Cmd.SlotName,
+                                                     Cmd.SlotHintIndex, Cmd.ParamName, V) ●→ ok
+                             ▶→ Return(ok)
+                      False ▶→ Select LinearColor(bUseBefore ? Cmd.BeforeColor : Cmd.AfterColor) → VC
+                             ▶→ SetSlotVectorParam(Mesh, Actor.MaterialSlots [ref], ...VC) ●→ ok
+                             ▶→ Return(ok)
+```
+`Q8:` Function | IsValid qua bFound | 2 nhánh có Return riêng | không latent | 6A: chính nó là đường ngược.
+
+---
+
+## CommitInteractiveEdit() — Custom Event (v1.21, U2.4 build / U2.5 nối UI)
+> Chốt session: đọc After, so Before, tạo ĐÚNG 1 entry `ParamCommand` (hoặc không tạo nếu no-op).
+> **Gap task card §5.4 (D-7):** card không nói lấy Mesh từ đâu → tự Resolve lại bằng `Sess_Cmd.EntityID` y hệt Begin
+> (Custom Event trên UndoManager không có `TargetFurnitureActor` của widget — đúng QĐ3 "đọc từ core").
+```
+Custom Event CommitInteractiveEdit() ▶→
+  Branch( Sess_Active AND (Sess_Phase == Previewing) )
+     False → Return                                                  ← SESS-06
+     True  ▶→ Get All Actors Of Class(BP_FurnitureSceneManager) → Get(0) → .ResolveByPersistentId(Sess_Cmd.EntityID) → (Actor,bFound)
+           ▶→ Branch(bFound)
+                False ▶→ SET Sess_Active=False ▶→ SET Sess_Phase=None   ← actor mất giữa session → hủy an toàn, không entry
+                True  ▶→ GET Actor.FurnitureMesh → Mesh
+                       ▶→ Branch(Sess_Cmd.Type == Scalar)
+                            True  ▶→ GetSlotScalarParam(Mesh, Sess_Cmd.SlotName, Sess_Cmd.SlotHintIndex, Sess_Cmd.ParamName) ●→ OutValue
+                                   ▶→ GET Sess_Cmd → Set members in MaterialParamCommand(AfterScalar = OutValue) → SET Sess_Cmd
+                                   ▶→ SET CommitEdit_Label = "Chỉnh " + Conv_NameToString(Sess_Cmd.ParamName)
+                            False ▶→ GetSlotVectorParam(...) ●→ OutValue
+                                   ▶→ GET Sess_Cmd → Set members in(AfterColor = OutValue) → SET Sess_Cmd
+                                   ▶→ SET CommitEdit_Label = "Đổi màu " + Conv_NameToString(Sess_Cmd.ParamName)
+                       [2 nhánh merge exec] ▶→ Branch( Is No Op Command(Sess_Cmd) )   ← Pure C++ (UParamCommandLibrary)
+                            True  ▶→ [Print tạm "COMMIT NOOP"] ▶→ SET Sess_Active=False ▶→ SET Sess_Phase=None      ← SESS-04
+                            False ▶→ BuildSceneSnapshotBase(CommitEdit_Label) ●SceneSnapshot→
+                                     Set members in S_SceneSnapshot(EntryKind = ParamCommand, ParamCmd = GET Sess_Cmd) ●→
+                                     AppendEntry(Entry = ●)                   ← dùng CHUNG helper với CaptureSnapshot (hybrid B: kèm full snapshot)
+                                     ▶→ [Print tạm "COMMIT CMD"] ▶→ SET Sess_Active=False ▶→ SET Sess_Phase=None
+```
+`Q8:` Custom Event → class var OK | IsValid qua bFound | mọi nhánh có đích | không latent | 6A: đường ngược = `ApplyParamCommand`.
+> Pattern đổi 1 field struct trong BP: `GET struct → Set members in <Struct> (tick field) → SET struct` (không có phép
+> "SET field" trực tiếp). Với `Entry` là pin output của hàm → nối thẳng vào `Set members in`, không cần Get/SET.
+
+---
+
+## BeginInteractiveEdit(EntityID, SlotName, HintIndex, ParamName, Type) — Custom Event (v1.21, U2.4)
+> Mở session, đọc Before TỪ CORE (MID/MI qua C++), không lấy từ widget. Inputs: `EntityID:String · SlotName:String ·
+> HintIndex:Integer · ParamName:Name · Type:EParamCmdType`.
+```
+Entry ▶→ Branch(bIsRestoring)
+       True  → Return                                              ← X1: cấm mở session giữa restore
+       False ▶→ Branch(Sess_Active)
+                    True  ▶→ CommitInteractiveEdit()                ← settle session cũ (QĐ5 — 1 session đồng thời)
+                    False → (đi thẳng)
+               [merge] ▶→ Get All Actors Of Class(BP_FurnitureSceneManager) → Get(0) → .ResolveByPersistentId(EntityID) → (Actor,bFound)
+             ▶→ Branch(bFound)
+                    False → Return
+                    True  ▶→ GET Actor.FurnitureMesh → Mesh
+                           ▶→ GET Sess_Cmd → Set members in MaterialParamCommand(EntityID, SlotName, SlotHintIndex=HintIndex,
+                                  ParamName, Type) → SET Sess_Cmd                         ← 5 field "danh tính" 1 lần trước branch
+                           ▶→ Branch(Type == Scalar)
+                                True  ▶→ GetSlotScalarParam(Mesh, SlotName, HintIndex, ParamName) ●→ OutValue
+                                       ▶→ GET Sess_Cmd → Set members in(BeforeScalar = OutValue) → SET Sess_Cmd
+                                False ▶→ GetSlotVectorParam(...) ●→ OutValue
+                                       ▶→ GET Sess_Cmd → Set members in(BeforeColor = OutValue) → SET Sess_Cmd
+                           [merge] ▶→ SET Sess_Phase = Previewing ▶→ SET Sess_Active = True
+                                   ▶→ [Print tạm "BEGIN | ParamName | S= | C= | Hist="]
+```
+`Q8:` Custom Event → class var OK | IsValid qua bFound | mọi Branch có đích | không latent | 6A: `CancelInteractiveEdit`.
+> Phụ thuộc: gọi `CommitInteractiveEdit` → phải build Commit TRƯỚC Begin (task card xếp Commit ở U2.5 — lệch thứ tự
+> build, D-5). Before đúng cho slot CHƯA chỉnh nhờ reader C++ đọc MI gốc (fix U2.5, `MaterialSlotService_Reference.md`).
+
+---
+
+## CancelInteractiveEdit() — Custom Event (v1.21, U2.4) — 6A của session
+```
+Entry ▶→ Branch(Sess_Active)
+       False → Return
+       True  ▶→ ApplyParamCommand(Cmd = Sess_Cmd, bUseBefore = True)   ← rollback preview về Before
+              ▶→ [Print tạm "CANCEL | ok | Hist"]
+              ▶→ SET Sess_Active = False ▶→ SET Sess_Phase = None      ← KHÔNG AppendEntry (SESS-05)
+```
+`Q8:` Custom Event | guard Sess_Active | 2 nhánh có đích | không latent | 6A: chính nó.
+> Caller: `UndoLastAction`/`RedoLastAction` (node đầu) + 4 seam ở `WBP_FurnitureInventory` (OnMeshSelected nhánh Material,
+> CloseMaterialInspector, NotifyViewportSlotClick, OnSlotSwatchClicked).
+> **Chống ghi mồ côi (U6b PASS):** Cancel qua bàn phím lúc đang giữ slider → Undo → `OnHistoryChanged` → `RefreshParamPanel`
+> xóa row đang giữ → mọi thao tác chuột sau đó rơi vào widget đã hủy → không ghi gì. Bảo vệ này DỰA VÀO rebuild panel —
+> nếu sau này có đường Cancel KHÔNG rebuild panel (vd phím tắt đổi tab) → phải thêm guard `Sess_Active` vào 4 handler (D-11).
+
+> **Print tạm** (BEGIN/COMMIT/CANCEL/UNDO CMD/UNDO SNAP/REDO CMD/REDO SNAP) — scaffolding test U2.4/U2.5, DỌN ở U2.7.
+
+---
+
 ## UndoLastAction (Alt+Z) — v1.20: +dispatch EntryKind (U2.3)
 
 ```
 Custom Event UndoLastAction ▶→
-  Branch CurrentIndex <= 0 → True: STOP
+  CancelInteractiveEdit()                     ← v1.21 (U2.4, SESS-07): hủy preview đang dở TRƯỚC — tự guard Sess_Active bên trong,
+                                                 KHÔNG bọc thêm Branch(Sess_Active) như task card §5.7 vẽ (D-9)
+  ▶→ Branch CurrentIndex <= 0 → True: STOP
   False ▶→ GET SnapshotHistory[CurrentIndex]   (GET CurrentIndex — pull TRƯỚC SET) → Break S_SceneSnapshot
          ▶→ Branch(EntryKind == ParamCommand)   (Equal Enum, B = ParamCommand)
               True  ▶→ ApplyParamCommand(Cmd = Break.ParamCmd, bUseBefore = True)   ← TARGETED, KHÔNG respawn (HIST-01)
-                     ▶→ SET CurrentIndex = CurrentIndex − 1   (kết thúc)
+                     ▶→ SET CurrentIndex = CurrentIndex − 1
+                     ▶→ Broadcast OnHistoryChanged            ← v1.21 (U2.5, seam #6) — node cuối
               False ▶→ SET CurrentIndex = CurrentIndex − 1
                      ▶→ Get All Actors Of Class(InputManager) → Get(0) → GET SelectedFurnitureActor
                      ▶→ RestoreSnapshot(
@@ -262,7 +393,11 @@ Custom Event UndoLastAction ▶→
 ```
 > ⚠️ **HAI node GET CurrentIndex riêng biệt** — 1 pull TRƯỚC SET (chọn entry đang undo, cho dispatch
 > EntryKind), 1 pull SAU SET (index mới, cho RestoreSnapshot). ĐỪNG gộp thành 1 GET.
-> Chưa có guard `Sess_Active` và chưa Broadcast (scope U2.4 / U2.6).
+> **v1.21:** guard session = `CancelInteractiveEdit()` node đầu; Broadcast CHỈ ở nhánh Command. Nhánh Snapshot KHÔNG
+> broadcast: `RestoreSnapshot` async (destroy+respawn) — broadcast ngay sau nó sẽ refresh panel lúc actor chưa sẵn;
+> nhánh đó đã có `ApplyRestoredActor` (Inventory) lo refresh đúng lúc (D-10).
+> **PASS U2.5:** U2 (HIST-01: UNDO CMD, không respawn, slider/swatch/Inspector/gizmo còn), U5 interleave (UNDO SNAP rồi
+> UNDO CMD resolve đúng actor MỚI qua PersistentID), U6/U6b (SESS-07: CANCEL in trước UNDO).
 > ⚠️ **Lỗi phiên U2.3 đã fix:** bản dựng đầu đọc entry SAU khi giảm CurrentIndex → trượt 1 entry (undo
 > `S_move` lại đảo `C1`, vd stack `S_init/C1/S_move`). Phát hiện qua review K2 export. As-built ĐÍCH là
 > bản trên (đọc entry Ở cursor TRƯỚC khi giảm).
@@ -273,11 +408,13 @@ Custom Event UndoLastAction ▶→
 
 ```
 Custom Event RedoLastAction ▶→
-  Branch CurrentIndex >= Array_Length(SnapshotHistory) − 1 → True: STOP
+  CancelInteractiveEdit()                     ← v1.21 (U2.4): như Undo
+  ▶→ Branch CurrentIndex >= Array_Length(SnapshotHistory) − 1 → True: STOP
   False ▶→ SET CurrentIndex = CurrentIndex + 1
          ▶→ GET SnapshotHistory[CurrentIndex]   (GET CurrentIndex — pull SAU SET → index MỚI) → Break S_SceneSnapshot
          ▶→ Branch(EntryKind == ParamCommand)
               True  ▶→ ApplyParamCommand(Cmd = Break.ParamCmd, bUseBefore = False)   ← apply After, KHÔNG chạm RestoreSnapshot
+                     ▶→ Broadcast OnHistoryChanged            ← v1.21 (U2.5, seam #6)
               False ▶→ RestoreSnapshot(
                           IndexHistory  = GET CurrentIndex,
                           PreviousActor = GET InputManager.SelectedFurnitureActor
@@ -323,7 +460,7 @@ Entry ▶→ CLEAR LocalValid                              ← local Array of St
 
 ## RestoreSnapshot(IndexHistory, PreviousActor) — v1.10: hợp nhất spawn path qua SpawnFurnitureCopy
 
-> **D-3 (U2.3, 25/09/2026) — sửa gap chữ ký:** hàm THẬT có input thứ 2 `PreviousActor : BP_FurnitureActor`
+> **D-3 (U2.3, 24/09/2026) — sửa gap chữ ký:** hàm THẬT có input thứ 2 `PreviousActor : BP_FurnitureActor`
 > (canonical trước chỉ ghi `RestoreSnapshot(IndexHistory)` — thiếu). `Undo`/`Redo` nhánh Snapshot truyền
 > `PreviousActor = GET InputManager.SelectedFurnitureActor` (xem §UndoLastAction / §RedoLastAction). Điểm
 > tiêu thụ chính xác trong THÂN hàm chưa soi K2 export riêng — chỉ bổ sung chữ ký, thân giữ nguyên (§13:
@@ -467,6 +604,7 @@ Event End Play →
   [Clear] RestoredActors         ← v1.4: drop array hard refs
   [Clear] TempGroups             ← v1.6
   [Clear] TempEditModeStack      ← v1.8
+  SET Sess_Active = False        ← v1.21 (U2.4): không để session "mồ côi" sang lượt PIE sau
 ```
 
 ---
@@ -529,4 +667,5 @@ Event End Play →
 
 | 1.18 | 21/09/2026 | U1.3 (PersistentIdentity) — `S_FurniturePlacement` +field `PersistentID`. `CaptureSnapshot` Step 3 +capture. `RestoreSnapshot` Step 4 +inject (guard != "", merge False — không dead-end). PIE PASS ID-02. Regression material PASS. |
 | 1.19 | 22/09/2026 | **U2.2 (Undo Architecture Foundation) — struct-only.** `S_SceneSnapshot` +`EntryKind:E_HistoryEntryKind` (mới, Snapshot|ParamCommand, default Snapshot) +`ParamCmd:FMaterialParamCommand` (C++ USTRUCT từ `ParamCommandTypes.h`, U2.1, default rỗng). Version 4→5. `CaptureSnapshot` Make node: chỉ bump Version=5, KHÔNG wire 2 field mới (để default → wrap trong suốt, 10 caller cũ không đổi). CHƯA đụng logic Undo/Redo dispatch (đó là U2.3). Compile sạch (W1 xác nhận: `FMaterialParamCommand` hiện trong Struct picker bình thường). Smoke PIE: chọn actor → Move → Undo → chạy y hệt trước giờ, không phát hiện lỗi. Task card: `Sprints/Sprint7/21-09-2026_U2_HistoryMutationBoundary_TaskCard.md` §5.1b/§8 U2.2. |
-| 1.20 | 25/09/2026 | **U2.3 PARITY GATE — PASS.** Tách `CaptureSnapshot` → `BuildSceneSnapshotBase(ActionName)→S_SceneSnapshot` (quét scene, build 1 entry; Local var `FurnitureInputManagerLocalVar` cache InputManager ×3, D-1; Step 3 THẬT 2 tầng cast StaticMeshActor→BP_FurnitureActor, D-2) + `AppendEntry(Entry)` (resize→trim→ADD→CurrentIndex+1, KHÔNG Broadcast — hoãn U2.6). `CaptureSnapshot` còn 2 node gọi 2 helper (chữ ký giữ nguyên, 10 caller cũ không đụng). `UndoLastAction`/`RedoLastAction` +nhánh `EntryKind==ParamCommand` → `ApplyParamCommand` (Undo bUseBefore=True, Redo=False; KHÔNG respawn) / nhánh Snapshot y hệt v1.18 — nhánh command CHƯA CHẠY vì chưa có caller sinh command entry (đúng thiết kế PARITY). D-3: `RestoreSnapshot` +input `PreviousActor` (gap chữ ký, bổ sung). Redo as-built dùng GET-sau-SET (không output pin) — exec tuyến tính nên cùng giá trị, PASS. Lỗi phiên đã fix: bản Undo đầu đọc entry SAU khi giảm index → trượt 1, sửa (đọc TRƯỚC khi giảm). **Bằng chứng:** W7 6/6 log `Idx=Len−1`; REG-01..05 (Move/Group/Combo/Select/Reset) PASS toàn bộ; trim MaxSteps=6 đúng số học. Deviations `DEVIATIONS.md` D-1..D-4; bài học async-restore `Learning_System.md`. Task card §5.1b/5.1c/5.7/5.8, §8 U2.3. |
+| 1.20 | 24/09/2026 | **U2.3 PARITY GATE — PASS.** Tách `CaptureSnapshot` → `BuildSceneSnapshotBase(ActionName)→S_SceneSnapshot` (quét scene, build 1 entry; Local var `FurnitureInputManagerLocalVar` cache InputManager ×3, D-1; Step 3 THẬT 2 tầng cast StaticMeshActor→BP_FurnitureActor, D-2) + `AppendEntry(Entry)` (resize→trim→ADD→CurrentIndex+1, KHÔNG Broadcast — hoãn U2.6). `CaptureSnapshot` còn 2 node gọi 2 helper (chữ ký giữ nguyên, 10 caller cũ không đụng). `UndoLastAction`/`RedoLastAction` +nhánh `EntryKind==ParamCommand` → `ApplyParamCommand` (Undo bUseBefore=True, Redo=False; KHÔNG respawn) / nhánh Snapshot y hệt v1.18 — nhánh command CHƯA CHẠY vì chưa có caller sinh command entry (đúng thiết kế PARITY). D-3: `RestoreSnapshot` +input `PreviousActor` (gap chữ ký, bổ sung). Redo as-built dùng GET-sau-SET (không output pin) — exec tuyến tính nên cùng giá trị, PASS. Lỗi phiên đã fix: bản Undo đầu đọc entry SAU khi giảm index → trượt 1, sửa (đọc TRƯỚC khi giảm). **Bằng chứng:** W7 6/6 log `Idx=Len−1`; REG-01..05 (Move/Group/Combo/Select/Reset) PASS toàn bộ; trim MaxSteps=6 đúng số học. Deviations `DEVIATIONS.md` D-1..D-4; bài học async-restore `Learning_System.md`. Task card §5.1b/5.1c/5.7/5.8, §8 U2.3. |
+| 1.21 | 24/09/2026 16:10 | **U2.4 + U2.5 ĐÓNG — PASS (câu hỏi nhị phân U2 XANH).** +enum `E_ParamSessionPhase`; +var `Sess_Active`/`Sess_Cmd`/`Sess_Phase`/`CommitEdit_Label`; `ApplyParamCommand` (có từ U2.3, lần đầu chạy thật); +`CommitInteractiveEdit`/`BeginInteractiveEdit`/`CancelInteractiveEdit`; Undo/Redo +`CancelInteractiveEdit()` đầu + `Broadcast OnHistoryChanged` cuối nhánh Command; +dispatcher `OnHistoryChanged`; End Play +`SET Sess_Active=False`. Build theo thứ tự phụ thuộc Apply→Commit→Begin→Cancel (D-5). PIE: SESS-01/03/04/05/07, HIST-01, interleave, U6b chống ghi mồ côi, Color W3 PASS. Chưa soi K2 export. Print tạm dọn ở U2.7. D-5..D-12. |

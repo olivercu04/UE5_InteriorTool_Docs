@@ -1,4 +1,5 @@
 # WBP_ParamScalarRow
+**Version:** 1.2 | **Cập nhật:** 24/09/2026 16:10 — **U2.4:** dispatcher `OnEditBegin` +input `ParamName:Name` (trước: 0 input). Lý do y hệt v1.1: 1 handler `Handle_ScalarBegin` chung cho mọi row → payload phải mang param identity; bản 0-input khiến `Bind OnEditBegin` KHÔNG chọn được handler có `ParamName` (sai signature). 2 chỗ `Call OnEditBegin` nối `GET ParamName`. `OnEditBegin` trước đó chưa ai bind → thêm input không phá gì. PIE PASS (1 dòng BEGIN/lần kéo).
 **Version:** 1.1 | **Cập nhật:** 18/09/2026 — **S7G7T4:** dispatcher `OnPreviewChanged`/`OnEditCommitted` thêm input `ParamName:Name` (đứng trước `Value`). Lý do: T4 handler dùng chung 1 `Handle_ScalarPreview`/`Handle_ScalarCommit` cho MỌI row → phải biết Value thuộc param nào; row đã lưu sẵn `ParamName` (từ `Setup`) nên broadcast kèm. 3 chỗ `Call` nối thêm `GET ParamName`. Test PASS (roughness live + undo/redo value đúng). Đây là bug loại Q10 (producer contract không phủ consumer mới) — xem `Rules/AI_Implementation_Rules.md` Q10.
 **Version:** 1.0 | **Ngày:** 15/09/2026 | **Tạo mới — S7G7T2, đóng PASS 4/4**
 
@@ -19,7 +20,7 @@ của widget, KHÔNG đổi range native của Slider).
 ## Variables + Event Dispatchers
 ```
 ParamName : Name · MinValue : Float · MaxValue : Float
-OnEditBegin() · OnPreviewChanged(ParamName:Name, Value:Float) · OnEditCommitted(ParamName:Name, Value:Float)
+OnEditBegin(ParamName:Name) · OnPreviewChanged(ParamName:Name, Value:Float) · OnEditCommitted(ParamName:Name, Value:Float)
 ```
 > **[v1.1 18/09]** `ParamName` là input MỚI (trước v1.0 chỉ có `Value`). Bắt buộc vì 1 handler T4 phục vụ mọi row Scalar — không có `ParamName` trong payload thì handler mù, không biết Value thuộc param nào (lộ khi material ≥2 param Scalar ở G8).
 
@@ -35,7 +36,7 @@ SpinBox_Value.SetValue(InInitialValue)          ← xem Bug B1
 
 ## Event flow (xác nhận qua K2Node export thật — `Slider_Value.OnValueChanged`, PASS test)
 ```
-Slider_Value.OnMouseCaptureBegin ▶→ Call OnEditBegin
+Slider_Value.OnMouseCaptureBegin ▶→ Call OnEditBegin(GET ParamName)     ← v1.2: +GET ParamName
 
 Slider_Value.OnValueChanged(Value:Float)
 ▶→ SET RealVal = MapRangeClamped(Value, 0, 1, MinValue, MaxValue)
@@ -49,7 +50,7 @@ Slider_Value.OnMouseCaptureEnd
 SpinBox_Value.OnValueCommitted(NewValue, CommitMethod)
 ▶→ SET ClampedVal = Clamp(NewValue, MinValue, MaxValue)
 ▶→ Slider_Value.SetValue( MapRangeClamped(ClampedVal, MinValue, MaxValue, 0, 1) )
-▶→ Call OnEditBegin ▶→ Call OnPreviewChanged(GET ParamName, ClampedVal) ▶→ Call OnEditCommitted(GET ParamName, ClampedVal)   ← v1.1: cả 2 +GET ParamName
+▶→ Call OnEditBegin(GET ParamName) ▶→ Call OnPreviewChanged(GET ParamName, ClampedVal) ▶→ Call OnEditCommitted(GET ParamName, ClampedVal)   ← v1.1: cả 2 +GET ParamName
 ```
 > `OnMouseCaptureBegin/End` + `SpinBox.OnValueCommitted` xác nhận đúng qua **test PASS** (không có
 > K2Node export riêng gửi cho phần này) — hành vi đã kiểm chứng, không phải suy đoán.
@@ -83,3 +84,4 @@ Q9: MIỄN (standalone, không đụng `SelectedActors`).
 |------|---------|----------|
 | 15/09/2026 | 1.0 | Tạo mới — S7G7T2. `Setup` + event flow (Slider/SpinBox → 3 dispatcher chuẩn hóa). 2 bug phát hiện+fix trong phiên (B1 thiếu wire InInitialValue, B2 dead-end pin OnPreviewChanged). Test 4/4 PASS. Nguồn: `DELTA — S7G7T2 AS-BUILT` (Opus+Sonnet, 15/09/2026). |
 | 18/09/2026 | 1.1 | **S7G7T4:** dispatcher `OnPreviewChanged`/`OnEditCommitted` thêm `ParamName:Name` (input đầu). 3 chỗ `Call` nối `GET ParamName`. Cần thiết vì T4 dùng 1 handler chung cho mọi row — payload phải mang param identity. Test PASS. Bug loại Q10 (contract producer không phủ consumer T4). |
+| 24/09/2026 | 1.2 | **U2.4:** `OnEditBegin` +`ParamName:Name`; 2 chỗ `Call OnEditBegin` nối `GET ParamName`. Cùng loại bug Q10 như v1.1 (lần này lộ khi U2.4 lần đầu bind `OnEditBegin`). PIE PASS. |

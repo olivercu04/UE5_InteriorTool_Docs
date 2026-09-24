@@ -285,7 +285,7 @@ tái xuất ở phiên redesign undo / T4b.
 
 ---
 
-## Phiên U2.3 PARITY GATE (25/09/2026) — bài học
+## Phiên U2.3 PARITY GATE (24/09/2026) — bài học
 
 1. **Quan sát trong cửa sổ async 2 pha của `RestoreSnapshot` → suýt kết luận FAIL oan.** REG-05 (Reset
    sau replace+tint) ban đầu NGỠ FAIL: nhìn mesh/tint chưa đúng ngay sau Undo. Thực ra `RestoreSnapshot`
@@ -298,6 +298,56 @@ tái xuất ở phiên redesign undo / T4b.
 2. **Debug-guess-first + Print giữ tốt (không đổi):** W7 (`CurrentIndex` semantics) chốt bằng 6 dòng log
    `Idx=Len−1` thay vì suy luận từ doc — bằng chứng thẳng. Bug Undo (đọc entry SAU khi giảm index →
    trượt 1) bắt được qua review K2 export, không phải đoán.
+
+---
+
+## Phiên U2.4 + U2.5 (24/09/2026) — bài học + cách phối hợp
+
+**Kết quả:** U2.4 + U2.5 ĐÓNG (câu hỏi nhị phân U2 xanh) + đóng B-gizmo (treo 3 tháng) + 2 bug nền phát hiện dọc đường.
+
+### Bài học kỹ thuật
+1. **Bug che bug — gặp 3 lần trong 1 phiên.** (a) Seed panel luôn trắng → che lỗi bánh xe màu không nhận `SetColor`
+   (trùng hợp đúng); (b) SlotContextLost (undo Move reset slot=-1) → che nghi vấn ghi mồ côi ở U6; (c) seed 0/trắng →
+   che luôn lỗi Before của Undo. → **Sửa xong 1 lỗi NỀN (nguồn dữ liệu, thời điểm) thì chạy lại test của mọi thứ đọc
+   nguồn đó** — cái "đang đúng" có thể chỉ đúng nhờ lỗi cũ.
+2. **Hàm công tắc (toggle) gọi 2 lần = tắt.** B-gizmo: `ActivateGizmo` đảo trạng thái; `RestoreSnapshot` gọi `SelectActors`
+   2 lần → bật rồi tắt. Test đối chứng 1 ghế vs 2 ghế (2 nhánh code khác nhau) chốt root cause trong 1 phút. Quy tắc:
+   `AI_Implementation_Rules.md` L15.
+3. **Setter C++ UWidget phải lưu vào biến TRƯỚC khi đẩy xuống Slate.** Gọi trước lúc widget được gắn (Setup trước
+   AddChild) thì Slate chưa tồn tại → bỏ im lặng. Quy ước engine (`USlider::SetValue`). `AI_Implementation_Rules.md` C10.
+4. **Dispatcher bind không chọn được handler → soi signature dispatcher trước.** UE5 ẩn Custom Event lệch signature khỏi
+   danh sách, không báo lỗi. cuhoang tự đoán đúng hướng ("do ParamName nên không nhận") — chỉ cần 1 bước verify.
+5. **Blueprint không có "SET 1 field của struct"** → `GET → Set members in <Struct> → SET`. Pin output của hàm thì nối
+   thẳng vào `Set members in`, không cần Get/SET. (Mới với cuhoang — đã hỏi lại 2 lần trong phiên, bình thường.)
+
+### Claude tự sửa mình (ghi để không lặp)
+- **Giao nhầm "build thân `ApplyParamCommand`"** — thật ra đã build + K2-review ở U2.3 (`DEVIATIONS.md` D-4). Nguyên nhân:
+  đầu phiên đọc Session_State + task card + canonical nhưng BỎ QUA bước "scoped DEVIATIONS" trong route pilot. → **Trước khi
+  giao việc trên 1 hàm đã có tên, grep tên đó trong `DEVIATIONS.md` + canonical.** (Bằng chứng cho pilot route: bước
+  scoped DEVIATIONS KHÔNG thừa.)
+- **Task card xếp `Commit` sau `Begin` mà `Begin` gọi `Commit`** → phát hiện trước khi cuhoang dựng (không để cuhoang
+  đâm vào lỗi compile). → Trước khi đưa thứ tự build, kiểm phụ thuộc gọi hàm giữa các bước.
+- **Nghi "ghi mồ côi" ở U6 → test U6b bác bỏ → KHÔNG vá.** Đúng quy trình: nghi thì thiết kế test, không vá phòng hờ.
+  Ghi ceiling + trigger vào DEVIATIONS D-11 thay vì thêm code.
+
+### Cách phối hợp — giữ / đổi
+- **Giữ:** mời cuhoang đoán trước rồi đưa test 1 phút đối chứng (B-gizmo: cuhoang đoán "công tắc" → test 1 vs 2 ghế →
+  khớp → mới sửa). Mẫu tốt nhất của phiên.
+- **Giữ:** cuhoang trả "không biết" → đổi câu hỏi suy luận thành câu hỏi SỰ KIỆN trả lời được ngay ("tạo biến theo thứ tự
+  nào, có compile giữa chừng không?") — tiến được 1 bước thay vì đưa đáp án.
+- **Giữ:** báo trước "trạng thái trung gian" trước PIE (U2.4 session chưa đóng khi thả chuột) — khi cuhoang thắc mắc,
+  giải thích bằng quy trình user thật + ví dụ thủ thư đóng dấu → hiểu ngay.
+- **Đổi:** câu hỏi quan trọng nhét cuối bảng test dài → cuhoang bỏ sót (U6 phải hỏi 3 lần, W3 Color 2 lần). → Câu hỏi
+  cần trả lời: tách riêng, đặt ĐẦU, nói luôn vì sao quan trọng.
+- **Ghi nhận:** cuhoang tự đề xuất hướng "trao đổi 2 chiều" cho lỗi bánh xe màu — sai root cause (thời điểm) nhưng đúng
+  nửa kia của fix (user kéo → lưu lại). Ý tưởng có giá trị → phản hồi rõ phần đúng, phần sai.
+- **Kỹ thuật bridge:** git trong folder đã kết nối cần quyền XÓA (file `.git/index.lock`) — xin quyền xóa đúng folder plugin
+  trước khi chạy git, nếu không sẽ kẹt lock.
+
+### Nợ kiểm tra hiểu (hỏi ở U2.7 cùng §11 task card, không dồn)
+- Vì sao `Begin` phải gọi `Commit` khi session cũ còn mở (1 session đồng thời)?
+- Vì sao Undo command không cần respawn mà Undo Move thì cần?
+- Toggle: vì sao Deactivate-trước-Activate làm hàm gọi bao nhiêu lần cũng an toàn?
 
 ---
 

@@ -1,6 +1,7 @@
 # MaterialSlotService — C++ Blueprint Function Library Reference
 **Nguồn:** `DELTA 27/08/2026 — S7.G1 MaterialSlotService (Sonnet execution, Fable task card)`, task card `S7.G1 MaterialSlotService | Fable → Sonnet | 27/08/2026`. As-built thật — 5/5 Việc PASS, build xanh xuyên suốt, KHÔNG deviation so với API đóng băng trong `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` mục S7.G1.
 **Tạo:** 27/08/2026
+**Cập nhật:** 24/09/2026 16:10 — U2.5 fix: `GetSlotScalarParam`/`GetSlotVectorParam` đọc trên `UMaterialInterface` hiện tại của slot (MID nếu đã chỉnh, MI gốc nếu chưa) thay vì chỉ MID. Git `c23b585` (plugin `FurnitureToolkit`).
 **Cập nhật:** 22/09/2026 — U2.1 (Undo Architecture): +`GetSlotScalarParam`/`GetSlotVectorParam` (reader Before) trên `UMaterialSlotService`; +class mới `UParamCommandLibrary` + struct `FMaterialParamCommand` (file reference này giờ phủ 3 class: `UMaterialSlotService`, `UMaterialParamMap`, `UParamCommandLibrary`).
 
 > File này là TÀI LIỆU THAM KHẢO — liệt kê function signature + hành vi thật từ delta as-built.
@@ -82,12 +83,27 @@ static bool GetSlotScalarParam(UStaticMeshComponent* Mesh, const FString& SlotNa
 static bool GetSlotVectorParam(UStaticMeshComponent* Mesh, const FString& SlotName,
     int32 HintIndex, FName ParamName, FLinearColor& OutValue);
 ```
-Reader "Before" cho command undo (U2) — đối xứng `Set*` nhưng **KHÔNG có side-effect**: đọc
-thẳng trên MID hiện tại (`GetAllScalarParameterInfo`/`GetAllVectorParameterInfo` check tồn tại,
-rồi `K2_GetScalarParameterValue`/`K2_GetVectorParameterValue`), **không gọi `EnsureSlotMID`**
-(không tự tạo MID chỉ vì đọc). Slot chưa từng `Set*` (chưa có MID) → trả `false`, KHÔNG throw —
-caller (BP, `BeginInteractiveEdit`) tự fallback `MinValue`/trắng (giống seed lúc `RefreshParamPanel`
-render row lần đầu).
+Reader cho Before/After của command undo (U2) VÀ seed của `RefreshParamPanel` (từ U2.5) — đối xứng
+`Set*` nhưng **KHÔNG có side-effect**, **không gọi `EnsureSlotMID`** (không tự tạo MID chỉ vì đọc).
+
+**As-built hiện tại (U2.5, 24/09/2026 — `c23b585`):**
+```cpp
+UMaterialInterface* Mat = Mesh->GetMaterial(Index);          // MID nếu đã chỉnh, MI gốc nếu chưa
+if (!IsValid(Mat)) return false;                             // log Warning "Slot khong co material"
+float Value = 0.f;                                           // (Vector: FLinearColor Value = White)
+if (!Mat->GetScalarParameterValue(FHashedMaterialParameterInfo(ParamName), Value))
+    return false;                                            // log Warning "Param '...' khong ton tai tren material"
+OutValue = Value; return true;
+```
+`false` CHỈ còn khi Mesh/slot/material không hợp lệ hoặc param không tồn tại. Caller BP vẫn giữ
+fallback hằng số (`MinValue`/trắng) cho đúng ca đó.
+
+> **[HISTORICAL — U2.1, 22/09]** Bản đầu đọc CHỈ trên MID (`Cast<UMaterialInstanceDynamic>` +
+> `GetAllScalarParameterInfo` + `K2_GetScalarParameterValue`); chưa có MID → `false` → caller fallback
+> hằng số. **Sai** cho slot chưa từng chỉnh (chỉ có MI): Before của Undo = 0/trắng → Undo lần chỉnh ĐẦU
+> TIÊN trả về sai giá trị; panel seed cũng hiện 0/FFFFFF. Lộ ở PIE U2.5 (Tint undo về FFFFFF). BP không
+> đọc được param trên MI (xác nhận T3 18/09) nhưng C++ `UMaterialInterface::GetScalar/VectorParameterValue`
+> đọc được mọi loại → đổi nguồn đọc. Test sau fix: F1–F4 PASS (seed đúng, undo lần đầu về đúng gốc).
 
 ### ClearSlotParams(Mesh, Records&, SlotName, HintIndex) → bool
 ```cpp

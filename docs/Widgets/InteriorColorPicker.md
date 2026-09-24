@@ -1,4 +1,5 @@
 # InteriorColorPicker (plugin C++ Slate/UMG)
+**Version:** 1.1 | **Cập nhật:** 24/09/2026 16:10 — **U2.5 fix:** `SetColor` lưu vào `InitialColor` TRƯỚC rồi mới đẩy xuống Slate nếu đã dựng; `HandleColorChanged`/`HandleInteractionEnd` cũng cập nhật `InitialColor`. Plugin có git LOCAL từ 24/09 (`84d380b` baseline trước fix → `ce51d9f` fix).
 **Version:** 1.0 | **Ngày:** 14/09/2026 | **Tạo mới — G7.0a SpikeGate, đóng GO**
 
 > 📌 **[CHỨA AS-BUILT]** — mục "Files" + "Flow code C++ chi tiết" dưới đây là kết quả thực thi
@@ -78,7 +79,7 @@ GetGradientEndColor(): tmp=State; tmp.V=1; return HSVToLinearColor(tmp)
 
 ## UInteriorColorPickerWidget (UWidget wrapper — API production, BẤT BIẾN)
 ```
-SetColor(FLinearColor) [BlueprintCallable] → MyColorPicker->SetColorSilent (nếu IsValid)
+SetColor(FLinearColor) [BlueprintCallable] → InitialColor = NewColor (v1.1) → MyColorPicker->SetColorSilent (nếu IsValid)
 GetColor() → FLinearColor
 Event OnInteractionBegin / OnColorChanged(FLinearColor) / OnInteractionEnd(FLinearColor) [BlueprintAssignable]
 InitialColor [EditAnywhere]
@@ -87,6 +88,23 @@ RebuildWidget(): SNew(SInteriorColorPicker) + bind 3 handler qua FSimpleDelegate
 ReleaseSlateResources(): Super:: + MyColorPicker.Reset()   [chống VRAM leak — SWidget không tự chết theo UWidget]
 ```
 Binding dùng `CreateUObject` (không phải `this,&Func` — UWidget là UObject, khác SCompoundWidget).
+
+### v1.1 (24/09/2026, U2.5) — `SetColor` không còn mất khi gọi trước lúc dựng
+```cpp
+void UInteriorColorPickerWidget::SetColor(FLinearColor NewColor)
+{
+    InitialColor = NewColor;                    // MỚI — lưu trước (quy ước UMG, như USlider::SetValue)
+    if (MyColorPicker.IsValid()) MyColorPicker->SetColorSilent(NewColor);
+}
+void HandleColorChanged(FLinearColor C)   { InitialColor = C; OnColorChanged.Broadcast(C); }    // MỚI dòng đầu
+void HandleInteractionEnd(FLinearColor C) { InitialColor = C; OnInteractionEnd.Broadcast(C); }  // MỚI dòng đầu
+```
+**Root cause:** `WBP_ParamColorRow.Setup` → `SetColor` chạy TRƯỚC `AddParamRow` → `MyColorPicker` chưa dựng →
+bản cũ bỏ im lặng → `RebuildWidget` dùng `InitialColor` mặc định TRẮNG → bánh xe + thanh sáng đứng ở trắng dù
+ô màu/hex đúng. Bị che từ G7.0 vì seed cũ luôn trắng (trùng hợp). Chiều ngược (user kéo → `InitialColor`) để
+Slate dựng lại (ẩn/hiện panel) không quay về màu cũ. Header KHÔNG đổi, API bất biến giữ nguyên.
+**Test:** C1–C5 PASS (bánh xe khớp seed, undo đồng bộ cả 3 phần, đóng/mở Inspector giữ màu, kéo/hex vẫn live).
+**Git (24/09):** `git init` local cho plugin — `84d380b` = baseline G7.0a (trước fix), `ce51d9f` = fix này. `.gitignore` bỏ `Binaries/` `Intermediate/`. Chưa có remote (GitHub).
 
 ## Test harness (spike only, bỏ khi production)
 `InteriorColorPickerSpikeWidget` (UUserWidget, build tree trong `Initialize()` — KHÔNG
@@ -158,3 +176,4 @@ Case #9 (regression guard SetColor achromatic) sửa so với task card gốc v1
 | Ngày | Version | Nội dung |
 |------|---------|----------|
 | 14/09/2026 | 1.0 | Tạo mới. G7.0a SpikeGate ĐÓNG — GO (PASS). 3 primitive Slate sống packaged Shipping, 10/10 case. Package ở project standalone riêng (né precompiled-manifest lỗi kiểu Gate 1.5). Build.cs +Engine. Chi tiết: `01_Session_State.md`, `DEVIATIONS.md`, `PROGRESS.md`. |
+| 24/09/2026 | 1.1 | U2.5 fix: `SetColor` + 2 handler lưu `InitialColor` → bánh xe khớp màu khi `SetColor` gọi trước lúc widget dựng. C1–C5 PASS. Git local `ce51d9f` (baseline `84d380b`). |

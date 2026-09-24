@@ -1,5 +1,6 @@
 # Open Bugs — Bugs đang mở
 **Tạo từ:** `00_Core/DEVIATIONS.md` (mục BUGS DEFERRED) + `00_Core/01_Session_State.md` (BUG CÒN MỞ) + `00_Core/02_Current_Sprint.md` (bối cảnh Gate 1)
+**Cập nhật 24/09/2026 16:10 (U2.4/U2.5):** ✅ Đóng **B-gizmo** (root cause: toggle `ActivateGizmo` + `SelectActors` 2 lần trong RestoreSnapshot, fix `UpdateGizmo`). ✅ Đóng 2 bug mới phát hiện + fix cùng phiên: **Bug-ParamSeed-MIFallback** (panel/Before = 0/trắng cho slot chưa chỉnh) và **Bug-ColorWheel-SetColorBeforeBuild** (bánh xe đứng trắng). `Bug-ParamUndo-SlotContextLost` THU HẸP: undo **param** giờ giữ context (không respawn); còn mất context khi undo thao tác **snapshot** (Move/Group...) → vẫn đóng ở U3.
 **Cập nhật:** 02/08/2026 — Replace UX Fix P0→P5 HOÀN TẤT: #1/#3a/#3b/#4/#5/#6 đều FIXED. Bug mới
 ghi nhận ngoài scope: Bug-EnterReplaceMode-MaterialPanel [OPEN, 🟢 Thấp]. P-5 (DA-legacy-path)
 gác lại — thiếu file save cũ để test.
@@ -72,9 +73,11 @@ riêng cho param) làm ở phiên redesign undo — cuhoang chốt "sẵn sàng 
 
 | # | Bug | Ưu tiên | Sprint/Gate xử lý |
 |---|---|---|---|
-| Bug-ParamUndo-SlotContextLost | Undo/redo material-param: value đúng nhưng mất slot-highlight → Inspector về placeholder. Kiến trúc: Undo=destroy+respawn actor, slot là widget-state không sống qua respawn | 🟡 Trung bình (backlog) | Hướng 1 chấp nhận (T4, 18/09). Hướng 3 (undo riêng cho param) — phiên redesign undo. Xem `DEVIATIONS.md` "Param-Undo slot-context" |
+| Bug-ParamUndo-SlotContextLost | **[THU HẸP 24/09]** Undo param (command, U2.5) GIỮ context. Còn mất slot-highlight/Inspector khi undo thao tác SNAPSHOT (Move/Group/Combo...) vì vẫn destroy+respawn | 🟡 Trung bình | Hướng 1 chấp nhận (T4, 18/09). Hướng 3 (undo riêng cho param) — phiên redesign undo. Xem `DEVIATIONS.md` "Param-Undo slot-context" |
 | B1 | ✅ FIXED (16/06) — Undo lần 2 không restore group state | — | Đóng Gate 1, xem BP_UndoManager.md v1.9-1.10 |
-| B-gizmo | Gizmo ẩn sau undo trong edit mode (pre-existing) | 🟢 Thấp | Known issue, chưa có timeline |
+| B-gizmo | ✅ FIXED (24/09) — Gizmo ẩn sau undo (1 actor, không riêng edit mode) | — | `UpdateGizmo` nhánh ==1 +DeactivateGizmo trước. Xem mục chi tiết |
+| Bug-ParamSeed-MIFallback | ✅ FIXED (24/09) — Panel param + Before undo = 0/trắng cho slot chưa từng chỉnh | — | Reader C++ đọc MI gốc + seed đổi nguồn. `DEVIATIONS.md` D-12 |
+| Bug-ColorWheel-SetColorBeforeBuild | ✅ FIXED (24/09) — Bánh xe/thanh sáng đứng trắng dù ô màu đúng | — | `InteriorColorPicker.SetColor` lưu InitialColor. `InteriorColorPicker.md` v1.1 |
 | B-folder | ✅ FIXED (17/06, D.T6) — Replace folder sai khi group nhiều mesh khác folder | — | OnMeshSelected nay đọc RowName→DT, không cần load DAPath. Xem WBP_FurnitureInventory.md v2.5 |
 | B-stale-popup | ✅ FIXED (17/06, D.T6) — Popup hiển thị thông tin đồ cũ | — | Xem mục bên dưới |
 | Bug-Pagination | ✅ FIXED (17/06, D.T9) — Furniture pagination dừng ở 7/8 thay vì 8/8 | — | Xem WBP_FurnitureInventory.md v2.6, mục Pagination |
@@ -182,7 +185,14 @@ Select 3 đồ → Ctrl+G → Move cả group → Undo → Undo
 
 ---
 
-## B-gizmo — Gizmo ẩn sau undo trong edit mode (pre-existing)
+## B-gizmo — ✅ FIXED 24/09/2026 — Gizmo ẩn sau undo (pre-existing)
+
+> **Root cause (24/09, xác nhận bằng test đối chứng):** `BP_GizmoController.ActivateGizmo` là CÔNG TẮC theo
+> `bGizmoActive` (đang bật mà gọi = tắt). `RestoreSnapshot` gọi `SelectActors` 2 lần (Step 5 + Step 6b) →
+> `UpdateGizmo` nhánh `==1` gọi `ActivateGizmo` 2 lần, không Deactivate xen giữa → bật rồi tắt. Nhánh `>=2`
+> đã có Deactivate trước từ 03/06 → không dính. Chứng: 1 ghế Move→Undo mất gizmo, 2 ghế thì còn. Không riêng
+> edit mode như mô tả gốc. **Fix:** `UpdateGizmo` nhánh `==1` +`DeactivateGizmo` trước. Test G1–G6 PASS.
+> Phân tích gốc bên dưới giữ làm lịch sử (cơ chế "ValidateEditMode" là suy đoán sai).
 
 **ID:** B-gizmo
 **Phát hiện:** Sprint 4 Bug Fix session (15/06/2026) — xác nhận là **pre-existing**, không phải regression

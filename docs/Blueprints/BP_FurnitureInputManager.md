@@ -1,4 +1,6 @@
 # BP_FurnitureInputManager
+**Phiên bản:** 3.9 | **Cập nhật:** 24/09/2026 16:10 — **Đóng B-gizmo (treo từ 15/06).** `UpdateGizmo` nhánh `== 1` +`DeactivateGizmo` TRƯỚC `ActivateGizmo` (y hệt nhánh `>= 2` đã vá 03/06). Root cause: `ActivateGizmo` là CÔNG TẮC (đang bật mà gọi nữa = tắt); `RestoreSnapshot` gọi `SelectActors` 2 lần (Step 5 + Step 6b) → 1 actor: bật rồi tắt → mất gizmo sau Undo. Chứng: 1 ghế Move→Undo mất gizmo, 2 ghế thì không (đúng dự đoán). Test G1–G6 PASS (G5: click lại đúng ghế đang chọn → gizmo vẫn còn). Chưa K2.
+
 **Phiên bản:** 3.8 | **Cập nhật:** 21/09/2026 (U1.2, PersistentIdentity) — `SpawnFurnitureCopy` FULL NODE FLOW đưa vào doc canonical lần đầu (✓K2 export thật) + đính chính task card giả định sai (không có IsValid(NewActor) nào bọc spawn); Then0 +ensure `NewActorCopy.PersistentID = EnsurePersistentId(...)` ngay sau SET NewActorCopy. PIE PASS (ID-01, ID-03). Xem `Sprints/Sprint7/21-09-2026_U1_PersistentIdentity_TaskCard.md` | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
 
 **Phiên bản:** 3.7 | **Cập nhật:** 12/09/2026 (G6.1) — `OnLMBReleased` Then 2 APPEND hook slot-pick sau `SET PendingClickActor=None` (guard `SelectedActors.Length==1` → `NotifyViewportSlotClick`). G6.1 (6/6) + G6.2 regression (8/8) PASS. GATE G6 ĐÓNG HẲN | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
@@ -1028,10 +1030,13 @@ ForEach SelectedActors (Actor):
 ```
 GET LENGTH SelectedActors:
   == 0 → DeactivateGizmo + DestroyPivot
-  == 1 → DestroyPivot → ActivateGizmo(SelectedActors[0])
+  == 1 → DeactivateGizmo (TRƯỚC!) → DestroyPivot → ActivateGizmo(SelectedActors[0])   ← v3.9 (24/09): +DeactivateGizmo, đóng B-gizmo
   >= 2 → DeactivateGizmo (TRƯỚC!) → SpawnOrUpdatePivot → ActivateGizmo(GizmoPivotActor) → SetActorTickEnabled(GizmoPivotActor, True)
 ```
 **Deviation:** nhánh >=2 phải DeactivateGizmo trước ActivateGizmo (plan bỏ sót).
+> **v3.9 (24/09/2026):** nhánh ==1 cũng phải có — bị sót 3 tháng. `ActivateGizmo` (BP_GizmoController) là TOGGLE theo
+> `bGizmoActive`: gọi 2 lần liên tiếp không Deactivate xen giữa = tắt. Mọi đường gọi `SelectActors` 2 lần (RestoreSnapshot
+> Step 5 + 6b) đều dính. Sửa ở gốc `UpdateGizmo` thay vì ở `RestoreSnapshot` → mọi caller an toàn. Đóng B-gizmo.
 
 ---
 
@@ -1642,3 +1647,4 @@ từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 | 3.4 | 04/08/2026 13:15 | **`CB_Replace` re-export ✓K2 03/08/2026 — đóng caveat v3.3.** Bản mô tả cũ (✓K2 24/07) đọc lúc CHƯA re-export sau T2 — SUPERSEDED, giữ lại làm lịch sử (không xóa). Bản mới: nhánh BẬT thêm `ShouldRouteReplaceToCombo(Actor=PrimarySelectedActor)` → `Branch(bRouteToCombo)` → `StartReplaceComboMode`/`StartReplaceMode` (node CŨ giữ nguyên ở nhánh False); nhánh TẮT thêm `SET ComboRootGroupIDToReplace=""` (thiếu ở bản cũ). Xác nhận: đủ 2 call site T2 (`OnMeshSelected` + `CB_Replace`), test 2 trial chuột phải PASS 03/08. Bug fix Branch dư (24/07) không bị cuốn lại. |
 
 | 3.8 | 21/09/2026 | U1.2 (PersistentIdentity) — `SpawnFurnitureCopy` FULL NODE FLOW vào doc canonical lần đầu (✓K2 export thật) + đính chính task card (không có IsValid(NewActor) guard). Then0 +ensure `PersistentID`. PIE PASS (ID-01, ID-03). |
+| 3.9 | 24/09/2026 16:10 | **Đóng B-gizmo.** `UpdateGizmo` nhánh `==1` +`DeactivateGizmo` trước `ActivateGizmo`. Root cause toggle + `SelectActors` gọi 2 lần trong RestoreSnapshot. Test G1–G6 PASS. Chưa K2. |
