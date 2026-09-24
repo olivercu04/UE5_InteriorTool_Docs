@@ -61,3 +61,18 @@ Branch(Key == Escape):
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 06/07/2026 | Khởi tạo — C5.6 Xóa Folder (widget generic, dùng lại được cho mọi confirm dialog sau này) |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]]
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — mở + nghe hộp xác nhận · Bind OnConfirmed
+
+<!-- BRAIN:END -->

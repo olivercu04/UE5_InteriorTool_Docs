@@ -85,3 +85,21 @@ Q9: MIỄN (standalone, không đụng `SelectedActors`).
 | 15/09/2026 | 1.0 | Tạo mới — S7G7T2. `Setup` + event flow (Slider/SpinBox → 3 dispatcher chuẩn hóa). 2 bug phát hiện+fix trong phiên (B1 thiếu wire InInitialValue, B2 dead-end pin OnPreviewChanged). Test 4/4 PASS. Nguồn: `DELTA — S7G7T2 AS-BUILT` (Opus+Sonnet, 15/09/2026). |
 | 18/09/2026 | 1.1 | **S7G7T4:** dispatcher `OnPreviewChanged`/`OnEditCommitted` thêm `ParamName:Name` (input đầu). 3 chỗ `Call` nối `GET ParamName`. Cần thiết vì T4 dùng 1 handler chung cho mọi row — payload phải mang param identity. Test PASS. Bug loại Q10 (contract producer không phủ consumer T4). |
 | 24/09/2026 | 1.2 | **U2.4:** `OnEditBegin` +`ParamName:Name`; 2 chỗ `Call OnEditBegin` nối `GET ParamName`. Cùng loại bug Q10 như v1.1 (lần này lộ khi U2.4 lần đầu bind `OnEditBegin`). PIE PASS. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3e - Vật liệu Material]]
+
+**Gọi / điều khiển →**
+- [[WBP_FurnitureInventory]] — báo bắt đầu / đang kéo / thả · OnEditBegin(ParamName) → Handle_ScalarBegin, OnPreviewChanged, OnEditCommitted
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — tạo row Scalar · Create WBP_ParamScalarRow → Setup() ✓K2
+
+<!-- BRAIN:END -->

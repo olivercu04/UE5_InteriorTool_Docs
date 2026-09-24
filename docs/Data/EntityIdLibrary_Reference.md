@@ -108,3 +108,20 @@ Restore) hoàn tất đầy đủ.
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 21/09/2026 | Tạo mới (U1.1, PersistentIdentity). `EnsurePersistentId` + `IsValidPersistentId`. Spec test 3/3 PASS + negative control xác nhận test biết kêu. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3d - Save Undo khởi động]]
+
+**← Được gọi bởi**
+- [[WBP_DragOverlay_FurnitureCard]] — sinh ID cho đồ kéo-thả (producer thứ 4, U1.2 21/09) · EnsurePersistentId()
+- [[BP_FurnitureActor]] — sinh/giữ ID lúc actor tải xong (Event ActorLoaded) · EnsurePersistentId()
+- [[BP_FurnitureInputManager]] — sinh ID cho đồ mới (Duplicate/Paste) · SpawnFurnitureCopy: EnsurePersistentId()
+
+<!-- BRAIN:END -->

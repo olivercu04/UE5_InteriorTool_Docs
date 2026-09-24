@@ -102,3 +102,21 @@ Branch(bIsActive):
 | 1.1 | 18/06/2026 — Chip Highlight | Thêm Custom Event `SetHighlight(bIsActive: Boolean)` → `SetBackgroundColor(Button_ChipTag)`. Phối hợp với `UpdateFolderHighlights` + `IsPathActive` trong `WBP_FurnitureInventory`. |
 | 1.2 | 06/07/2026 — C5.7a Right-click | Thêm Dispatcher `OnChipRightClicked(FolderPath : String)` + override `On Mouse Button Down` (pattern copy `WBP_TreeNode` v1.2, nhánh False trả Unhandled vì root là Horizontal Box không phải Button). Bind trong `WBP_FurnitureInventory.RebuildChipRowForPath` → tái dùng `OnComboTreeNodeRightClicked`. |
 | 1.3 | 06/07/2026 — C5.7b Inline Rename | Thay `TextBlock_ChipTag` → `EditLabel_ChipTag` (WBP_EditableLabel). Thêm `EnterRenameMode` (relay EnterEditMode) + `HandleLabelCommitted` + dispatcher `OnChipRenameCommitted`. Test PASS full case (rename chip cấp giữa khi đang xem folder con). |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]]
+
+**Gọi / điều khiển →**
+- [[WBP_EditableLabel]] — nhúng nhãn sửa tên · EditLabel_ChipTag
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — tạo + nghe chip đường dẫn · Create + Bind OnChip…
+
+<!-- BRAIN:END -->

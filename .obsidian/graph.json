@@ -1,14 +1,57 @@
 {
   "collapse-filter": true,
-  "search": "",
+  "search": "-path:Archive -path:import_raw -path:docs/Sprints -path:docs/Plans -path:docs/Planning -file:00_INDEX -file:README -file:CLAUDE",
   "showTags": false,
   "showAttachments": false,
   "hideUnresolved": false,
   "showOrphans": true,
   "collapse-color-groups": true,
-  "colorGroups": [],
+  "colorGroups": [
+    {
+      "query": "path:\"docs/Brain/Chưa có doc\"",
+      "color": {
+        "a": 1,
+        "rgb": 10395294
+      }
+    },
+    {
+      "query": "path:docs/Brain",
+      "color": {
+        "a": 1,
+        "rgb": 9329881
+      }
+    },
+    {
+      "query": "path:docs/Blueprints",
+      "color": {
+        "a": 1,
+        "rgb": 3898840
+      }
+    },
+    {
+      "query": "path:docs/Widgets",
+      "color": {
+        "a": 1,
+        "rgb": 14715182
+      }
+    },
+    {
+      "query": "path:docs/Data",
+      "color": {
+        "a": 1,
+        "rgb": 4170587
+      }
+    },
+    {
+      "query": "path:docs/00_Core",
+      "color": {
+        "a": 1,
+        "rgb": 13938688
+      }
+    }
+  ],
   "collapse-display": true,
-  "showArrow": false,
+  "showArrow": true,
   "textFadeMultiplier": 0,
   "nodeSizeMultiplier": 1,
   "lineSizeMultiplier": 1,
@@ -17,6 +60,6 @@
   "repelStrength": 10,
   "linkStrength": 1,
   "linkDistance": 250,
-  "scale": 0.3628873693012089,
+  "scale": 1.05349794238683,
   "close": false
 }

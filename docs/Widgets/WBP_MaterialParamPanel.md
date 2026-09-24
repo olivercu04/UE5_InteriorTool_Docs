@@ -59,3 +59,18 @@ chọn nằm ở `WBP_FurnitureInventory.RefreshParamPanel`, xem Q9 của phần
 | Ngày | Version | Nội dung |
 |------|---------|----------|
 | 17/09/2026 | 1.0 | Tạo mới — S7G7T3.1. `ShowEmptyState(bEmpty, Message)`, `ClearRows()`, `AddRow(Row)`. Test PASS (2/2 + 3/3). Nguồn: `GỬI CLAUDE CODE — Phân phối as-built S7G7T3` (17/09/2026), xác nhận cuhoang panel chưa từng build trước đó. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3e - Vật liệu Material]]
+
+**← Được gọi bởi**
+- [[WBP_MaterialInspector]] — forward 5 hàm xuống panel con · SetHeader/ClearParamRows/AddParamRow/ShowParamEmptyState/SetResetEnabled → ParamPanelRef
+
+<!-- BRAIN:END -->

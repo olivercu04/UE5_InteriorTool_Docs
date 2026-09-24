@@ -191,3 +191,25 @@ Branch IsValid(SelectedActor) AND bIsDraggingGizmo → True:
 |---|---|---|
 | 1.0 | 23/04/2026 | Logic gốc (fragment 16/04 — OnMouseReleased dùng PlayerController cast) |
 | 1.1 | 05/06/2026 — 20:00 ICT | T15: OnMousePressed thêm Cast → BP_PivotActor → RefreshOffsets. OnMouseReleased đổi sang Get All Actors(InputManager) → Cast → GET ActiveMode (thay Get Player Controller → BP_FoffPlayerController). |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3d - Save Undo khởi động]]
+
+**Gọi / điều khiển →**
+- [[BP_TransformerPawn]] — giữ tham chiếu · TransformerPawnRef
+- [[BP_PivotActor]] — cập nhật trục lúc bấm · RefreshOffsets()
+- [[BP_FurnitureInputManager]] — hỏi chế độ hiện tại · GET ActiveMode
+- [[BP_UndoManager]] — chụp trạng thái khi kéo xong · CaptureSnapshot()
+- [[BP_UndoManager]] — lưu mốc sau khi kéo · CaptureSnapshot(Move/Rotate/Scale)
+
+**← Được gọi bởi**
+- [[BP_FurnitureInputManager]] — gọi lúc bấm chuột + giữ tham chiếu · OnMousePressed(), GizmoControllerRef
+
+<!-- BRAIN:END -->

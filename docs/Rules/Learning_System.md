@@ -344,10 +344,18 @@ tái xuất ở phiên redesign undo / T4b.
 - **Kỹ thuật bridge:** git trong folder đã kết nối cần quyền XÓA (file `.git/index.lock`) — xin quyền xóa đúng folder plugin
   trước khi chạy git, nếu không sẽ kẹt lock.
 
-### Nợ kiểm tra hiểu (hỏi ở U2.7 cùng §11 task card, không dồn)
-- Vì sao `Begin` phải gọi `Commit` khi session cũ còn mở (1 session đồng thời)?
-- Vì sao Undo command không cần respawn mà Undo Move thì cần?
-- Toggle: vì sao Deactivate-trước-Activate làm hàm gọi bao nhiêu lần cũng an toàn?
+### §11 kiểm tra hiểu U2 — PASS 7/7 (24/09/2026 17:38, hỏi từng câu, sửa tại chỗ khi lệch)
+| # | Câu | Kết quả |
+|---|---|---|
+| 1 | Vì sao Undo command phải `ResolveByPersistentId`, không dùng `TargetFurnitureActor` | ✓ "undo = destroy+respawn". Bổ sung: con trỏ cũ = tham chiếu CHẾT; PersistentID sống qua respawn (địa chỉ nhà vs số CCCD) |
+| 2 | Vì sao Before đọc từ core, không lấy số trên slider | ✓ nối được với bug seed 0/trắng. Bổ sung nguyên tắc: widget = bản sao hiển thị (có thể bị kẹp Min/Max), mesh = bản gốc |
+| 3 | 100 preview → 1 entry; Cancel không để entry mà vẫn về giá trị cũ | ✓ sau 1 vòng dẫn: tách `BuildSceneSnapshotBase` (dựng) vs `AppendEntry` (đưa vào sổ); Before cất ở `Sess_Cmd.BeforeScalar` lúc Begin, Cancel áp lại qua `ApplyParamCommand(bUseBefore)` |
+| 4 | Vì sao command entry vẫn kèm ảnh full (hướng B) | ✓ sau 3 vòng: "Undo snapshot N → ảnh của N−1" — ảnh full trong command entry là để DÀNH cho entry snapshot đứng sau nó. **Nợ nhẹ:** lần đầu nói undo command "dùng entry trước" — đúng là dùng Before của CHÍNH nó. Hỏi lại khi gặp ở U3 |
+| 5 | Bỏ nhánh `Sess_Active→Commit` trong Begin thì sao | ✓ lần chỉnh trước mất dấu khỏi history. Bổ sung: Before cũ bị ghi đè → cũng không Cancel được = ghi mồ côi |
+| 6 | Undo command không respawn vs Undo Move respawn | ✓ tính qua câu 1 + 4 |
+| 7 | Vì sao Deactivate-trước-Activate an toàn với mọi số lần gọi | ✓ + giới thiệu khái niệm **idempotent** |
+
+**Quan sát cách học:** câu có ví dụ từ CHÍNH test chiều đó (U5, bug seed) trả lời nhanh và đúng ngay; câu thuần khái niệm (hướng B/ảnh full) cần quy tắc tường minh + bảng điền `?` mới vỡ ra. → Với khái niệm trừu tượng, đưa QUY TẮC dạng 1 dòng + bài tập điền chỗ trống sớm hơn, đừng chỉ gợi ý.
 
 ---
 

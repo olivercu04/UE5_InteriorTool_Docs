@@ -352,3 +352,26 @@ không đổi · thả chỗ trống → không lỗi · Furniture card + Combo 
 | 1.10 | 11/09/2026 — S7.G5.4 | `On Drop` xóa thật `Sequence` debug artifact G5.1 (Cast Material debug + Print RowName) — chain sạch hoàn toàn, `FunctionEntry.then` nối thẳng vào `Cast To BP_DragDropOperation_FurnitureCard`. Regression 8/8 PASS. GATE G5 ĐÓNG HẲN. Nguồn: `11-09-2026_S7G5_G5.4_AsBuilt_Addendum.md` |
 
 | 1.11 | 21/09/2026 | U1.2 (PersistentIdentity) — `On Drop` (Furniture) +ensure `PreviewActorRef.PersistentID` sau Cast → BP_FurnitureActor. Producer thứ 4 (Q10 gap fix). PIE PASS. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3b - Combo lưu spawn thay combo]] · [[Luồng 3c - Inventory + Cây thư mục]]
+
+**Gọi / điều khiển →**
+- [[BP_ComboGhostActor]] — nhận diện bóng combo lúc thả · Cast BP_ComboGhostActor
+- [[BP_DragDropOperation_ComboCard]] — đọc ComboID từ gói lúc thả · Cast BP_DragDropOperation_ComboCard
+- [[BP_DragDropOperation_FurnitureCard]] — đọc RowName từ gói lúc thả · Cast BP_DragDropOperation_FurnitureCard
+- [[BP_FurnitureActor]] — đặt loại bề mặt cho đồ · Cast + SET PlacementSurfaceType
+- [[BP_FurnitureInputManager]] — tắt gizmo khi thả · GizmoControllerRef.DeactivateGizmo()
+- [[EntityIdLibrary_Reference]] — sinh ID cho đồ kéo-thả (producer thứ 4, U1.2 21/09) · EnsurePersistentId()
+
+**← Được gọi bởi**
+- [[WBP_FurnitureCard]] — tạo lớp kéo-thả · Create WBP_DragOverlay
+
+<!-- BRAIN:END -->

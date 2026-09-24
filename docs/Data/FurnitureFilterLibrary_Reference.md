@@ -141,3 +141,19 @@ Xem spec đầy đủ trong `00_Core/02_Current_Sprint.md` mục D.T3 và D.T7.
 - Include: `#include "FurnitureFilterLibrary.h"` (chỉ dùng nếu gọi từ C++ khác)
 - Blueprint: node hiện trực tiếp sau khi compile plugin
 - **Dependency:** FilterMaterialItems dùng `IAssetRegistry` (module `AssetRegistry`) — check Build.cs đã có
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3e - Vật liệu Material]]
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — lọc đồ / vật liệu · FilterFurnitureRows() (C++)
+- [[WBP_FurnitureInventory]] — lọc vật liệu · FilterMaterialItems() (C++)
+
+<!-- BRAIN:END -->

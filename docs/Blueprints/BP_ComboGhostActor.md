@@ -94,3 +94,19 @@ WBP_ComboCard.OnDragCancelled
 |---|---|---|
 | 1.0 | 24/06/2026 | Tạo mới — C4 combo drag preview. InitGhost(Extent). Bug ghost offset open. |
 | 1.1 | 25/06/2026 | Ghost offset FIXED (Approach B). Thêm var GhostExtentZ = Extent.Z. InitGhost lưu GhostExtentZ (bỏ Set Relative Location Z=50 sai). On Drag Over + On Drop cập nhật ở WBP_DragOverlay v1.8. C4/C8 → 100% DONE. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3b - Combo lưu spawn thay combo]]
+
+**← Được gọi bởi**
+- [[WBP_ComboCard]] — tạo bóng preview lúc kéo · Spawn BP_ComboGhostActor
+- [[WBP_DragOverlay_FurnitureCard]] — nhận diện bóng combo lúc thả · Cast BP_ComboGhostActor
+
+<!-- BRAIN:END -->

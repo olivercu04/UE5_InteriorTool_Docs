@@ -190,3 +190,23 @@ sạch sau khi xóa.
 | 1.4 | 22/07/2026 (tiếp) | **Delete Combo DONE, 5/5 test PASS.** `BTN_DeleteCombo.OnClicked` bind ở Event Construct → `Branch(IsValid(InventoryRef))` → `InventoryRef.RequestDeleteCombo(ComboItem.ComboID, ComboItem.ComboName)`. Logic xóa thật nằm ở `WBP_FurnitureInventory`. Layout note BTN_DeleteCombo cập nhật (trước ghi "chưa bind handler"). |
 | 1.5 | 24/07/2026 — C9.0c | Xóa dead code `Get_Button_ChangeMesh_Visibility` — function trùng tên duplicate từ `WBP_FurnitureCard` lúc tạo file, widget này không có `Button_ChangeMesh` nên hàm không được binding nào tham chiếu. Compile sạch sau khi xóa. Phát hiện trong lúc migrate `bIsReplaceMode`→`ReplaceTarget` toàn hệ thống (C9.0c). |
 | 1.6 | 30/07/2026 — C9.f (delta "C9 Replace: Folder Highlight + Chip Fix & C9.b–C9.f") | `BTN_ChangeCombo` WIRED lần đầu: `OnListItemObjectSet` +gate Visibility (`Branch(InventoryRef.ReplaceTarget==Combo)` → Visible/Hidden, nối cuối chuỗi hiện có); `OnClicked` → `Get All Actors Of Class(BP_FurnitureInputManager) → ExecuteComboReplace(NewComboID=ComboItem.ComboID)`. Layout nút có sẵn từ C4, trước đó luôn Hidden vì chưa có logic C9. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.6. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3b - Combo lưu spawn thay combo]]
+
+**Gọi / điều khiển →**
+- [[WBP_FurnitureInventory]] — giữ tham chiếu + gọi xoá / chuột phải · InventoryRef, RequestDeleteCombo()
+- [[BP_FurnitureInputManager]] — gọi đổi combo · ExecuteComboReplace()
+- [[BP_ComboItemView]] — nhận dữ liệu combo · IUserObjectListEntry
+- [[BP_ComboGhostActor]] — tạo bóng preview lúc kéo · Spawn BP_ComboGhostActor
+- [[BP_DragDropOperation_ComboCard]] — tạo gói kéo-thả mang ComboID · Create BP_DragDropOperation_ComboCard
+- [[Foff_GameInstance]] — đọc tham chiếu inventory · GameInstance.FurnitureInventoryRef
+
+<!-- BRAIN:END -->

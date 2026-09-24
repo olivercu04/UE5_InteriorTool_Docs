@@ -71,3 +71,23 @@ Gọi từ `WBP_FurnitureInventory.HandleDeleteComboConfirmed` khi xóa combo �
 |------|---------|----------|
 | 22/07/2026 | 1.0 | Tạo mới. Bug fix `AddRecentCombo` dead-end: `Call SaveUserPrefs` rút khỏi nhánh `True` của `Branch(RecentComboIDs.Length > 48)`, merge cả 2 nhánh cùng trỏ vào — trước đó chỉ save khi Recent vượt cap 48, mọi test thực tế (< 48 combo) không bao giờ ghi xuống đĩa. Ghi chú phụ: cap thật = 48, không phải 20 như `UX_Phase2_Plan.md`. Test PASS: spawn combo → tắt PIE → mở lại → Recent giữ đúng. Bối cảnh đầy đủ: `01_Session_State.md` mục C6 (22/07/2026), `Bugs/Open_Bugs.md`. |
 | 22/07/2026 (tiếp) | 1.1 | Function mới `RemoveRecentCombo(ComboID)` — cùng pattern `AddRecentCombo`, bỏ đoạn Insert/dedup/cap-trim, thay bằng `Array_Remove` + `SaveUserPrefs`. Gọi từ `WBP_FurnitureInventory.HandleDeleteComboConfirmed` (Delete Combo feature, 5/5 test PASS). |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3b - Combo lưu spawn thay combo]] · [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3d - Save Undo khởi động]]
+
+**Gọi / điều khiển →**
+- [[BP_UserPreferencesSave]] — ghi/đọc danh sách combo Gần đây · RecentComboIDs (SaveGame)
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — gọi bỏ combo khỏi Gần đây · RemoveRecentCombo()
+- [[WBP_FurnitureCard]] — gọi thêm Gần đây / Yêu thích · AddRecentMesh()
+- [[WBP_FOFF_ToolDemo]] — sinh ra · Spawn
+
+<!-- BRAIN:END -->

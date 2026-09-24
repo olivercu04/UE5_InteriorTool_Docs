@@ -121,3 +121,18 @@ leak, không kẹt input).
 | Phiên bản | Ngày | Nội dung |
 |---|---|---|
 | 1.0 | 11/09/2026 | Tạo file riêng (tách khỏi `Blueprint_Logic_NodeFlow.md`). Migrate `OnListItemObjectSet`/`Button_ChangeMaterial OnClicked`/`Event Destruct` nguyên văn. Thêm as-built S7.G5.1: `DragOverlayRef`, `OnDragDetected`, `On Drag Cancelled`, `BP_DragDropOperation_Material`. Test PASS 3/3. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3e - Vật liệu Material]]
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — đổ thẻ vật liệu vào lưới · TileView entry
+
+<!-- BRAIN:END -->

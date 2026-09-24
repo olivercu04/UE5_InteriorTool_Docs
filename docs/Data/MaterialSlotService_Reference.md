@@ -354,3 +354,23 @@ cách: sửa TRỰC TIẾP 1 nhánh return có sẵn (không tạo dead code) �
 
 Q9: MIỄN (C++ thuần, không đụng `SelectedActors`). Q10: N/A (type/function mới, chưa có consumer
 nào khác ngoài U2 đang xây).
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3d - Save Undo khởi động]] · [[Luồng 3e - Vật liệu Material]]
+
+**← Được gọi bởi**
+- [[BP_UndoManager]] — đọc giá trị trước/sau + đảo 1 thông số · GetSlot*Param() / SetSlot*Param() (qua ApplyParamCommand)
+- [[WBP_FurnitureInventory]] — reset param / reset về mặc định · ResetSlotToAssetDefault() / ResetAllSlotsToAssetDefault() ✓K2
+- [[WBP_FurnitureInventory]] — gán vật liệu vào slot (kéo-thả G5) · ApplyLoadedMaterialToSlot() → LoadAndApplyMaterial ✓K2
+- [[WBP_ParamColorRow]] — parse hex khi commit ô Hex · HexToLinearColor()
+- [[WBP_FurnitureInventory]] — tra từ điển param theo material · GetControlsForMaterial(SlotMaterial, DT_ParamMap) ✓K2
+- [[WBP_FurnitureInventory]] — seed giá trị row = giá trị THẬT trên MID/MI (U2.5, thay Cast MID+fallback) · GetSlotScalarParam() / GetSlotVectorParam()
+
+<!-- BRAIN:END -->

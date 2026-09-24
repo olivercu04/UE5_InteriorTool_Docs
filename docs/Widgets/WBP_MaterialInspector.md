@@ -87,3 +87,21 @@ Q9: MIỄN (widget chưa nối `SelectedActors` — chỉ display/dispatcher, wi
 | Ngày | Version | Nội dung |
 |------|---------|----------|
 | 17/09/2026 | 1.0 | Tạo mới — S7G7T3.2. Hierarchy + 3 dispatcher + 5 function pass-through (nhúng `WBP_MaterialParamPanel` qua `ParamPanelRef`). Test 7/7 PASS. Nguồn: `GỬI CLAUDE CODE — Phân phối as-built S7G7T3` (17/09/2026), task card gốc `Sprints/Sprint7/17-09-2026_S7G7_T3-T5_TaskCards_v6.md`. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3e - Vật liệu Material]]
+
+**Gọi / điều khiển →**
+- [[WBP_MaterialParamPanel]] — forward 5 hàm xuống panel con · SetHeader/ClearParamRows/AddParamRow/ShowParamEmptyState/SetResetEnabled → ParamPanelRef
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — build/xóa danh sách row + empty-state · ClearParamRows()/AddParamRow()/ShowParamEmptyState(), SetVisibility ✓K2
+
+<!-- BRAIN:END -->

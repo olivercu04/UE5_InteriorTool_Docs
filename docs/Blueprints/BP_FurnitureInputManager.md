@@ -1648,3 +1648,46 @@ từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 
 | 3.8 | 21/09/2026 | U1.2 (PersistentIdentity) — `SpawnFurnitureCopy` FULL NODE FLOW vào doc canonical lần đầu (✓K2 export thật) + đính chính task card (không có IsValid(NewActor) guard). Then0 +ensure `PersistentID`. PIE PASS (ID-01, ID-03). |
 | 3.9 | 24/09/2026 16:10 | **Đóng B-gizmo.** `UpdateGizmo` nhánh `==1` +`DeactivateGizmo` trước `ActivateGizmo`. Root cause toggle + `SelectActors` gọi 2 lần trong RestoreSnapshot. Test G1–G6 PASS. Chưa K2. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3b - Combo lưu spawn thay combo]] · [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3d - Save Undo khởi động]] · [[Luồng 3e - Vật liệu Material]]
+
+**Gọi / điều khiển →**
+- [[WBP_ContextMenuItem]] — tạo 11 mục menu · Create Widget (OnRightClick) ✓K2
+- [[WBP_ContextMenu]] — tạo menu + gọi đóng · Create + Hide() ✓K2
+- [[WBP_BoxSelectOverlay]] — tạo + gọi ẩn khung · Create + HideBox() ✓K2
+- [[BP_UndoManager]] — chụp mốc Select/Deselect · CaptureSnapshot() ✓K2
+- [[BP_FurnitureSceneManager]] — tìm singleton, đọc tham chiếu inventory · GetAllActorsOfClass, GET FurnitureInventoryRef ✓K2
+- [[WBP_FurnitureInventory]] — báo click-vào-mesh chọn slot · NotifyViewportSlotClick(ClickedActor, ScreenPos) ✓K2
+- [[BP_GizmoController]] — gọi lúc bấm chuột + giữ tham chiếu · OnMousePressed(), GizmoControllerRef
+- [[BP_TransformerPawn]] — giữ tham chiếu · TransformerPawnRef
+- [[BP_GroupsContainer]] — đọc-ghi số đếm nhóm · GroupNameCounter, Groups
+- [[BP_PivotActor]] — tạo & huỷ trục xoay · SpawnOrUpdatePivot() / DestroyPivot()
+- [[BP_FurnitureActor]] — đọc đồ đang chọn · Cast + GET PrimarySelectedActor
+- [[WBP_MeshControls]] — giữ tham chiếu thanh công cụ · CurrentMeshControls
+- [[BP_ComboManager]] — ra lệnh đổi combo · ExecuteComboReplace() → ReplaceCombo() ✓K2
+- [[EntityIdLibrary_Reference]] — sinh ID cho đồ mới (Duplicate/Paste) · SpawnFurnitureCopy: EnsurePersistentId()
+- [[BP_GroupsContainer]] — ghi số đếm nhóm để lưu · GroupNameCounter, Groups
+
+**← Được gọi bởi**
+- [[BP_GizmoController]] — hỏi chế độ hiện tại · GET ActiveMode
+- [[WBP_MeshControls]] — nghe chọn đồ / đổi chế độ + gọi hàm edit-mode · Bind OnSelectionChanged, OnEditModeChanged ✓K2
+- [[BP_FurnitureSceneManager]] — yêu cầu bỏ chọn · DeselectMesh()
+- [[BP_UndoManager]] — chọn lại đồ sau khôi phục + báo tin · SelectActors(), Broadcast OnEditModeChanged
+- [[BP_ComboManager]] — giữ tham chiếu + gọi huỷ cụm cũ · InputManagerRef, DestroyComboCluster()
+- [[WBP_ComboCard]] — gọi đổi combo · ExecuteComboReplace()
+- [[WBP_FurnitureInventory]] — vào chế độ thay đồ · StartReplaceMode() / ShouldRouteReplaceToCombo() ✓K2
+- [[WBP_FurnitureCard]] — lấy tham chiếu manager · GetAllActorsOfClass (F_ExecuteReplace) ✓K2
+- [[WBP_DragOverlay_FurnitureCard]] — tắt gizmo khi thả · GizmoControllerRef.DeactivateGizmo()
+- [[WBP_FOFF_ToolDemo]] — sinh ra các manager · Spawn (Event Construct, Then 0..13)
+- [[BP_UndoManager]] — chọn lại / bỏ chọn sau khôi phục · SelectActors() / DeselectAll()
+- [[WBP_DetailPopup]] — vào chế độ thay đồ · StartReplaceMode() ✓K2
+
+<!-- BRAIN:END -->

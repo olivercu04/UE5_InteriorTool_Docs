@@ -228,3 +228,22 @@ M1-M6 (Wire Move full flow, mirror REG A1-A2)                            ✅ t�
 | 1.1 | 12/07/2026 10:40 | Giai đoạn 2 (Search) + Giai đoạn 3 (Select) DONE. Thêm 3 Function mới: `PathMatchesQuery` (Pure), `BuildSearchOverride`, `GetParentPath` (Pure, hỗ trợ bug 2.3). `RefreshVisibleRows` ghép xong nhánh search (as-built thật, không còn ⚠️ SUY LUẬN) — `SetExpanded` bỏ hardcode `True`, dùng chung công thức `Array_Contains(ExpandedFolders,Path)` cả 2 nhánh. Thêm Event `SB_SearchFolder.OnSearchTextChanged`. Thêm class var `CurrentSearchFolder` (thay Local `QueryStr`). Bug fix: 2.1 (`PathMatchesQuery` dùng `DisplayLabel` thay `Path` đầy đủ), 2.3 (`bShow` thêm điều kiện qua `GetParentPath` để lộ con khi manual-expand trong lúc search). Test mục 1-10 PASS hết. |
 | 1.2 | 12/07/2026 16:03 | Giai đoạn 4 (Chốt sổ) — gỡ cờ ⚠️ SUY LUẬN của `IsPathVisible`: thay bằng node flow as-built đầy đủ (K2Node export xác nhận). Loop = `ForEachLoopWithBreak` (thoát sớm khi gặp tổ tiên chưa mở), `CurrentPrefix` build tích lũy qua từng segment, bỏ qua segment cuối (chính node). Không đổi hành vi — chỉ hoàn thiện tài liệu. |
 | 1.3 | 13/07/2026 | **2d Phần 2 (rename host) + Card 1 (current tag/select) DONE.** Var mới `CurrentPath`/`bShowCurrentTag`. Dispatcher mới `OnRequestCommitRename`; `OnFolderSelected` xác nhận thật (gỡ cờ SUY LUẬN). Function mới `BeginRenameOnPath` (tìm row qua `GetRowPath()`, gọi `EnterRenameMode`) + `ExpandToPath` (Card 1, chạy hết mảng — khác `BuildSearchOverride`). `RefreshVisibleRows`: thêm `Row.SetCurrentTag`/`Row.SetSelectedHighlight` ngay sau `SetNode`, thêm bind `Row.OnRowRenameCommitted`→`HandleRowRenameCommitted`. `HandleRowSelected`: xác nhận thật + thêm `RefreshVisibleRows()` TRƯỚC `Broadcast`. Custom Event mới `HandleRowRenameCommitted` (relay `OnRequestCommitRename`). [BUG-FIX] `SetSelectedHighlight` trước đó so sai biến (dùng chung so sánh với nhánh CurrentTag) — tách riêng so với `SelectedPath`. Test PASS: Phần 2 (1,2), M1-M6, 0.3. Xóa "Chưa build". |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3b - Combo lưu spawn thay combo]] · [[Luồng 3c - Inventory + Cây thư mục]]
+
+**Gọi / điều khiển →**
+- [[WBP_FolderPickerRow]] — tạo + nghe từng hàng folder · Create WBP_FolderPickerRow, Bind OnRow… ✓K2
+
+**← Được gọi bởi**
+- [[WBP_SaveComboDialog]] — nhúng cây thư mục · Picker, ExpandToPath()
+- [[WBP_MoveToFolderDialog]] — nhúng + nghe cây thư mục · Picker, Bind OnFolderSelected
+
+<!-- BRAIN:END -->

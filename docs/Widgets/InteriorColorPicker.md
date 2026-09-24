@@ -177,3 +177,18 @@ Case #9 (regression guard SetColor achromatic) sửa so với task card gốc v1
 |------|---------|----------|
 | 14/09/2026 | 1.0 | Tạo mới. G7.0a SpikeGate ĐÓNG — GO (PASS). 3 primitive Slate sống packaged Shipping, 10/10 case. Package ở project standalone riêng (né precompiled-manifest lỗi kiểu Gate 1.5). Build.cs +Engine. Chi tiết: `01_Session_State.md`, `DEVIATIONS.md`, `PROGRESS.md`. |
 | 24/09/2026 | 1.1 | U2.5 fix: `SetColor` + 2 handler lưu `InitialColor` → bánh xe khớp màu khi `SetColor` gọi trước lúc widget dựng. C1–C5 PASS. Git local `ce51d9f` (baseline `84d380b`). |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3e - Vật liệu Material]]
+
+**← Được gọi bởi**
+- [[WBP_ParamColorRow]] — nhúng picker, gọi SetColor/GetColor + nghe 3 dispatcher · InteriorColorPicker (UInteriorColorPickerWidget)
+
+<!-- BRAIN:END -->

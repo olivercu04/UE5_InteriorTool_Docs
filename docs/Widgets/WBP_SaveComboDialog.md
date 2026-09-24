@@ -196,3 +196,22 @@ Remove from Parent
 | 13/07/2026 | 2.0 | **C5.8 Wire Save.** Xoá hẳn: `CMB_Folder`, `BTN_NewFolder`, `TextBox_FolderPath`, `HB_Folder_Row`, var `bIsCreatingNewFolder`, pin `ExistingFolders` (Expose on Spawn), đoạn Event Construct cũ (CLEAR Options + ForEach ExistingFolders). Thêm: var `Picker : WBP_FolderTreePicker` (SizeBox ~180px, compact); `BTN_AddFolder` (text "+ Thư mục mới"); dispatcher `OnRequestCreateFolder(ParentPath)`; `BTN_AddFolder.OnClicked` broadcast `OnRequestCreateFolder(Picker.SelectedPath)`; `BTN_Confirm` đổi nhánh folder sang `GET Picker.SelectedPath`. `TagVocabulary`/field Name-Description-Tags/`ValidateComboName`/`ParseTags` giữ nguyên. Test PASS: S6a, S6c. S6b [SCOPE — không áp dụng]. |
 | 07/08/2026 | 2.1 | **T3 Save As/Save Đè — ĐÓNG.** Thêm 8 Expose on Spawn (`bOverwriteAllowed`/`OverwriteComboID`/`OverwriteName`/`DisabledReason`/`PrefillName`/`PrefillFolder`/`PrefillDesc`/`PrefillTagsText` — ⚠ hạ tầng dựng từ trước phiên T3 theo 7b.4/7c, lần đầu phân phối vào file này); `Border_OverwriteWrap`+`BTN_Overwrite` (Layout); `BTN_Confirm` đổi text → "Lưu thành combo mới…". Function mới `RefreshButtonStates()` (nguồn duy nhất quyết định 2 nút, cả 2 xám khi tên rỗng). `ValidateComboName` thay thân hoàn toàn → gọi `RefreshButtonStates`. `Event Construct` dựng lại toàn bộ (bản 13/07 bị mất không ghi log) — prefill 3 ô + label `BTN_Overwrite` + `RefreshButtonStates()` + bind `OnTextChanged`. `BTN_Overwrite.OnClicked` mới — Branch `bOverwriteAllowed`: True→Print debug (T4 mở dispatcher thật); False→bản copy độc lập luồng `BTN_Confirm` (Save As), KHÔNG dùng chung hàm (KP3). Đóng `Bug-SaveConfirm-EmptyName` (`Bugs/Open_Bugs.md`). Test PASS 6/6 case + 2 câu hiểu bài. Nguồn: command block 07/08/2026, K2Node export + test tay. |
 | 07/08/2026 (15:40) | 2.2 | **T4 Overwrite Flow — ĐÓNG.** Dispatcher mới `OnDialogConfirmedOverwrite(ComboID, ComboName, FolderPath, Description, Tags)`. `BTN_Overwrite.OnClicked` nhánh `True`: XÓA Print debug `"T3-OVERWRITE"`, thay bằng `ParseTags` + `CallDelegate OnDialogConfirmedOverwrite(...)` + `Remove from Parent` — cấu trúc nhánh `False` (Save As, KHÔNG dùng chung hàm với `BTN_Confirm`) giữ nguyên. Test PASS 6/6 case (`Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7d.5, bao gồm S8 mix combo+mesh rời) + 2 câu hiểu bài. Nguồn: `DELTA_07-08-2026_T4_Overwrite.md` (Opus). |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3b - Combo lưu spawn thay combo]]
+
+**Gọi / điều khiển →**
+- [[WBP_FolderTreePicker]] — nhúng cây thư mục · Picker, ExpandToPath()
+- [[WBP_FurnitureInventory]] — báo tin: bấm Lưu / Ghi đè / Huỷ · Broadcast
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — mở + nghe dialog lưu combo · SaveComboDialogRef, Bind 4 sự kiện
+
+<!-- BRAIN:END -->

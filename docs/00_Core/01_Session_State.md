@@ -28,9 +28,11 @@
 
 **Last verified (tiếp):** 24/09/2026 16:10 — **U2.4 + U2.5 ĐÓNG — PASS. Câu hỏi nhị phân U2 = XANH** (undo param đảo đúng giá trị, KHÔNG respawn, slot/Inspector/gizmo còn nguyên; redo đúng). Build: session vars + `ApplyParamCommand`/`Commit`/`Begin`/`Cancel` (thứ tự theo phụ thuộc — D-5) + 4 Cancel seam + 2 handler Begin + Commit rewire + seam #6 `OnHistoryChanged`. Dọc đường đóng thêm: **B-gizmo** (toggle), **seed/Before 0-trắng** (C++ reader đọc MI, git `c23b585`), **bánh xe màu đứng trắng** (`InteriorColorPicker.SetColor`). Merge canonical: `BP_UndoManager` v1.21, `WBP_FurnitureInventory` v3.33, 2 row v1.2, `BP_FurnitureInputManager` v3.9, `MaterialSlotService_Reference`, `InteriorColorPicker` v1.1, `Architecture_Map` v1.3, `DEVIATIONS` D-5..D-13, `Open_Bugs`, `Learning_System`, `AI_Implementation_Rules` v2.23. ⚠ Chưa soi K2 export phiên này.
 
+**Last verified (tiếp):** 24/09/2026 17:40 — **U2 ĐÓNG HẲN.** U2.6 History-UI PASS (broadcast `OnHistoryChanged` đủ 5 chỗ; HISTUI-01/02/03 PASS; `JumpToHistoryIndex` ✓K2). U2.7: Print tạm dọn hết + smoke PASS; `CommitInteractiveEdit`/`BeginInteractiveEdit` ✓K2; doc as-built đủ (`Data_Structures`, `Testing` v1.2, W1–W7, QĐ6/hướng B/Đ12 vào DEVIATIONS); **§11 kiểm tra hiểu PASS 7/7** (`Learning_System.md`). `S7G7T4b` = absorbed by U2. Plugin `InteriorColorPicker` có git local (`ce51d9f`). Next: **Opus lập task card U3**.
+
 --- hôm này là ngày thứ 6, sau vài ngày mưa tầm tã, hôm nay là ngày đẹp trời
 
-Current: Sprint 7 tạm DỪNG ở G7 — đang xây **Undo Architecture Foundation** (T0→U1→U2→U3). **T0, U1 ĐÓNG.** U2 theo task card `Sprints/Sprint7/21-09-2026_U2_HistoryMutationBoundary_TaskCard.md` — **U2.0→U2.5 ĐÓNG (24/09, câu hỏi nhị phân XANH)**, đang ở **U2.6 — History-UI readiness** (broadcast `OnHistoryChanged` đủ chỗ + PIE HISTUI-01..03), rồi U2.7 (dọn Print + doc + §11) → đóng U2 → U3.
+Current: Sprint 7 tạm DỪNG ở G7 — đang xây **Undo Architecture Foundation** (T0→U1→U2→U3). **T0, U1, U2 ĐÓNG (U2: 24/09).** Tiếp: **U3 — Context / ChangeSet** (chưa có task card — Opus lập từ `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md` §U3). Câu hỏi nhị phân U3: *undo xong (kể cả undo Move/snapshot) slot-highlight và Inspector còn nguyên?*
 > Giữ đúng 1 dòng. Đổi trạng thái → sửa tại chỗ, không thêm dòng mới.
 
 ---
@@ -42,9 +44,9 @@ Current: Sprint 7 tạm DỪNG ở G7 — đang xây **Undo Architecture Foundat
 | **Nền làm việc** | Project tổng tháng 6 (clone MỚI của master, tích hợp 24/08). Code trực tiếp tại đây. `FurnitureTool_Standalone` chỉ còn vai trò lịch sử/đóng gói cũ. |
 | **Phase** | Hướng Gate 2 (bản packaged Shipping thật) — **tạm rẽ nhánh xây Undo Architecture Foundation trước khi quay lại Sprint 7** |
 | **Milestone** | Undo Architecture Foundation (T0→U1→U2→U3) — chuẩn bị nền cho Sprint 7 G8-G10 + mọi continuous-edit sau này (transform gizmo...) |
-| **Current Task** | **U2 — History đa hình + Mutation Boundary + Param Command.** Hướng B (additive hybrid). **U2.0→U2.5 ĐÓNG (24/09)** — undo param targeted qua Resolver, không respawn. Đang ở **U2.6 — History-UI readiness**. As-built đọc ở `BP_UndoManager.md` v1.21 + `WBP_FurnitureInventory.md` v3.33 (task card là PLAN — KHÔNG sửa ngược). |
+| **Current Task** | **U2 ĐÓNG (24/09/2026).** Undo param targeted qua Resolver, không respawn; History-UI API sẵn sàng. **Chưa bắt đầu U3** — chờ task card. As-built: `BP_UndoManager.md` v1.22, `WBP_FurnitureInventory.md` v3.33. |
 | **Task Source** | `Plans/18-09-2026_UndoArchitecture_Foundation_v1.md` (delta, chưa merge canonical — merge từng phần khi mỗi gate as-built). |
-| **Next** | **U2.6 — History-UI readiness** (task card §6, việc tay cuhoang + Sonnet dẫn): (1) broadcast `OnHistoryChanged` ở cuối `AppendEntry` (phủ Capture + Commit) và `JumpToHistoryIndex` — hiện CHỈ có ở nhánh Command của Undo/Redo (D-10); cân nhắc nhánh Snapshot sau `OnRestoreCompleted`; (2) accessors §6 (`GetHistoryCount/CurrentIndex/Labels/Kinds/JumpToHistoryIndex`) đã build từ U2.3, CHƯA PIE → chạy HISTUI-01 (labels khớp count), HISTUI-02 (Jump = undo/redo tuần tự), HISTUI-03 (đếm broadcast). **Rồi U2.7:** dọn Print tạm (BEGIN/COMMIT/CANCEL/UNDO/REDO) + doc as-built còn thiếu (`Data_Structures.md` S_SceneSnapshot V5 + enum `E_ParamSessionPhase`; `Rules/Testing.md` dòng U2) + **§11 kiểm tra hiểu bài** (4 câu task card + 3 câu nợ trong `Learning_System.md` phiên 24/09) → ĐÓNG U2 → **U3** (Context/ChangeSet — đóng nốt `Bug-ParamUndo-SlotContextLost` phần undo snapshot). **Treo nhỏ:** watch-item T5 (phím tắt đổi tab lúc đang giữ slider — chưa test; nếu session mồ côi → thêm Cancel seam `SwitchInventoryMode` + guard Sess_Active, D-11);  nên soi K2 1-2 hàm mới (`CommitInteractiveEdit`, `BeginInteractiveEdit`) để nâng mức bằng chứng. |
+| **Next** | **1. Opus lập task card U3 — Context / ChangeSet** (plan §U3: `TargetPath` + ChangeSet + Inspector giữ context; ~1 buổi). Đóng `Bug-ParamUndo-SlotContextLost` phần còn lại (undo SNAPSHOT như Move vẫn respawn → mất slot/Inspector). Trước khi đụng code: backup `_preU3` + git commit mốc (plan §bước 0). Opus nên đọc: `BP_UndoManager.md` v1.22, `WBP_FurnitureInventory.md` v3.33 (`ApplyRestoredActor`, `OnMeshSelected` Equal-guard), `DEVIATIONS.md` D-5..D-13 + D-11 (ceiling chống ghi mồ côi dựa vào RefreshParamPanel — U3 giữ slot sau undo snapshot sẽ đổi điều kiện này, phải rà lại). **2. Treo nhỏ (không chặn):** watch-item phím tắt đổi tab lúc đang giữ slider (chưa test — nếu session mồ côi → Cancel seam `SwitchInventoryMode` + guard Sess_Active); tùy chọn nối `Struct Out → AppendEntry` trong `CommitInteractiveEdit` cho dễ đọc; nợ hiểu nhẹ "undo command dùng Before của chính nó" hỏi lại ở U3. **Sau U3:** plan cho phép quay lại Sprint 7 G8–G10 (hoặc F-Migration — Opus + cuhoang quyết). |
 | **Blockers** | Không. Sprint 7 G8-G10 **tạm hoãn có chủ đích** (không phải bị chặn) — chờ nền Undo mới xong để tránh xây thêm trên kiến trúc sắp thay. `Bug-ParamUndo-SlotContextLost` đóng khi U3 PASS. `S7G7T4b` đã xác định **absorbed by architecture**, không còn là task riêng. |
 
 Thứ tự tổng tới Gate 2: **Sprint 7 (Material v1.2) → Sprint 6 (Polish UX) → Gate 2**
@@ -83,7 +85,7 @@ ro đụng đồ đồng nghiệp.
 | **S7G7T2** | `WBP_ParamScalarRow` + `WBP_ParamColorRow` (nhúng `UInteriorColorPickerWidget`) | ĐÓNG — PASS toàn bộ (15/09). +`HexToLinearColor` (C++). |
 | **S7G7T3** | `WBP_MaterialParamPanel` (T3.1) + `WBP_MaterialInspector` (T3.2) + tích hợp `RefreshParamPanel`+lifecycle+5 seam (T3.3+T3.4) | **ĐÓNG HẲN — PASS (18/09).** T3.1/T3.2/T3.3/T3.4 đều PASS. `Bug-MaterialEdit-EnableState` cũng ĐÓNG cùng ngày — seam #1/#2/#3 coi như đóng hẳn. |
 | **S7G7T4** | ⭐ Thân thật 4 delegate handler (Scalar/Color Preview+Commit) + `Handle_ResetParamsRequested` → `MaterialSlotService`. **INTEGRATION GATE.** | **ĐÓNG — PASS (18/09).** Live-preview + undo/redo VALUE đúng. Dispatcher 2-input `(ParamName,Value)`. Lộ giới hạn Hướng 1 (mất slot-context sau undo, chấp nhận). seam #6 DONE. seam #7 (`EndParamSession`) tách sang T4b. |
-| **S7G7T4b** | Coalescing undo (gộp nhiều lần kéo→1 entry) + `EndParamSession`/`ParamSession_*` trên `BP_UndoManager` (ranh giới Undo session khi đổi selection). | Chưa bắt đầu. **LƯU Ý:** phiên redesign undo (Hướng 3) đi TRƯỚC — có thể đổi cả cách tiếp cận T4b. |
+| **S7G7T4b** | Coalescing undo + `EndParamSession` | **ABSORBED by U2 (24/09/2026)** — Interactive Edit Session tự sinh đúng 1 command lúc thả (100 preview → 1 entry, SESS-02/03 PASS); Cancel seam thay `EndParamSession`. Không còn là task riêng. |
 | **S7G7T5** | Multi-select áp param cả cụm theo SlotName/ParamName + test từ điển tạm 2 dòng | Chưa bắt đầu |
 
 Plan T1-T5 (PLAN, chưa as-built): `Sprints/Sprint7/15-09-2026_S7G7_T1-T5_ExecutionPlan.md`. Task
@@ -101,7 +103,7 @@ sau undo = lý do làm Hướng 3 trước.
 
 ## Việc tiếp theo (chưa làm)
 
-0. **[ĐANG LÀM — 24/09] U2.6 → U2.7 → U3** — xem ô **Next** ở bảng "Đang ở đâu". Mục 1 dưới đây là trạng thái 18/09, đã được hiện thực hóa thành Undo Architecture Foundation (T0/U1/U2 xong phần lớn) — giữ làm lịch sử.
+0. **[24/09 — U2 ĐÓNG] Tiếp: task card U3** — xem ô **Next** ở bảng "Đang ở đâu". Mục 1 dưới đây là trạng thái 18/09, đã được hiện thực hóa thành Undo Architecture Foundation (T0/U1/U2 xong phần lớn) — giữ làm lịch sử.
 1. **[HISTORICAL 18/09 — đang thực hiện qua T0→U3] Phiên mới — REDESIGN UNDO (Hướng 3).** Param-undo riêng (command-pattern old/new
    value per slot-param), KHÔNG đi qua full scene snapshot. Mục tiêu: undo param → đảo đúng 1 giá
    trị, giữ nguyên actor + selection + slot-highlight + Inspector. Bối cảnh phải đọc trước:
@@ -149,20 +151,11 @@ sau undo = lý do làm Hướng 3 trước.
 ## Recent changes (tối đa 5, mới nhất trên cùng)
 > Chỉ để định vị "vừa xong gì". Lịch sử đầy đủ → PROGRESS.md + Git.
 
+- 24/09 (chiều) — **U2 ĐÓNG HẲN.** U2.6 HISTUI-01/02/03 PASS, U2.7 dọn Print + smoke PASS + ✓K2 Commit/Begin/Jump + §11 7/7. Next: task card U3.
 - 24/09 — **U2.4 + U2.5 ĐÓNG — câu hỏi nhị phân U2 XANH.** Interactive Edit Session (Begin/Commit/Cancel) + 4 Cancel seam + seam #6 refresh panel. Đóng B-gizmo (toggle), seed/Before 0-trắng (C++ `c23b585`), bánh xe màu (`InteriorColorPicker` v1.1). D-5..D-13. Next: U2.6.
 - 24/09 — **U2.3 PARITY GATE ĐÓNG — PASS.** Tách `CaptureSnapshot` → `BuildSceneSnapshotBase`+`AppendEntry` (CaptureSnapshot còn 2 node) + dispatch `EntryKind` vào `UndoLastAction`/`RedoLastAction` (nhánh command chưa chạy). W7 (`Idx=Len−1`) + REG-01..05 PASS toàn bộ + trim MaxSteps đúng. §6 History-UI accessors build sẵn (kéo lên sớm, chưa PIE). Lỗi Undo đọc-sau-giảm đã fix. Merge: `BP_UndoManager.md` v1.20, `DEVIATIONS.md` D-1..D-4, `Learning_System.md` (async-restore). Next: U2.4 Interactive Edit Session.
 - 22/09 — **U2.2 ĐÓNG.** `E_HistoryEntryKind` (enum) + `S_SceneSnapshot` +`EntryKind`+`ParamCmd`, Version→5 (cuhoang, tay, Blueprint Editor). W1 xác nhận: `FMaterialParamCommand` hiện đúng trong Struct picker. Compile sạch, smoke PIE (Move→Undo) PASS. Struct-only, chưa đụng logic node. Merge canonical: `BP_UndoManager.md` v1.19. Next: U2.3 PARITY GATE.
-- 22/09 — **U2.0 + U2.1 ĐÓNG.** U2.0: backup `preU2` (tay) + git `a504560`. U2.1: `FMaterialParamCommand`
-  + `UParamCommandLibrary` (Build*/IsNoOpCommand/RefuseTexture) + `MaterialSlotService` +`GetSlot*Param`
-  (reader Before, không side-effect). Spec 4/4 xanh, negative control PASS. Git `3fd1b2a`. Merge:
-  `Data/MaterialSlotService_Reference.md`. Next: U2.2 (struct/enum, cuhoang trong Editor).
-- 18/09 (tiếp 2) — **S7G7T4 GATE ĐÓNG — PASS.** 5 handler thật nối `MaterialSlotService`
-  (Scalar/Color Preview+Commit + ResetParams). Dispatcher 2 row nâng 2-input `(ParamName,Value)` (v1.1).
-  Live-preview + undo/redo VALUE PASS. Bug B3 (sót wire ParamName → preview màu hỏng ngầm) fix. **Lộ
-  giới hạn kiến trúc Hướng 1:** undo mất slot-highlight (Undo=destroy+respawn actor) — `Bug-ParamUndo-
-  SlotContextLost` backlog, cuhoang chốt phiên sau **đập-xây-lại hệ undo (Hướng 3)**. Merge: `WBP_
-  FurnitureInventory.md` v3.32, 2 row v1.1, `DEVIATIONS.md`, `Open_Bugs.md`. Bài học phiên: đoán sai
-  giả định object-identity qua undo 3 lượt → xem `Rules/Learning_System.md`.
+- 22/09 — **U2.0 + U2.1 ĐÓNG.** Backup `preU2` + git `a504560`; `FMaterialParamCommand` + `UParamCommandLibrary` + `MaterialSlotService` +`GetSlot*Param`. Spec 4/4 xanh + negative control. Git `3fd1b2a`.
 
 ---
 

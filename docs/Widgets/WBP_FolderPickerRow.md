@@ -133,3 +133,21 @@ Branch(bSelected) True→ Set Background Color(BTN_Name, R=0.2 G=0.4 B=1.0 A=0.4
 | 1.1 | 11/07/2026 13:14 | Giai đoạn 1 bug fix: `SetNode` thêm `SET RowNode = Node` (thiếu hoàn toàn ở bản đầu — root cause bug #2) + thêm `SetVisibility(BTN_Arrow,...)` song song `TXT_Arrow` ở cả 2 nhánh Branch. Đính chính lần 2 "Button handlers": as-built THẬT là nối THẲNG `OnClicked → Call dispatcher` (không Custom Event trung gian) — xác nhận qua export K2Node 11/07. |
 | 1.2 | 12/07/2026 10:40 | `SetSearchHighlight(bMatch)` DONE (Giai đoạn 2) — 2 class var mới `Color Match`/`Color Default` + hàm dùng `f Set Color and Opacity` set màu `TXT_Name`. Xóa khỏi "Còn nợ". |
 | 1.3 | 13/07/2026 | **2d Phần 1 (rename host) + Card 1** — `TXT_Name`→`EditableLabel_Name` (`WBP_EditableLabel`); `SetNode`/`SetSearchHighlight` relay qua `EditableLabel_Name.SetLabel`/`SetLabelColor` (không đục thẳng widget con). Thêm `EnterRenameMode` (relay), `Event Construct` bind `OnLabelRenameCommitted`→`HandleLabelCommitted`, `HandleLabelCommitted` broadcast `OnRowRenameCommitted`, dispatcher `OnRowRenameCommitted` mới, getter `GetRowPath()` (Pure). Card 1: thêm `TXT_CurrentTag` + 2 Custom Event `SetCurrentTag`/`SetSelectedHighlight`. Test PASS Task Card 2d Phần 1 (1,2,5,6,0.2,0.3). Xóa "Còn nợ". |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]]
+
+**Gọi / điều khiển →**
+- [[WBP_EditableLabel]] — nhúng + đổi màu nhãn · EditableLabel_Name, SetLabelColor() ✓K2
+
+**← Được gọi bởi**
+- [[WBP_FolderTreePicker]] — tạo + nghe từng hàng folder · Create WBP_FolderPickerRow, Bind OnRow… ✓K2
+
+<!-- BRAIN:END -->

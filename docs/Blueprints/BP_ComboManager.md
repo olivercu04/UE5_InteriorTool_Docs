@@ -850,3 +850,32 @@ không giật thêm dù RT giờ 2048²).
 | 07/08/2026 15:40 | 1.16 | **T4 DONE — Overwrite Flow (Save As/Save đè).** `SaveComboFromSelection` +2 param `bOverwrite : Bool` (default false) / `OverwriteComboID : String` (default ""). Bước 5a: thay `SET SaveCombo_ComboID = "combo_"+NewGuid()` đơn lẻ bằng `Branch(bOverwrite)` — True→`SET SaveCombo_ComboID = OverwriteComboID`, False→node cũ giữ nguyên (Save As không đổi hành vi, verify qua test case 4). Event Tick tail: chèn `InvalidateThumbnail(SaveCombo_ComboID)` NGAY TRƯỚC `Broadcast OnComboLibraryChanged` có sẵn, chạy VÔ ĐIỀU KIỆN (không Branch theo `bOverwrite` — Save As = no-op vô hại). `FolderPath` (Bước 5e) không đổi — luôn ghi từ param, path vật lý luôn khóa theo `ComboID` (`GetCombosDir()/<ComboID>.json`) nên đổi Folder lúc Ghi đè không sinh file mồ côi (verify qua test case 5). Test PASS 6/6 case (bao gồm S8 — mix combo+mesh rời, nuốt hết vào combo khớp Save As) + 2 câu hiểu bài. Nguồn: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7d. |
 | 08/08/2026 | 1.17 | T5 D2 (`Bug-ComboCategoryHardcode` fix): xóa DefaultValue `"MyCombo"` ở pin `Category`, node `Make FComboData` (Bước 5e) — để rỗng. Verify `.json` ra `"category": ""`. Test lại A3+A4 PASS. Nguồn: `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7e.4 (D2). |
 | 07/09/2026 | 1.18 | S7.G3 Item 4: `FComboItemData` +field `MaterialSlots` (C++, thứ tự include `MaterialSlotService.h` trước `.generated.h`). `SaveComboFromSelection` Bước 5d +GET `MaterialSlots` vào field mới, giữ nguyên loop `MaterialOverrides_SaveCombo` cũ (KP3). `SpawnComboByID` Sub-step C: Branch `Material Slots.Length>0` — SET NewActor.MaterialSlots (đường mới) / `F_ApplyMaterialOverrides` giữ nguyên làm đường legacy combo cũ. Test PASS combo 4 ghế 2 material + combo cũ specimen. Nguồn: `07-09-2026_S7G3_Item1-4_Delta.md` mục B3. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3b - Combo lưu spawn thay combo]] · [[Luồng 3d - Save Undo khởi động]] · [[Luồng 3e - Vật liệu Material]]
+
+**Gọi / điều khiển →**
+- [[BP_FurnitureInputManager]] — giữ tham chiếu + gọi huỷ cụm cũ · InputManagerRef, DestroyComboCluster()
+- [[BP_UndoManager]] — giữ tham chiếu + gọi quay lui · UndoManagerRef, RestoreCurrentSnapshot()
+- [[BP_FurnitureActor]] — gán vật liệu cho đồ · F_ApplyMaterialOverrides()
+- [[UComboThumbnail]] — chụp ảnh bìa combo · BeginComboCapture / FinishComboCapture ✓K2
+- [[ComboSerializer_Reference]] — ghi/đọc file + thư mục combo · save / load
+- [[Foff_GameInstance]] — hiện thông báo · GameInstance.ToastRef.ShowToast()
+- [[WBP_FurnitureInventory]] — báo tin: thư viện combo đổi · Broadcast OnComboLibraryChanged
+- [[BP_UndoManager]] — quay lui khi đổi combo lỗi · RestoreCurrentSnapshot()
+- [[BP_FurnitureActor]] — gán vật liệu khi spawn combo · F_ApplyMaterialOverrides()
+
+**← Được gọi bởi**
+- [[BP_FurnitureInputManager]] — ra lệnh đổi combo · ExecuteComboReplace() → ReplaceCombo() ✓K2
+- [[WBP_FurnitureInventory]] — giữ tham chiếu + xin ảnh bìa · ComboManagerRef, GetComboThumbnail()
+- [[BP_ComboItemView]] — dùng chung bộ nhớ ảnh bìa · Cmb_ThumbnailCache
+- [[WBP_FOFF_ToolDemo]] — sinh ra (⚠ doc còn ghi Level BP) · Spawn
+
+<!-- BRAIN:END -->

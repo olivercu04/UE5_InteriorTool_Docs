@@ -104,3 +104,21 @@ Broadcast OnNodeRenameCommitted(GET FolderPath, NewName)
 | 1.1 | 18/06/2026 — TreeNode Highlight | `RefreshDisplay` thêm param `bIsActive: Boolean` → `SetBackgroundColor(Button_58)`. Phối hợp với `UpdateFolderHighlights` + `IsPathActive` trong `WBP_FurnitureInventory`. |
 | 1.2 | 26/06/2026 — Right-click dispatcher | Thêm `OnNodeRightClicked(FolderPath: String)` dispatcher. Override `On Mouse Button Down`: branch Right Mouse Button → Broadcast dispatcher → Handled; False → Unhandled. |
 | 1.3 | 27/06/2026 — C5.2 Inline Rename | TextBlock_71→`EditableLabel_Name` (WBP_EditableLabel). Dispatcher `OnNodeRenameCommitted(OldPath, NewName)`. Custom Event `EnterRenameMode(Siblings)` → relay vào `EditableLabel_Name.EnterEditMode`. Event Construct: Bind `EditableLabel_Name.OnLabelRenameCommitted` → `HandleLabelCommitted` → Broadcast `OnNodeRenameCommitted`. RefreshDisplay: `SetText(TextBlock_71)` → `EditableLabel_Name.SetLabel`. Additive — furniture/material unaffected. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]]
+
+**Gọi / điều khiển →**
+- [[WBP_EditableLabel]] — nhúng + nghe nhãn sửa tên · EditableLabel_Name, Bind OnLabelRenameCommitted
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — tạo + nghe cây folder · Create + Bind OnNodeSelected / RightClicked / Rename
+
+<!-- BRAIN:END -->

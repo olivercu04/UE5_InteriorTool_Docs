@@ -1,5 +1,6 @@
 # 05 — Data Structures
 **Mục đích:** Tham chiếu đầy đủ struct, enum, variables.
+**Cập nhật (tiếp) 24/09/2026 (U2.7):** `S_SceneSnapshot` +V4/V5 fields (`EditModeStackSnapshot`, `EntryKind`, `ParamCmd`); +enum `E_HistoryEntryKind`, `E_ParamSessionPhase`, `EParamCmdType` (C++); +mục `FMaterialParamCommand`. Nguồn as-built: `Blueprints/BP_UndoManager.md` v1.22, `Data/MaterialSlotService_Reference.md`.
 **Cập nhật:** 14/07/2026 — đối chiếu C++ thật (`ComboTypes.h`/`ComboSerializer.h`), sửa mảng Combo lỗi thời (3+ tuần chưa cập nhật): `S_FolderTargetEntry`→`S_FolderTreeNode`, +`S_GroupData.SourceComboID`, `S_ComboMeshData`/`DT_ComboMeshCatalog`/`S_ComboJSONEntry` (planned, chưa từng xây) → `FComboData`/`FComboGroupData`/`FComboItemData` thật + JSON ví dụ, sửa vị trí function Combo (BP_ComboManager, không phải InputManager)
 **Cập nhật (tiếp) 24/08/2026:** thêm `IA_RMBPress`/`IA_RMBRelease` vào mục INPUT ACTIONS — xác nhận qua K2Node export (Right-click handler T4, `BP_FurnitureInputManager.md`). Ghi nhận mâu thuẫn chưa giải quyết với `IA_RightClick` đã có sẵn ở "Mới — Sprint 2".
 **Cập nhật (tiếp) 11/09/2026:** đóng doc debt — bảng `VARIABLES — BP_FurnitureActor` thêm `MaterialSlots` (tồn tại thật từ 05/09, chưa từng liệt kê) + 3 biến `Apply_Pending*` (S7.G5.2). Thêm mục mới "BP_FurnitureActor Custom Events" (danh sách Custom Event async on-actor, gồm `ApplyMaterialByRowName` mới). Nguồn: `11-09-2026_S7G5_G5.1-G5.3_AsBuilt_Delta.md`.
@@ -48,6 +49,16 @@
 | Groups | Array of S_GroupData | [] | Mới Sprint 3 |
 | EditingGroupID | String | "" | Mới Sprint 4 |
 | ActiveMode | E_ActiveMode | Select | Existing |
+| EditModeStackSnapshot | Array of String | [] | **V4** (Sprint 4 A12) — thay cho dòng `EditingGroupID` ở trên (dòng đó là plan cũ, as-built dùng stack) |
+| EntryKind | E_HistoryEntryKind | Snapshot | **V5** (U2.2, 22/09/2026) — Snapshot \| ParamCommand |
+| ParamCmd | FMaterialParamCommand (C++) | rỗng | **V5** (U2.2) — chỉ có nội dung khi EntryKind=ParamCommand (từ U2.5) |
+
+> Version hiện tại = **5**. Bảng field đầy đủ + lịch sử version: `Blueprints/BP_UndoManager.md` §S_SceneSnapshot (canonical thắng file này).
+
+### FMaterialParamCommand — C++ USTRUCT (U2.1, `ParamCommandTypes.h`, plugin FurnitureToolkit)
+`EntityID:FString` (PersistentID) · `SlotName:FString` · `SlotHintIndex:int32=-1` · `ParamName:FName` · `Type:EParamCmdType` ·
+`BeforeScalar/AfterScalar:float` · `BeforeColor/AfterColor:FLinearColor=White`. Chi tiết: `Data/MaterialSlotService_Reference.md`.
+Dùng ở: `S_SceneSnapshot.ParamCmd`, `BP_UndoManager.Sess_Cmd`.
 
 ### S_ClipboardEntry (mới — Sprint 1)
 
@@ -194,6 +205,15 @@ Mảng phẳng `TArray<FString>` các path folder đã biết (kể cả cấp c
 
 ### E_AlignReference (mới — Sprint 6)
 - BoundingBox | Primary
+
+### E_HistoryEntryKind (U2.2, 22/09/2026 — BP enum)
+- Snapshot | ParamCommand  — loại entry trong history (`S_SceneSnapshot.EntryKind`)
+
+### E_ParamSessionPhase (U2.4, 24/09/2026 — BP enum)
+- None | Previewing  — trạng thái phiên chỉnh param (`BP_UndoManager.Sess_Phase`)
+
+### EParamCmdType (U2.1 — C++ UENUM, `ParamCommandTypes.h`)
+- Scalar | Color  — Texture KHÔNG có (Đ12, builder từ chối)
 
 ---
 

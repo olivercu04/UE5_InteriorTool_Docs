@@ -80,3 +80,21 @@ M1-M6 (Wire Move full flow, mirror REG A1-A2) — chi tiết xem `WBP_FolderTree
 |---|---|---|
 | 1.0 | 30/06/2026 | Khởi tạo — C5.4 Move Folder |
 | 2.0 | 13/07/2026 | **C5.8 Wire Move.** Xoá hẳn: `ScrollBox_FolderList`, `WBP_MoveFolderRow` reference, `PopulateRows`, `HandleRowSelected` (bản cũ của Dialog), var `CurrentSelectedRow`. Thêm: var `Picker : WBP_FolderTreePicker`; `InitPicker(Entries, InCurrentPath, bInShowTag)` (SET CurrentPath/bShowCurrentTag → ExpandToPath → SetFolders → reset selection → Bind OnFolderSelected); `HandlePickerFolderSelected` (Custom Event, thay `HandleRowSelected` cũ). `BTN_Confirm`/`BTN_Cancel` giữ nguyên 100%. `WBP_MoveFolderRow` SUPERSEDED (không xoá file). Test PASS: M1-M6. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]]
+
+**Gọi / điều khiển →**
+- [[WBP_FolderTreePicker]] — nhúng + nghe cây thư mục · Picker, Bind OnFolderSelected
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — mở + nghe dialog di chuyển · MoveComboDialogRef, Bind OnMoveFolderConfirmed
+
+<!-- BRAIN:END -->

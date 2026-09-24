@@ -91,3 +91,21 @@ Enhanced Input (khi LM_FurnitureInput active)
 | Ctrl+Shift+Z trigger cả Undo và Redo | Chord Action `IA_Ctrl` thỏa cho cả 2 | Trong `IA_FurnitureUndo` Started, check Shift Down → bỏ qua |
 | Was Input Key Just Pressed(Z) luôn = false | Mapping Z đơn fire trước, consume Z | Bỏ Was Input Key Just Pressed, dùng Started |
  
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3d - Save Undo khởi động]]
+
+**Gọi / điều khiển →**
+- [[BP_UndoManager]] — phím Undo / Redo · UndoLastAction() / RedoLastAction()
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — đổi bộ phím lúc mở/đóng · Add/Remove Mapping Context
+
+<!-- BRAIN:END -->

@@ -104,3 +104,26 @@ Q8: Function (pure resolver) | Cast tự guard AsActor (không cần IsValid ri�
 | 1.0 | 05/05/2026 | Logic gốc — Event Tick rebind SaveGameMenu, OnLoadButtonClicked destroy + reload, Save/Load functions |
 | 1.1 | 24/08/2026 | +mục Components — Post Process Component (Unbound=True, M_SelectionOutline) thay PostProcessVolume actor (không còn đặt sẵn trong level project tổng, Volume actor cần brush). Verify PASS trong Editor. |
 | 1.2 | 21/09/2026 | +Function `ResolveByPersistentId` (U1.4, PersistentIdentity) — full node flow, verify từ K2 export thật. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3d - Save Undo khởi động]]
+
+**Gọi / điều khiển →**
+- [[WBP_FurnitureInventory]] — gọi thoát Replace Mode · .FurnitureInventoryRef.ExitReplaceMode() ✓K2
+- [[BP_FurnitureInputManager]] — yêu cầu bỏ chọn · DeselectMesh()
+- [[BP_FurnitureActor]] — sinh / xoá đồ theo danh mục · Spawn / Destroy
+- [[SaveGameMenu]] — giữ tham chiếu menu Save · SaveGameMenuRef
+
+**← Được gọi bởi**
+- [[BP_FurnitureInputManager]] — tìm singleton, đọc tham chiếu inventory · GetAllActorsOfClass, GET FurnitureInventoryRef ✓K2
+- [[WBP_FOFF_ToolDemo]] — sinh ra · Spawn
+- [[BP_UndoManager]] — tìm lại đồ theo ID khi undo/chốt param — caller đầu tiên của Resolver · ResolveByPersistentId()
+
+<!-- BRAIN:END -->

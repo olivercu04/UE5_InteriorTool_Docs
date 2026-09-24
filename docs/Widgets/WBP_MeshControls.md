@@ -295,3 +295,23 @@ BTN_ExitFull.OnClicked     : Get All Actors Of Class(InputManager)[0] → ExitEd
 | 1.6 | 15/06/2026 — 20:30 ICT | **F1: Info bar dùng GetSelectionUnitLabel.** OnSelectionChangedInfoBar Then 1: thay inline label logic bằng call InputManager.GetSelectionUnitLabel(Primary, Count). Widget name fix: HB_SelectionInfo → Border_ET_SelectionCount, TXT_SelectionInfo → ET_SelectionCount (tên thực tế trong UE5 Blueprint). |
 | 1.7 | 17/06/2026 — Sprint D.T6 | BTN_Info: đọc RowName thay DAPath→Load. UpdateDetailPopup rewrite: bound OnSelectionChanged, nhận Primary → RowName → InitPopup(RowName). Event Construct: thêm bind UpdateDetailPopup. Fix stale popup bug (cũ: Step 11 Mouse Left Pressed đọc actor trước selection resolve). |
 | 1.8 | 24/07/2026 — C9.0c | `BTN_Replace` migrate `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`) + Pure Function `IsReplaceModeActive()`. Migration xảy ra ngoài phiên Claude Code — verify qua K2Node export thật 24/07/2026, không suy đoán. Test regression 5/5 PASS. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.5. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3e - Vật liệu Material]]
+
+**Gọi / điều khiển →**
+- [[BP_FurnitureInputManager]] — nghe chọn đồ / đổi chế độ + gọi hàm edit-mode · Bind OnSelectionChanged, OnEditModeChanged ✓K2
+- [[BP_FurnitureActor]] — đọc mã đồ · Cast + GET RowName
+- [[WBP_DetailPopup]] — tạo popup chi tiết khi bấm Info · Create WBP_DetailPopup
+
+**← Được gọi bởi**
+- [[BP_FurnitureInputManager]] — giữ tham chiếu thanh công cụ · CurrentMeshControls
+
+<!-- BRAIN:END -->

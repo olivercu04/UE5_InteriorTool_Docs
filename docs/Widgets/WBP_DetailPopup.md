@@ -228,3 +228,24 @@ Event Tick: Branch bIsDragging → Set Position = MousePos - DragOffset / Viewpo
 | 1.1 | 25/05/2026 — 17:29 ICT | BTN_ChangeMesh: thêm RefreshCardReplaceMode sau FilterByFolderPathWithUI. Fix: Regenerate phải chạy SAU populate cards |
 | 1.2 | 17/06/2026 — Sprint D.T6 | Bỏ FurnitureDA → RowData : S_FurnitureData. InitPopup(RowName, bFromScene): DT lookup thay DA load. Toàn bộ DA.* → RowData.*. BTN_BuyLink: RowData.Link. BTN_ChangeMesh: RowData.MeshFolderPath. |
 | 1.3 | 24/07/2026 — C9.0c | **BTN_ChangeMesh — REFACTOR kiến trúc**, không chỉ đổi biến. Xóa toàn bộ khối SET tay `bIsReplaceMode`/`MeshToReplace` + tự mở/filter inventory (trùng lặp `StartReplaceMode`) — gọi thẳng `StartReplaceMode(Make Array(SelectedFurnitureActor))`. **Bug fix root cause:** bản cũ SET nhầm biến `MeshToReplace` (số ít, dead code) thay vì `MeshesToReplace` (mảng, biến `F_ExecuteReplace` thực đọc) → Replace từ card không đổi mesh (guard Length>0 luôn fail). Verify qua K2Node export thật, test regression case 5 PASS. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.5. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3e - Vật liệu Material]]
+
+**Gọi / điều khiển →**
+- [[BP_FurnitureInputManager]] — vào chế độ thay đồ · StartReplaceMode() ✓K2
+- [[BP_UndoManager]] — lưu mốc khi khoá / reset scale · CaptureSnapshot(Scale)
+- [[BP_FurnitureActor]] — chỉnh scale đồ đang chọn · SelectedFurnitureActor
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — mở popup chi tiết · CurrentPopup
+- [[WBP_MeshControls]] — tạo popup chi tiết khi bấm Info · Create WBP_DetailPopup
+
+<!-- BRAIN:END -->

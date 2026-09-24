@@ -707,7 +707,7 @@ Dùng đúng tên này, KHÔNG bịa tên khác:
 | `Break <Struct>` (vd `Break MaterialParamControlRow`) | Tách struct thành các pin field riêng để đọc (`ParamName`, `ControlType`, `MinValue`...). Dùng trong `ForEach Controls` của `RefreshParamPanel`. ✅ xác nhận compile sạch + test PASS 18/09/2026 — S7G7T3 | |
 | `Set Background Color` (trên `Button`) | Đổi màu nền button runtime — dùng cho toggle highlight `BTN_MaterialEdit` (Open/Close Inspector). ✅ xác nhận hoạt động đúng 18/09/2026 — S7G7T3, KHÔNG dính bug Tint Alpha=0 từng gặp ở nút tim Favorite | `SetHighlight` (hàm KHÔNG tồn tại trên `Button` — nhầm lẫn đã gặp trong task card, xem `DEVIATIONS.md`) |
 
-| `Set members in <Struct>` (vd `Set members in MaterialParamCommand`, `Set members in S_SceneSnapshot`) | Đổi 1 vài field của struct, giữ nguyên field khác — tick field trong Details để hiện pin. Biến struct: `GET → Set members in → SET`. Pin output của hàm: nối thẳng vào input. ✅ U2.4 24/09 | ~~"SET field" trực tiếp~~ (không tồn tại); `Make <Struct>` (tạo mới, xóa field khác) |
+| `Set members in <Struct>` (vd `Set members in MaterialParamCommand`, `Set members in S_SceneSnapshot`) | Đổi 1 vài field của struct, giữ nguyên field khác — tick field trong Details để hiện pin. Pin `Struct Ref` là THAM CHIẾU: `GET <biến struct> ●→ Struct Ref` sửa THẲNG biến, KHÔNG cần node SET sau (✓K2 `CommitInteractiveEdit` 24/09). Pin output của hàm cũng sửa tại chỗ được, nhưng nên nối tiếp `Struct Out` cho dễ đọc. ✅ U2.4 24/09 | ~~"SET field" trực tiếp~~ (không tồn tại); `Make <Struct>` (tạo mới, xóa field khác) |
 | `Select Float` / `Select LinearColor` | Chọn 1 trong 2 giá trị theo Bool (Pick A). Dùng chọn Before/After, giá trị thật / fallback. ✅ U2.4 24/09 | |
 | `Is No Op Command` (C++ Pure, `UParamCommandLibrary`) | Cắm thẳng vào `Condition` của Branch — Pure, không exec pin. ✅ U2.5 24/09 | |
 | `Get Slot Scalar Param` / `Get Slot Vector Param` (C++, `MaterialSlotService`) | Đọc param trên vật liệu HIỆN TẠI của slot — MID hoặc MI gốc (từ 24/09). CÓ exec pin. Out `Out Value` + `Return Value` (false = param không tồn tại). **Thay** `Get Scalar/Vector Parameter Value` khi slot có thể chưa có MID. ✅ U2.5 24/09 | Cast MI→MID + fallback hằng số (sai cho slot chưa chỉnh) |
@@ -976,6 +976,18 @@ Sau khi 1 sprint/task lớn xong:
 | `Get Local Bounds` (StaticMeshComponent → Min, Max Vector) | Bounds trong không gian LOCAL của mesh (chưa nhân Scale/Rotation) — dùng trong `CalculateComboBoundingExtent` để đo kích thước vật lý thật, không bị Actor Rotation làm phồng to (khác `Get Actor Bounds` là World AABB) — Dimension Fix, 22/07/2026 | ⏳ Cần cuhoang confirm trong project |
 
 ---
+
+## Kết quả [VERIFY] task card U2 (§12) — 24/09/2026
+
+| Mã | Kết quả |
+|---|---|
+| W1 | ✅ BP struct `S_SceneSnapshot` chứa được C++ USTRUCT `FMaterialParamCommand` (hiện trong Struct picker, U2.2) |
+| W2 | ⚠ ĐÍNH CHÍNH: `Get Scalar/Vector Parameter Value` BP chỉ trên MID — nhưng C++ `UMaterialInterface::Get…ParameterValue` đọc được MI → reader U2 đọc MID **hoặc MI gốc**, KHÔNG fallback hằng số (D-12) |
+| W3 | ✅ cả 2 row — sau khi thêm `ParamName` vào `OnEditBegin` (D-8): Scalar bắn lúc `OnMouseCaptureBegin` + SpinBox commit; Color bắn lúc `OnInteractionBegin` + Hex commit |
+| W4 | ✅ `bIsRestoring` đọc được trong `BeginInteractiveEdit` (cùng UndoManager) |
+| W5 | ✅ `ResolveByPersistentId` trả actor MỚI sau respawn — tái xác nhận U5 interleave (UNDO SNAP rồi UNDO CMD đúng giá trị) |
+| W6 | ✅ `GetSlot*Param` ở Commit đọc lại đúng giá trị Preview vừa áp (round-trip MID, COMMIT NOOP/CMD phân biệt đúng) |
+| W7 | ✅ (U2.3) `CurrentIndex = Len−1` luôn trỏ entry hiện tại |
 
 ## C++ Automation API đã xác nhận (T0, 21/09/2026)
 

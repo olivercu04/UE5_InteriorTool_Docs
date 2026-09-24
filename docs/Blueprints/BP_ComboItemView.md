@@ -28,3 +28,22 @@ Bọc FComboData thành UObject để TileView/ListView display combo card trong
 | 23/06/2026 | 1.1 | Thêm FolderPath (C3a), Description, Tags, ThumbnailPath, CreatedAt |
 | 24/06/2026 | 1.2 | Thêm BoundingBoxExtent (C4 — tính từ CalculateComboBoundingExtent khi save, dùng cho ghost size trong OnDragDetected) |
 | 15/07/2026 | 1.3 | Thêm Thumbnail : Texture2D (G4 — dùng chung cache với BP_ComboManager, KHÔNG copy). Xác nhận ThumbnailPath là dead field, không dùng ở đâu — giữ nguyên (KP3, dọn sau). |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3b - Combo lưu spawn thay combo]]
+
+**Gọi / điều khiển →**
+- [[BP_ComboManager]] — dùng chung bộ nhớ ảnh bìa · Cmb_ThumbnailCache
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — tạo 1 ô cho mỗi combo · Make BP_ComboItemView
+- [[WBP_ComboCard]] — nhận dữ liệu combo · IUserObjectListEntry
+
+<!-- BRAIN:END -->

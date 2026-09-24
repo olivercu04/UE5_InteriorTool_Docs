@@ -124,3 +124,20 @@ Branch(bIsEditing):
 |---|---|---|
 | 1.0 | 27/06/2026 | Khởi tạo — C5.2 Inline Rename. Layout Overlay 3 con. ValidateName (empty/slash/dupe). EnterEditMode + Delay(0.0) focus. ExitEditMode guard bIsEditing. OnEditBoxCommitted Switch on ETextCommit. 3 bugs documented: Switch.Selection pin, Delay 0.0, Broadcast order. |
 | 1.1 | 13/07/2026 | C5.8 2d — thêm `SetLabelColor(InColor : Slate Color)` (relay cho `WBP_FolderPickerRow.SetSearchHighlight`, cách B: không đục thẳng widget con). `[CORRECTION]`: type đúng là Slate Color, không phải Linear Color như patch gốc giả định. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]]
+
+**← Được gọi bởi**
+- [[WBP_TreeNode]] — nhúng + nghe nhãn sửa tên · EditableLabel_Name, Bind OnLabelRenameCommitted
+- [[WBP_ChipTag]] — nhúng nhãn sửa tên · EditLabel_ChipTag
+- [[WBP_FolderPickerRow]] — nhúng + đổi màu nhãn · EditableLabel_Name, SetLabelColor() ✓K2
+
+<!-- BRAIN:END -->

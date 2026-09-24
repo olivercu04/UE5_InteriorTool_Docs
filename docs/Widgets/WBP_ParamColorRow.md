@@ -139,3 +139,23 @@ G8/G9.
 | 15/09/2026 | 1.0 | Tạo mới — S7G7T2. `SyncCurrentColor` hub duy nhất + `Setup` + event flow (Picker/Hex → 3 dispatcher chuẩn hóa). 3 quyết định kiến trúc: D1 single-source-of-truth, D2 bỏ preset tĩnh (backlog Project Palette/Recent Colors), D3 hex-error chỉ revert không Timer. Test PASS toàn bộ. Nguồn: `DELTA — S7G7T2 AS-BUILT` (Opus+Sonnet, 15/09/2026). |
 | 18/09/2026 | 1.1 | **S7G7T4:** dispatcher `OnPreviewChanged`/`OnEditCommitted` +`ParamName:Name`. Bug B3: sót wire ParamName ở node preview → live-preview màu hỏng ngầm (bắt qua log `Param 'None'`), fix nối đủ 3 chỗ. Test PASS (màu + hex LIVE + undo value đúng). |
 | 24/09/2026 | 1.2 | **U2.4:** `OnEditBegin` +`ParamName:Name`, 2 chỗ Call nối `GET ParamName`. W3 Color PASS. Ghi chú thời điểm `SetColor` trong `Setup` (fix nằm ở C++ picker). |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3e - Vật liệu Material]]
+
+**Gọi / điều khiển →**
+- [[InteriorColorPicker]] — nhúng picker, gọi SetColor/GetColor + nghe 3 dispatcher · InteriorColorPicker (UInteriorColorPickerWidget)
+- [[MaterialSlotService_Reference]] — parse hex khi commit ô Hex · HexToLinearColor()
+- [[WBP_FurnitureInventory]] — báo bắt đầu / đang chỉnh / thả · OnEditBegin(ParamName) → Handle_ColorBegin, OnPreviewChanged, OnEditCommitted
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — tạo row Color · Create WBP_ParamColorRow → Setup() ✓K2
+
+<!-- BRAIN:END -->

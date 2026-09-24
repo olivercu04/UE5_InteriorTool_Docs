@@ -162,3 +162,28 @@ IsValid(PreviewActor) → Destroy Actor → SET None
 |---|---|---|
 | 1.0 | 17/06/2026 — Sprint D.T6 | Tạo mới — tách từ WBP_DragOverlay_FurnitureCard.md. Implement D.T6: bỏ FurnitureDA, dùng CardRowName + BP_FurnitureItemView + DT_FurnitureCatalog. |
 | 1.1 | 24/07/2026 — C9.0c | Migrate `bIsReplaceMode` (Boolean) → `ReplaceTarget` (Enum `E_ReplaceTarget`) trong `OnListItemObjectSet` (so sánh trực tiếp `== Mesh`, không dùng `IsReplaceModeActive()` — card cần phân biệt loại). Thêm `Get_Button_ChangeMesh_Visibility` (Function getter cho Property Binding, chưa từng document trước đây) — bug fix: node `EqualEqual` đọc biến `bIsReplaceMode` đã xóa → luôn Hidden vĩnh viễn, chỉ Compile All Blueprints mới bắt được. Verify qua K2Node export thật, test regression 5/5 PASS. Chi tiết: `Blueprints/BP_FurnitureInputManager.md` v2.5. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]]
+
+**Gọi / điều khiển →**
+- [[WBP_FurnitureInventory]] — giữ tham chiếu + đọc chế độ thay đồ · InventoryRef, ReplaceTarget ✓K2
+- [[BP_FurnitureItemView]] — đọc mã đồ từ ô · Cast BP_FurnitureItemView → RowName
+- [[BP_FurnitureUserPrefsManager]] — gọi thêm Gần đây / Yêu thích · AddRecentMesh()
+- [[BP_FurnitureActor]] — tạo đồ bóng lúc kéo · Spawn BP_FurnitureActor
+- [[WBP_DragOverlay_FurnitureCard]] — tạo lớp kéo-thả · Create WBP_DragOverlay
+- [[BP_DragDropOperation_FurnitureCard]] — tạo gói kéo-thả mang RowName · Create BP_DragDropOperation_FurnitureCard
+- [[BP_UndoManager]] — chụp trạng thái khi thay đồ · CaptureSnapshot(Replace)
+- [[BP_FurnitureInputManager]] — lấy tham chiếu manager · GetAllActorsOfClass (F_ExecuteReplace) ✓K2
+
+**← Được gọi bởi**
+- [[WBP_FurnitureInventory]] — đổ đồ vào ListView · ListView entry WBP_FurnitureCard
+
+<!-- BRAIN:END -->

@@ -324,3 +324,32 @@ False → Branch: Overrides[Index] != ""
 | 2.3 | 11/09/2026 | S7.G5.2 (kéo-thả material, engine on-actor): thêm Custom Event `ApplyMaterialByRowName(SlotName, SlotIndex, RowName)` + 3 biến `Apply_Pending*`. 2 bug fix trong phiên: Branch thừa chặn nhánh "Row Not Found" của `Get Data Table Row`; khối X3 (refresh swatch) sai lớp (Router thay vì Engine) + so sánh sai kiểu (`FurnitureMesh` Component thay vì `Self`). Test PASS 4/4. ⚠️ Còn 1 chỗ debug scaffolding thật trong code (`Debug_TestApplyMaterial`, Call In Editor) CHƯA xóa — chờ G5.4. Nguồn: `11-09-2026_S7G5_G5.1-G5.3_AsBuilt_Delta.md` |
 | 2.4 | 11/09/2026 (G5.4) | Fix bug #5: `ApplyMaterialByRowName` +khối `AddRecentMaterial(Apply_PendingRowName)` sau `CaptureSnapshot` (kéo-thả material trước đó không ghi Recent). Xóa thật `Debug_TestApplyMaterial` (scaffolding, dọn xong theo G5.4). Regression 8/8 PASS. GATE G5 ĐÓNG HẲN. Nguồn: `11-09-2026_S7G5_G5.4_AsBuilt_Addendum.md` |
 | 2.5 | 18/09/2026 (S7G7T3) | `ApplyMaterialByRowName` X3 mở rộng — nhánh True/True (Self==TargetFurnitureActor) thêm 4 bước sau `RefreshSlotSwatches()` cũ: SET `SelectedSlotIndex`/`SelectedSlotName` = `Apply_Pending*`, `HighlightSwatchByIndex(Apply_PendingSlotIndex)` (PHẢI sau `RefreshSlotSwatches` — hàm đó rebuild toàn bộ swatch, highlight set trước sẽ mất), `RefreshParamPanel()`. Lỗ hổng: đường kéo-thả material KHÔNG nằm trong 5 seam của `WBP_FurnitureInventory` (task card `17-09-2026_S7G7_T3-T5_TaskCards_v6.md` không liệt kê) — trước fix này, kéo-thả material không đồng bộ panel param mới. Test PASS. Nguồn: `Sprints/Sprint7/18-09-2026_S7G7_T3-T4_ASBUILT_delta.md`. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3b - Combo lưu spawn thay combo]] · [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3d - Save Undo khởi động]] · [[Luồng 3e - Vật liệu Material]]
+
+**Gọi / điều khiển →**
+- [[EntityIdLibrary_Reference]] — sinh/giữ ID lúc actor tải xong (Event ActorLoaded) · EnsurePersistentId()
+- [[WBP_FurnitureInventory]] — đồng bộ slot chọn + highlight + refresh panel sau kéo-thả · SET SelectedSlotIndex/Name, HighlightSwatchByIndex(), RefreshParamPanel()
+
+**← Được gọi bởi**
+- [[BP_FurnitureInputManager]] — đọc đồ đang chọn · Cast + GET PrimarySelectedActor
+- [[BP_PivotActor]] — kéo đồ con theo trục · ApplyTransformToChildren()
+- [[WBP_MeshControls]] — đọc mã đồ · Cast + GET RowName
+- [[BP_ComboManager]] — gán vật liệu cho đồ · F_ApplyMaterialOverrides()
+- [[WBP_FurnitureCard]] — tạo đồ bóng lúc kéo · Spawn BP_FurnitureActor
+- [[WBP_DragOverlay_FurnitureCard]] — đặt loại bề mặt cho đồ · Cast + SET PlacementSurfaceType
+- [[BP_UndoManager]] — tạo lại đồ khi Undo + đặt lại mã + giữ nguyên PersistentID (guard) · SpawnFurnitureCopy(), SET RowName, SET PersistentID
+- [[BP_FurnitureSceneManager]] — sinh / xoá đồ theo danh mục · Spawn / Destroy
+- [[WBP_FurnitureInventory]] — gán MI theo slot cho đồ · TargetFurnitureActor
+- [[WBP_DetailPopup]] — chỉnh scale đồ đang chọn · SelectedFurnitureActor
+- [[BP_ComboManager]] — gán vật liệu khi spawn combo · F_ApplyMaterialOverrides()
+
+<!-- BRAIN:END -->

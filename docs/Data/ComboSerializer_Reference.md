@@ -238,3 +238,19 @@ Xem checklist đầy đủ: `00_Core/PROGRESS.md` mục P1.
 - Plugin: `FurnitureToolkit` — cùng plugin với `FurnitureFilterLibrary`, `UComboSerializer`, `UComboThumbnail`.
 - `ComboThumbnail.h` include forward-declare `class ASceneCapture2D;` — không include full header `SceneCapture2D.h` ở `.h` (giữ nhẹ), thật ra include ở `.cpp` (chưa có để đối chiếu).
 - Dependency: `FJsonObjectConverter` (module `JsonUtilities`) cho `ComboSerializer`. `ComboThumbnail` — **[CONFIRMED 14/07/2026, Gate G1]** module `ImageCore` thêm vào `FurnitureToolkit.Build.cs` (cần cho `FImageUtils::ImageResize`) + include `"Engine/Texture2D.h"`, `"ImageUtils.h"` trong `ComboThumbnail.cpp`. Chưa xác nhận module cho phần đọc PNG (`IImageWrapper` — thường cần module `ImageWrapper`, chưa thấy nhắc trong delta G1) và phần capture/RenderTarget (G0-R, `.cpp` vẫn chưa có để đối chiếu).
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3b - Combo lưu spawn thay combo]]
+
+**← Được gọi bởi**
+- [[BP_ComboManager]] — ghi/đọc file + thư mục combo · save / load
+- [[WBP_FurnitureInventory]] — đổi tên / xoá thư mục combo · folder ops
+
+<!-- BRAIN:END -->

@@ -4,17 +4,24 @@
     "type": "split",
     "children": [
       {
-        "id": "e1a16db80ee68118",
+        "id": "f3de25f051ac97f9",
         "type": "tabs",
         "children": [
           {
-            "id": "0d75f68e094b9b92",
+            "id": "5ff223a103752ffb",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Xem biểu đồ"
+              "type": "canvas",
+              "state": {
+                "file": "docs/Brain/Canvas/5a - Click chọn đồ trong viewport.canvas",
+                "viewState": {
+                  "x": 1290,
+                  "y": 2494.4175824175823,
+                  "zoom": -1.5067838247241958
+                }
+              },
+              "icon": "lucide-layout-dashboard",
+              "title": "5a - Click chọn đồ trong viewport"
             }
           }
         ]
@@ -79,7 +86,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 296.5
   },
   "right": {
     "id": "4e5140dfc2ac73c0",
@@ -95,6 +102,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "docs/Brain/Canvas/5a - Click chọn đồ trong viewport.canvas",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -181,8 +189,48 @@
       "bases:Tạo cơ sở mới": false
     }
   },
-  "active": "0d75f68e094b9b92",
+  "active": "5ff223a103752ffb",
   "lastOpenFiles": [
-    "docs/00_Core/01_Session_State.md"
+    "docs/Brain/Luồng - Kéo gizmo Move.md",
+    "docs/Brain/Canvas/5f - Kéo gizmo Move (1 món · nhiều món qua Pivot).canvas",
+    "docs/Blueprints/BP_FurnitureInputManager.md",
+    "docs/Brain/Bản đồ não.md",
+    "docs/Brain/Canvas/5a - Click chọn đồ trong viewport.canvas",
+    "docs/Brain/Luồng - Undo Redo.md",
+    "docs/Brain/Canvas/5d - Ghi sổ lịch sử — 1 thao tác thành 1 entry (CaptureSnapshot).canvas",
+    "docs/Brain/Canvas/5c - Undo - Redo — tổng quan (dispatch theo EntryKind).canvas",
+    "docs/Brain/Canvas/5b - Chỉnh 1 thông số vật liệu (U2 Interactive Edit Session).canvas",
+    "docs/Brain/sedHQO8KW",
+    "docs/Brain/sed9CgjBQ",
+    "docs/00_Core/Architecture_Map.md",
+    "docs/Brain/Luồng - Click chọn đồ trong viewport.md",
+    "docs/Brain/Canvas/5e - Undo 1 entry Snapshot — RestoreSnapshot (destroy + spawn lại).canvas",
+    "docs/Brain/_tools/gen_canvas.py",
+    "docs/Brain/Canvas",
+    "docs/Brain/Luồng 3a - Chọn đồ Gizmo Nhóm.md",
+    "docs/Brain/Luồng 3c - Inventory + Cây thư mục.md",
+    "docs/Brain/Luồng 3b - Combo lưu spawn thay combo.md",
+    "docs/00_Core/01_Session_State.md",
+    "docs/00_Core/00_INDEX.md",
+    "docs/Blueprints/BP_FurnitureActor.md",
+    "docs/Brain/Luồng U2 - Chỉnh thông số vật liệu và Undo.md",
+    "docs/Brain/_tools/sedg9Bh8R",
+    "docs/Brain/Luồng 3e - Vật liệu Material.md",
+    "docs/Brain/Luồng 3d - Save Undo khởi động.md",
+    "docs/Brain/Chưa có doc/WBP_SlotSwatch.md",
+    "docs/Brain/Chưa có doc/WBP_FOFF_ToolDemo.md",
+    "docs/Brain/Chưa có doc/WBP_ContextMenuItem.md",
+    "docs/Brain/Chưa có doc/WBP_ContextMenu.md",
+    "docs/Brain/Chưa có doc/WBP_ChipRow.md",
+    "docs/Brain/Chưa có doc/UComboThumbnail.md",
+    "docs/Brain/Chưa có doc/SaveGameMenu.md",
+    "docs/Brain/Chưa có doc/Foff_GameInstance.md",
+    "docs/Brain/Chưa có doc/BP_UserPreferencesSave.md",
+    "docs/Brain/Chưa có doc/BP_TransformerPawn.md",
+    "docs/Brain/Chưa có doc/BP_GroupsContainer.md",
+    "docs/Brain/_tools/gen_brain.py",
+    "docs/Brain/Chưa có doc",
+    "docs/Brain/_tools",
+    "docs/Brain"
   ]
 }

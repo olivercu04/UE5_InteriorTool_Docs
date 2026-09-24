@@ -1,0 +1,353 @@
+{
+ "nodes": [
+  {
+   "id": "lane_MC",
+   "type": "group",
+   "x": 2200,
+   "y": 110,
+   "width": 380,
+   "height": 2356,
+   "label": "WBP_MeshControls",
+   "color": "2"
+  },
+  {
+   "id": "lane_INV",
+   "type": "group",
+   "x": 1760,
+   "y": 110,
+   "width": 380,
+   "height": 2356,
+   "label": "WBP_FurnitureInventory",
+   "color": "2"
+  },
+  {
+   "id": "lane_UM",
+   "type": "group",
+   "x": 1320,
+   "y": 110,
+   "width": 380,
+   "height": 2356,
+   "label": "BP_UndoManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_GZ",
+   "type": "group",
+   "x": 880,
+   "y": 110,
+   "width": 380,
+   "height": 2356,
+   "label": "BP_GizmoController",
+   "color": "5"
+  },
+  {
+   "id": "lane_IM",
+   "type": "group",
+   "x": 440,
+   "y": 110,
+   "width": 380,
+   "height": 2356,
+   "label": "BP_FurnitureInputManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_U",
+   "type": "group",
+   "x": 0,
+   "y": 110,
+   "width": 380,
+   "height": 2356,
+   "label": "User"
+  },
+  {
+   "id": "title",
+   "type": "text",
+   "x": 0,
+   "y": -120,
+   "width": 2580,
+   "height": 170,
+   "text": "# 5a — Click chọn đồ trong viewport\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
+  },
+  {
+   "id": "h_U",
+   "type": "text",
+   "x": 25,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### User"
+  },
+  {
+   "id": "h_IM",
+   "type": "text",
+   "x": 465,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureInputManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_GZ",
+   "type": "text",
+   "x": 905,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_GizmoController]]",
+   "color": "5"
+  },
+  {
+   "id": "h_UM",
+   "type": "text",
+   "x": 1345,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_UndoManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_INV",
+   "type": "text",
+   "x": 1785,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_FurnitureInventory]]",
+   "color": "2"
+  },
+  {
+   "id": "h_MC",
+   "type": "text",
+   "x": 2225,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_MeshControls]]",
+   "color": "2"
+  },
+  {
+   "id": "s1",
+   "type": "text",
+   "x": 465,
+   "y": 280,
+   "width": 330,
+   "height": 146,
+   "text": "**1.** nhấn chuột\n`Mouse Left Pressed (chỉ ghi PendingClickActor, CHƯA chọn)`\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s2",
+   "type": "text",
+   "x": 465,
+   "y": 466,
+   "width": 330,
+   "height": 124,
+   "text": "**2.** thả chuột\n`OnLMBReleased (Sequence Then 2)`\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s3",
+   "type": "text",
+   "x": 465,
+   "y": 630,
+   "width": 330,
+   "height": 124,
+   "text": "▸ nếu click thường\n**3.** bỏ chọn cũ\n`DeselectAll()`\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s4",
+   "type": "text",
+   "x": 465,
+   "y": 794,
+   "width": 330,
+   "height": 124,
+   "text": "▸ nếu click thường\n**4.** lấy cả group chứa món\n`ExpandSelectionWithGroups()`\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s5",
+   "type": "text",
+   "x": 465,
+   "y": 958,
+   "width": 330,
+   "height": 124,
+   "text": "▸ nếu click thường\n**5.** chọn\n`SelectActors()`\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s6",
+   "type": "text",
+   "x": 465,
+   "y": 1122,
+   "width": 330,
+   "height": 124,
+   "text": "▸ nếu click thường\n**6.** tô viền\n`UpdateOutlineState()`\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s7",
+   "type": "text",
+   "x": 905,
+   "y": 1286,
+   "width": 330,
+   "height": 168,
+   "text": "▸ nếu click thường\n**7.** tắt rồi bật gizmo\n`UpdateGizmo → DeactivateGizmo() + ActivateGizmo()`\n<small>← BP_FurnitureInputManager · theo doc</small>"
+  },
+  {
+   "id": "s8",
+   "type": "text",
+   "x": 1785,
+   "y": 1494,
+   "width": 330,
+   "height": 168,
+   "text": "▸ nếu click thường\n**8.** báo tin\n`Broadcast OnSelectionChanged → OnSelectionChangedMaterial → OnMeshSelected`\n<small>← BP_FurnitureInputManager · theo doc</small>"
+  },
+  {
+   "id": "s9",
+   "type": "text",
+   "x": 2225,
+   "y": 1702,
+   "width": 330,
+   "height": 168,
+   "text": "▸ nếu click thường\n**9.** báo tin\n`OnSelectionChanged → OnSelectionChangedInfoBar`\n<small>← BP_FurnitureInputManager · theo doc</small>"
+  },
+  {
+   "id": "s10",
+   "type": "text",
+   "x": 465,
+   "y": 1910,
+   "width": 330,
+   "height": 146,
+   "text": "▸ ngược lại: Ctrl+click\n**10.** lấy cả group\n`ExpandSelectionWithGroups() → ToggleActor() từng món`\n<small>nội bộ · ✓K2</small>",
+   "color": "3"
+  },
+  {
+   "id": "s11",
+   "type": "text",
+   "x": 1345,
+   "y": 2096,
+   "width": 330,
+   "height": 124,
+   "text": "**11.** chụp trạng thái\n`CaptureSnapshot(\"Select\")`\n<small>← BP_FurnitureInputManager · ✓K2</small>"
+  },
+  {
+   "id": "s12",
+   "type": "text",
+   "x": 1785,
+   "y": 2260,
+   "width": 330,
+   "height": 146,
+   "text": "◇ khi: chỉ 1 món được chọn\n**12.** chọn slot vật liệu dưới chuột\n`NotifyViewportSlotClick()`\n<small>← BP_FurnitureInputManager · ✓K2</small>"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e0",
+   "fromNode": "h_U",
+   "fromSide": "right",
+   "toNode": "s1",
+   "toSide": "left",
+   "label": "1"
+  },
+  {
+   "id": "e1",
+   "fromNode": "s1",
+   "fromSide": "bottom",
+   "toNode": "s2",
+   "toSide": "top",
+   "label": "2"
+  },
+  {
+   "id": "e2",
+   "fromNode": "s2",
+   "fromSide": "bottom",
+   "toNode": "s3",
+   "toSide": "top",
+   "label": "3 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e3",
+   "fromNode": "s3",
+   "fromSide": "bottom",
+   "toNode": "s4",
+   "toSide": "top",
+   "label": "4 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e4",
+   "fromNode": "s4",
+   "fromSide": "bottom",
+   "toNode": "s5",
+   "toSide": "top",
+   "label": "5 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e5",
+   "fromNode": "s5",
+   "fromSide": "bottom",
+   "toNode": "s6",
+   "toSide": "top",
+   "label": "6"
+  },
+  {
+   "id": "e6",
+   "fromNode": "s6",
+   "fromSide": "right",
+   "toNode": "s7",
+   "toSide": "left",
+   "label": "7"
+  },
+  {
+   "id": "e7",
+   "fromNode": "s7",
+   "fromSide": "right",
+   "toNode": "s8",
+   "toSide": "left",
+   "label": "8"
+  },
+  {
+   "id": "e8",
+   "fromNode": "s8",
+   "fromSide": "right",
+   "toNode": "s9",
+   "toSide": "left",
+   "label": "9"
+  },
+  {
+   "id": "e9",
+   "fromNode": "s2",
+   "fromSide": "bottom",
+   "toNode": "s10",
+   "toSide": "top",
+   "label": "10 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e10",
+   "fromNode": "s9",
+   "fromSide": "left",
+   "toNode": "s11",
+   "toSide": "right",
+   "label": "11 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e11",
+   "fromNode": "s10",
+   "fromSide": "right",
+   "toNode": "s11",
+   "toSide": "left",
+   "label": "11 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e12",
+   "fromNode": "s11",
+   "fromSide": "right",
+   "toNode": "s12",
+   "toSide": "left",
+   "label": "12 ✓K2",
+   "color": "4"
+  }
+ ]
+}

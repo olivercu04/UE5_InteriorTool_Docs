@@ -2438,7 +2438,7 @@ Lỗi: Int Divide rồi Ceil → mất phần dư → TotalPages thấp hơn th�
 ---
 
 ## Keyboard Shortcuts
-Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/Redo | Ctrl+S/O = Save/Load | I = Inventory | Esc = Deselect | Ctrl+G / Ctrl+Shift+G = Group/Ungroup (Sprint 3)
+Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Ctrl+Z / Ctrl+Shift+Z = Undo/Redo (sửa 24/09 — trước ghi nhầm Alt+Z) | Ctrl+S/O = Save/Load | I = Inventory | Esc = Deselect | Ctrl+G / Ctrl+Shift+G = Group/Ungroup (Sprint 3)
 
 ---
 
@@ -2534,3 +2534,65 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Alt+Z / Shift+Alt+Z = Undo/
 | 3.31 | 18/09/2026 (tiếp) — Đóng `Bug-MaterialEdit-EnableState` | Root cause thật (K2-verified) khác nghi vấn ban đầu: KHÔNG phải seam #3 không chạy — mà 2 lỗi "entry point cũ không rà lại khi seam mới ra đời": (1) `RefreshSlotSwatches()` v1.2 thêm `Completed ▶→ HighlightSwatchByIndex(SelectedSlotIndex)`; (2) `BTN_ResetSlot`/`BTN_ResetAll` thêm `RefreshParamPanel()` cuối mỗi nhánh; (3) seam #5 `SwitchInventoryMode` thêm `Branch(SelectedSlotIndex>=0)→SetIsEnabled(BTN_MaterialEdit)` chèn TRƯỚC `Branch(IsInspectorVisible())` đã có (cuối nhánh Material). Cả 3 test PASS. Sinh rule mới `Rules/AI_Implementation_Rules.md` Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit), đặt trước Q9. |
 | 3.32 | 18/09/2026 (tiếp 2) — **S7G7T4 GATE ĐÓNG** | Thân thật 5 handler: `Handle_ScalarPreview`/`Commit` (`SetSlotScalarParam`), `Handle_ColorPreview`/`Commit` (`SetSlotVectorParam`), `Handle_ResetParamsRequested` (`ClearSlotParams`+snapshot+RefreshParamPanel, thay STUB). Dispatcher 2 row nâng 2-input `(ParamName,Value)` (xem `WBP_ParamScalarRow`/`WBP_ParamColorRow` v1.1). Snapshot chỉ khi `ok=true`. Live-preview + undo/redo VALUE PASS. Bug B3 (sót wire ParamName → preview màu hỏng ngầm) fix ở row. 2 fix undo phụ: Equal-guard `OnMeshSelected` [K2 `6adf2603`] + `ApplyRestoredActor` v1.2 (+seam #6 RefreshParamPanel). **Giới hạn Hướng 1:** undo value đúng nhưng mất slot-highlight (Undo=destroy+respawn actor) — xem `DEVIATIONS.md` + `Open_Bugs.md` backlog Hướng 3. Seam #7 (`EndParamSession`) CHƯA (T4b). |
 | 3.33 | 24/09/2026 16:10 — **U2.4 + U2.5 PASS** | +`Handle_ScalarBegin`/`Handle_ColorBegin` (bind `OnEditBegin` → `BeginInteractiveEdit`). 2 handler Commit: `CaptureSnapshot` → `CommitInteractiveEdit()`. +4 Cancel seam (`OnMeshSelected` nhánh Material đầu, `CloseMaterialInspector` đầu, `NotifyViewportSlotClick` trước SET slot, `OnSlotSwatchClicked` đầu). Seam #6: bind `OnHistoryChanged → Handle_HistoryChanged → RefreshParamPanel`. `RefreshParamPanel` seed qua `GetSlot*Param` (C++) thay Cast MID + fallback hằng số. Chưa K2. `DEVIATIONS.md` D-5..D-12. |
+
+---
+
+<!-- BRAIN:START — tự sinh từ Architecture_Map bằng Brain/_tools/gen_brain.py, ĐỪNG sửa tay đoạn này -->
+
+## 🧠 Kết nối (bản đồ não)
+
+> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+
+**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3b - Combo lưu spawn thay combo]] · [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3d - Save Undo khởi động]] · [[Luồng 3e - Vật liệu Material]]
+
+**Gọi / điều khiển →**
+- [[BP_ComboManager]] — giữ tham chiếu + xin ảnh bìa · ComboManagerRef, GetComboThumbnail()
+- [[BP_ComboItemView]] — tạo 1 ô cho mỗi combo · Make BP_ComboItemView
+- [[ComboSerializer_Reference]] — đổi tên / xoá thư mục combo · folder ops
+- [[WBP_SaveComboDialog]] — mở + nghe dialog lưu combo · SaveComboDialogRef, Bind 4 sự kiện
+- [[WBP_LibraryContextMenu]] — mở + nghe menu chuột phải · LibraryMenuRef, Bind 4 sự kiện
+- [[BP_FurnitureUserPrefsManager]] — gọi bỏ combo khỏi Gần đây · RemoveRecentCombo()
+- [[FurnitureFilterLibrary_Reference]] — lọc đồ / vật liệu · FilterFurnitureRows() (C++)
+- [[BP_FurnitureInputManager]] — vào chế độ thay đồ · StartReplaceMode() / ShouldRouteReplaceToCombo() ✓K2
+- [[BP_UndoManager]] — giữ tham chiếu + nghe khôi phục + chụp trạng thái · UndoManagerRef, Bind OnRestoreCompleted
+- [[BP_FoffPlayerController]] — đổi bộ phím lúc mở/đóng · Add/Remove Mapping Context
+- [[Foff_GameInstance]] — tự đăng ký + hiện thông báo · FurnitureInventoryRef, ToastRef.ShowToast()
+- [[WBP_FurnitureCard]] — đổ đồ vào ListView · ListView entry WBP_FurnitureCard
+- [[BP_FurnitureItemView]] — tạo 1 ô cho mỗi hàng lọc · Make BP_FurnitureItemView
+- [[WBP_TreeNode]] — tạo + nghe cây folder · Create + Bind OnNodeSelected / RightClicked / Rename
+- [[WBP_ChipTag]] — tạo + nghe chip đường dẫn · Create + Bind OnChip…
+- [[WBP_ChipRow]] — tạo hàng chip cho mỗi cấp · Create WBP_ChipRow
+- [[WBP_DetailPopup]] — mở popup chi tiết · CurrentPopup
+- [[WBP_MoveToFolderDialog]] — mở + nghe dialog di chuyển · MoveComboDialogRef, Bind OnMoveFolderConfirmed
+- [[WBP_ConfirmDialog]] — mở + nghe hộp xác nhận · Bind OnConfirmed
+- [[BP_UndoManager]] — nghe khôi phục xong · Bind OnRestoreCompleted
+- [[BP_UndoManager]] — mở / chốt / hủy phiên chỉnh param (U2.4-2.5) · BeginInteractiveEdit() / CommitInteractiveEdit() / CancelInteractiveEdit()
+- [[BP_UndoManager]] — nghe lịch sử đổi → refresh panel · Bind OnHistoryChanged → RefreshParamPanel()
+- [[FurnitureFilterLibrary_Reference]] — lọc vật liệu · FilterMaterialItems() (C++)
+- [[MaterialSlotService_Reference]] — reset param / reset về mặc định · ResetSlotToAssetDefault() / ResetAllSlotsToAssetDefault() ✓K2
+- [[MaterialSlotService_Reference]] — gán vật liệu vào slot (kéo-thả G5) · ApplyLoadedMaterialToSlot() → LoadAndApplyMaterial ✓K2
+- [[BP_FurnitureActor]] — gán MI theo slot cho đồ · TargetFurnitureActor
+- [[WBP_MaterialCard]] — đổ thẻ vật liệu vào lưới · TileView entry
+- [[WBP_SlotSwatch]] — tạo + nghe ô màu slot · Create WBP_SlotSwatch, Bind OnSwatchClicked
+- [[MaterialSlotService_Reference]] — tra từ điển param theo material · GetControlsForMaterial(SlotMaterial, DT_ParamMap) ✓K2
+- [[WBP_MaterialInspector]] — build/xóa danh sách row + empty-state · ClearParamRows()/AddParamRow()/ShowParamEmptyState(), SetVisibility ✓K2
+- [[WBP_ParamScalarRow]] — tạo row Scalar · Create WBP_ParamScalarRow → Setup() ✓K2
+- [[WBP_ParamColorRow]] — tạo row Color · Create WBP_ParamColorRow → Setup() ✓K2
+- [[MaterialSlotService_Reference]] — seed giá trị row = giá trị THẬT trên MID/MI (U2.5, thay Cast MID+fallback) · GetSlotScalarParam() / GetSlotVectorParam()
+- [[BP_UndoManager]] — mở/chốt/hủy phiên chỉnh (chi tiết ở 3d) · Begin/Commit/CancelInteractiveEdit()
+
+**← Được gọi bởi**
+- [[BP_FurnitureSceneManager]] — gọi thoát Replace Mode · .FurnitureInventoryRef.ExitReplaceMode() ✓K2
+- [[BP_FurnitureInputManager]] — báo click-vào-mesh chọn slot · NotifyViewportSlotClick(ClickedActor, ScreenPos) ✓K2
+- [[BP_ComboManager]] — báo tin: thư viện combo đổi · Broadcast OnComboLibraryChanged
+- [[WBP_ComboCard]] — giữ tham chiếu + gọi xoá / chuột phải · InventoryRef, RequestDeleteCombo()
+- [[WBP_SaveComboDialog]] — báo tin: bấm Lưu / Ghi đè / Huỷ · Broadcast
+- [[WBP_FurnitureCard]] — giữ tham chiếu + đọc chế độ thay đồ · InventoryRef, ReplaceTarget ✓K2
+- [[WBP_FOFF_ToolDemo]] — mở inventory khi bấm nút · Open widget
+- [[BP_UndoManager]] — báo tin: khôi phục xong · Broadcast OnRestoreCompleted
+- [[BP_UndoManager]] — báo lịch sử vừa đổi (undo/redo param) · Broadcast OnHistoryChanged
+- [[WBP_ParamScalarRow]] — báo bắt đầu / đang kéo / thả · OnEditBegin(ParamName) → Handle_ScalarBegin, OnPreviewChanged, OnEditCommitted
+- [[WBP_ParamColorRow]] — báo bắt đầu / đang chỉnh / thả · OnEditBegin(ParamName) → Handle_ColorBegin, OnPreviewChanged, OnEditCommitted
+- [[BP_FurnitureActor]] — đồng bộ slot chọn + highlight + refresh panel sau kéo-thả · SET SelectedSlotIndex/Name, HighlightSwatchByIndex(), RefreshParamPanel()
+
+<!-- BRAIN:END -->
