@@ -1,6 +1,7 @@
 # MaterialSlotService — C++ Blueprint Function Library Reference
 **Nguồn:** `DELTA 27/08/2026 — S7.G1 MaterialSlotService (Sonnet execution, Fable task card)`, task card `S7.G1 MaterialSlotService | Fable → Sonnet | 27/08/2026`. As-built thật — 5/5 Việc PASS, build xanh xuyên suốt, KHÔNG deviation so với API đóng băng trong `Plans/Sprint7_MaterialEdit_Plan_v1.1.md` mục S7.G1.
 **Tạo:** 27/08/2026
+**Cập nhật:** 22/09/2026 — U2.1 (Undo Architecture): +`GetSlotScalarParam`/`GetSlotVectorParam` (reader Before) trên `UMaterialSlotService`; +class mới `UParamCommandLibrary` + struct `FMaterialParamCommand` (file reference này giờ phủ 3 class: `UMaterialSlotService`, `UMaterialParamMap`, `UParamCommandLibrary`).
 
 > File này là TÀI LIỆU THAM KHẢO — liệt kê function signature + hành vi thật từ delta as-built.
 > Struct đầy đủ xem bên dưới (chưa tách sang `Data_Structures.md` — cân nhắc khi có nhu cầu).
@@ -69,6 +70,24 @@ static bool SetSlotTextureParam(…, UTexture* Value);
 ```
 Đ4 MID-on-demand; kiểm `GetAllXParameterInfo` chứa `ParamName` trước khi set — không có → trả
 `false` (trị tận gốc bẫy "slider kéo mesh đứng im").
+
+### GetSlotScalarParam / GetSlotVectorParam(Mesh, SlotName, HintIndex, ParamName, OutValue&) → bool
+
+> 📌 **[CHỨA AS-BUILT]** — U2.1 (22/09/2026), nguồn task card
+> `Sprints/Sprint7/21-09-2026_U2_HistoryMutationBoundary_TaskCard.md` §3 QĐ3 + §5.1.
+
+```cpp
+static bool GetSlotScalarParam(UStaticMeshComponent* Mesh, const FString& SlotName,
+    int32 HintIndex, FName ParamName, float& OutValue);
+static bool GetSlotVectorParam(UStaticMeshComponent* Mesh, const FString& SlotName,
+    int32 HintIndex, FName ParamName, FLinearColor& OutValue);
+```
+Reader "Before" cho command undo (U2) — đối xứng `Set*` nhưng **KHÔNG có side-effect**: đọc
+thẳng trên MID hiện tại (`GetAllScalarParameterInfo`/`GetAllVectorParameterInfo` check tồn tại,
+rồi `K2_GetScalarParameterValue`/`K2_GetVectorParameterValue`), **không gọi `EnsureSlotMID`**
+(không tự tạo MID chỉ vì đọc). Slot chưa từng `Set*` (chưa có MID) → trả `false`, KHÔNG throw —
+caller (BP, `BeginInteractiveEdit`) tự fallback `MinValue`/trắng (giống seed lúc `RefreshParamPanel`
+render row lần đầu).
 
 ### ClearSlotParams(Mesh, Records&, SlotName, HintIndex) → bool
 ```cpp
@@ -244,3 +263,78 @@ bool UMaterialParamMap::HexToLinearColor(const FString& HexString, FLinearColor&
 
 **Node UE sẵn dùng (verify, thêm vào bảng node được phép nếu chưa có):** `To Hex` /
 `ToHex_LinearColor` (`KismetMathLibrary`, format `RRGGBBAA`, nhận thẳng `LinearColor`).
+
+---
+
+## FMaterialParamCommand + UParamCommandLibrary (U2.1, 22/09/2026)
+
+> 📌 **[CHỨA AS-BUILT]** — Nguồn: task card `Sprints/Sprint7/21-09-2026_U2_HistoryMutationBoundary_TaskCard.md`
+> §3 QĐ1/QĐ4, §5.1. **U2.1 ĐÓNG — PASS.** Class RIÊNG (`ParamCommandLibrary.h/.cpp`) + struct
+> RIÊNG (`ParamCommandTypes.h`), KHÔNG nhét vào `MaterialSlotService`. Compile sạch, 4/4 Spec test
+> xanh, negative control PASS (xem Test bên dưới). Git: `feat(U2.1)` commit `3fd1b2a`.
+
+### EParamCmdType (UENUM BlueprintType)
+```cpp
+enum class EParamCmdType : uint8 { Scalar, Color };   // Texture: KHÔNG có case (Đ12)
+```
+
+### FMaterialParamCommand (USTRUCT BlueprintType) — 9 field
+| Field | Kiểu | Ý nghĩa |
+|---|---|---|
+| `EntityID` | `FString` | PersistentID (U1) của actor đích — KHÔNG cầm con trỏ actor, resolve lại lúc Undo/Redo qua `ResolveByPersistentId` |
+| `SlotName` | `FString` | Danh tính slot chính |
+| `SlotHintIndex` | `int32` (default -1) | Fallback resolve slot, đối xứng `HintIndex` của `MaterialSlotService` |
+| `ParamName` | `FName` | Tên param trên material |
+| `Type` | `EParamCmdType` (default `Scalar`) | Chọn field Before/After nào có nghĩa |
+| `BeforeScalar` / `AfterScalar` | `float` | Dùng khi `Type=Scalar` |
+| `BeforeColor` / `AfterColor` | `FLinearColor` (default White) | Dùng khi `Type=Color` |
+
+Nhúng vào `S_SceneSnapshot.ParamCmd` (BP struct, +U2.2) khi `EntryKind=ParamCommand`. Đây là
+payload "command", KHÔNG phải "snapshot" — hướng B (additive hybrid) vẫn chụp full `Meshes` kèm
+theo (xem `BP_UndoManager.md` mục U2 khi as-built §5.1b/5.1c).
+
+### BuildScalarCommand / BuildColorCommand(EntityID, SlotName, SlotHintIndex, ParamName, Before, After) → FMaterialParamCommand
+```cpp
+// class UParamCommandLibrary : public UBlueprintFunctionLibrary
+static FMaterialParamCommand BuildScalarCommand(const FString& EntityID, const FString& SlotName,
+    int32 SlotHintIndex, FName ParamName, float Before, float After);
+static FMaterialParamCommand BuildColorCommand(const FString& EntityID, const FString& SlotName,
+    int32 SlotHintIndex, FName ParamName, FLinearColor Before, FLinearColor After);
+```
+`BlueprintPure`, PURE hoàn toàn (không đụng World) — chỉ gói field vào struct + set đúng `Type`.
+
+### IsNoOpCommand(Command) → bool
+```cpp
+static bool IsNoOpCommand(const FMaterialParamCommand& Command);
+```
+`Before==After` (theo đúng `Type`, dùng `FMath::IsNearlyEqual` cho Scalar và `FLinearColor::Equals`
+cho Color — dung sai nhỏ, không phải `==` cứng) → `true`. Dùng chặn `UNDO-SESS-04` (không tạo
+entry rỗng khi kéo rồi thả lại đúng giá trị cũ). `Type` lạ (không nên xảy ra) → coi như no-op, an
+toàn hơn tạo entry rác.
+
+### RefuseTexture() → bool
+```cpp
+static bool RefuseTexture();
+```
+Đ12 — texture param KHÔNG có builder command, hàm này LUÔN trả `false`. Tồn tại để BP có 1 điểm
+gọi tường minh nếu lỡ định làm texture command, thay vì im lặng bỏ qua.
+
+### Test U2.1 — Spec `FurnitureTool.Undo.U2_Command` (4/4 PASS, 22/09/2026)
+| Test | Nội dung | Kết quả |
+|---|---|---|
+| `[UNDO-HIST-03]` | Build scalar command → `BeforeScalar`/`AfterScalar` khớp đúng giá trị truyền vào | ✅ |
+| `[UNDO-SESS-04]` | `IsNoOpCommand(Before==After)` → `true` | ✅ |
+| (không mã) | `IsNoOpCommand(Before!=After)` → `false` (kiểm chứng không luôn trả `true`) | ✅ |
+| `[UNDO-CMD-TEX]` | `RefuseTexture()` → luôn `false` | ✅ |
+
+**Negative control (bắt buộc, đã chạy):** sửa tạm nhánh `Scalar` trong `IsNoOpCommand` thành
+`return false;` → case `UNDO-SESS-04` (Before==After) chuyển ĐỎ đúng như kỳ vọng → xác nhận test
+biết kêu khi logic sai → khôi phục nguyên bản → chạy lại 4/4 xanh.
+
+**Bài học nhỏ trong phiên:** lần đầu thử negative control bằng cách chèn `return true;` sớm phía
+trên `switch` trong `IsNoOpCommand` → project này bật warnings-as-errors, cảnh báo "unreachable
+code" (do dead code dưới `switch`) bị nâng thành lỗi biên dịch, build fail (exit code 6). Đổi
+cách: sửa TRỰC TIẾP 1 nhánh return có sẵn (không tạo dead code) — sạch, không vướng warning.
+
+Q9: MIỄN (C++ thuần, không đụng `SelectedActors`). Q10: N/A (type/function mới, chưa có consumer
+nào khác ngoài U2 đang xây).

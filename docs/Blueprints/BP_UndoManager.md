@@ -1,5 +1,9 @@
 # BP_UndoManager
 **HỢP NHẤT TỪ 6 file:** v1.2 (16/05) → v1.4 (04/06) → v1.5 (07/06) → **v1.6 base** (10/06) + v1.7_patch (12/06) + v1.8_patch (15/06)
+**Phiên bản:** 1.20 | **Cập nhật:** 25/09/2026 (U2.3 PARITY GATE — PASS) — tách `CaptureSnapshot` thành `BuildSceneSnapshotBase(ActionName)→S_SceneSnapshot` + `AppendEntry(Entry)`; `CaptureSnapshot` còn 2 node gọi 2 helper (chữ ký không đổi, 10 caller cũ nguyên). `UndoLastAction`/`RedoLastAction` +nhánh dispatch `EntryKind==ParamCommand` (nhánh command CHƯA chạy — chưa có caller sinh command entry, đúng thiết kế). Sửa doc gap: D-2 (Step 3 THẬT 2 tầng cast), D-3 (`RestoreSnapshot` +input `PreviousActor`). Redo ghi as-built GET-sau-SET. **W7 PASS** (`CurrentIndex=Len−1`, luôn trỏ entry hiện tại) + **REG-01..05 PASS toàn bộ** (parity thuần-snapshot y hệt v1.19). Deviations: `DEVIATIONS.md` D-1..D-4. Task card §5.1b/5.1c/5.7/5.8, §8 U2.3.
+
+**Phiên bản:** 1.19 | **Cập nhật:** 22/09/2026 (U2.2, Undo Architecture) — `S_SceneSnapshot` +field `EntryKind:E_HistoryEntryKind` (default Snapshot) +field `ParamCmd:FMaterialParamCommand` (default rỗng); `Version` 4→5. Struct-only, KHÔNG đụng logic node (BuildSceneSnapshotBase/AppendEntry tách riêng ở U2.3). Compile sạch, smoke PIE (Move→Undo) PASS, không hồi quy. Xem `Sprints/Sprint7/21-09-2026_U2_HistoryMutationBoundary_TaskCard.md` §5.1b/§8 U2.2.
+
 **Phiên bản:** 1.18 | **Cập nhật:** 21/09/2026 (U1.3, PersistentIdentity) — `S_FurniturePlacement` +field `PersistentID:String`; `CaptureSnapshot` Step 3 +capture; `RestoreSnapshot` Step 4 +inject có guard (`Placement.PersistentID != ""`, merge — không dead-end). PIE PASS ID-02 (ID sống qua Move+Undo). Regression Undo/Redo material PASS, không hồi quy. Xem `Sprints/Sprint7/21-09-2026_U1_PersistentIdentity_TaskCard.md`
 
 **Phiên bản:** 1.17 | **Cập nhật:** 08/09/2026 | `RestoreSnapshot` Step 4 gỡ dòng `Call RestoreMyMaterialSlots` thừa (đóng nợ từ 07/09) — chỉ còn SET MaterialSlots, restore tự chạy qua `LoadMeshAsync.Completed`. Test regression Undo/Redo material PASS. `Bug-LoadMeshAsync-RestoreRace` đóng hoàn toàn
@@ -47,7 +51,7 @@ RestoreInputMgr     : BP_FurnitureInputManager    ← cache 1 lần trước For
 
 ---
 
-## S_SceneSnapshot struct — v1.8: VIẾT LẠI (Version 4)
+## S_SceneSnapshot struct — v1.19: +EntryKind/ParamCmd (Version 5)
 
 ```
 ActionName              : String
@@ -55,16 +59,19 @@ Meshes                  : Array of S_FurniturePlacement
 SelectedMeshIndex       : Integer              ← Version 1 (single), giữ tương thích
 ActiveMode              : E_ActiveMode
 SelectedMeshIndices     : Array of Integer     ← v1.4 (Version 2 — nhiều đồ)
-Version                 : Integer              ← v1.8: 4 = groups+editmode; 3 = group; 2 = multi; 0/1 = single cũ
+Version                 : Integer              ← v1.19: 5 = +EntryKind/ParamCmd; 4 = groups+editmode; 3 = group; 2 = multi; 0/1 = single cũ
 Groups                  : Array of S_GroupData ← v1.6 (Version 3)
 EditModeStackSnapshot   : Array of String      ← v1.8 (Version 4): stack GroupID tại thời điểm snapshot. Default = [] cho V<4.
+EntryKind               : E_HistoryEntryKind   ← v1.19 (Version 5): Snapshot | ParamCommand. Default Snapshot — entry cũ (V<5) đọc ra mặc định Snapshot, đúng ý nghĩa cũ.
+ParamCmd                : FMaterialParamCommand ← v1.19 (Version 5): C++ USTRUCT (BlueprintType, `ParamCommandTypes.h`, U2.1). Default rỗng (default-construct). Chỉ có nội dung khi EntryKind==ParamCommand (từ U2.3 trở đi — U2.2 struct-only, chưa có caller nào set field này).
 ```
 
 **Version history:**
 - V1: single select (legacy)
 - V2: multi-select (Sprint 1 T12)
 - V3: Groups (Sprint 3)
-- **V4: Groups + EditModeStackSnapshot (Sprint 4 Bug Fix A12, 15/06/2026)**
+- V4: Groups + EditModeStackSnapshot (Sprint 4 Bug Fix A12, 15/06/2026)
+- **V5: +EntryKind (E_HistoryEntryKind) + ParamCmd (FMaterialParamCommand) — Undo Architecture U2.2, 22/09/2026. Additive (QĐ2, task card U2 §3) — mọi caller CŨ của `CaptureSnapshot` không đổi (field mới để default, "wrap trong suốt").**
 
 **S_FurniturePlacement** (v1.6 thêm `GroupID`; v1.14 thêm `RowName`; v1.16 thêm `MaterialSlots`; v1.18 thêm `PersistentID`):
 `UniqueID(String), MeshPath, DAPath, Location, Rotation, Scale, ActorTag, MaterialPaths(Array<String>), GroupID(String), RowName(Name), MaterialSlots(Array<FMaterialSlotRecord>), PersistentID(String)`.
@@ -142,83 +149,143 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Length → Branch > 0:
 
 ---
 
-## CaptureSnapshot(ActionName) — v1.8: VIẾT LẠI
+## BuildSceneSnapshotBase(ActionName) → S_SceneSnapshot — Function MỚI (U2.3, 25/09/2026)
+
+> **U2.3:** tách toàn bộ phần "quét scene → dựng nội dung 1 entry" khỏi `CaptureSnapshot`.
+> `CaptureSnapshot` VÀ `CommitInteractiveEdit` (U2.5, chưa build) đều gọi hàm này — 1 nguồn build
+> entry, không chép tay ForEach-actor 2 lần. KHÔNG đụng phần "quản lý stack" (xem `AppendEntry`).
+> **Chữ ký:** Input `ActionName : String` · Return `SceneSnapshot : S_SceneSnapshot` · Local var
+> `FurnitureInputManagerLocalVar : BP_FurnitureInputManager`.
 
 ```
-0.  ← v1.5 FIX: CLEAR TempSelectedIndices       ← NGAY đầu hàm, trước mọi Branch (chống stale)
+0.  Array_Clear(TempSelectedIndices)                          ← v1.5: chống stale
+0b. Call GetGroupsForSnapshot → SET TempGroups                ← v1.6: chống impure-timing
+    Get All Actors Of Class(BP_FurnitureInputManager) → Get(0)
+      → SET FurnitureInputManagerLocalVar                     ← D-1 (U2.3): cache InputManager 1 LẦN,
+                                                                 thay Get-All-Actors-Of-Class→Get(0) lặp của
+                                                                 bản gốc; dùng lại ×3 chỗ (0b / 4 / 6)
+    GET FurnitureInputManagerLocalVar.EditModeStack → SET TempEditModeStack   ← v1.8
 
-0b. ← v1.6 FIX: Call GetGroupsForSnapshot → SET TempGroups   ← đệm group (chống impure-timing)
-    ← v1.8 FIX: GET InputManager.EditModeStack → SET TempEditModeStack
-                 (reuse InputManager ref đang sẵn trong exec chain)
-
-1.  Branch CurrentIndex < Length(History) - 1:
-    True → Array Resize(CurrentIndex + 1)   ← xóa redo stack
-
-2.  CLEAR TempMeshes
+2.  Array_Clear(TempMeshes)
 
 3.  Get All Actors With Tag("FurnitureSpawned") → ForEach:
-    Cast To BP_FurnitureActor (Array Element)
-    Build S_FurniturePlacement:
-      UniqueID    = Get Display Name(Array Element)
-      MeshPath, DAPath ← từ Cast BP_FurnitureActor
-      Location, Rotation, Scale, ActorTag
-      MaterialPaths = GET BP_FurnitureActor.MaterialOverrides
-      GroupID       = GET BP_FurnitureActor.GroupID          ← v1.6
-      RowName       = GET BP_FurnitureActor.RowName          ← v1.14 (03/08/2026) ✓K2 — node
-                                                                 flow y hệt GroupID đứng cạnh
-      PersistentID  = GET BP_FurnitureActor.PersistentID     ← v1.18 (21/09/2026, U1.3) — node
-                                                                 flow y hệt GroupID/RowName đứng cạnh
-    ADD to TempMeshes
+    LoopBody:
+      Cast To StaticMeshActor(Array Element)                  ← D-2 (U2.3): Step 3 THẬT có 2 TẦNG cast
+        → Cast To BP_FurnitureActor(AsStaticMeshActor)           (canonical cũ ghi 1 tầng — doc sai từ trước, sửa theo thật)
+      Make S_FurniturePlacement:
+        UniqueID     = Get Display Name(Array Element)
+        MeshPath, DAPath, Location, Rotation, Scale, ActorTag ← từ Cast BP_FurnitureActor
+        MaterialPaths = GET BP_FurnitureActor.MaterialOverrides
+        MaterialSlots = GET BP_FurnitureActor.MaterialSlots   ← v1.17
+        GroupID       = GET BP_FurnitureActor.GroupID         ← v1.6
+        RowName       = GET BP_FurnitureActor.RowName         ← v1.14
+        PersistentID  = GET BP_FurnitureActor.PersistentID    ← v1.18
+      Array_ADD to TempMeshes
+    CastFailed: để trống — ForEach tự chạy element kế (as-built gốc)
+    Completed → Step 4
 
-4.  ← v1.4: Build mảng index các đồ ĐANG CHỌN:
-    CLEAR TempSelectedIndices                ← v1.5: backup (CLEAR chính ở Step 0)
-    Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast:
-      Failed → Branch(Length >= MaxSteps)
-      Success → GET SelectedActors:
-        ForEach SelectedActors (SelectedActor):                    ← OUTER
-          ForEach Loop WITH BREAK [TempMeshes] (Index, Mesh):      ← INNER (có Break)
-            Branch Mesh.UniqueID == Get Display Name(SelectedActor):
-              True → ADD Index → TempSelectedIndices → BREAK (inner)
-              False → (continue)
-        Completed (outer) → Branch(Length >= MaxSteps)
+4.  Array_Clear(TempSelectedIndices)                          ← v1.5: backup (GIỮ 2 chỗ CLEAR)
+    GET FurnitureInputManagerLocalVar.SelectedActors → ForEach (OUTER, SelectedActor):
+      ForEach Loop WITH BREAK [TempMeshes] (Index, Mesh):     ← INNER (có Break)
+        Branch Mesh.UniqueID == Get Display Name(SelectedActor):
+          True → ADD Index → TempSelectedIndices → BREAK (inner)
+      outer Completed → Step 6
 
-    ⚠️ INNER ForEach PHẢI dùng "ForEach Loop WITH BREAK" — không break thì duyệt thừa.
-    ⚠️ Tất cả nhánh False/Failed đều nối vào Branch(Length >= MaxSteps) — không dead-end.
+    ⚠️ INNER PHẢI "ForEach Loop WITH BREAK". Mọi nhánh False đều đi tiếp Step 6 — không dead-end.
 
-5.  Branch Length >= MaxSteps → Remove Index 0 → CurrentIndex - 1
-
-6.  GET ActiveMode (từ BP_FurnitureInputManager)
+6.  GET FurnitureInputManagerLocalVar.ActiveMode
     Make S_SceneSnapshot(
-      ActionName,
-      Meshes                = TempMeshes,
-      SelectedMeshIndex     = -1,                      ← Version 2+ không dùng field này
-      SelectedMeshIndices   = TempSelectedIndices,     ← v1.4
+      ActionName            = input pin hàm (KHÔNG phải biến),
+      Meshes                = GET TempMeshes,
+      SelectedMeshIndex     = -1,
+      SelectedMeshIndices   = GET TempSelectedIndices,        ← v1.4
       ActiveMode,
-      Version               = 4,                       ← v1.8 (bump từ 3)
-      Groups                = GET TempGroups,          ← v1.6: đọc TempGroups, KHÔNG nối thẳng GetGroupsForSnapshot
-      EditModeStackSnapshot = GET TempEditModeStack    ← v1.8
+      Version               = 5,                              ← v1.19 (U2.2)
+      Groups                = GET TempGroups,                 ← v1.6
+      EditModeStackSnapshot = GET TempEditModeStack,          ← v1.8
+      EntryKind, ParamCmd   = KHÔNG wire (default: Snapshot / rỗng — QĐ2 "wrap trong suốt")
     )
-    → ADD to SnapshotHistory → CurrentIndex + 1
+    → Return(SceneSnapshot)
 ```
+> **Mức bằng chứng (U2.3):** K2 export soi ~40% đầu (đến Step 3) + cuhoang xác nhận 3 gạch (Make pins ·
+> 2 wire đổi đích · CastFailed Step 3 để trống) + local var dùng ×3 chỗ (0b / 4 / 6). Nửa sau (Step 4
+> nested loop + Step 6 Make) chưa soi export riêng — REG-01..05 PASS bao phủ hành vi.
 
 ---
 
-## UndoLastAction (Alt+Z)
+## AppendEntry(Entry : S_SceneSnapshot) — Function MỚI (U2.3, 25/09/2026)
+
+> **U2.3:** gộp phần "quản lý stack" cũ: resize redo-stack (Step 1 cũ) + trim MaxSteps (Step 5 cũ) + ADD +
+> tăng `CurrentIndex`. Độc lập biến với `BuildSceneSnapshotBase` (không đụng Temp*). Thứ tự **build trước,
+> trim/add sau** — NGƯỢC bản cũ (trim trước). Đây chính là lý do U2.3 PARITY GATE bắt buộc chạy đủ REG-01..05.
 
 ```
-Branch CurrentIndex <= 0 → STOP
-False: CurrentIndex - 1 → RestoreSnapshot(CurrentIndex)
+Entry ▶→ Branch[CurrentIndex < Array_Length(SnapshotHistory) − 1]
+           True  → Array_Resize(SnapshotHistory, CurrentIndex + 1)   ← xóa redo stack
+           False → (bỏ qua)
+       [cả 2 merge] ▶→ Branch[Array_Length(SnapshotHistory) ≥ MaxSteps]
+           True  → Array_RemoveIndex(SnapshotHistory, 0) → SET CurrentIndex = CurrentIndex − 1
+           False → (bỏ qua)
+       [cả 2 merge] ▶→ Array_ADD(SnapshotHistory, Entry)
+       ▶→ SET CurrentIndex = CurrentIndex + 1                        ← node CUỐI
 ```
+> ⚠️ **KHÔNG có Broadcast OnHistoryChanged** trong AppendEntry — dispatcher chốt hoãn sang U2.6 (History-UI).
 
 ---
 
-## RedoLastAction (Shift+Alt+Z)
+## CaptureSnapshot(ActionName) — v1.20: VIẾT LẠI còn 2 node (U2.3)
 
 ```
-Branch CurrentIndex >= Length - 1 → STOP
-False: SET CurrentIndex = CurrentIndex + 1 → RestoreSnapshot(output pin của SET)
-⚠️ PHẢI dùng output pin của SET, không GET riêng
+Custom Event CaptureSnapshot(ActionName) ▶→
+  BuildSceneSnapshotBase(ActionName) ●SceneSnapshot→ AppendEntry(Entry = ●)
 ```
+> Chữ ký KHÔNG đổi → 10 caller cũ không đụng. EntryKind mặc định Snapshot ở mọi entry → parity 100% với
+> v1.19 (đã chứng qua REG-01..05, xem changelog v1.20).
+
+---
+
+## UndoLastAction (Alt+Z) — v1.20: +dispatch EntryKind (U2.3)
+
+```
+Custom Event UndoLastAction ▶→
+  Branch CurrentIndex <= 0 → True: STOP
+  False ▶→ GET SnapshotHistory[CurrentIndex]   (GET CurrentIndex — pull TRƯỚC SET) → Break S_SceneSnapshot
+         ▶→ Branch(EntryKind == ParamCommand)   (Equal Enum, B = ParamCommand)
+              True  ▶→ ApplyParamCommand(Cmd = Break.ParamCmd, bUseBefore = True)   ← TARGETED, KHÔNG respawn (HIST-01)
+                     ▶→ SET CurrentIndex = CurrentIndex − 1   (kết thúc)
+              False ▶→ SET CurrentIndex = CurrentIndex − 1
+                     ▶→ Get All Actors Of Class(InputManager) → Get(0) → GET SelectedFurnitureActor
+                     ▶→ RestoreSnapshot(
+                          IndexHistory  = GET CurrentIndex     (pull SAU SET → giá trị MỚI đã giảm),
+                          PreviousActor = GET SelectedFurnitureActor
+                        )                                      ← Y HỆT v1.18 (HIST-02, parity)
+```
+> ⚠️ **HAI node GET CurrentIndex riêng biệt** — 1 pull TRƯỚC SET (chọn entry đang undo, cho dispatch
+> EntryKind), 1 pull SAU SET (index mới, cho RestoreSnapshot). ĐỪNG gộp thành 1 GET.
+> Chưa có guard `Sess_Active` và chưa Broadcast (scope U2.4 / U2.6).
+> ⚠️ **Lỗi phiên U2.3 đã fix:** bản dựng đầu đọc entry SAU khi giảm CurrentIndex → trượt 1 entry (undo
+> `S_move` lại đảo `C1`, vd stack `S_init/C1/S_move`). Phát hiện qua review K2 export. As-built ĐÍCH là
+> bản trên (đọc entry Ở cursor TRƯỚC khi giảm).
+
+---
+
+## RedoLastAction (Shift+Alt+Z) — v1.20: +dispatch EntryKind (U2.3)
+
+```
+Custom Event RedoLastAction ▶→
+  Branch CurrentIndex >= Array_Length(SnapshotHistory) − 1 → True: STOP
+  False ▶→ SET CurrentIndex = CurrentIndex + 1
+         ▶→ GET SnapshotHistory[CurrentIndex]   (GET CurrentIndex — pull SAU SET → index MỚI) → Break S_SceneSnapshot
+         ▶→ Branch(EntryKind == ParamCommand)
+              True  ▶→ ApplyParamCommand(Cmd = Break.ParamCmd, bUseBefore = False)   ← apply After, KHÔNG chạm RestoreSnapshot
+              False ▶→ RestoreSnapshot(
+                          IndexHistory  = GET CurrentIndex,
+                          PreviousActor = GET InputManager.SelectedFurnitureActor
+                        )                                      ← Y HỆT v1.18
+```
+> **As-built (U2.3):** Redo dùng **GET CurrentIndex (pure, pull SAU SET)** thay "output pin của SET" mà doc
+> cũ khuyến cáo. Trong chuỗi exec tuyến tính (SET đã chạy TRƯỚC khi pin được pull) → 2 cách cho CÙNG giá
+> trị. Test PASS → ghi as-built này vào canonical thay vì bắt đổi (xem Key Learnings, mục Redo đã cập nhật).
 
 ---
 
@@ -254,7 +321,15 @@ Entry ▶→ CLEAR LocalValid                              ← local Array of St
 
 ---
 
-## RestoreSnapshot(IndexHistory) — v1.10: hợp nhất spawn path qua SpawnFurnitureCopy
+## RestoreSnapshot(IndexHistory, PreviousActor) — v1.10: hợp nhất spawn path qua SpawnFurnitureCopy
+
+> **D-3 (U2.3, 25/09/2026) — sửa gap chữ ký:** hàm THẬT có input thứ 2 `PreviousActor : BP_FurnitureActor`
+> (canonical trước chỉ ghi `RestoreSnapshot(IndexHistory)` — thiếu). `Undo`/`Redo` nhánh Snapshot truyền
+> `PreviousActor = GET InputManager.SelectedFurnitureActor` (xem §UndoLastAction / §RedoLastAction). Điểm
+> tiêu thụ chính xác trong THÂN hàm chưa soi K2 export riêng — chỉ bổ sung chữ ký, thân giữ nguyên (§13:
+> không có ground truth thì báo, không sửa). ⚠️ `Data/Data_Structures.md` mục "BP_UndoManager Functions"
+> vẫn ghi `RestoreSnapshot(IndexHistory : Integer)` (1 param) — mâu thuẫn cùng gốc, chưa sửa (ngoài phạm vi
+> delta U2.3, để cuhoang quyết).
 
 ⚠️ **Đính chính 21/07/2026 (K3):** đoạn Step 4 dưới đây trước ghi "v1.8: VIẾT LẠI" nhưng thực ra
 là bản CŨ (spawn inline `Spawn BP_FurnitureActor → Load Asset Blocking → Set Static Mesh...`) —
@@ -412,7 +487,10 @@ Event End Play →
 - **Nested ForEach With Break** trong CaptureSnapshot: outer = SelectedActors, inner = TempMeshes; match UniqueID → ADD index → BREAK inner.
 - **SelectActors trong multi-restore** nhận RestoredActors (mảng build element-by-element → độc lập, không alias) → tự lo outline + gizmo.
 - **KHÔNG gọi CaptureSnapshot trong DeselectMesh/DeselectAll** → infinite loop.
-- **RedoLastAction dùng output pin của SET** CurrentIndex, không GET riêng.
+- **RedoLastAction — GET CurrentIndex pull SAU SET (U2.3):** as-built dùng GET (pure) pull sau khi SET
+  CurrentIndex đã chạy, KHÔNG dùng output pin của SET. Trong exec tuyến tính (SET chạy trước khi pin được
+  pull) → cùng giá trị, test PASS. [Trước v1.20 doc khuyến cáo "PHẢI dùng output pin" — nay ghi as-built
+  thật.] L4 chỉ áp khi pure node bị pull TRƯỚC khi SET kịp chạy (race ngoài thứ tự exec) — không phải case này.
 - **OnRestoreCompleted dùng RestoredBPActor** (Cast output đúng snapshot), không SpawnedActors[class var].
 - **CaptureSnapshot("Initial")** gọi cuối Level Blueprint BeginPlay.
 - **Load Asset Blocking trong RestoreSnapshot** — technical debt, refactor Async ở Phase B.
@@ -450,3 +528,5 @@ Event End Play →
 | 1.17 | 08/09/2026 | **Đóng nợ từ v1.16.** `RestoreSnapshot` Step 4 gỡ dòng `Call NewActor.RestoreMyMaterialSlots` thừa — chỉ còn `SET NewActor.MaterialSlots`, restore tự chạy qua `LoadMeshAsync.Completed` (cùng pattern Combo). Test regression Undo/Redo material PASS. `Bug-LoadMeshAsync-RestoreRace` đóng hoàn toàn (Combo + Undo/Redo). |
 
 | 1.18 | 21/09/2026 | U1.3 (PersistentIdentity) — `S_FurniturePlacement` +field `PersistentID`. `CaptureSnapshot` Step 3 +capture. `RestoreSnapshot` Step 4 +inject (guard != "", merge False — không dead-end). PIE PASS ID-02. Regression material PASS. |
+| 1.19 | 22/09/2026 | **U2.2 (Undo Architecture Foundation) — struct-only.** `S_SceneSnapshot` +`EntryKind:E_HistoryEntryKind` (mới, Snapshot|ParamCommand, default Snapshot) +`ParamCmd:FMaterialParamCommand` (C++ USTRUCT từ `ParamCommandTypes.h`, U2.1, default rỗng). Version 4→5. `CaptureSnapshot` Make node: chỉ bump Version=5, KHÔNG wire 2 field mới (để default → wrap trong suốt, 10 caller cũ không đổi). CHƯA đụng logic Undo/Redo dispatch (đó là U2.3). Compile sạch (W1 xác nhận: `FMaterialParamCommand` hiện trong Struct picker bình thường). Smoke PIE: chọn actor → Move → Undo → chạy y hệt trước giờ, không phát hiện lỗi. Task card: `Sprints/Sprint7/21-09-2026_U2_HistoryMutationBoundary_TaskCard.md` §5.1b/§8 U2.2. |
+| 1.20 | 25/09/2026 | **U2.3 PARITY GATE — PASS.** Tách `CaptureSnapshot` → `BuildSceneSnapshotBase(ActionName)→S_SceneSnapshot` (quét scene, build 1 entry; Local var `FurnitureInputManagerLocalVar` cache InputManager ×3, D-1; Step 3 THẬT 2 tầng cast StaticMeshActor→BP_FurnitureActor, D-2) + `AppendEntry(Entry)` (resize→trim→ADD→CurrentIndex+1, KHÔNG Broadcast — hoãn U2.6). `CaptureSnapshot` còn 2 node gọi 2 helper (chữ ký giữ nguyên, 10 caller cũ không đụng). `UndoLastAction`/`RedoLastAction` +nhánh `EntryKind==ParamCommand` → `ApplyParamCommand` (Undo bUseBefore=True, Redo=False; KHÔNG respawn) / nhánh Snapshot y hệt v1.18 — nhánh command CHƯA CHẠY vì chưa có caller sinh command entry (đúng thiết kế PARITY). D-3: `RestoreSnapshot` +input `PreviousActor` (gap chữ ký, bổ sung). Redo as-built dùng GET-sau-SET (không output pin) — exec tuyến tính nên cùng giá trị, PASS. Lỗi phiên đã fix: bản Undo đầu đọc entry SAU khi giảm index → trượt 1, sửa (đọc TRƯỚC khi giảm). **Bằng chứng:** W7 6/6 log `Idx=Len−1`; REG-01..05 (Move/Group/Combo/Select/Reset) PASS toàn bộ; trim MaxSteps=6 đúng số học. Deviations `DEVIATIONS.md` D-1..D-4; bài học async-restore `Learning_System.md`. Task card §5.1b/5.1c/5.7/5.8, §8 U2.3. |

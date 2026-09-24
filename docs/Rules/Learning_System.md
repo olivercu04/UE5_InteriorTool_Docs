@@ -285,6 +285,22 @@ tái xuất ở phiên redesign undo / T4b.
 
 ---
 
+## Phiên U2.3 PARITY GATE (25/09/2026) — bài học
+
+1. **Quan sát trong cửa sổ async 2 pha của `RestoreSnapshot` → suýt kết luận FAIL oan.** REG-05 (Reset
+   sau replace+tint) ban đầu NGỠ FAIL: nhìn mesh/tint chưa đúng ngay sau Undo. Thực ra `RestoreSnapshot`
+   restore async 2 pha (material trước, `ParamsJson` sau qua `LoadMeshAsync.Completed`) — quan sát quá
+   sớm thấy trạng thái trung gian, chưa phải kết quả cuối. Probe định vị (log entry `Đổi màu Tint` Idx=4
+   + mesh CÓ tint + panel đúng) xác nhận restore ĐÚNG, chỉ là mắt bắt sai thời điểm. → **Với thao tác có
+   async/latent (restore, load mesh), đợi trễ hoặc đọc Output Log trước khi chốt PASS/FAIL — đừng chốt
+   bằng frame đầu tiên.** (Biến thể của "test 1 phút bằng mắt": mắt phải đợi async xong.)
+
+2. **Debug-guess-first + Print giữ tốt (không đổi):** W7 (`CurrentIndex` semantics) chốt bằng 6 dòng log
+   `Idx=Len−1` thay vì suy luận từ doc — bằng chứng thẳng. Bug Undo (đọc entry SAU khi giảm index →
+   trượt 1) bắt được qua review K2 export, không phải đoán.
+
+---
+
 ## Tính năng tiếp theo cần học
 
 - [ ] **C++ Subsystem** — AssetService trong Refactor Phase B
