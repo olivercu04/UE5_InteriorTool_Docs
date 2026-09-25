@@ -111,12 +111,15 @@ Broadcast OnNodeRenameCommitted(GET FolderPath, NewName)
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]]
+**Có mặt trong thao tác:** [[L02 · Tìm đồ trong kho|L02]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3c - Inventory + Cây thư mục]]
 
 **Gọi / điều khiển →**
 - [[WBP_EditableLabel]] — nhúng + nghe nhãn sửa tên · EditableLabel_Name, Bind OnLabelRenameCommitted
+- [[WBP_FurnitureInventory]] — báo tin bấm thư mục · OnNodeSelected → OnTreeNodeClicked()
 
 **← Được gọi bởi**
 - [[WBP_FurnitureInventory]] — tạo + nghe cây folder · Create + Bind OnNodeSelected / RightClicked / Rename

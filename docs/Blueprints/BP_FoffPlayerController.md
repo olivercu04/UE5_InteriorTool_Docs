@@ -98,14 +98,18 @@ Enhanced Input (khi LM_FurnitureInput active)
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3d - Save Undo khởi động]]
+**Có mặt trong thao tác:** [[L01 · Mở tool và kho đồ|L01]] · [[L05 · Di chuyển và xoay đồ|L05]] · [[L07 · Menu chuột phải và phím tắt|L07]] · [[L13 · Hoàn tác và làm lại|L13]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3a - Chọn đồ Gizmo Nhóm]] · [[Kết nối 3c - Inventory + Cây thư mục]] · [[Kết nối 3d - Save Undo khởi động]]
 
 **Gọi / điều khiển →**
 - [[BP_UndoManager]] — phím Undo / Redo · UndoLastAction() / RedoLastAction()
+- [[BP_FurnitureInputManager]] — phím tắt nhích / copy / dán / nhân bản · NudgeMesh() / CopyMesh() / PasteMesh() / DuplicateMesh()
 
 **← Được gọi bởi**
 - [[WBP_FurnitureInventory]] — đổi bộ phím lúc mở/đóng · Add/Remove Mapping Context
+- [[WBP_FOFF_ToolDemo]] — đổi bộ phím khi mở / đóng kho · AddFurnitureInput() / RemoveFurnitureInput()
 
 <!-- BRAIN:END -->

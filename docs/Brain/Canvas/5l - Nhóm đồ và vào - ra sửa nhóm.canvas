@@ -1,0 +1,409 @@
+{
+ "nodes": [
+  {
+   "id": "lane_UM",
+   "type": "group",
+   "x": 2200,
+   "y": 110,
+   "width": 380,
+   "height": 3816,
+   "label": "BP_UndoManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_FA",
+   "type": "group",
+   "x": 1760,
+   "y": 110,
+   "width": 380,
+   "height": 3816,
+   "label": "BP_FurnitureActor (mỗi món)",
+   "color": "5"
+  },
+  {
+   "id": "lane_GRP",
+   "type": "group",
+   "x": 1320,
+   "y": 110,
+   "width": 380,
+   "height": 3816,
+   "label": "BP_GroupsContainer",
+   "color": "5"
+  },
+  {
+   "id": "lane_IM",
+   "type": "group",
+   "x": 880,
+   "y": 110,
+   "width": 380,
+   "height": 3816,
+   "label": "BP_FurnitureInputManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_MC",
+   "type": "group",
+   "x": 440,
+   "y": 110,
+   "width": 380,
+   "height": 3816,
+   "label": "WBP_MeshControls",
+   "color": "2"
+  },
+  {
+   "id": "lane_U",
+   "type": "group",
+   "x": 0,
+   "y": 110,
+   "width": 380,
+   "height": 3816,
+   "label": "User"
+  },
+  {
+   "id": "title",
+   "type": "text",
+   "x": 0,
+   "y": -120,
+   "width": 2580,
+   "height": 170,
+   "text": "# 5l — Nhóm đồ và vào / ra sửa nhóm\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
+  },
+  {
+   "id": "h_U",
+   "type": "text",
+   "x": 25,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### User"
+  },
+  {
+   "id": "h_MC",
+   "type": "text",
+   "x": 465,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_MeshControls]]",
+   "color": "2"
+  },
+  {
+   "id": "h_IM",
+   "type": "text",
+   "x": 905,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureInputManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_GRP",
+   "type": "text",
+   "x": 1345,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_GroupsContainer]]",
+   "color": "5"
+  },
+  {
+   "id": "h_FA",
+   "type": "text",
+   "x": 1785,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureActor]]\n(mỗi món)",
+   "color": "5"
+  },
+  {
+   "id": "h_UM",
+   "type": "text",
+   "x": 2225,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_UndoManager]]",
+   "color": "5"
+  },
+  {
+   "id": "s1",
+   "type": "text",
+   "x": 905,
+   "y": 280,
+   "width": 330,
+   "height": 234,
+   "text": "**1.** chọn từ 2 món trở lên rồi Ctrl+G\n`IA_GroupCreate → CreateGroup() (nơi bắt phím chưa ghi ?)`\n↗ [[BP_FurnitureInputManager#CreateGroup() — Ctrl+G — **v1.9 VIẾT LẠI bottom-up nesting (F3)**|BP_FurnitureInputManager › CreateGroup]]\n<small>← User · thao tác người dùng</small>",
+   "color": "1"
+  },
+  {
+   "id": "s2",
+   "type": "text",
+   "x": 905,
+   "y": 554,
+   "width": 330,
+   "height": 234,
+   "text": "**2.** gom đơn vị - nhóm con giữ nguyên + đồ rời, cần ≥2 đơn vị\n`ComputeSelectionUnits()`\n↗ [[BP_FurnitureInputManager#ComputeSelectionUnits(InActors) → (OutGroupUnits Array<String>, OutLooseActors Array<BP_FurnitureActor>) (F3)|BP_FurnitureInputManager › ComputeSelectionUnits]]\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s3",
+   "type": "text",
+   "x": 1345,
+   "y": 828,
+   "width": 330,
+   "height": 124,
+   "text": "**3.** đặt tên \"Nhóm N\" rồi tăng bộ đếm\n`GET / SET GroupNameCounter`\n<small>← BP_FurnitureInputManager · theo doc</small>"
+  },
+  {
+   "id": "s4",
+   "type": "text",
+   "x": 905,
+   "y": 992,
+   "width": 330,
+   "height": 190,
+   "text": "**4.** nhóm con đổi cha thành nhóm mới\n`GenerateGroupID() → Rebuild Groups (ParentGroupID = NewGID)`\n↗ [[BP_FurnitureInputManager#GenerateGroupID() → String|BP_FurnitureInputManager › GenerateGroupID]]\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s5",
+   "type": "text",
+   "x": 1785,
+   "y": 1222,
+   "width": 330,
+   "height": 124,
+   "text": "**5.** đồ rời nhận mã nhóm\n`SET GroupID = NewGID`\n<small>← BP_FurnitureInputManager · theo doc</small>"
+  },
+  {
+   "id": "s6",
+   "type": "text",
+   "x": 1345,
+   "y": 1386,
+   "width": 330,
+   "height": 212,
+   "text": "**6.** chép danh sách nhóm sang container để lưu\n`SyncGroupsToContainer()`\n↗ [[BP_FurnitureInputManager#SyncGroupsToContainer()|BP_FurnitureInputManager › SyncGroupsToContainer]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
+  },
+  {
+   "id": "s7",
+   "type": "text",
+   "x": 2225,
+   "y": 1638,
+   "width": 330,
+   "height": 190,
+   "text": "**7.** ghi sổ\n`CaptureSnapshot(\"CreateGroup\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
+  },
+  {
+   "id": "s8",
+   "type": "text",
+   "x": 465,
+   "y": 1868,
+   "width": 330,
+   "height": 256,
+   "text": "**8.** chọn lại cả nhóm → info bar đổi nhãn\n`SelectActors() → Broadcast OnSelectionChanged, OnGroupCreated`\n↗ [[WBP_MeshControls#UpdateDetailPopup (Custom Event, bound to OnSelectionChanged) — v1.7|WBP_MeshControls › OnSelectionChanged]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
+  },
+  {
+   "id": "s9",
+   "type": "text",
+   "x": 465,
+   "y": 2164,
+   "width": 330,
+   "height": 146,
+   "text": "**9.** bấm \"Vào nhóm\" (chỉ hiện khi món chính có GroupID)\n`BTN_EnterEdit`\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s10",
+   "type": "text",
+   "x": 905,
+   "y": 2350,
+   "width": 330,
+   "height": 212,
+   "text": "**10.** vào sửa nhóm, tối đa 3 cấp\n`TryEnterEditFromSelection() → EnterEditMode()`\n↗ [[BP_FurnitureInputManager#TryEnterEditFromSelection()|BP_FurnitureInputManager › TryEnterEditFromSelection]]\n<small>← WBP_MeshControls · theo doc</small>"
+  },
+  {
+   "id": "s11",
+   "type": "text",
+   "x": 465,
+   "y": 2602,
+   "width": 330,
+   "height": 168,
+   "text": "**11.** báo tin đang sửa nhóm → hiện thanh sửa nhóm\n`Broadcast OnEditModeChanged(True, GroupID)`\n<small>← BP_FurnitureInputManager · theo doc</small>"
+  },
+  {
+   "id": "n18",
+   "type": "text",
+   "x": 460,
+   "y": 2810,
+   "width": 2100,
+   "height": 70,
+   "text": "📝 Đang sửa nhóm - click chỉ chọn thành viên trực tiếp (ResolveSelectionUnit), đồ mới thả / dán tự vào nhóm (GetCurrentEditScope).",
+   "color": "3"
+  },
+  {
+   "id": "s12",
+   "type": "text",
+   "x": 465,
+   "y": 2920,
+   "width": 330,
+   "height": 124,
+   "text": "**12.** \"Lên 1 cấp\" hoặc \"Thoát\"\n`BTN_ExitOneLevel / BTN_ExitFull`\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s13",
+   "type": "text",
+   "x": 905,
+   "y": 3084,
+   "width": 330,
+   "height": 256,
+   "text": "**13.** ra 1 cấp hoặc ra hẳn, chọn lại cả cây vừa sửa\n`ExitEditModeOneLevel() / ExitEditModeFull()`\n↗ [[BP_FurnitureInputManager#ExitEditModeOneLevel() — nút \"↑ Lên 1 cấp\"|BP_FurnitureInputManager › ExitEditModeOneLevel]]\n<small>← WBP_MeshControls · theo doc</small>"
+  },
+  {
+   "id": "s14",
+   "type": "text",
+   "x": 905,
+   "y": 3380,
+   "width": 330,
+   "height": 256,
+   "text": "**14.** Ctrl+Shift+G bỏ nhóm (bóc đúng 1 lớp)\n`IA_GroupUngroup → UngroupActors(GroupID) ?`\n↗ [[BP_FurnitureInputManager#UngroupActors(InGroupID) — Ctrl+Shift+G — **v1.8 VIẾT LẠI peel-one-level**|BP_FurnitureInputManager › UngroupActors]]\n<small>← User · thao tác người dùng</small>",
+   "color": "1"
+  },
+  {
+   "id": "s15",
+   "type": "text",
+   "x": 2225,
+   "y": 3676,
+   "width": 330,
+   "height": 190,
+   "text": "**15.** ghi sổ 1 lần ở cuối\n`CaptureSnapshot(\"Ungroup\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e0",
+   "fromNode": "h_U",
+   "fromSide": "right",
+   "toNode": "s1",
+   "toSide": "left",
+   "label": "1 ?",
+   "color": "1"
+  },
+  {
+   "id": "e1",
+   "fromNode": "s1",
+   "fromSide": "bottom",
+   "toNode": "s2",
+   "toSide": "top",
+   "label": "2"
+  },
+  {
+   "id": "e2",
+   "fromNode": "s2",
+   "fromSide": "right",
+   "toNode": "s3",
+   "toSide": "left",
+   "label": "3"
+  },
+  {
+   "id": "e3",
+   "fromNode": "s3",
+   "fromSide": "left",
+   "toNode": "s4",
+   "toSide": "right",
+   "label": "4"
+  },
+  {
+   "id": "e4",
+   "fromNode": "s4",
+   "fromSide": "right",
+   "toNode": "s5",
+   "toSide": "left",
+   "label": "5"
+  },
+  {
+   "id": "e5",
+   "fromNode": "s5",
+   "fromSide": "left",
+   "toNode": "s6",
+   "toSide": "right",
+   "label": "6"
+  },
+  {
+   "id": "e6",
+   "fromNode": "s6",
+   "fromSide": "right",
+   "toNode": "s7",
+   "toSide": "left",
+   "label": "7"
+  },
+  {
+   "id": "e7",
+   "fromNode": "s7",
+   "fromSide": "left",
+   "toNode": "s8",
+   "toSide": "right",
+   "label": "8"
+  },
+  {
+   "id": "e8",
+   "fromNode": "s8",
+   "fromSide": "bottom",
+   "toNode": "s9",
+   "toSide": "top",
+   "label": "9"
+  },
+  {
+   "id": "e9",
+   "fromNode": "s9",
+   "fromSide": "right",
+   "toNode": "s10",
+   "toSide": "left",
+   "label": "10"
+  },
+  {
+   "id": "e10",
+   "fromNode": "s10",
+   "fromSide": "left",
+   "toNode": "s11",
+   "toSide": "right",
+   "label": "11"
+  },
+  {
+   "id": "e11",
+   "fromNode": "s11",
+   "fromSide": "bottom",
+   "toNode": "n18",
+   "toSide": "top"
+  },
+  {
+   "id": "e12",
+   "fromNode": "n18",
+   "fromSide": "bottom",
+   "toNode": "s12",
+   "toSide": "top",
+   "label": "12"
+  },
+  {
+   "id": "e13",
+   "fromNode": "s12",
+   "fromSide": "right",
+   "toNode": "s13",
+   "toSide": "left",
+   "label": "13"
+  },
+  {
+   "id": "e14",
+   "fromNode": "s13",
+   "fromSide": "bottom",
+   "toNode": "s14",
+   "toSide": "top",
+   "label": "14 ?",
+   "color": "1"
+  },
+  {
+   "id": "e15",
+   "fromNode": "s14",
+   "fromSide": "right",
+   "toNode": "s15",
+   "toSide": "left",
+   "label": "15"
+  }
+ ]
+}

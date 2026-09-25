@@ -1,72 +1,90 @@
 # Bản đồ não — UE5 Interior Tool
 
-> Trang chủ "bộ não thứ 2" trong Obsidian. Mục tiêu: nhìn **graph** là thấy **ai gọi ai**, click 1 node là vào doc thật.
-> Tạo 24/09/2026. Link giữa các doc sinh tự động từ [[Architecture_Map]] — xem "Cập nhật" cuối trang.
+> Trang chủ "bộ não thứ 2" (Obsidian, vault = gốc repo). Người mới — hoặc AI mới vào dự án — **đi theo lộ trình bên dưới từ trên xuống**; mỗi trang đều có link "Đọc tiếp →".
+> Tạo 24/09/2026 · cấu trúc lại thành lộ trình tiếp nhận 25/09/2026. Sơ đồ + link sinh từ [[Architecture_Map]] — xem mục "Cập nhật" cuối trang.
 
-## Bắt đầu từ đâu
-- Đang ở đâu → [[01_Session_State]]
-- Kiến trúc tổng (sơ đồ gốc) → [[Architecture_Map]]
-- Bug đang mở → [[Open_Bugs]] · Vì sao làm khác plan → [[DEVIATIONS]]
-- Luật Blueprint → [[AI_Implementation_Rules]] · Bài học → [[Learning_System]]
+## 🧭 Lộ trình tiếp nhận — 4 chặng, ~2 giờ
 
-## 5 luồng hệ thống (tự sinh)
-- [[Luồng 3a - Chọn đồ Gizmo Nhóm]] — click chọn, box select, gizmo, group
-- [[Luồng 3b - Combo lưu spawn thay combo]] — lưu/spawn/thay combo, thumbnail
-- [[Luồng 3c - Inventory + Cây thư mục]] — cửa sổ inventory, cây folder, kéo-thả
-- [[Luồng 3d - Save Undo khởi động]] — khởi động tool, Save/Load, Undo/Redo
-- [[Luồng 3e - Vật liệu Material]] — slot vật liệu, Inspector, param panel
+| Chặng | Đọc | Để biết | Thời gian |
+|---|---|---|---|
+| **1 · Nhìn tổng thể** | [[1 · Một buổi dựng phòng.canvas\|Tổng quát 1]] → [[2 · Phía sau màn hình.canvas\|2]] → [[3 · Khuôn 4 bước.canvas\|3]] | Người dùng làm gì, trên màn hình nào · bên trong gồm khối nào · mọi thao tác đi 4 bước nào | 15 phút |
+| **2 · Cách nghĩ của dự án** | [[Tư duy 1 · Sản phẩm và người dùng\|Tư duy 1]] → [[Tư duy 2 · Kiến trúc và nguyên tắc code\|2]] → [[Tư duy 3 · Cách làm việc và kiểm chứng\|3]] → [[Tư duy 4 · Cách viết tài liệu trong bộ não\|4]] | Làm cho ai · xây thế nào · làm việc thế nào · ghi chép thế nào | 30 phút |
+| **3 · Từng việc người dùng làm** | 13 note luồng bên dưới, theo thứ tự | Mỗi thao tác chạy qua hàm nào, bằng chứng tới đâu, chỗ nào dễ sai | 60 phút |
+| **4 · Bắt tay vào việc** | [[01_Session_State]] → [[00_INDEX]] "Muốn sửa X" | Đang ở sprint / gate nào, task nào | 10 phút |
 
-## Luồng event / function (viết tay, có sơ đồ)
-> Mức HÀM: mỗi note = 1 thao tác của user, NHÚNG `sequenceDiagram` từ [[Architecture_Map]] **Phần 5** (1 nguồn, theo skill
-> `arch-map` + diagram-contract: liền = ✓K2, đứt = theo doc). Không đưa hàm vào graph (≈300 hàm, tự trích sẽ ra cạnh sai).
-> Thêm luồng mới = thêm 1 mục 5x vào Architecture_Map (quy trình `/arch-map`), rồi tạo note nhúng ở đây.
-- [[Luồng - Click chọn đồ trong viewport]] — nhấn/thả chuột → chọn → viền + gizmo + báo Inventory
-- [[Luồng U2 - Chỉnh thông số vật liệu và Undo]] — nhấn slider → kéo → thả → Ctrl+Z
-- [[Luồng - Undo Redo]] — Ctrl+Z / Ctrl+Shift+Z: ghi sổ, dispatch, RestoreSnapshot chi tiết
-- [[Luồng - Kéo gizmo Move]] — bấm Move → nhấn trục → kéo → thả (1 món / nhiều món qua Pivot) → ghi sổ Undo
+## Chặng 3 — 13 luồng theo hành trình một buổi dựng phòng
 
-## Xem dạng Canvas — kéo, zoom, bấm vào tên doc (24/09)
-> Cùng nội dung sơ đồ Phần 5, trình bày dạng **làn bơi**: mỗi cột = 1 BP/WBP/C++, mỗi thẻ = 1 bước, **đi theo mũi tên 1 → 2 → 3 = đi theo thời gian**.
-> Mũi tên xanh lá + chữ `✓K2` = đã kiểm chứng K2 · xám = theo doc · đỏ + `?` = chưa rõ. Thẻ vàng = nhánh "ngược lại" / ghi chú.
-> Chuột giữa kéo = di chuyển · `Ctrl` + cuộn = zoom · `Shift+1` = vừa khung · bấm tên `[[doc]]` ở đầu cột để mở doc.
-- [[5a - Click chọn đồ trong viewport.canvas|5a — Click chọn đồ trong viewport]]
-- [[5b - Chỉnh 1 thông số vật liệu (U2 Interactive Edit Session).canvas|5b — Chỉnh 1 thông số vật liệu (U2 Interactive Edit Session)]]
-- [[5c - Undo - Redo — tổng quan (dispatch theo EntryKind).canvas|5c — Undo - Redo — tổng quan (dispatch theo EntryKind)]]
-- [[5d - Ghi sổ lịch sử — 1 thao tác thành 1 entry (CaptureSnapshot).canvas|5d — Ghi sổ lịch sử — 1 thao tác thành 1 entry (CaptureSnapshot)]]
-- [[5e - Undo 1 entry Snapshot — RestoreSnapshot (destroy + spawn lại).canvas|5e — Undo 1 entry Snapshot — RestoreSnapshot (destroy + spawn lại)]]
-- [[5f - Kéo gizmo Move (1 món · nhiều món qua Pivot).canvas|5f — Kéo gizmo Move (1 món · nhiều món qua Pivot)]]
+| # | Luồng | Người dùng làm | Sơ đồ |
+|---|---|---|---|
+| ① | [[L01 · Mở tool và kho đồ]] | mở kho, đóng kho | 5g |
+| ② | [[L02 · Tìm đồ trong kho]] | gõ tìm, bấm thư mục, Gần đây / Yêu thích | 5h |
+| ③ | [[L03 · Kéo đồ vào phòng]] | kéo thẻ, thả vào phòng | 5i |
+| ④ | [[L04 · Chọn đồ]] | click, Ctrl+click, quét khung | 5a · 5j |
+| ④ | [[L05 · Di chuyển và xoay đồ]] | kéo gizmo, phím mũi tên | 5f · 5k |
+| ④ | [[L06 · Nhóm đồ và sửa nhóm]] | Ctrl+G, vào / ra nhóm, bỏ nhóm | 5l |
+| ✦ | [[L07 · Menu chuột phải và phím tắt]] | copy, dán, nhân bản, xoá | 5m |
+| ✦ | [[L08 · Thay đồ]] | thay món bằng món khác cùng chỗ | 5n |
+| ⑤ | [[L09 · Đổi vật liệu]] | bấm / kéo thẻ vật liệu | 5o · 5p |
+| ⑤ | [[L10 · Chỉnh thông số vật liệu]] | kéo thanh trượt, vòng màu | 5b |
+| ⑥ | [[L11 · Combo]] | lưu, đặt, thay cả cụm | 5q · 5r · 5s |
+| ⑦ | [[L12 · Lưu và mở cảnh]] | Save / Load | 5t |
+| ✦ | [[L13 · Hoàn tác và làm lại]] | Ctrl+Z, Ctrl+Shift+Z | 5c · 5d · 5e |
+
+> ①…⑦ = số bước trên [[1 · Một buổi dựng phòng.canvas|Tổng quát 1]] · ✦ = dùng được bất cứ lúc nào.
+
+## Khi cần tra nhanh
+
+| Muốn biết | Mở |
+|---|---|
+| Hàm / biến Y dính luồng nào, ai GHI ai ĐỌC (đầu vào Q10) | [[Chỉ mục hàm & biến]] *(tự sinh)* |
+| Bản đồ có khớp không, nên xin K2 nào, link nào gãy | [[Kiểm tra bản đồ]] *(tự sinh)* |
+| Thành phần X nói chuyện với ai (mức asset) | mục 🧠 Kết nối cuối doc X · 5 mảng: [[Kết nối 3a - Chọn đồ Gizmo Nhóm\|3a Chọn đồ]] · [[Kết nối 3b - Combo lưu spawn thay combo\|3b Combo]] · [[Kết nối 3c - Inventory + Cây thư mục\|3c Kho]] · [[Kết nối 3d - Save Undo khởi động\|3d Save / Undo]] · [[Kết nối 3e - Vật liệu Material\|3e Vật liệu]] |
+| Node thật bên trong 1 hàm | doc canonical (khối ▶→) — thẻ canvas có dòng `↗ Doc › Hàm` nhảy thẳng tới mục |
+| Bug đang mở · vì sao làm khác plan | [[Open_Bugs]] · [[DEVIATIONS]] |
+| Luật Blueprint · bài học | [[AI_Implementation_Rules]] · [[Learning_System]] |
+| Review sản phẩm / UX | [[25-09-2026_Product_UX_Review_Plan_v1]] |
+
+## 🔧 Chi tiết — Canvas làn bơi (tự sinh, 1 canvas cho mỗi sơ đồ 5x)
+> Cùng nội dung sơ đồ Phần 5, dạng **làn bơi**: mỗi cột = 1 BP / WBP / C++, mỗi thẻ = 1 bước, đi theo mũi tên = đi theo thời gian.
+> Xanh lá + `✓K2` = đã kiểm chứng K2 · xám = theo doc · đỏ + `?` = chưa rõ · vàng = nhánh "ngược lại" / ghi chú.
+> Chuột giữa kéo = di chuyển · `Ctrl` + cuộn = zoom · `Shift+1` = vừa khung. Dòng `↗ Doc › Hàm` trên thẻ nhảy tới mục của hàm trong doc.
+> Mở từ note luồng (mỗi sơ đồ có link "Bản làn bơi") — hoặc thư mục `Brain/Canvas` trong File explorer.
 
 ## 3 nhân vật trung tâm (nhiều kết nối nhất)
 - [[BP_FurnitureInputManager]] — não chọn đồ / thao tác
-- [[WBP_FurnitureInventory]] — cửa sổ inventory + material
+- [[WBP_FurnitureInventory]] — cửa sổ kho + vật liệu
 - [[BP_UndoManager]] — sổ lịch sử
 
 ---
 
-## Graph đã cài sẵn (24/09)
-Filter + 6 nhóm màu đã ghi thẳng vào `.obsidian/graph.json` của vault — đóng/mở lại Graph view là thấy.
-Ẩn: Archive · import_raw · Sprints · Plans · Planning · 00_INDEX · README · CLAUDE. Bật mũi tên hướng gọi.
+## Graph
+Filter + 6 nhóm màu đã ghi trong `.obsidian/graph.json` của vault. Ẩn: Archive · import_raw · Sprints · Plans · Planning · 00_INDEX · README · CLAUDE.
 
 | Màu | Query | Là gì |
 |---|---|---|
-| xanh dương | `path:docs/Blueprints` | Blueprint Actor/Manager |
+| xanh dương | `path:docs/Blueprints` | Blueprint Actor / Manager |
 | cam | `path:docs/Widgets` | Widget UMG |
 | xanh lá | `path:docs/Data` | C++ / dữ liệu |
-| tím | `path:docs/Brain` | note luồng + trang chủ |
+| tím | `path:docs/Brain` | note luồng, tư duy, trang chủ |
 | xám | `path:"docs/Brain/Chưa có doc"` | mắt xích chưa có doc |
 | vàng | `path:docs/00_Core` | trạng thái / kiến trúc |
 
-**Cách dùng hay nhất — Local graph:** mở 1 doc (vd [[BP_UndoManager]]) → `Ctrl+P` → "Open local graph" → Depth 1 = hàng xóm trực tiếp, Depth 2 = hàng xóm của hàng xóm. Đây là "ai gọi ai" của đúng thành phần đó.
-
-Mỗi doc canonical có mục **🧠 Kết nối** ở CUỐI file (Gọi → / ← Được gọi bởi / Thuộc luồng).
+**Local graph** là cách xem hay nhất: mở 1 doc (vd [[BP_UndoManager]]) → `Ctrl+P` → "Open local graph" → Depth 1 = hàng xóm trực tiếp. Cuối mỗi doc canonical có mục **🧠 Kết nối** (Có mặt trong thao tác · Gọi → · ← Được gọi bởi).
 
 ---
 
 ## Cập nhật
-Link sinh từ `00_Core/Architecture_Map.md` Phần 3 (sơ đồ mermaid) bằng `Brain/_tools/gen_brain.py`:
-1. Sửa/thêm cạnh trong [[Architecture_Map]] (đúng quy trình doc như mọi khi).
-2. Nhờ Claude chạy lại script (hoặc tự chạy `python Brain/_tools/gen_brain.py` trong thư mục `docs`).
-Canvas (`Brain/Canvas/*.canvas`) sinh từ [[Architecture_Map]] **Phần 5** bằng `Brain/_tools/gen_canvas.py` — sửa Phần 5 rồi chạy
-`python Brain/_tools/gen_canvas.py`. Canvas bị **ghi đè** mỗi lần chạy: kéo thẻ để xem thoải mái, nhưng đừng sửa nội dung trong canvas.
-Script CHỈ thay đoạn giữa `BRAIN:START` / `BRAIN:END` ở cuối doc + ghi đè note trong `Brain/` — không đụng nội dung doc.
-**Không sửa tay** mục 🧠 Kết nối (lần chạy sau sẽ ghi đè). Trang này và note "Luồng U2" viết tay — script không đụng.
+**1 lệnh dựng lại tất cả** — sửa [[Architecture_Map]] (đúng quy trình doc) → chạy trong thư mục `docs`:
+```
+python Brain/_tools/build.py
+```
+| Sinh ra | Từ | Script |
+|---|---|---|
+| Mục 🧠 Kết nối cuối mỗi doc + `Brain/Kết nối/*` + `Brain/Chưa có doc/*` | Phần 3 + note `Brain/Luồng/Lxx` | `gen_brain.py` |
+| Canvas làn bơi `Brain/Canvas/*.canvas` | Phần 5 | `gen_canvas.py` |
+| 3 canvas `Brain/Tổng quát/*` | nội dung trong script | `gen_tong_quat.py` |
+| [[Kiểm tra bản đồ]] — lệch Phần 3 ↔ 5, `?`, K2 đáng xin, link gãy, mục 5x chưa thuộc luồng | Phần 3 + 5 + Brain | `build.py` |
+| [[Chỉ mục hàm & biến]] | Phần 5 | `build.py` |
+
+Sau mỗi lần chạy: mở [[Kiểm tra bản đồ]] — ❌, ⚠, 🔗 phải bằng 0. File sinh ra không ghi ngày → chạy lại khi nguồn không đổi thì git không đổi.
+**Viết tay (script không đụng):** trang này · `Brain/Tư duy/*` · `Brain/Luồng/*`. **Tự sinh (không sửa tay):** mọi thứ còn lại trong `Brain/`. Quy trình thêm 1 luồng mới: [[Tư duy 4 · Cách viết tài liệu trong bộ não|Tư duy 4]] mục 5.

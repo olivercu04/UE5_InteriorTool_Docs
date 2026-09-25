@@ -331,25 +331,35 @@ False → Branch: Overrides[Index] != ""
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3b - Combo lưu spawn thay combo]] · [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3d - Save Undo khởi động]] · [[Luồng 3e - Vật liệu Material]]
+**Có mặt trong thao tác:** [[L03 · Kéo đồ vào phòng|L03]] · [[L05 · Di chuyển và xoay đồ|L05]] · [[L06 · Nhóm đồ và sửa nhóm|L06]] · [[L07 · Menu chuột phải và phím tắt|L07]] · [[L08 · Thay đồ|L08]] · [[L09 · Đổi vật liệu|L09]] · [[L12 · Lưu và mở cảnh|L12]] · [[L13 · Hoàn tác và làm lại|L13]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3a - Chọn đồ Gizmo Nhóm]] · [[Kết nối 3b - Combo lưu spawn thay combo]] · [[Kết nối 3c - Inventory + Cây thư mục]] · [[Kết nối 3d - Save Undo khởi động]] · [[Kết nối 3e - Vật liệu Material]]
 
 **Gọi / điều khiển →**
 - [[EntityIdLibrary_Reference]] — sinh/giữ ID lúc actor tải xong (Event ActorLoaded) · EnsurePersistentId()
 - [[WBP_FurnitureInventory]] — đồng bộ slot chọn + highlight + refresh panel sau kéo-thả · SET SelectedSlotIndex/Name, HighlightSwatchByIndex(), RefreshParamPanel()
+- [[MaterialSlotService_Reference]] — gắn lại vật liệu + thông số từng slot sau khi tải mesh (Undo) · ApplyLoadedMaterialToSlot() → ApplyParamsJsonToSlot()
+- [[BP_UndoManager]] — ghi sổ sau khi đổi vật liệu · CaptureSnapshot(ApplyMaterial)
+- [[BP_FurnitureUserPrefsManager]] — thêm vật liệu vào Gần đây · AddRecentMaterial()
 
 **← Được gọi bởi**
 - [[BP_FurnitureInputManager]] — đọc đồ đang chọn · Cast + GET PrimarySelectedActor
+- [[BP_GizmoController]] — dời món khi kéo (1 món) · Set Actor Location(SelectedActor)
 - [[BP_PivotActor]] — kéo đồ con theo trục · ApplyTransformToChildren()
 - [[WBP_MeshControls]] — đọc mã đồ · Cast + GET RowName
+- [[BP_FurnitureInputManager]] — dời / gán nhóm / xoá đồ đang chọn · Add Actor World Offset (NudgeMesh), SET GroupID (CreateGroup), Destroy Actor (DeleteSelected)
 - [[BP_ComboManager]] — gán vật liệu cho đồ · F_ApplyMaterialOverrides()
 - [[WBP_FurnitureCard]] — tạo đồ bóng lúc kéo · Spawn BP_FurnitureActor
 - [[WBP_DragOverlay_FurnitureCard]] — đặt loại bề mặt cho đồ · Cast + SET PlacementSurfaceType
-- [[BP_UndoManager]] — tạo lại đồ khi Undo + đặt lại mã + giữ nguyên PersistentID (guard) · SpawnFurnitureCopy(), SET RowName, SET PersistentID
+- [[BP_FurnitureInputManager]] — spawn đồ + bắt đầu tải mesh (async) · SpawnFurnitureCopy → LoadMeshAsync() ✓K2
+- [[BP_UndoManager]] — đặt lại mã đồ sau spawn lại · SET RowName ✓K2
+- [[BP_UndoManager]] — giữ nguyên danh tính + nhóm + slot vật liệu · SET PersistentID (guard), GroupID, MaterialSlots
 - [[BP_FurnitureSceneManager]] — sinh / xoá đồ theo danh mục · Spawn / Destroy
 - [[WBP_FurnitureInventory]] — gán MI theo slot cho đồ · TargetFurnitureActor
 - [[WBP_DetailPopup]] — chỉnh scale đồ đang chọn · SelectedFurnitureActor
 - [[BP_ComboManager]] — gán vật liệu khi spawn combo · F_ApplyMaterialOverrides()
+- [[WBP_DragOverlay_FurnitureCard]] — giao việc đổi vật liệu cho món bị thả trúng · ApplyMaterialByRowName() ✓K2
 
 <!-- BRAIN:END -->

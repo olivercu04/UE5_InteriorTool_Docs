@@ -359,19 +359,28 @@ không đổi · thả chỗ trống → không lỗi · Furniture card + Combo 
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3b - Combo lưu spawn thay combo]] · [[Luồng 3c - Inventory + Cây thư mục]]
+**Có mặt trong thao tác:** [[L03 · Kéo đồ vào phòng|L03]] · [[L09 · Đổi vật liệu|L09]] · [[L11 · Combo|L11]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3b - Combo lưu spawn thay combo]] · [[Kết nối 3c - Inventory + Cây thư mục]] · [[Kết nối 3e - Vật liệu Material]]
 
 **Gọi / điều khiển →**
 - [[BP_ComboGhostActor]] — nhận diện bóng combo lúc thả · Cast BP_ComboGhostActor
 - [[BP_DragDropOperation_ComboCard]] — đọc ComboID từ gói lúc thả · Cast BP_DragDropOperation_ComboCard
+- [[BP_ComboManager]] — đặt combo khi thả · SpawnComboByID(ComboID, SpawnLocation)
 - [[BP_DragDropOperation_FurnitureCard]] — đọc RowName từ gói lúc thả · Cast BP_DragDropOperation_FurnitureCard
 - [[BP_FurnitureActor]] — đặt loại bề mặt cho đồ · Cast + SET PlacementSurfaceType
 - [[BP_FurnitureInputManager]] — tắt gizmo khi thả · GizmoControllerRef.DeactivateGizmo()
 - [[EntityIdLibrary_Reference]] — sinh ID cho đồ kéo-thả (producer thứ 4, U1.2 21/09) · EnsurePersistentId()
+- [[BP_UndoManager]] — ghi sổ khi thả đồ · CaptureSnapshot(Spawn)
+- [[BP_FurnitureUserPrefsManager]] — thêm đồ vừa thả vào Gần đây · AddRecentMesh()
+- [[MaterialSlotService_Reference]] — tìm món + slot dưới điểm thả · TraceSlotUnderCursor() ✓K2
+- [[BP_FurnitureActor]] — giao việc đổi vật liệu cho món bị thả trúng · ApplyMaterialByRowName() ✓K2
+- [[BP_FurnitureSceneManager]] — báo thả trúng kiến trúc · ToastRef.ShowToast() ✓K2
 
 **← Được gọi bởi**
 - [[WBP_FurnitureCard]] — tạo lớp kéo-thả · Create WBP_DragOverlay
+- [[WBP_MaterialCard]] — kéo thẻ → phủ lớp kéo-thả mang RowName · Create WBP_DragOverlay + BP_DragDropOperation_Material
 
 <!-- BRAIN:END -->

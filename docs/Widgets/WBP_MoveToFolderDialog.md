@@ -87,9 +87,9 @@ M1-M6 (Wire Move full flow, mirror REG A1-A2) — chi tiết xem `WBP_FolderTree
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]]
+**Thuộc mảng kết nối:** [[Kết nối 3c - Inventory + Cây thư mục]]
 
 **Gọi / điều khiển →**
 - [[WBP_FolderTreePicker]] — nhúng + nghe cây thư mục · Picker, Bind OnFolderSelected

@@ -6,7 +6,7 @@
    "x": 2200,
    "y": 110,
    "width": 380,
-   "height": 2848,
+   "height": 3926,
    "label": "MaterialSlotService (C++)",
    "color": "6"
   },
@@ -16,7 +16,7 @@
    "x": 1760,
    "y": 110,
    "width": 380,
-   "height": 2848,
+   "height": 3926,
    "label": "BP_FurnitureSceneManager",
    "color": "5"
   },
@@ -26,7 +26,7 @@
    "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 2848,
+   "height": 3926,
    "label": "BP_UndoManager",
    "color": "5"
   },
@@ -36,7 +36,7 @@
    "x": 880,
    "y": 110,
    "width": 380,
-   "height": 2848,
+   "height": 3926,
    "label": "WBP_FurnitureInventory",
    "color": "2"
   },
@@ -46,7 +46,7 @@
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 2848,
+   "height": 3926,
    "label": "WBP_ParamScalarRow",
    "color": "2"
   },
@@ -56,7 +56,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 2848,
+   "height": 3926,
    "label": "User"
   },
   {
@@ -151,32 +151,32 @@
    "x": 1345,
    "y": 608,
    "width": 330,
-   "height": 124,
-   "text": "**3.** mở phiên\n`BeginInteractiveEdit()`\n<small>← WBP_FurnitureInventory · theo doc</small>"
+   "height": 256,
+   "text": "**3.** mở phiên\n`BeginInteractiveEdit()`\n↗ [[BP_UndoManager#BeginInteractiveEdit(EntityID, SlotName, HintIndex, ParamName, Type) — Custom Event (v1.21, U2.4) — ** ✓K2 export 24/09/2026, sau khi dọn Print **|BP_UndoManager › BeginInteractiveEdit]]\n<small>← WBP_FurnitureInventory · theo doc</small>"
   },
   {
    "id": "s4",
    "type": "text",
    "x": 1785,
-   "y": 772,
+   "y": 904,
    "width": 330,
-   "height": 102,
-   "text": "**4.** tìm ghế theo ID\n`ResolveByPersistentId()`\n<small>← BP_UndoManager · ✓K2</small>"
+   "height": 190,
+   "text": "**4.** tìm ghế theo ID\n`ResolveByPersistentId()`\n↗ [[BP_FurnitureSceneManager#ResolveByPersistentId(Id String) → (OutActor BP_FurnitureActor, bFound Bool)|BP_FurnitureSceneManager › ResolveByPersistentId]]\n<small>← BP_UndoManager · ✓K2</small>"
   },
   {
    "id": "s5",
    "type": "text",
    "x": 2225,
-   "y": 914,
+   "y": 1134,
    "width": 330,
-   "height": 102,
-   "text": "**5.** đọc Before từ mesh\n`GetSlotScalarParam() → cất Sess_Cmd`\n<small>← BP_UndoManager · ✓K2</small>"
+   "height": 212,
+   "text": "**5.** đọc Before từ mesh\n`GetSlotScalarParam() → cất Sess_Cmd`\n↗ [[MaterialSlotService_Reference#GetSlotScalarParam / GetSlotVectorParam(Mesh, SlotName, HintIndex, ParamName, OutValue&) → bool|MaterialSlotService_Reference › GetSlotScalarParam]]\n<small>← BP_UndoManager · ✓K2</small>"
   },
   {
    "id": "s6",
    "type": "text",
    "x": 465,
-   "y": 1056,
+   "y": 1386,
    "width": 330,
    "height": 124,
    "text": "↻ lặp: mỗi khấc kéo\n**6.** kéo\n<small>← User · thao tác người dùng</small>"
@@ -185,7 +185,7 @@
    "id": "s7",
    "type": "text",
    "x": 905,
-   "y": 1220,
+   "y": 1550,
    "width": 330,
    "height": 146,
    "text": "↻ lặp: mỗi khấc kéo\n**7.** báo tin\n`OnPreviewChanged(ParamName, Value)`\n<small>← WBP_ParamScalarRow · ✓K2</small>"
@@ -194,16 +194,16 @@
    "id": "s8",
    "type": "text",
    "x": 2225,
-   "y": 1406,
+   "y": 1736,
    "width": 330,
-   "height": 146,
-   "text": "↻ lặp: mỗi khấc kéo\n**8.** áp live, KHÔNG ghi sổ\n`SetSlotScalarParam()`\n<small>← WBP_FurnitureInventory · theo doc</small>"
+   "height": 278,
+   "text": "↻ lặp: mỗi khấc kéo\n**8.** áp live, KHÔNG ghi sổ\n`SetSlotScalarParam()`\n↗ [[MaterialSlotService_Reference#SetSlotScalarParam / SetSlotVectorParam / SetSlotTextureParam(Mesh, Records&, SlotName, HintIndex, ParamName, Value) → bool|MaterialSlotService_Reference › SetSlotScalarParam]]\n<small>← WBP_FurnitureInventory · theo doc</small>"
   },
   {
    "id": "s9",
    "type": "text",
    "x": 905,
-   "y": 1592,
+   "y": 2054,
    "width": 330,
    "height": 146,
    "text": "▸ nếu thả tay\n**9.** báo tin\n`OnEditCommitted → Handle_ScalarCommit`\n<small>← WBP_ParamScalarRow · theo doc</small>"
@@ -212,56 +212,56 @@
    "id": "s10",
    "type": "text",
    "x": 1345,
-   "y": 1778,
+   "y": 2240,
    "width": 330,
-   "height": 146,
-   "text": "▸ nếu thả tay\n**10.** chốt phiên\n`CommitInteractiveEdit()`\n<small>← WBP_FurnitureInventory · theo doc</small>"
+   "height": 256,
+   "text": "▸ nếu thả tay\n**10.** chốt phiên\n`CommitInteractiveEdit()`\n↗ [[BP_UndoManager#CommitInteractiveEdit() — Custom Event (v1.21, U2.4 build / U2.5 nối UI) — ** ✓K2 export 24/09/2026, sau khi dọn Print **|BP_UndoManager › CommitInteractiveEdit]]\n<small>← WBP_FurnitureInventory · theo doc</small>"
   },
   {
    "id": "s11",
    "type": "text",
    "x": 2225,
-   "y": 1964,
+   "y": 2536,
    "width": 330,
-   "height": 124,
-   "text": "▸ nếu thả tay\n**11.** đọc After\n`GetSlotScalarParam()`\n<small>← BP_UndoManager · ✓K2</small>"
+   "height": 234,
+   "text": "▸ nếu thả tay\n**11.** đọc After\n`GetSlotScalarParam()`\n↗ [[MaterialSlotService_Reference#GetSlotScalarParam / GetSlotVectorParam(Mesh, SlotName, HintIndex, ParamName, OutValue&) → bool|MaterialSlotService_Reference › GetSlotScalarParam]]\n<small>← BP_UndoManager · ✓K2</small>"
   },
   {
    "id": "s12",
    "type": "text",
    "x": 1345,
-   "y": 2128,
+   "y": 2810,
    "width": 330,
-   "height": 124,
-   "text": "▸ nếu thả tay\n**12.** After khác Before → BuildSceneSnapshotBase() + AppendEntry() = 1 entry\n<small>nội bộ · ✓K2</small>"
+   "height": 212,
+   "text": "▸ nếu thả tay\n**12.** After khác Before → BuildSceneSnapshotBase() + AppendEntry() = 1 entry\n↗ [[BP_UndoManager#BuildSceneSnapshotBase(ActionName) → S_SceneSnapshot — Function MỚI (U2.3, 24/09/2026)|BP_UndoManager › BuildSceneSnapshotBase]]\n<small>nội bộ · ✓K2</small>"
   },
   {
    "id": "s13",
    "type": "text",
    "x": 905,
-   "y": 2292,
+   "y": 3062,
    "width": 330,
-   "height": 168,
-   "text": "▸ nếu thả tay\n**13.** báo tin\n`Broadcast OnHistoryChanged → RefreshParamPanel()`\n<small>← BP_UndoManager · theo doc</small>"
+   "height": 256,
+   "text": "▸ nếu thả tay\n**13.** báo tin\n`Broadcast OnHistoryChanged → RefreshParamPanel()`\n↗ [[WBP_FurnitureInventory#`RefreshParamPanel()` — Function — AS-BUILT ĐẦY ĐỦ 18/09/2026 (K2Node export thật)|WBP_FurnitureInventory › RefreshParamPanel]]\n<small>← BP_UndoManager · theo doc</small>"
   },
   {
    "id": "s14",
    "type": "text",
    "x": 1345,
-   "y": 2500,
+   "y": 3358,
    "width": 330,
-   "height": 168,
-   "text": "▸ ngược lại: hủy giữa chừng (đổi ghế · đổi slot · đóng panel · Ctrl+Z)\n**14.** hủy phiên\n`CancelInteractiveEdit()`\n<small>← WBP_FurnitureInventory · theo doc</small>",
+   "height": 256,
+   "text": "▸ ngược lại: hủy giữa chừng (đổi ghế · đổi slot · đóng panel · Ctrl+Z)\n**14.** hủy phiên\n`CancelInteractiveEdit()`\n↗ [[BP_UndoManager#CancelInteractiveEdit() — Custom Event (v1.21, U2.4) — 6A của session|BP_UndoManager › CancelInteractiveEdit]]\n<small>← WBP_FurnitureInventory · theo doc</small>",
    "color": "3"
   },
   {
    "id": "s15",
    "type": "text",
    "x": 2225,
-   "y": 2708,
+   "y": 3654,
    "width": 330,
-   "height": 190,
-   "text": "▸ ngược lại: hủy giữa chừng (đổi ghế · đổi slot · đóng panel · Ctrl+Z)\n**15.** về Before, 0 entry\n`ApplyParamCommand() → SetSlotScalarParam()`\n<small>← BP_UndoManager · theo doc</small>",
+   "height": 322,
+   "text": "▸ ngược lại: hủy giữa chừng (đổi ghế · đổi slot · đóng panel · Ctrl+Z)\n**15.** về Before, 0 entry\n`ApplyParamCommand() → SetSlotScalarParam()`\n↗ [[MaterialSlotService_Reference#SetSlotScalarParam / SetSlotVectorParam / SetSlotTextureParam(Mesh, Records&, SlotName, HintIndex, ParamName, Value) → bool|MaterialSlotService_Reference › SetSlotScalarParam]]\n<small>← BP_UndoManager · theo doc</small>",
    "color": "3"
   }
  ],

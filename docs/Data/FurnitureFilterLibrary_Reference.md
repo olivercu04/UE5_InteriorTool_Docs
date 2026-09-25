@@ -148,9 +148,11 @@ Xem spec đầy đủ trong `00_Core/02_Current_Sprint.md` mục D.T3 và D.T7.
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3e - Vật liệu Material]]
+**Có mặt trong thao tác:** [[L02 · Tìm đồ trong kho|L02]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3c - Inventory + Cây thư mục]] · [[Kết nối 3e - Vật liệu Material]]
 
 **← Được gọi bởi**
 - [[WBP_FurnitureInventory]] — lọc đồ / vật liệu · FilterFurnitureRows() (C++)

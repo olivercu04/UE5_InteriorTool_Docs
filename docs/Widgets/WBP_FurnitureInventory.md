@@ -2541,9 +2541,11 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Ctrl+Z / Ctrl+Shift+Z = Und
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3b - Combo lưu spawn thay combo]] · [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3d - Save Undo khởi động]] · [[Luồng 3e - Vật liệu Material]]
+**Có mặt trong thao tác:** [[L01 · Mở tool và kho đồ|L01]] · [[L02 · Tìm đồ trong kho|L02]] · [[L04 · Chọn đồ|L04]] · [[L08 · Thay đồ|L08]] · [[L09 · Đổi vật liệu|L09]] · [[L10 · Chỉnh thông số vật liệu|L10]] · [[L11 · Combo|L11]] · [[L13 · Hoàn tác và làm lại|L13]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3a - Chọn đồ Gizmo Nhóm]] · [[Kết nối 3b - Combo lưu spawn thay combo]] · [[Kết nối 3c - Inventory + Cây thư mục]] · [[Kết nối 3d - Save Undo khởi động]] · [[Kết nối 3e - Vật liệu Material]]
 
 **Gọi / điều khiển →**
 - [[BP_ComboManager]] — giữ tham chiếu + xin ảnh bìa · ComboManagerRef, GetComboThumbnail()
@@ -2552,6 +2554,7 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Ctrl+Z / Ctrl+Shift+Z = Und
 - [[WBP_SaveComboDialog]] — mở + nghe dialog lưu combo · SaveComboDialogRef, Bind 4 sự kiện
 - [[WBP_LibraryContextMenu]] — mở + nghe menu chuột phải · LibraryMenuRef, Bind 4 sự kiện
 - [[BP_FurnitureUserPrefsManager]] — gọi bỏ combo khỏi Gần đây · RemoveRecentCombo()
+- [[BP_ComboManager]] — lưu combo (mới / ghi đè) · SaveComboFromSelection()
 - [[FurnitureFilterLibrary_Reference]] — lọc đồ / vật liệu · FilterFurnitureRows() (C++)
 - [[BP_FurnitureInputManager]] — vào chế độ thay đồ · StartReplaceMode() / ShouldRouteReplaceToCombo() ✓K2
 - [[BP_UndoManager]] — giữ tham chiếu + nghe khôi phục + chụp trạng thái · UndoManagerRef, Bind OnRestoreCompleted
@@ -2565,6 +2568,7 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Ctrl+Z / Ctrl+Shift+Z = Und
 - [[WBP_DetailPopup]] — mở popup chi tiết · CurrentPopup
 - [[WBP_MoveToFolderDialog]] — mở + nghe dialog di chuyển · MoveComboDialogRef, Bind OnMoveFolderConfirmed
 - [[WBP_ConfirmDialog]] — mở + nghe hộp xác nhận · Bind OnConfirmed
+- [[BP_FurnitureUserPrefsManager]] — đọc danh sách Gần đây / Yêu thích · GET UserPrefs → RecentMeshes / FavoriteMeshes
 - [[BP_UndoManager]] — nghe khôi phục xong · Bind OnRestoreCompleted
 - [[BP_UndoManager]] — mở / chốt / hủy phiên chỉnh param (U2.4-2.5) · BeginInteractiveEdit() / CommitInteractiveEdit() / CancelInteractiveEdit()
 - [[BP_UndoManager]] — nghe lịch sử đổi → refresh panel · Bind OnHistoryChanged → RefreshParamPanel()
@@ -2580,6 +2584,7 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Ctrl+Z / Ctrl+Shift+Z = Und
 - [[WBP_ParamColorRow]] — tạo row Color · Create WBP_ParamColorRow → Setup() ✓K2
 - [[MaterialSlotService_Reference]] — seed giá trị row = giá trị THẬT trên MID/MI (U2.5, thay Cast MID+fallback) · GetSlotScalarParam() / GetSlotVectorParam()
 - [[BP_UndoManager]] — mở/chốt/hủy phiên chỉnh (chi tiết ở 3d) · Begin/Commit/CancelInteractiveEdit()
+- [[BP_FurnitureUserPrefsManager]] — thêm vật liệu vào Gần đây · AddRecentMaterial() ✓K2
 
 **← Được gọi bởi**
 - [[BP_FurnitureSceneManager]] — gọi thoát Replace Mode · .FurnitureInventoryRef.ExitReplaceMode() ✓K2
@@ -2587,12 +2592,19 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Ctrl+Z / Ctrl+Shift+Z = Und
 - [[BP_ComboManager]] — báo tin: thư viện combo đổi · Broadcast OnComboLibraryChanged
 - [[WBP_ComboCard]] — giữ tham chiếu + gọi xoá / chuột phải · InventoryRef, RequestDeleteCombo()
 - [[WBP_SaveComboDialog]] — báo tin: bấm Lưu / Ghi đè / Huỷ · Broadcast
+- [[BP_FurnitureInputManager]] — mở hộp thoại lưu combo · OpenSaveComboDialog(SelectedActors, Center) ✓K2
+- [[BP_FurnitureInputManager]] — mở tab Combo ở chế độ thay · StartReplaceComboMode → SwitchInventoryMode(Combo) / FilterComboByFolder() / RefreshComboCardReplaceMode()
 - [[WBP_FurnitureCard]] — giữ tham chiếu + đọc chế độ thay đồ · InventoryRef, ReplaceTarget ✓K2
+- [[WBP_TreeNode]] — báo tin bấm thư mục · OnNodeSelected → OnTreeNodeClicked()
+- [[BP_FurnitureInputManager]] — mở kho ở chế độ thay đồ · EnterReplaceMode() → FilterByFolderPathWithUI() ✓K2
 - [[WBP_FOFF_ToolDemo]] — mở inventory khi bấm nút · Open widget
 - [[BP_UndoManager]] — báo tin: khôi phục xong · Broadcast OnRestoreCompleted
 - [[BP_UndoManager]] — báo lịch sử vừa đổi (undo/redo param) · Broadcast OnHistoryChanged
-- [[WBP_ParamScalarRow]] — báo bắt đầu / đang kéo / thả · OnEditBegin(ParamName) → Handle_ScalarBegin, OnPreviewChanged, OnEditCommitted
-- [[WBP_ParamColorRow]] — báo bắt đầu / đang chỉnh / thả · OnEditBegin(ParamName) → Handle_ColorBegin, OnPreviewChanged, OnEditCommitted
+- [[WBP_ParamScalarRow]] — báo đang kéo · OnPreviewChanged(ParamName, Value) ✓K2
+- [[WBP_ParamScalarRow]] — báo bắt đầu / thả · OnEditBegin(ParamName) → Handle_ScalarBegin, OnEditCommitted
+- [[WBP_ParamColorRow]] — báo đang chỉnh · OnPreviewChanged(ParamName, Value) ✓K2
+- [[WBP_ParamColorRow]] — báo bắt đầu / thả · OnEditBegin(ParamName) → Handle_ColorBegin, OnEditCommitted
 - [[BP_FurnitureActor]] — đồng bộ slot chọn + highlight + refresh panel sau kéo-thả · SET SelectedSlotIndex/Name, HighlightSwatchByIndex(), RefreshParamPanel()
+- [[WBP_MaterialCard]] — bấm thẻ → áp cho món đang mở panel · ApplyMaterial(RowName)
 
 <!-- BRAIN:END -->

@@ -1,0 +1,384 @@
+{
+ "nodes": [
+  {
+   "id": "lane_UM",
+   "type": "group",
+   "x": 2640,
+   "y": 110,
+   "width": 380,
+   "height": 3202,
+   "label": "BP_UndoManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_IM",
+   "type": "group",
+   "x": 2200,
+   "y": 110,
+   "width": 380,
+   "height": 3202,
+   "label": "BP_FurnitureInputManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_CM",
+   "type": "group",
+   "x": 1760,
+   "y": 110,
+   "width": 380,
+   "height": 3202,
+   "label": "BP_ComboManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_DO",
+   "type": "group",
+   "x": 1320,
+   "y": 110,
+   "width": 380,
+   "height": 3202,
+   "label": "WBP_DragOverlay (lớp phủ lúc kéo)",
+   "color": "2"
+  },
+  {
+   "id": "lane_GH",
+   "type": "group",
+   "x": 880,
+   "y": 110,
+   "width": 380,
+   "height": 3202,
+   "label": "BP_ComboGhostActor",
+   "color": "5"
+  },
+  {
+   "id": "lane_CC",
+   "type": "group",
+   "x": 440,
+   "y": 110,
+   "width": 380,
+   "height": 3202,
+   "label": "WBP_ComboCard",
+   "color": "2"
+  },
+  {
+   "id": "lane_U",
+   "type": "group",
+   "x": 0,
+   "y": 110,
+   "width": 380,
+   "height": 3202,
+   "label": "User"
+  },
+  {
+   "id": "title",
+   "type": "text",
+   "x": 0,
+   "y": -120,
+   "width": 3020,
+   "height": 170,
+   "text": "# 5r — Đặt combo từ thư viện vào phòng\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
+  },
+  {
+   "id": "h_U",
+   "type": "text",
+   "x": 25,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### User"
+  },
+  {
+   "id": "h_CC",
+   "type": "text",
+   "x": 465,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_ComboCard]]",
+   "color": "2"
+  },
+  {
+   "id": "h_GH",
+   "type": "text",
+   "x": 905,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_ComboGhostActor]]",
+   "color": "5"
+  },
+  {
+   "id": "h_DO",
+   "type": "text",
+   "x": 1345,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### WBP_DragOverlay (lớp phủ lúc kéo)",
+   "color": "2"
+  },
+  {
+   "id": "h_CM",
+   "type": "text",
+   "x": 1785,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_ComboManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_IM",
+   "type": "text",
+   "x": 2225,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureInputManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_UM",
+   "type": "text",
+   "x": 2665,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_UndoManager]]",
+   "color": "5"
+  },
+  {
+   "id": "s1",
+   "type": "text",
+   "x": 465,
+   "y": 280,
+   "width": 330,
+   "height": 190,
+   "text": "**1.** kéo 1 thẻ combo (tab Combo)\n`On Drag Detected`\n↗ [[WBP_ComboCard#On Drag Detected (v1.0, C4 24/06/2026)|WBP_ComboCard › On Drag Detected]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s2",
+   "type": "text",
+   "x": 905,
+   "y": 510,
+   "width": 330,
+   "height": 168,
+   "text": "**2.** sinh khối bóng đúng kích thước combo\n`Spawn BP_ComboGhostActor(BoundingBoxExtent)`\n<small>← WBP_ComboCard · theo doc</small>"
+  },
+  {
+   "id": "s3",
+   "type": "text",
+   "x": 465,
+   "y": 718,
+   "width": 330,
+   "height": 124,
+   "text": "**3.** gói kéo-thả mang ComboID + kích thước\n`Create BP_DragDropOperation_ComboCard`\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s4",
+   "type": "text",
+   "x": 905,
+   "y": 882,
+   "width": 330,
+   "height": 190,
+   "text": "↻ lặp: mỗi lần rê chuột\n**4.** đặt bóng lên điểm chạm, đáy khớp sàn\n`Cast BP_ComboGhostActor → HitLocation + GhostExtentZ`\n<small>← WBP_DragOverlay · theo doc</small>"
+  },
+  {
+   "id": "s5",
+   "type": "text",
+   "x": 1345,
+   "y": 1112,
+   "width": 330,
+   "height": 212,
+   "text": "**5.** thả\n`On Drop (nhánh Combo)`\n↗ [[WBP_DragOverlay_FurnitureCard#On Drop — v1.10 S7.G5.3+G5.4 (material branch + dọn scaffolding, 11/09/2026)|WBP_DragOverlay_FurnitureCard › On Drop]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s6",
+   "type": "text",
+   "x": 1785,
+   "y": 1364,
+   "width": 330,
+   "height": 212,
+   "text": "**6.** đặt combo tại điểm sàn (trừ lại nửa chiều cao bóng)\n`SpawnComboByID(ComboID, SpawnLocation)`\n↗ [[BP_ComboManager#C2 — SpawnComboByID (thêm vào v1.3 — 22/06/2026)|BP_ComboManager › SpawnComboByID]]\n<small>← WBP_DragOverlay · theo doc</small>"
+  },
+  {
+   "id": "s7",
+   "type": "text",
+   "x": 905,
+   "y": 1616,
+   "width": 330,
+   "height": 124,
+   "text": "**7.** huỷ bóng, gỡ lớp phủ\n`Destroy Actor → Remove From Parent`\n<small>← WBP_DragOverlay · theo doc</small>"
+  },
+  {
+   "id": "s8",
+   "type": "text",
+   "x": 1785,
+   "y": 1780,
+   "width": 330,
+   "height": 102,
+   "text": "**8.** chặn lệnh chồng khi đang sinh\n`Branch Cmb_bSpawnInFlight`\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s9",
+   "type": "text",
+   "x": 2225,
+   "y": 1922,
+   "width": 330,
+   "height": 190,
+   "text": "**9.** đang sửa nhóm thì thoát hẳn trước\n`ExitEditModeFull()`\n↗ [[BP_FurnitureInputManager#ExitEditModeFull()|BP_FurnitureInputManager › ExitEditModeFull]]\n<small>← BP_ComboManager · theo doc</small>"
+  },
+  {
+   "id": "s10",
+   "type": "text",
+   "x": 1785,
+   "y": 2152,
+   "width": 330,
+   "height": 146,
+   "text": "**10.** đọc JSON, dựng nhóm mới với GUID mới cho từng token\n`F_LoadComboData → F_BuildTokenGUIDMap → F_RegisterComboGroups`\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s11",
+   "type": "text",
+   "x": 2225,
+   "y": 2338,
+   "width": 330,
+   "height": 322,
+   "text": "↻ lặp: mỗi món trong combo\n**11.** sinh món (mesh tra từ DT) tại điểm đặt + vị trí tương đối\n`SpawnFurnitureCopy() → SET RowName, GroupID, MaterialSlots`\n↗ [[BP_FurnitureInputManager#SpawnFurnitureCopy(...) → NewActorCopy — FULL NODE FLOW ( ✓K2 export 21/09/2026 — U1 prep + ✓ensure PersistentID chèn 21/09/2026, U1.2 )|BP_FurnitureInputManager › SpawnFurnitureCopy]]\n<small>← BP_ComboManager · theo doc</small>"
+  },
+  {
+   "id": "s12",
+   "type": "text",
+   "x": 2225,
+   "y": 2700,
+   "width": 330,
+   "height": 212,
+   "text": "**12.** chọn cả cụm\n`DeselectAll() → SelectActors(Cmb_SpawnedActors)`\n↗ [[BP_FurnitureInputManager#DeselectAll (T5 → v1.6)|BP_FurnitureInputManager › DeselectAll]]\n<small>← BP_ComboManager · theo doc</small>"
+  },
+  {
+   "id": "s13",
+   "type": "text",
+   "x": 2665,
+   "y": 2952,
+   "width": 330,
+   "height": 190,
+   "text": "**13.** cả cụm = 1 entry\n`CaptureSnapshot(\"SpawnCombo\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_ComboManager · theo doc</small>"
+  },
+  {
+   "id": "n21",
+   "type": "text",
+   "x": 20,
+   "y": 3182,
+   "width": 2980,
+   "height": 70,
+   "text": "📝 RowName không còn trong DT → bỏ qua món đó + Toast, vẫn tính thành công. 0 món sinh được = thất bại (Cmb_LastSpawnSucceeded = False, dùng cho 5s).",
+   "color": "3"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e0",
+   "fromNode": "h_U",
+   "fromSide": "right",
+   "toNode": "s1",
+   "toSide": "left",
+   "label": "1"
+  },
+  {
+   "id": "e1",
+   "fromNode": "s1",
+   "fromSide": "right",
+   "toNode": "s2",
+   "toSide": "left",
+   "label": "2"
+  },
+  {
+   "id": "e2",
+   "fromNode": "s2",
+   "fromSide": "left",
+   "toNode": "s3",
+   "toSide": "right",
+   "label": "3"
+  },
+  {
+   "id": "e3",
+   "fromNode": "s3",
+   "fromSide": "right",
+   "toNode": "s4",
+   "toSide": "left",
+   "label": "4"
+  },
+  {
+   "id": "e4",
+   "fromNode": "s4",
+   "fromSide": "right",
+   "toNode": "s5",
+   "toSide": "left",
+   "label": "5"
+  },
+  {
+   "id": "e5",
+   "fromNode": "s5",
+   "fromSide": "right",
+   "toNode": "s6",
+   "toSide": "left",
+   "label": "6"
+  },
+  {
+   "id": "e6",
+   "fromNode": "s6",
+   "fromSide": "left",
+   "toNode": "s7",
+   "toSide": "right",
+   "label": "7"
+  },
+  {
+   "id": "e7",
+   "fromNode": "s7",
+   "fromSide": "right",
+   "toNode": "s8",
+   "toSide": "left",
+   "label": "8"
+  },
+  {
+   "id": "e8",
+   "fromNode": "s8",
+   "fromSide": "right",
+   "toNode": "s9",
+   "toSide": "left",
+   "label": "9"
+  },
+  {
+   "id": "e9",
+   "fromNode": "s9",
+   "fromSide": "left",
+   "toNode": "s10",
+   "toSide": "right",
+   "label": "10"
+  },
+  {
+   "id": "e10",
+   "fromNode": "s10",
+   "fromSide": "right",
+   "toNode": "s11",
+   "toSide": "left",
+   "label": "11"
+  },
+  {
+   "id": "e11",
+   "fromNode": "s11",
+   "fromSide": "bottom",
+   "toNode": "s12",
+   "toSide": "top",
+   "label": "12"
+  },
+  {
+   "id": "e12",
+   "fromNode": "s12",
+   "fromSide": "right",
+   "toNode": "s13",
+   "toSide": "left",
+   "label": "13"
+  }
+ ]
+}

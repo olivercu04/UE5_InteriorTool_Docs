@@ -1,8 +1,8 @@
-# Luồng 3b - Combo lưu spawn thay combo
+# Kết nối 3b - Combo lưu spawn thay combo
 
-> Tự sinh từ [[Architecture_Map]] v1.5 mục **3b — Combo (lưu / spawn / thay combo)** (24/09/2026). Dấu ✓K2 = cạnh nét dày `==>` trên sơ đồ gốc (đã kiểm chứng K2, diagram-contract §2); không dấu = theo doc. Sửa bản đồ gốc rồi chạy lại script.
+> Tự sinh từ [[Architecture_Map]] mục **3b — Combo (lưu / spawn / thay combo)**. Dấu ✓K2 = cạnh nét dày `==>` trên sơ đồ gốc (đã kiểm chứng K2, diagram-contract §2); không dấu = theo doc. Sửa bản đồ gốc rồi chạy lại script.
 
-← [[Bản đồ não]]
+← [[Bản đồ não]] · Mức asset (ai nói chuyện với ai). Theo từng THAO TÁC của người dùng → note `L01…L13` trong `Brain/Luồng/`.
 
 ## Thành phần
 
@@ -53,3 +53,9 @@
 - [[WBP_SaveComboDialog]] → [[WBP_FolderTreePicker]] — nhúng cây thư mục · Picker, ExpandToPath()
 - [[WBP_SaveComboDialog]] → [[WBP_FurnitureInventory]] — báo tin: bấm Lưu / Ghi đè / Huỷ · Broadcast
 - [[WBP_LibraryContextMenu]] → [[WBP_ContextMenuItem]] — tạo từng dòng menu · Create WBP_ContextMenuItem
+- [[BP_FurnitureInputManager]] → [[WBP_FurnitureInventory]] — mở hộp thoại lưu combo · OpenSaveComboDialog(SelectedActors, Center) ✓K2
+- [[BP_FurnitureInputManager]] → [[WBP_FurnitureInventory]] — mở tab Combo ở chế độ thay · StartReplaceComboMode → SwitchInventoryMode(Combo) / FilterComboByFolder() / RefreshComboCardReplaceMode()
+- [[WBP_FurnitureInventory]] → [[BP_ComboManager]] — lưu combo (mới / ghi đè) · SaveComboFromSelection()
+- [[WBP_DragOverlay_FurnitureCard]] → [[BP_ComboManager]] — đặt combo khi thả · SpawnComboByID(ComboID, SpawnLocation)
+- [[BP_ComboManager]] → [[BP_FurnitureInputManager]] — sinh từng món + chọn cả cụm · ExitEditModeFull() / SpawnFurnitureCopy() / SelectActors() / GetAllDescendantActors()
+- [[BP_ComboManager]] → [[BP_UndoManager]] — ghi sổ khi đặt / thay combo · CaptureSnapshot(SpawnCombo / ReplaceCombo)

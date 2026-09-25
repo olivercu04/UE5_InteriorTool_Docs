@@ -1,0 +1,305 @@
+{
+ "nodes": [
+  {
+   "id": "lane_UM",
+   "type": "group",
+   "x": 2200,
+   "y": 110,
+   "width": 380,
+   "height": 2996,
+   "label": "BP_UndoManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_CM",
+   "type": "group",
+   "x": 1760,
+   "y": 110,
+   "width": 380,
+   "height": 2996,
+   "label": "BP_ComboManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_CC",
+   "type": "group",
+   "x": 1320,
+   "y": 110,
+   "width": 380,
+   "height": 2996,
+   "label": "WBP_ComboCard",
+   "color": "2"
+  },
+  {
+   "id": "lane_INV",
+   "type": "group",
+   "x": 880,
+   "y": 110,
+   "width": 380,
+   "height": 2996,
+   "label": "WBP_FurnitureInventory",
+   "color": "2"
+  },
+  {
+   "id": "lane_IM",
+   "type": "group",
+   "x": 440,
+   "y": 110,
+   "width": 380,
+   "height": 2996,
+   "label": "BP_FurnitureInputManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_U",
+   "type": "group",
+   "x": 0,
+   "y": 110,
+   "width": 380,
+   "height": 2996,
+   "label": "User"
+  },
+  {
+   "id": "title",
+   "type": "text",
+   "x": 0,
+   "y": -120,
+   "width": 2580,
+   "height": 170,
+   "text": "# 5s — Thay cả combo\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
+  },
+  {
+   "id": "h_U",
+   "type": "text",
+   "x": 25,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### User"
+  },
+  {
+   "id": "h_IM",
+   "type": "text",
+   "x": 465,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureInputManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_INV",
+   "type": "text",
+   "x": 905,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_FurnitureInventory]]",
+   "color": "2"
+  },
+  {
+   "id": "h_CC",
+   "type": "text",
+   "x": 1345,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_ComboCard]]",
+   "color": "2"
+  },
+  {
+   "id": "h_CM",
+   "type": "text",
+   "x": 1785,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_ComboManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_UM",
+   "type": "text",
+   "x": 2225,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_UndoManager]]",
+   "color": "5"
+  },
+  {
+   "id": "s1",
+   "type": "text",
+   "x": 465,
+   "y": 280,
+   "width": 330,
+   "height": 256,
+   "text": "**1.** chuột phải \"Thay đồ\" trên 1 món thuộc combo\n`CB_Replace`\n↗ [[BP_FurnitureInputManager#CB_Replace — Custom Event (EventGraph, verified qua K2Node export 03/08/2026 — Save As/Save đè T2)|BP_FurnitureInputManager › CB_Replace]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s2",
+   "type": "text",
+   "x": 465,
+   "y": 576,
+   "width": 330,
+   "height": 256,
+   "text": "**2.** món thuộc combo, không đang sửa bên trong → thay cả cụm\n`ShouldRouteReplaceToCombo() → StartReplaceComboMode(RootGroupID, ComboID)`\n↗ [[BP_FurnitureInputManager#ShouldRouteReplaceToCombo(Actor BP_FurnitureActor) → (bRouteToCombo Bool, ComboID, RootGroupID String)|BP_FurnitureInputManager › ShouldRouteReplaceToCombo]]\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s3",
+   "type": "text",
+   "x": 905,
+   "y": 872,
+   "width": 330,
+   "height": 256,
+   "text": "**3.** mở tab Combo đúng thư mục của combo gốc, thẻ hiện nút Thay\n`EnsureExpanded() → SwitchInventoryMode(Combo) → FilterComboByFolder() → RefreshComboCardReplaceMode()`\n↗ [[WBP_FurnitureInventory#EnsureExpanded — v2.3|WBP_FurnitureInventory › EnsureExpanded]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
+  },
+  {
+   "id": "s4",
+   "type": "text",
+   "x": 1345,
+   "y": 1168,
+   "width": 330,
+   "height": 190,
+   "text": "**4.** bấm Thay trên thẻ combo muốn dùng\n`BTN_ChangeCombo`\n↗ [[WBP_ComboCard#BTN_ChangeCombo — Change Combo (WIRED, C9.f, 30/07/2026)|WBP_ComboCard › BTN_ChangeCombo]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s5",
+   "type": "text",
+   "x": 465,
+   "y": 1398,
+   "width": 330,
+   "height": 212,
+   "text": "**5.** thẻ chỉ gọi đúng 1 node\n`ExecuteComboReplace(NewComboID)`\n↗ [[BP_FurnitureInputManager#ExecuteComboReplace(NewComboID String) — Function (MỚI, C9.f, 30/07/2026)|BP_FurnitureInputManager › ExecuteComboReplace]]\n<small>← WBP_ComboCard · theo doc</small>"
+  },
+  {
+   "id": "s6",
+   "type": "text",
+   "x": 1785,
+   "y": 1650,
+   "width": 330,
+   "height": 212,
+   "text": "**6.** thay\n`ReplaceCombo(ComboRootGroupIDToReplace, NewComboID)`\n↗ [[BP_ComboManager#Custom Event ReplaceCombo(RootGroupID String, NewComboID String)|BP_ComboManager › ReplaceCombo]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
+  },
+  {
+   "id": "s7",
+   "type": "text",
+   "x": 465,
+   "y": 1902,
+   "width": 330,
+   "height": 256,
+   "text": "**7.** gom cụm cũ, tính điểm neo, xoá cụm cũ\n`GetAllDescendantActors() → CalculateComboAnchor() → DestroyComboCluster()`\n↗ [[BP_FurnitureInputManager#GetAllDescendantActors(InGroupID) → Array<BP_FurnitureActor> ⭐ ĐỆ QUY|BP_FurnitureInputManager › GetAllDescendantActors]]\n<small>← BP_ComboManager · theo doc</small>"
+  },
+  {
+   "id": "s8",
+   "type": "text",
+   "x": 1785,
+   "y": 2198,
+   "width": 330,
+   "height": 212,
+   "text": "**8.** đặt combo mới tại điểm neo (như 5r)\n`SpawnComboByID(NewComboID, Cmb_ReplaceAnchor, \"ReplaceCombo\")`\n↗ [[BP_ComboManager#C2 — SpawnComboByID (thêm vào v1.3 — 22/06/2026)|BP_ComboManager › SpawnComboByID]]\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s9",
+   "type": "text",
+   "x": 2225,
+   "y": 2450,
+   "width": 330,
+   "height": 278,
+   "text": "▸ nếu không sinh được món nào\n**9.** khôi phục cụm cũ tại chỗ, không lùi sổ\n`RestoreCurrentSnapshot() → Toast \"Thay thế thất bại\"`\n↗ [[BP_UndoManager#RestoreCurrentSnapshot() — Custom Event (MỚI, C9.c, 30/07/2026)|BP_UndoManager › RestoreCurrentSnapshot]]\n<small>← BP_ComboManager · theo doc</small>"
+  },
+  {
+   "id": "s10",
+   "type": "text",
+   "x": 465,
+   "y": 2768,
+   "width": 330,
+   "height": 278,
+   "text": "**10.** nhắm vào cụm mới để thay tiếp được\n`ResolveSelectedComboRoot() → SET ComboRootGroupIDToReplace`\n↗ [[BP_FurnitureInputManager#ResolveSelectedComboRoot() → RootGroupID String, ComboID String, bFound Bool — Function (ghi nhận 02/08/2026, K2Node export thật cuhoang cung cấp)|BP_FurnitureInputManager › ResolveSelectedComboRoot]]\n<small>nội bộ · theo doc</small>"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e0",
+   "fromNode": "h_U",
+   "fromSide": "right",
+   "toNode": "s1",
+   "toSide": "left",
+   "label": "1"
+  },
+  {
+   "id": "e1",
+   "fromNode": "s1",
+   "fromSide": "bottom",
+   "toNode": "s2",
+   "toSide": "top",
+   "label": "2 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e2",
+   "fromNode": "s2",
+   "fromSide": "right",
+   "toNode": "s3",
+   "toSide": "left",
+   "label": "3"
+  },
+  {
+   "id": "e3",
+   "fromNode": "s3",
+   "fromSide": "right",
+   "toNode": "s4",
+   "toSide": "left",
+   "label": "4"
+  },
+  {
+   "id": "e4",
+   "fromNode": "s4",
+   "fromSide": "left",
+   "toNode": "s5",
+   "toSide": "right",
+   "label": "5"
+  },
+  {
+   "id": "e5",
+   "fromNode": "s5",
+   "fromSide": "right",
+   "toNode": "s6",
+   "toSide": "left",
+   "label": "6 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e6",
+   "fromNode": "s6",
+   "fromSide": "left",
+   "toNode": "s7",
+   "toSide": "right",
+   "label": "7"
+  },
+  {
+   "id": "e7",
+   "fromNode": "s7",
+   "fromSide": "right",
+   "toNode": "s8",
+   "toSide": "left",
+   "label": "8"
+  },
+  {
+   "id": "e8",
+   "fromNode": "s8",
+   "fromSide": "right",
+   "toNode": "s9",
+   "toSide": "left",
+   "label": "9"
+  },
+  {
+   "id": "e9",
+   "fromNode": "s9",
+   "fromSide": "left",
+   "toNode": "s10",
+   "toSide": "right",
+   "label": "10"
+  }
+ ]
+}

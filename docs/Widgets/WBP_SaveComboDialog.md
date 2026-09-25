@@ -203,9 +203,11 @@ Remove from Parent
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3b - Combo lưu spawn thay combo]]
+**Có mặt trong thao tác:** [[L11 · Combo|L11]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3b - Combo lưu spawn thay combo]]
 
 **Gọi / điều khiển →**
 - [[WBP_FolderTreePicker]] — nhúng cây thư mục · Picker, ExpandToPath()

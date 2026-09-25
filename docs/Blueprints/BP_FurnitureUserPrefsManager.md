@@ -78,9 +78,11 @@ Gọi từ `WBP_FurnitureInventory.HandleDeleteComboConfirmed` khi xóa combo �
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3b - Combo lưu spawn thay combo]] · [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3d - Save Undo khởi động]]
+**Có mặt trong thao tác:** [[L02 · Tìm đồ trong kho|L02]] · [[L03 · Kéo đồ vào phòng|L03]] · [[L08 · Thay đồ|L08]] · [[L09 · Đổi vật liệu|L09]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3b - Combo lưu spawn thay combo]] · [[Kết nối 3c - Inventory + Cây thư mục]] · [[Kết nối 3d - Save Undo khởi động]] · [[Kết nối 3e - Vật liệu Material]]
 
 **Gọi / điều khiển →**
 - [[BP_UserPreferencesSave]] — ghi/đọc danh sách combo Gần đây · RecentComboIDs (SaveGame)
@@ -88,6 +90,10 @@ Gọi từ `WBP_FurnitureInventory.HandleDeleteComboConfirmed` khi xóa combo �
 **← Được gọi bởi**
 - [[WBP_FurnitureInventory]] — gọi bỏ combo khỏi Gần đây · RemoveRecentCombo()
 - [[WBP_FurnitureCard]] — gọi thêm Gần đây / Yêu thích · AddRecentMesh()
+- [[WBP_FurnitureInventory]] — đọc danh sách Gần đây / Yêu thích · GET UserPrefs → RecentMeshes / FavoriteMeshes
+- [[WBP_DragOverlay_FurnitureCard]] — thêm đồ vừa thả vào Gần đây · AddRecentMesh()
 - [[WBP_FOFF_ToolDemo]] — sinh ra · Spawn
+- [[WBP_FurnitureInventory]] — thêm vật liệu vào Gần đây · AddRecentMaterial() ✓K2
+- [[BP_FurnitureActor]] — thêm vật liệu vào Gần đây · AddRecentMaterial()
 
 <!-- BRAIN:END -->

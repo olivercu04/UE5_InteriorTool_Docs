@@ -1,0 +1,392 @@
+{
+ "nodes": [
+  {
+   "id": "lane_UM",
+   "type": "group",
+   "x": 2640,
+   "y": 110,
+   "width": 380,
+   "height": 2862,
+   "label": "BP_UndoManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_PREFS",
+   "type": "group",
+   "x": 2200,
+   "y": 110,
+   "width": 380,
+   "height": 2862,
+   "label": "BP_FurnitureUserPrefsManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_MSS",
+   "type": "group",
+   "x": 1760,
+   "y": 110,
+   "width": 380,
+   "height": 2862,
+   "label": "MaterialSlotService (C++)",
+   "color": "6"
+  },
+  {
+   "id": "lane_IM",
+   "type": "group",
+   "x": 1320,
+   "y": 110,
+   "width": 380,
+   "height": 2862,
+   "label": "BP_FurnitureInputManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_INV",
+   "type": "group",
+   "x": 880,
+   "y": 110,
+   "width": 380,
+   "height": 2862,
+   "label": "WBP_FurnitureInventory",
+   "color": "2"
+  },
+  {
+   "id": "lane_MAT",
+   "type": "group",
+   "x": 440,
+   "y": 110,
+   "width": 380,
+   "height": 2862,
+   "label": "WBP_MaterialCard",
+   "color": "2"
+  },
+  {
+   "id": "lane_U",
+   "type": "group",
+   "x": 0,
+   "y": 110,
+   "width": 380,
+   "height": 2862,
+   "label": "User"
+  },
+  {
+   "id": "title",
+   "type": "text",
+   "x": 0,
+   "y": -120,
+   "width": 3020,
+   "height": 170,
+   "text": "# 5o — Đổi vật liệu bằng cách bấm thẻ (1 hoặc nhiều món)\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
+  },
+  {
+   "id": "h_U",
+   "type": "text",
+   "x": 25,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### User"
+  },
+  {
+   "id": "h_MAT",
+   "type": "text",
+   "x": 465,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_MaterialCard]]",
+   "color": "2"
+  },
+  {
+   "id": "h_INV",
+   "type": "text",
+   "x": 905,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_FurnitureInventory]]",
+   "color": "2"
+  },
+  {
+   "id": "h_IM",
+   "type": "text",
+   "x": 1345,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureInputManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_MSS",
+   "type": "text",
+   "x": 1785,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[MaterialSlotService_Reference]]",
+   "color": "6"
+  },
+  {
+   "id": "h_PREFS",
+   "type": "text",
+   "x": 2225,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureUserPrefsManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_UM",
+   "type": "text",
+   "x": 2665,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_UndoManager]]",
+   "color": "5"
+  },
+  {
+   "id": "n8",
+   "type": "text",
+   "x": 20,
+   "y": 280,
+   "width": 2980,
+   "height": 70,
+   "text": "📝 Trước đó - đã chọn đồ (5a) và đang ở tab Vật liệu với 1 slot được chọn (bấm ô slot, hoặc bấm thẳng lên mesh → NotifyViewportSlotClick).",
+   "color": "3"
+  },
+  {
+   "id": "s1",
+   "type": "text",
+   "x": 465,
+   "y": 390,
+   "width": 330,
+   "height": 190,
+   "text": "**1.** bấm 1 thẻ vật liệu\n`Button_ChangeMaterial`\n↗ [[WBP_MaterialCard#Button_ChangeMaterial OnClicked|WBP_MaterialCard › Button_ChangeMaterial]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s2",
+   "type": "text",
+   "x": 905,
+   "y": 620,
+   "width": 330,
+   "height": 190,
+   "text": "**2.** áp cho món đang mở panel\n`ApplyMaterial(RowName)`\n↗ [[WBP_FurnitureInventory#ApplyMaterial(MaterialRowName) — v1.1|WBP_FurnitureInventory › ApplyMaterial]]\n<small>← WBP_MaterialCard · theo doc</small>"
+  },
+  {
+   "id": "s3",
+   "type": "text",
+   "x": 905,
+   "y": 850,
+   "width": 330,
+   "height": 146,
+   "text": "**3.** cần món + slot hợp lệ → tra DT lấy đường dẫn\n`SET PendingRowName, PendingMaterialPath → LoadAndApplyMaterial`\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s4",
+   "type": "text",
+   "x": 905,
+   "y": 1036,
+   "width": 330,
+   "height": 124,
+   "text": "**4.** tải vật liệu (async)\n`Async Load Asset → Cast To MaterialInterface`\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s5",
+   "type": "text",
+   "x": 1785,
+   "y": 1200,
+   "width": 330,
+   "height": 256,
+   "text": "**5.** gắn vào slot của món chính, ghi MaterialSlots\n`ApplyLoadedMaterialToSlot()`\n↗ [[MaterialSlotService_Reference#ApplyLoadedMaterialToSlot(Mesh, Records&, SlotName, HintIndex, LoadedMI, RowName, PathFallback) → bool|MaterialSlotService_Reference › ApplyLoadedMaterialToSlot]]\n<small>← WBP_FurnitureInventory · ✓K2</small>"
+  },
+  {
+   "id": "s6",
+   "type": "text",
+   "x": 1345,
+   "y": 1496,
+   "width": 330,
+   "height": 124,
+   "text": "**6.** lấy danh sách đang chọn\n`GET SelectedActors`\n<small>← WBP_FurnitureInventory · ✓K2</small>"
+  },
+  {
+   "id": "s7",
+   "type": "text",
+   "x": 1785,
+   "y": 1660,
+   "width": 330,
+   "height": 322,
+   "text": "▸ nếu từ 2 món trở lên, tất cả cùng RowName\n**7.** áp tiếp cho từng món phụ, dùng lại vật liệu đã tải\n`ApplyLoadedMaterialToSlot() → Toast \"Áp cho N/N đồ\"`\n↗ [[MaterialSlotService_Reference#ApplyLoadedMaterialToSlot(Mesh, Records&, SlotName, HintIndex, LoadedMI, RowName, PathFallback) → bool|MaterialSlotService_Reference › ApplyLoadedMaterialToSlot]]\n<small>← WBP_FurnitureInventory · ✓K2</small>"
+  },
+  {
+   "id": "s8",
+   "type": "text",
+   "x": 905,
+   "y": 2022,
+   "width": 330,
+   "height": 146,
+   "text": "▸ ngược lại: từ 2 món, khác loại\n**8.** chỉ đổi món chính\n`Toast \"Chỉ áp cho món đang chọn - N món khác loại chưa đổi\"`\n<small>nội bộ · ✓K2</small>",
+   "color": "3"
+  },
+  {
+   "id": "s9",
+   "type": "text",
+   "x": 905,
+   "y": 2208,
+   "width": 330,
+   "height": 102,
+   "text": "**9.** cập nhật ảnh ô slot\n`SerializeSlotRecords → UpdateThumbnail`\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s10",
+   "type": "text",
+   "x": 905,
+   "y": 2350,
+   "width": 330,
+   "height": 146,
+   "text": "**10.** hẹn ghi sổ 0.5s, bấm liên tục chỉ ghi 1 lần\n`SetTimer(\"CaptureMaterialSnapshot\", 0.5)`\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s11",
+   "type": "text",
+   "x": 2225,
+   "y": 2536,
+   "width": 330,
+   "height": 124,
+   "text": "**11.** thêm vào Gần đây\n`AddRecentMaterial(PendingRowName)`\n<small>← WBP_FurnitureInventory · ✓K2</small>"
+  },
+  {
+   "id": "s12",
+   "type": "text",
+   "x": 2665,
+   "y": 2700,
+   "width": 330,
+   "height": 212,
+   "text": "**12.** 0.5s sau - ghi sổ\n`CaptureMaterialSnapshot → CaptureSnapshot(\"ChangeMaterial\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← WBP_FurnitureInventory · theo doc</small>"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e0",
+   "fromNode": "h_U",
+   "fromSide": "bottom",
+   "toNode": "n8",
+   "toSide": "top"
+  },
+  {
+   "id": "e1",
+   "fromNode": "n8",
+   "fromSide": "bottom",
+   "toNode": "s1",
+   "toSide": "top",
+   "label": "1"
+  },
+  {
+   "id": "e2",
+   "fromNode": "s1",
+   "fromSide": "right",
+   "toNode": "s2",
+   "toSide": "left",
+   "label": "2"
+  },
+  {
+   "id": "e3",
+   "fromNode": "s2",
+   "fromSide": "bottom",
+   "toNode": "s3",
+   "toSide": "top",
+   "label": "3"
+  },
+  {
+   "id": "e4",
+   "fromNode": "s3",
+   "fromSide": "bottom",
+   "toNode": "s4",
+   "toSide": "top",
+   "label": "4 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e5",
+   "fromNode": "s4",
+   "fromSide": "right",
+   "toNode": "s5",
+   "toSide": "left",
+   "label": "5 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e6",
+   "fromNode": "s5",
+   "fromSide": "left",
+   "toNode": "s6",
+   "toSide": "right",
+   "label": "6 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e7",
+   "fromNode": "s6",
+   "fromSide": "right",
+   "toNode": "s7",
+   "toSide": "left",
+   "label": "7 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e8",
+   "fromNode": "s6",
+   "fromSide": "left",
+   "toNode": "s8",
+   "toSide": "right",
+   "label": "8 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e9",
+   "fromNode": "s7",
+   "fromSide": "left",
+   "toNode": "s9",
+   "toSide": "right",
+   "label": "9 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e10",
+   "fromNode": "s8",
+   "fromSide": "bottom",
+   "toNode": "s9",
+   "toSide": "top",
+   "label": "9 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e11",
+   "fromNode": "s9",
+   "fromSide": "bottom",
+   "toNode": "s10",
+   "toSide": "top",
+   "label": "10 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e12",
+   "fromNode": "s10",
+   "fromSide": "right",
+   "toNode": "s11",
+   "toSide": "left",
+   "label": "11 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e13",
+   "fromNode": "s11",
+   "fromSide": "right",
+   "toNode": "s12",
+   "toSide": "left",
+   "label": "12"
+  }
+ ]
+}

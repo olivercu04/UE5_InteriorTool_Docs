@@ -172,15 +172,18 @@ Chọn còn 1 đồ / bỏ chọn hết:
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]]
+**Có mặt trong thao tác:** [[L05 · Di chuyển và xoay đồ|L05]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3a - Chọn đồ Gizmo Nhóm]]
 
 **Gọi / điều khiển →**
 - [[BP_FurnitureActor]] — kéo đồ con theo trục · ApplyTransformToChildren()
 
 **← Được gọi bởi**
 - [[BP_FurnitureInputManager]] — tạo & huỷ trục xoay · SpawnOrUpdatePivot() / DestroyPivot()
-- [[BP_GizmoController]] — cập nhật trục lúc bấm · RefreshOffsets()
+- [[BP_GizmoController]] — cập nhật trục lúc bấm + dời pivot khi kéo · RefreshOffsets(), Set Actor Location
+- [[BP_FurnitureInputManager]] — dời pivot theo nhóm khi nhích phím · Set Actor Location → RefreshOffsets()
 
 <!-- BRAIN:END -->

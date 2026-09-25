@@ -1,10 +1,13 @@
 # Design — Nguyên tắc thiết kế UI/UX
 **Nguồn:** `import_raw/Design.md`
+**Phiên bản:** 1.2 | **Cập nhật:** 25/09/2026 — đính chính "Đối tượng người dùng" theo quyết định người dùng đích (xem đầu mục đó).
 **Phiên bản:** 1.1 | **Dự án:** Lighting_Mnger | **Cập nhật:** 20/05/2026 — 16:00 ICT
 
 ---
 
 ## Đối tượng người dùng
+
+> ⚠ **Đính chính 25/09/2026 (quyết định cuhoang):** người dùng đích = **người có kỹ năng thiết kế và tư vấn nội thất tốt, dễ tiếp cận công nghệ** — không phải người mù công nghệ, không phải nhân viên FOFF. Hệ quả: chữ trên giao diện nói bằng ngôn ngữ nghề nội thất (không bằng ngôn ngữ engine); "đơn giản, ít bước, phản hồi ngay" vẫn giữ. Nguồn: `Plans/25-09-2026_Product_UX_Review_Plan_v1.md` mục 2.0 · tóm tắt: `Brain/Tư duy/Tư duy 1 · Sản phẩm và người dùng.md`. 3 dòng dưới là bản 20/05, giữ để tra lịch sử.
 
 - **Người dùng bình thường** — không quen phần mềm kiến trúc, không quen phần mềm máy tính phức tạp
 - **Ưu tiên:** đơn giản, trực quan, ít bước thao tác nhất có thể

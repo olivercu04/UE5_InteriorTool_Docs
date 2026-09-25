@@ -857,9 +857,11 @@ không giật thêm dù RT giờ 2048²).
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3b - Combo lưu spawn thay combo]] · [[Luồng 3d - Save Undo khởi động]] · [[Luồng 3e - Vật liệu Material]]
+**Có mặt trong thao tác:** [[L11 · Combo|L11]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3b - Combo lưu spawn thay combo]] · [[Kết nối 3d - Save Undo khởi động]] · [[Kết nối 3e - Vật liệu Material]]
 
 **Gọi / điều khiển →**
 - [[BP_FurnitureInputManager]] — giữ tham chiếu + gọi huỷ cụm cũ · InputManagerRef, DestroyComboCluster()
@@ -869,6 +871,8 @@ không giật thêm dù RT giờ 2048²).
 - [[ComboSerializer_Reference]] — ghi/đọc file + thư mục combo · save / load
 - [[Foff_GameInstance]] — hiện thông báo · GameInstance.ToastRef.ShowToast()
 - [[WBP_FurnitureInventory]] — báo tin: thư viện combo đổi · Broadcast OnComboLibraryChanged
+- [[BP_FurnitureInputManager]] — sinh từng món + chọn cả cụm · ExitEditModeFull() / SpawnFurnitureCopy() / SelectActors() / GetAllDescendantActors()
+- [[BP_UndoManager]] — ghi sổ khi đặt / thay combo · CaptureSnapshot(SpawnCombo / ReplaceCombo)
 - [[BP_UndoManager]] — quay lui khi đổi combo lỗi · RestoreCurrentSnapshot()
 - [[BP_FurnitureActor]] — gán vật liệu khi spawn combo · F_ApplyMaterialOverrides()
 
@@ -876,6 +880,8 @@ không giật thêm dù RT giờ 2048²).
 - [[BP_FurnitureInputManager]] — ra lệnh đổi combo · ExecuteComboReplace() → ReplaceCombo() ✓K2
 - [[WBP_FurnitureInventory]] — giữ tham chiếu + xin ảnh bìa · ComboManagerRef, GetComboThumbnail()
 - [[BP_ComboItemView]] — dùng chung bộ nhớ ảnh bìa · Cmb_ThumbnailCache
+- [[WBP_FurnitureInventory]] — lưu combo (mới / ghi đè) · SaveComboFromSelection()
+- [[WBP_DragOverlay_FurnitureCard]] — đặt combo khi thả · SpawnComboByID(ComboID, SpawnLocation)
 - [[WBP_FOFF_ToolDemo]] — sinh ra (⚠ doc còn ghi Level BP) · Spawn
 
 <!-- BRAIN:END -->

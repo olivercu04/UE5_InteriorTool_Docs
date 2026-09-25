@@ -6,7 +6,7 @@
    "x": 1760,
    "y": 110,
    "width": 380,
-   "height": 1930,
+   "height": 2304,
    "label": "WBP_FurnitureInventory",
    "color": "2"
   },
@@ -16,7 +16,7 @@
    "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 1930,
+   "height": 2304,
    "label": "BP_FurnitureInputManager",
    "color": "5"
   },
@@ -26,7 +26,7 @@
    "x": 880,
    "y": 110,
    "width": 380,
-   "height": 1930,
+   "height": 2304,
    "label": "BP_UndoManager",
    "color": "5"
   },
@@ -36,7 +36,7 @@
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 1930,
+   "height": 2304,
    "label": "BP_GizmoController",
    "color": "5"
   },
@@ -46,7 +46,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 1930,
+   "height": 2304,
    "label": "User"
   },
   {
@@ -122,14 +122,14 @@
    "x": 905,
    "y": 422,
    "width": 330,
-   "height": 146,
-   "text": "**2.** chụp trạng thái theo mode\n`CaptureSnapshot(\"Move\" / \"Rotate\" / \"Scale\")`\n<small>← BP_GizmoController · theo doc</small>"
+   "height": 212,
+   "text": "**2.** chụp trạng thái theo mode\n`CaptureSnapshot(\"Move\" / \"Rotate\" / \"Scale\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_GizmoController · ✓K2</small>"
   },
   {
    "id": "n8",
    "type": "text",
    "x": 460,
-   "y": 608,
+   "y": 674,
    "width": 340,
    "height": 97,
    "text": "📝 rồi mới SET bIsDraggingGizmo = False (đảo thứ tự = bug Undo)",
@@ -139,25 +139,25 @@
    "id": "s3",
    "type": "text",
    "x": 905,
-   "y": 745,
+   "y": 811,
    "width": 330,
-   "height": 102,
-   "text": "**3.** dựng nội dung entry\n`BuildSceneSnapshotBase(ActionName)`\n<small>nội bộ · theo doc</small>"
+   "height": 190,
+   "text": "**3.** dựng nội dung entry\n`BuildSceneSnapshotBase(ActionName)`\n↗ [[BP_UndoManager#BuildSceneSnapshotBase(ActionName) → S_SceneSnapshot — Function MỚI (U2.3, 24/09/2026)|BP_UndoManager › BuildSceneSnapshotBase]]\n<small>nội bộ · theo doc</small>"
   },
   {
    "id": "s4",
    "type": "text",
    "x": 1345,
-   "y": 887,
+   "y": 1041,
    "width": 330,
-   "height": 146,
-   "text": "**4.** đọc nhóm + edit mode\n`GetGroupsForSnapshot() (hàm của UM), GET EditModeStack`\n<small>← BP_UndoManager · theo doc</small>"
+   "height": 212,
+   "text": "**4.** đọc nhóm + edit mode\n`GetGroupsForSnapshot() (hàm của UM), GET EditModeStack`\n↗ [[BP_UndoManager#GetGroupsForSnapshot() → Array\\<S_GroupData\\> (v1.6)|BP_UndoManager › GetGroupsForSnapshot]]\n<small>← BP_UndoManager · theo doc</small>"
   },
   {
    "id": "s5",
    "type": "text",
    "x": 905,
-   "y": 1073,
+   "y": 1293,
    "width": 330,
    "height": 146,
    "text": "**5.** quét mọi actor tag FurnitureSpawned → S_FurniturePlacement (vị trí, RowName, GroupID, MaterialSlots, PersistentID)\n<small>nội bộ · theo doc</small>"
@@ -166,7 +166,7 @@
    "id": "s6",
    "type": "text",
    "x": 1345,
-   "y": 1259,
+   "y": 1479,
    "width": 330,
    "height": 124,
    "text": "**6.** đọc đồ đang chọn + mode\n`GET SelectedActors, ActiveMode`\n<small>← BP_UndoManager · theo doc</small>"
@@ -175,16 +175,16 @@
    "id": "s7",
    "type": "text",
    "x": 905,
-   "y": 1423,
+   "y": 1643,
    "width": 330,
-   "height": 102,
-   "text": "**7.** đưa vào sổ\n`AppendEntry(Entry)`\n<small>nội bộ · theo doc</small>"
+   "height": 168,
+   "text": "**7.** đưa vào sổ\n`AppendEntry(Entry)`\n↗ [[BP_UndoManager#AppendEntry(Entry S_SceneSnapshot) — Function MỚI (U2.3, 24/09/2026)|BP_UndoManager › AppendEntry]]\n<small>nội bộ · theo doc</small>"
   },
   {
    "id": "n14",
    "type": "text",
    "x": 900,
-   "y": 1565,
+   "y": 1851,
    "width": 340,
    "height": 119,
    "text": "📝 AppendEntry: đang ở giữa sổ → cắt bỏ nhánh Redo · đủ MaxSteps → bỏ entry cũ nhất · ADD · CurrentIndex+1",
@@ -194,16 +194,16 @@
    "id": "s8",
    "type": "text",
    "x": 1785,
-   "y": 1724,
+   "y": 2010,
    "width": 330,
-   "height": 146,
-   "text": "**8.** báo tin\n`Broadcast OnHistoryChanged → RefreshParamPanel()`\n<small>← BP_UndoManager · theo doc</small>"
+   "height": 234,
+   "text": "**8.** báo tin\n`Broadcast OnHistoryChanged → RefreshParamPanel()`\n↗ [[WBP_FurnitureInventory#`RefreshParamPanel()` — Function — AS-BUILT ĐẦY ĐỦ 18/09/2026 (K2Node export thật)|WBP_FurnitureInventory › RefreshParamPanel]]\n<small>← BP_UndoManager · theo doc</small>"
   },
   {
    "id": "n16",
    "type": "text",
    "x": 20,
-   "y": 1910,
+   "y": 2284,
    "width": 2100,
    "height": 70,
    "text": "📝 Nguồn ghi sổ khác cùng đường CaptureSnapshot: Select/Deselect/BoxSelect/Group (InputManager) · Replace · Reset vật liệu · Combo. Riêng chỉnh thông số vật liệu đi CommitInteractiveEdit (5b), cũng kết thúc bằng AppendEntry.",
@@ -225,7 +225,8 @@
    "fromSide": "right",
    "toNode": "s2",
    "toSide": "left",
-   "label": "2"
+   "label": "2 ✓K2",
+   "color": "4"
   },
   {
    "id": "e2",

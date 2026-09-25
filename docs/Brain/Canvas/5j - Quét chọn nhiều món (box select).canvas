@@ -1,0 +1,294 @@
+{
+ "nodes": [
+  {
+   "id": "lane_UM",
+   "type": "group",
+   "x": 1320,
+   "y": 110,
+   "width": 380,
+   "height": 2688,
+   "label": "BP_UndoManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_BX",
+   "type": "group",
+   "x": 880,
+   "y": 110,
+   "width": 380,
+   "height": 2688,
+   "label": "WBP_BoxSelectOverlay",
+   "color": "2"
+  },
+  {
+   "id": "lane_IM",
+   "type": "group",
+   "x": 440,
+   "y": 110,
+   "width": 380,
+   "height": 2688,
+   "label": "BP_FurnitureInputManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_U",
+   "type": "group",
+   "x": 0,
+   "y": 110,
+   "width": 380,
+   "height": 2688,
+   "label": "User"
+  },
+  {
+   "id": "title",
+   "type": "text",
+   "x": 0,
+   "y": -120,
+   "width": 1700,
+   "height": 170,
+   "text": "# 5j — Quét chọn nhiều món (box select)\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
+  },
+  {
+   "id": "h_U",
+   "type": "text",
+   "x": 25,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### User"
+  },
+  {
+   "id": "h_IM",
+   "type": "text",
+   "x": 465,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureInputManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_BX",
+   "type": "text",
+   "x": 905,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_BoxSelectOverlay]]",
+   "color": "2"
+  },
+  {
+   "id": "h_UM",
+   "type": "text",
+   "x": 1345,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_UndoManager]]",
+   "color": "5"
+  },
+  {
+   "id": "s1",
+   "type": "text",
+   "x": 465,
+   "y": 280,
+   "width": 330,
+   "height": 234,
+   "text": "**1.** nhấn chuột (nền hoặc lên đồ) - chỉ ghi nhận, chưa chọn\n`Mouse Left Pressed → SET BoxStartPos, bIsPendingBoxSelect = True`\n↗ [[BP_FurnitureInputManager#Mouse Left Pressed — FULL FLOW (v1.5)|BP_FurnitureInputManager › Mouse Left Pressed]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s2",
+   "type": "text",
+   "x": 465,
+   "y": 554,
+   "width": 330,
+   "height": 168,
+   "text": "↻ lặp: mỗi frame khi còn giữ chuột (Event Tick, chỉ khi kho đang mở)\n**2.** kéo quá 5px → thành quét khung\n`SET bIsBoxSelecting = True, bIsPendingBoxSelect = False`\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s3",
+   "type": "text",
+   "x": 905,
+   "y": 762,
+   "width": 330,
+   "height": 234,
+   "text": "↻ lặp: mỗi frame khi còn giữ chuột (Event Tick, chỉ khi kho đang mở)\n**3.** hiện và vẽ khung theo chuột\n`ShowBox() → UpdateBox(BoxStartPos, chuột)`\n↗ [[WBP_BoxSelectOverlay#ShowBox|WBP_BoxSelectOverlay › ShowBox]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
+  },
+  {
+   "id": "s4",
+   "type": "text",
+   "x": 465,
+   "y": 1036,
+   "width": 330,
+   "height": 234,
+   "text": "**4.** thả chuột\n`OnLMBReleased (Sequence Then 1)`\n↗ [[BP_FurnitureInputManager#OnLMBReleased — FULL FLOW (v1.6, ✓K2 12/09/2026 — G6.0 VERIFY) ⭐ đường chính chốt selection|BP_FurnitureInputManager › OnLMBReleased]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s5",
+   "type": "text",
+   "x": 465,
+   "y": 1310,
+   "width": 330,
+   "height": 190,
+   "text": "**5.** chốt khung\n`FinishBoxSelect(EndPos)`\n↗ [[BP_FurnitureInputManager#FinishBoxSelect(EndPos Vector2D) — Function (v1.5)|BP_FurnitureInputManager › FinishBoxSelect]]\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s6",
+   "type": "text",
+   "x": 465,
+   "y": 1540,
+   "width": 330,
+   "height": 146,
+   "text": "**6.** lấy đồ có ĐIỂM GỐC nằm trong khung (không theo bounding box)\n`Project World To Screen ÷ Get Viewport Scale`\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s7",
+   "type": "text",
+   "x": 465,
+   "y": 1726,
+   "width": 330,
+   "height": 190,
+   "text": "▸ nếu giữ Ctrl\n**7.** cộng dồn vào selection cũ\n`ToggleActor() từng món`\n↗ [[BP_FurnitureInputManager#ToggleActor(Actor) (T5, T7)|BP_FurnitureInputManager › ToggleActor]]\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s8",
+   "type": "text",
+   "x": 465,
+   "y": 1956,
+   "width": 330,
+   "height": 212,
+   "text": "▸ ngược lại: không giữ Ctrl\n**8.** thay selection\n`DeselectAll() → SelectActors(LocalSelected)`\n↗ [[BP_FurnitureInputManager#DeselectAll (T5 → v1.6)|BP_FurnitureInputManager › DeselectAll]]\n<small>nội bộ · theo doc</small>",
+   "color": "3"
+  },
+  {
+   "id": "s9",
+   "type": "text",
+   "x": 1345,
+   "y": 2208,
+   "width": 330,
+   "height": 190,
+   "text": "**9.** ghi sổ\n`CaptureSnapshot(\"BoxSelect\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
+  },
+  {
+   "id": "s10",
+   "type": "text",
+   "x": 905,
+   "y": 2438,
+   "width": 330,
+   "height": 190,
+   "text": "**10.** ẩn khung, dọn cờ\n`HideBox() → SET bIsBoxSelecting = False, PendingClickActor = None`\n↗ [[WBP_BoxSelectOverlay#HideBox|WBP_BoxSelectOverlay › HideBox]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
+  },
+  {
+   "id": "n15",
+   "type": "text",
+   "x": 20,
+   "y": 2668,
+   "width": 1660,
+   "height": 70,
+   "text": "📝 Kéo chưa tới 5px thì là click đơn → 5a. Tick còn 1 nhánh dự phòng (thả chuột lọt giữa 2 frame) cũng gọi FinishBoxSelect.",
+   "color": "3"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e0",
+   "fromNode": "h_U",
+   "fromSide": "right",
+   "toNode": "s1",
+   "toSide": "left",
+   "label": "1"
+  },
+  {
+   "id": "e1",
+   "fromNode": "s1",
+   "fromSide": "bottom",
+   "toNode": "s2",
+   "toSide": "top",
+   "label": "2 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e2",
+   "fromNode": "s2",
+   "fromSide": "right",
+   "toNode": "s3",
+   "toSide": "left",
+   "label": "3 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e3",
+   "fromNode": "s3",
+   "fromSide": "left",
+   "toNode": "s2",
+   "toSide": "right",
+   "label": "↻ lặp"
+  },
+  {
+   "id": "e4",
+   "fromNode": "s3",
+   "fromSide": "left",
+   "toNode": "s4",
+   "toSide": "right",
+   "label": "4"
+  },
+  {
+   "id": "e5",
+   "fromNode": "s4",
+   "fromSide": "bottom",
+   "toNode": "s5",
+   "toSide": "top",
+   "label": "5 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e6",
+   "fromNode": "s5",
+   "fromSide": "bottom",
+   "toNode": "s6",
+   "toSide": "top",
+   "label": "6"
+  },
+  {
+   "id": "e7",
+   "fromNode": "s6",
+   "fromSide": "bottom",
+   "toNode": "s7",
+   "toSide": "top",
+   "label": "7"
+  },
+  {
+   "id": "e8",
+   "fromNode": "s6",
+   "fromSide": "bottom",
+   "toNode": "s8",
+   "toSide": "top",
+   "label": "8"
+  },
+  {
+   "id": "e9",
+   "fromNode": "s7",
+   "fromSide": "right",
+   "toNode": "s9",
+   "toSide": "left",
+   "label": "9"
+  },
+  {
+   "id": "e10",
+   "fromNode": "s8",
+   "fromSide": "right",
+   "toNode": "s9",
+   "toSide": "left",
+   "label": "9"
+  },
+  {
+   "id": "e11",
+   "fromNode": "s9",
+   "fromSide": "left",
+   "toNode": "s10",
+   "toSide": "right",
+   "label": "10 ✓K2",
+   "color": "4"
+  }
+ ]
+}

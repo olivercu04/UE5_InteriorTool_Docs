@@ -727,34 +727,43 @@ Event End Play →
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3b - Combo lưu spawn thay combo]] · [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3d - Save Undo khởi động]] · [[Luồng 3e - Vật liệu Material]]
+**Có mặt trong thao tác:** [[L01 · Mở tool và kho đồ|L01]] · [[L03 · Kéo đồ vào phòng|L03]] · [[L04 · Chọn đồ|L04]] · [[L05 · Di chuyển và xoay đồ|L05]] · [[L06 · Nhóm đồ và sửa nhóm|L06]] · [[L07 · Menu chuột phải và phím tắt|L07]] · [[L08 · Thay đồ|L08]] · [[L09 · Đổi vật liệu|L09]] · [[L10 · Chỉnh thông số vật liệu|L10]] · [[L11 · Combo|L11]] · [[L13 · Hoàn tác và làm lại|L13]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3a - Chọn đồ Gizmo Nhóm]] · [[Kết nối 3b - Combo lưu spawn thay combo]] · [[Kết nối 3c - Inventory + Cây thư mục]] · [[Kết nối 3d - Save Undo khởi động]] · [[Kết nối 3e - Vật liệu Material]]
 
 **Gọi / điều khiển →**
 - [[BP_FurnitureInputManager]] — chọn lại đồ sau khôi phục + báo tin · SelectActors(), Broadcast OnEditModeChanged
-- [[BP_FurnitureActor]] — tạo lại đồ khi Undo + đặt lại mã + giữ nguyên PersistentID (guard) · SpawnFurnitureCopy(), SET RowName, SET PersistentID
+- [[WBP_MeshControls]] — đặt nút mode theo ảnh sau khôi phục · RefreshButtonState(ActiveMode) — lấy tham chiếu từ đâu ?
+- [[BP_FurnitureInputManager]] — spawn lại đồ khi Undo, không tự chọn, không nhồi Recent · SpawnFurnitureCopy(bAutoSelect=False, bAddToRecent=False) ✓K2
+- [[BP_FurnitureActor]] — đặt lại mã đồ sau spawn lại · SET RowName ✓K2
+- [[BP_FurnitureActor]] — giữ nguyên danh tính + nhóm + slot vật liệu · SET PersistentID (guard), GroupID, MaterialSlots
 - [[BP_FurnitureInputManager]] — chọn lại / bỏ chọn sau khôi phục · SelectActors() / DeselectAll()
 - [[WBP_FurnitureInventory]] — báo tin: khôi phục xong · Broadcast OnRestoreCompleted
-- [[BP_FurnitureSceneManager]] — tìm lại đồ theo ID khi undo/chốt param — caller đầu tiên của Resolver · ResolveByPersistentId()
-- [[MaterialSlotService_Reference]] — đọc giá trị trước/sau + đảo 1 thông số · GetSlot*Param() / SetSlot*Param() (qua ApplyParamCommand)
+- [[BP_FurnitureSceneManager]] — tìm lại đồ theo ID khi undo/chốt param — caller đầu tiên của Resolver · ResolveByPersistentId() ✓K2
+- [[MaterialSlotService_Reference]] — đọc giá trị trước/sau + đảo 1 thông số · GetSlot*Param() / SetSlot*Param() (qua ApplyParamCommand) ✓K2
 - [[WBP_FurnitureInventory]] — báo lịch sử vừa đổi (undo/redo param) · Broadcast OnHistoryChanged
 
 **← Được gọi bởi**
-- [[BP_FurnitureInputManager]] — chụp mốc Select/Deselect · CaptureSnapshot() ✓K2
-- [[BP_GizmoController]] — chụp trạng thái khi kéo xong · CaptureSnapshot()
+- [[BP_FurnitureInputManager]] — chụp mốc Select/Deselect · CaptureSnapshot(Select / Deselect) ✓K2
+- [[BP_GizmoController]] — chụp trạng thái khi kéo xong · CaptureSnapshot() ✓K2
 - [[BP_FoffPlayerController]] — phím Undo / Redo · UndoLastAction() / RedoLastAction()
+- [[BP_FurnitureInputManager]] — chụp mốc các thao tác khác · CaptureSnapshot(BoxSelect / CreateGroup / Ungroup / PasteMulti / DuplicateMulti / Delete / Nudge / SelectSimilar / ResetRotation)
 - [[BP_ComboManager]] — giữ tham chiếu + gọi quay lui · UndoManagerRef, RestoreCurrentSnapshot()
+- [[BP_ComboManager]] — ghi sổ khi đặt / thay combo · CaptureSnapshot(SpawnCombo / ReplaceCombo)
 - [[WBP_FurnitureInventory]] — giữ tham chiếu + nghe khôi phục + chụp trạng thái · UndoManagerRef, Bind OnRestoreCompleted
 - [[WBP_FurnitureCard]] — chụp trạng thái khi thay đồ · CaptureSnapshot(Replace)
+- [[WBP_DragOverlay_FurnitureCard]] — ghi sổ khi thả đồ · CaptureSnapshot(Spawn)
 - [[WBP_FOFF_ToolDemo]] — sinh ra · Spawn
 - [[WBP_FOFF_ToolDemo]] — lưu mốc đầu tiên · CaptureSnapshot(Initial)
 - [[BP_ComboManager]] — quay lui khi đổi combo lỗi · RestoreCurrentSnapshot()
-- [[BP_GizmoController]] — lưu mốc sau khi kéo · CaptureSnapshot(Move/Rotate/Scale)
+- [[BP_GizmoController]] — lưu mốc sau khi kéo · CaptureSnapshot(Move/Rotate/Scale) ✓K2
 - [[WBP_FurnitureInventory]] — nghe khôi phục xong · Bind OnRestoreCompleted
 - [[WBP_FurnitureInventory]] — mở / chốt / hủy phiên chỉnh param (U2.4-2.5) · BeginInteractiveEdit() / CommitInteractiveEdit() / CancelInteractiveEdit()
 - [[WBP_FurnitureInventory]] — nghe lịch sử đổi → refresh panel · Bind OnHistoryChanged → RefreshParamPanel()
 - [[WBP_DetailPopup]] — lưu mốc khi khoá / reset scale · CaptureSnapshot(Scale)
 - [[WBP_FurnitureInventory]] — mở/chốt/hủy phiên chỉnh (chi tiết ở 3d) · Begin/Commit/CancelInteractiveEdit()
+- [[BP_FurnitureActor]] — ghi sổ sau khi đổi vật liệu · CaptureSnapshot(ApplyMaterial)
 
 <!-- BRAIN:END -->

@@ -302,16 +302,23 @@ BTN_ExitFull.OnClicked     : Get All Actors Of Class(InputManager)[0] → ExitEd
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3e - Vật liệu Material]]
+**Có mặt trong thao tác:** [[L04 · Chọn đồ|L04]] · [[L05 · Di chuyển và xoay đồ|L05]] · [[L06 · Nhóm đồ và sửa nhóm|L06]] · [[L13 · Hoàn tác và làm lại|L13]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3a - Chọn đồ Gizmo Nhóm]] · [[Kết nối 3e - Vật liệu Material]]
 
 **Gọi / điều khiển →**
 - [[BP_FurnitureInputManager]] — nghe chọn đồ / đổi chế độ + gọi hàm edit-mode · Bind OnSelectionChanged, OnEditModeChanged ✓K2
 - [[BP_FurnitureActor]] — đọc mã đồ · Cast + GET RowName
+- [[BP_FurnitureInputManager]] — đặt chế độ Move / Rotate / Scale / Select · SET ActiveMode
+- [[BP_GizmoController]] — tắt rồi bật gizmo khi đổi chế độ · DeactivateGizmo() / ActivateGizmo() — lấy tham chiếu từ đâu ?
+- [[BP_FurnitureInputManager]] — bật / tắt thay đồ · BTN_Replace → StartReplaceMode(SelectedActors), IsReplaceModeActive() ✓K2
+- [[BP_FurnitureInputManager]] — vào / ra sửa nhóm · TryEnterEditFromSelection() / ExitEditModeOneLevel() / ExitEditModeFull()
 - [[WBP_DetailPopup]] — tạo popup chi tiết khi bấm Info · Create WBP_DetailPopup
 
 **← Được gọi bởi**
 - [[BP_FurnitureInputManager]] — giữ tham chiếu thanh công cụ · CurrentMeshControls
+- [[BP_UndoManager]] — đặt nút mode theo ảnh sau khôi phục · RefreshButtonState(ActiveMode) — lấy tham chiếu từ đâu ?
 
 <!-- BRAIN:END -->

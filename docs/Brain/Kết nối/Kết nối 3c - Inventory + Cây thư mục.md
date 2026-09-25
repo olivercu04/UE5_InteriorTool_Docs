@@ -1,8 +1,8 @@
-# Luồng 3c - Inventory + Cây thư mục
+# Kết nối 3c - Inventory + Cây thư mục
 
-> Tự sinh từ [[Architecture_Map]] v1.5 mục **3c — Inventory + Cây thư mục** (24/09/2026). Dấu ✓K2 = cạnh nét dày `==>` trên sơ đồ gốc (đã kiểm chứng K2, diagram-contract §2); không dấu = theo doc. Sửa bản đồ gốc rồi chạy lại script.
+> Tự sinh từ [[Architecture_Map]] mục **3c — Inventory + Cây thư mục**. Dấu ✓K2 = cạnh nét dày `==>` trên sơ đồ gốc (đã kiểm chứng K2, diagram-contract §2); không dấu = theo doc. Sửa bản đồ gốc rồi chạy lại script.
 
-← [[Bản đồ não]]
+← [[Bản đồ não]] · Mức asset (ai nói chuyện với ai). Theo từng THAO TÁC của người dùng → note `L01…L13` trong `Brain/Luồng/`.
 
 ## Thành phần
 
@@ -61,3 +61,8 @@
 - [[WBP_FolderTreePicker]] → [[WBP_FolderPickerRow]] — tạo + nghe từng hàng folder · Create WBP_FolderPickerRow, Bind OnRow… ✓K2
 - [[WBP_FolderPickerRow]] → [[WBP_EditableLabel]] — nhúng + đổi màu nhãn · EditableLabel_Name, SetLabelColor() ✓K2
 - [[WBP_MoveToFolderDialog]] → [[WBP_FolderTreePicker]] — nhúng + nghe cây thư mục · Picker, Bind OnFolderSelected
+- [[WBP_TreeNode]] → [[WBP_FurnitureInventory]] — báo tin bấm thư mục · OnNodeSelected → OnTreeNodeClicked()
+- [[WBP_FurnitureInventory]] → [[BP_FurnitureUserPrefsManager]] — đọc danh sách Gần đây / Yêu thích · GET UserPrefs → RecentMeshes / FavoriteMeshes
+- [[BP_FurnitureInputManager]] → [[WBP_FurnitureInventory]] — mở kho ở chế độ thay đồ · EnterReplaceMode() → FilterByFolderPathWithUI() ✓K2
+- [[WBP_DragOverlay_FurnitureCard]] → [[BP_UndoManager]] — ghi sổ khi thả đồ · CaptureSnapshot(Spawn)
+- [[WBP_DragOverlay_FurnitureCard]] → [[BP_FurnitureUserPrefsManager]] — thêm đồ vừa thả vào Gần đây · AddRecentMesh()

@@ -6,7 +6,7 @@
    "x": 2200,
    "y": 110,
    "width": 380,
-   "height": 1514,
+   "height": 2064,
    "label": "WBP_FurnitureInventory",
    "color": "2"
   },
@@ -16,7 +16,7 @@
    "x": 1760,
    "y": 110,
    "width": 380,
-   "height": 1514,
+   "height": 2064,
    "label": "MaterialSlotService (C++)",
    "color": "6"
   },
@@ -26,7 +26,7 @@
    "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 1514,
+   "height": 2064,
    "label": "BP_FurnitureSceneManager",
    "color": "5"
   },
@@ -36,7 +36,7 @@
    "x": 880,
    "y": 110,
    "width": 380,
-   "height": 1514,
+   "height": 2064,
    "label": "BP_UndoManager",
    "color": "5"
   },
@@ -46,7 +46,7 @@
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 1514,
+   "height": 2064,
    "label": "BP_FoffPlayerController",
    "color": "5"
   },
@@ -56,7 +56,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 1514,
+   "height": 2064,
    "label": "User"
   },
   {
@@ -142,60 +142,60 @@
    "x": 905,
    "y": 422,
    "width": 330,
-   "height": 146,
-   "text": "**2.** IA_FurnitureUndo (Started), KHÔNG giữ Shift\n`UndoLastAction()`\n<small>← BP_FoffPlayerController · theo doc</small>"
+   "height": 212,
+   "text": "**2.** IA_FurnitureUndo (Started), KHÔNG giữ Shift\n`UndoLastAction()`\n↗ [[BP_UndoManager#UndoLastAction (Ctrl+Z) — v1.20 +dispatch EntryKind (U2.3)|BP_UndoManager › UndoLastAction]]\n<small>← BP_FoffPlayerController · theo doc</small>"
   },
   {
    "id": "s3",
    "type": "text",
    "x": 905,
-   "y": 608,
+   "y": 674,
    "width": 330,
-   "height": 102,
-   "text": "**3.** hủy phiên chỉnh đang dở\n`CancelInteractiveEdit()`\n<small>nội bộ · theo doc</small>"
+   "height": 190,
+   "text": "**3.** hủy phiên chỉnh đang dở\n`CancelInteractiveEdit()`\n↗ [[BP_UndoManager#CancelInteractiveEdit() — Custom Event (v1.21, U2.4) — 6A của session|BP_UndoManager › CancelInteractiveEdit]]\n<small>nội bộ · theo doc</small>"
   },
   {
    "id": "s4",
    "type": "text",
    "x": 1345,
-   "y": 750,
+   "y": 904,
    "width": 330,
-   "height": 124,
-   "text": "▸ nếu entry là ParamCommand\n**4.** tìm ghế theo ID\n`ResolveByPersistentId()`\n<small>← BP_UndoManager · ✓K2</small>"
+   "height": 212,
+   "text": "▸ nếu entry là ParamCommand\n**4.** tìm ghế theo ID\n`ResolveByPersistentId()`\n↗ [[BP_FurnitureSceneManager#ResolveByPersistentId(Id String) → (OutActor BP_FurnitureActor, bFound Bool)|BP_FurnitureSceneManager › ResolveByPersistentId]]\n<small>← BP_UndoManager · ✓K2</small>"
   },
   {
    "id": "s5",
    "type": "text",
    "x": 1785,
-   "y": 914,
+   "y": 1156,
    "width": 330,
-   "height": 168,
-   "text": "▸ nếu entry là ParamCommand\n**5.** đảo đúng 1 thông số, KHÔNG respawn\n`ApplyParamCommand(Before) → SetSlotScalarParam()`\n<small>← BP_UndoManager · ✓K2</small>"
+   "height": 300,
+   "text": "▸ nếu entry là ParamCommand\n**5.** đảo đúng 1 thông số, KHÔNG respawn\n`ApplyParamCommand(Before) → SetSlotScalarParam()`\n↗ [[MaterialSlotService_Reference#SetSlotScalarParam / SetSlotVectorParam / SetSlotTextureParam(Mesh, Records&, SlotName, HintIndex, ParamName, Value) → bool|MaterialSlotService_Reference › SetSlotScalarParam]]\n<small>← BP_UndoManager · ✓K2</small>"
   },
   {
    "id": "s6",
    "type": "text",
    "x": 905,
-   "y": 1122,
+   "y": 1496,
    "width": 330,
-   "height": 146,
-   "text": "▸ ngược lại: entry là Snapshot\n**6.** khôi phục ảnh full entry N−1, destroy + spawn lại\n`RestoreSnapshot() (chi tiết 5e)`\n<small>nội bộ · ✓K2</small>",
+   "height": 234,
+   "text": "▸ ngược lại: entry là Snapshot\n**6.** khôi phục ảnh full entry N−1, destroy + spawn lại\n`RestoreSnapshot() (chi tiết 5e)`\n↗ [[BP_UndoManager#RestoreSnapshot(IndexHistory, PreviousActor) — v1.10 hợp nhất spawn path qua SpawnFurnitureCopy|BP_UndoManager › RestoreSnapshot]]\n<small>nội bộ · ✓K2</small>",
    "color": "3"
   },
   {
    "id": "s7",
    "type": "text",
    "x": 2225,
-   "y": 1308,
+   "y": 1770,
    "width": 330,
-   "height": 146,
-   "text": "**7.** báo tin\n`Broadcast OnHistoryChanged → RefreshParamPanel()`\n<small>← BP_UndoManager · theo doc</small>"
+   "height": 234,
+   "text": "**7.** báo tin\n`Broadcast OnHistoryChanged → RefreshParamPanel()`\n↗ [[WBP_FurnitureInventory#`RefreshParamPanel()` — Function — AS-BUILT ĐẦY ĐỦ 18/09/2026 (K2Node export thật)|WBP_FurnitureInventory › RefreshParamPanel]]\n<small>← BP_UndoManager · theo doc</small>"
   },
   {
    "id": "n14",
    "type": "text",
    "x": 460,
-   "y": 1494,
+   "y": 2044,
    "width": 780,
    "height": 70,
    "text": "📝 Redo = Ctrl+Shift+Z → IA_FurnitureRedo → RedoLastAction(): Command → After · Snapshot → ảnh của chính entry N",

@@ -1,19 +1,22 @@
-# Luồng 3e - Vật liệu Material
+# Kết nối 3e - Vật liệu Material
 
-> Tự sinh từ [[Architecture_Map]] v1.5 mục **3e — Vật liệu (Material)** (24/09/2026). Dấu ✓K2 = cạnh nét dày `==>` trên sơ đồ gốc (đã kiểm chứng K2, diagram-contract §2); không dấu = theo doc. Sửa bản đồ gốc rồi chạy lại script.
+> Tự sinh từ [[Architecture_Map]] mục **3e — Vật liệu (Material)**. Dấu ✓K2 = cạnh nét dày `==>` trên sơ đồ gốc (đã kiểm chứng K2, diagram-contract §2); không dấu = theo doc. Sửa bản đồ gốc rồi chạy lại script.
 
-← [[Bản đồ não]]
+← [[Bản đồ não]] · Mức asset (ai nói chuyện với ai). Theo từng THAO TÁC của người dùng → note `L01…L13` trong `Brain/Luồng/`.
 
 ## Thành phần
 
 - [[BP_ComboManager]]
 - [[BP_FurnitureActor]]
 - [[BP_FurnitureInputManager]]
+- [[BP_FurnitureSceneManager]]
+- [[BP_FurnitureUserPrefsManager]]
 - [[BP_UndoManager]]
 - [[FurnitureFilterLibrary_Reference]]
 - [[InteriorColorPicker]]
 - [[MaterialSlotService_Reference]]
 - [[WBP_DetailPopup]]
+- [[WBP_DragOverlay_FurnitureCard]]
 - [[WBP_FurnitureInventory]]
 - [[WBP_MaterialCard]]
 - [[WBP_MaterialInspector]]
@@ -44,7 +47,18 @@
 - [[WBP_FurnitureInventory]] → [[WBP_ParamScalarRow]] — tạo row Scalar · Create WBP_ParamScalarRow → Setup() ✓K2
 - [[WBP_FurnitureInventory]] → [[WBP_ParamColorRow]] — tạo row Color · Create WBP_ParamColorRow → Setup() ✓K2
 - [[WBP_FurnitureInventory]] → [[MaterialSlotService_Reference]] — seed giá trị row = giá trị THẬT trên MID/MI (U2.5, thay Cast MID+fallback) · GetSlotScalarParam() / GetSlotVectorParam()
-- [[WBP_ParamScalarRow]] → [[WBP_FurnitureInventory]] — báo bắt đầu / đang kéo / thả · OnEditBegin(ParamName) → Handle_ScalarBegin, OnPreviewChanged, OnEditCommitted
-- [[WBP_ParamColorRow]] → [[WBP_FurnitureInventory]] — báo bắt đầu / đang chỉnh / thả · OnEditBegin(ParamName) → Handle_ColorBegin, OnPreviewChanged, OnEditCommitted
+- [[WBP_ParamScalarRow]] → [[WBP_FurnitureInventory]] — báo đang kéo · OnPreviewChanged(ParamName, Value) ✓K2
+- [[WBP_ParamScalarRow]] → [[WBP_FurnitureInventory]] — báo bắt đầu / thả · OnEditBegin(ParamName) → Handle_ScalarBegin, OnEditCommitted
+- [[WBP_ParamColorRow]] → [[WBP_FurnitureInventory]] — báo đang chỉnh · OnPreviewChanged(ParamName, Value) ✓K2
+- [[WBP_ParamColorRow]] → [[WBP_FurnitureInventory]] — báo bắt đầu / thả · OnEditBegin(ParamName) → Handle_ColorBegin, OnEditCommitted
 - [[WBP_FurnitureInventory]] → [[BP_UndoManager]] — mở/chốt/hủy phiên chỉnh (chi tiết ở 3d) · Begin/Commit/CancelInteractiveEdit()
 - [[BP_FurnitureActor]] → [[WBP_FurnitureInventory]] — đồng bộ slot chọn + highlight + refresh panel sau kéo-thả · SET SelectedSlotIndex/Name, HighlightSwatchByIndex(), RefreshParamPanel()
+- [[BP_FurnitureActor]] → [[MaterialSlotService_Reference]] — gắn lại vật liệu + thông số từng slot sau khi tải mesh (Undo) · ApplyLoadedMaterialToSlot() → ApplyParamsJsonToSlot()
+- [[WBP_MaterialCard]] → [[WBP_FurnitureInventory]] — bấm thẻ → áp cho món đang mở panel · ApplyMaterial(RowName)
+- [[WBP_MaterialCard]] → [[WBP_DragOverlay_FurnitureCard]] — kéo thẻ → phủ lớp kéo-thả mang RowName · Create WBP_DragOverlay + BP_DragDropOperation_Material
+- [[WBP_FurnitureInventory]] → [[BP_FurnitureUserPrefsManager]] — thêm vật liệu vào Gần đây · AddRecentMaterial() ✓K2
+- [[WBP_DragOverlay_FurnitureCard]] → [[MaterialSlotService_Reference]] — tìm món + slot dưới điểm thả · TraceSlotUnderCursor() ✓K2
+- [[WBP_DragOverlay_FurnitureCard]] → [[BP_FurnitureActor]] — giao việc đổi vật liệu cho món bị thả trúng · ApplyMaterialByRowName() ✓K2
+- [[WBP_DragOverlay_FurnitureCard]] → [[BP_FurnitureSceneManager]] — báo thả trúng kiến trúc · ToastRef.ShowToast() ✓K2
+- [[BP_FurnitureActor]] → [[BP_UndoManager]] — ghi sổ sau khi đổi vật liệu · CaptureSnapshot(ApplyMaterial)
+- [[BP_FurnitureActor]] → [[BP_FurnitureUserPrefsManager]] — thêm vật liệu vào Gần đây · AddRecentMaterial()

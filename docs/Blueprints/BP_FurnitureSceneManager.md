@@ -111,9 +111,11 @@ Q8: Function (pure resolver) | Cast tự guard AsActor (không cần IsValid ri�
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3d - Save Undo khởi động]]
+**Có mặt trong thao tác:** [[L09 · Đổi vật liệu|L09]] · [[L10 · Chỉnh thông số vật liệu|L10]] · [[L12 · Lưu và mở cảnh|L12]] · [[L13 · Hoàn tác và làm lại|L13]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3a - Chọn đồ Gizmo Nhóm]] · [[Kết nối 3d - Save Undo khởi động]] · [[Kết nối 3e - Vật liệu Material]]
 
 **Gọi / điều khiển →**
 - [[WBP_FurnitureInventory]] — gọi thoát Replace Mode · .FurnitureInventoryRef.ExitReplaceMode() ✓K2
@@ -124,6 +126,8 @@ Q8: Function (pure resolver) | Cast tự guard AsActor (không cần IsValid ri�
 **← Được gọi bởi**
 - [[BP_FurnitureInputManager]] — tìm singleton, đọc tham chiếu inventory · GetAllActorsOfClass, GET FurnitureInventoryRef ✓K2
 - [[WBP_FOFF_ToolDemo]] — sinh ra · Spawn
-- [[BP_UndoManager]] — tìm lại đồ theo ID khi undo/chốt param — caller đầu tiên của Resolver · ResolveByPersistentId()
+- [[BP_UndoManager]] — tìm lại đồ theo ID khi undo/chốt param — caller đầu tiên của Resolver · ResolveByPersistentId() ✓K2
+- [[SaveGameMenu]] — báo tin bấm Load · OnLoadButtonClicked
+- [[WBP_DragOverlay_FurnitureCard]] — báo thả trúng kiến trúc · ToastRef.ShowToast() ✓K2
 
 <!-- BRAIN:END -->

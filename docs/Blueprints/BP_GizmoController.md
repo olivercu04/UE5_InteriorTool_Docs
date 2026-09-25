@@ -1,6 +1,7 @@
 # BP_GizmoController
 **HỢP NHẤT TỪ 2 file:** v1.1 base (05/06) + OnMouseReleased fragment (16/04, v1.0 tham khảo)
-**Phiên bản:** 1.1 | **Cập nhật:** 05/06/2026 — 20:00 ICT | Actor riêng — xử lý toàn bộ gizmo movement logic
+**Phiên bản:** 1.2 | **Cập nhật:** 24/09/2026 — 20:25 ICT — `OnMouseReleased` ✓K2 export: đính chính khối dọn cờ (chỉ chạy sau CaptureSnapshot) + ⚠ 2 điểm treo | Actor riêng — xử lý toàn bộ gizmo movement logic
+**Phiên bản:** 1.1 | **Cập nhật:** 05/06/2026 — 20:00 ICT
 
 > **v1.1 (05/06 T15):** OnMousePressed thêm Cast → BP_PivotActor → RefreshOffsets (capture drag-start cho multi-select rotate/scale).
 > **Lịch sử OnMouseReleased:** Fragment 16/04 dùng `Get Player Controller → Cast BP_FoffPlayerController`. Bản v1.1 (05/06) đổi sang `Get All Actors Of Class(BP_FurnitureInputManager)` — nhất quán với architecture (ActiveMode sống ở InputManager, không PlayerController).
@@ -94,31 +95,44 @@ RESTORE COLLISION:
 
 ---
 
-## OnMouseReleased — v1.1
-```
-Branch bGizmoActive == True:
-  True:
-    Branch IsValid(SelectedActor):
-      True:
-        Branch bIsDraggingGizmo == True:
-          True:
-            Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast → GET ActiveMode
-            Branch ActiveMode == Rotate?
-              True → Get All Actors Of Class(BP_UndoManager) → Get(0) → CaptureSnapshot("Rotate")
-              False →
-                Branch ActiveMode == Scale?
-                  True  → Get All Actors Of Class(BP_UndoManager) → Get(0) → CaptureSnapshot("Scale")
-                  False → Get All Actors Of Class(BP_UndoManager) → Get(0) → CaptureSnapshot("Move")
+## OnMouseReleased — v1.2 ([✓K2 export 24/09/2026] — as-built, thay mô tả v1.1)
 
-← Luôn chạy (nằm ngoài tất cả Branch):
-SET bIsDraggingGizmo = False  ← PHẢI sau CaptureSnapshot
-SET ActiveAxis = ""
-SET PreviousMousePosition = (0, 0)
-SET AccumulatedRotation = 0
-Set Ignore Look Input = False
+> **Đính chính 24/09/2026 (K2 export thật, 36 node, không lỗi compile):** v1.1 ghi khối dọn cờ "luôn chạy, nằm ngoài tất cả
+> Branch" — **SAI**. Khối dọn cờ chỉ nối SAU 3 node `CaptureSnapshot`; nhánh False của cả 3 Branch gác là dead-end. Không có
+> node `Cast` (mảng `Get All Actors Of Class` đã đúng kiểu → `Get(0).ActiveMode` đọc thẳng).
+
+```
+Custom Event OnMouseReleased
+▶→ Branch( bGizmoActive )
+     False → (dead-end)
+     True ▶→ Branch( IsValid(SelectedActor) )
+          False → (dead-end)
+          True ▶→ Branch( bIsDraggingGizmo )
+               False → (dead-end)
+               True ▶→ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0).ActiveMode
+                    ▶→ Branch( ActiveMode == NewEnumerator2 )
+                         True  ▶→ Get All Actors Of Class(BP_UndoManager) → Get(0) → CaptureSnapshot("Rotate") ──┐
+                         False ▶→ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0).ActiveMode           │
+                               ▶→ Branch( ActiveMode == NewEnumerator2 )   ← ⚠ CÙNG giá trị với Branch trên       │
+                                    True  ▶→ Get All Actors Of Class(BP_UndoManager) → Get(0) → CaptureSnapshot("Scale") ─┤
+                                    False ▶→ Get All Actors Of Class(BP_UndoManager) → Get(0) → CaptureSnapshot("Move")  ─┤
+                                                                                                                          ▼
+                    [MERGE 3 nhánh] ▶→ SET bIsDraggingGizmo = False      ← SAU CaptureSnapshot ✓
+                                    ▶→ SET ActiveAxis = ""
+                                    ▶→ SET PreviousMousePosition = (0, 0)
+                                    ▶→ SET AccumulatedRotation = 0.0
+                                    ▶→ Set Ignore Look Input(Target = Get Player Controller(0), False)   ← node cuối
 ```
 > CaptureSnapshot duyệt tất cả actor tag "FurnitureSpawned" → tự động ghi đúng trạng thái mới của cả nhóm. Pivot (tag "FurniturePivot") KHÔNG bị lưu — đúng ý định.
-> SET bIsDraggingGizmo PHẢI SAU CaptureSnapshot — nếu đảo ngược sẽ bug Undo.
+> SET bIsDraggingGizmo PHẢI SAU CaptureSnapshot — nếu đảo ngược sẽ bug Undo. (✓K2 24/09: đúng thứ tự.)
+
+> ⚠ **2 điểm treo từ export 24/09 — CHƯA sửa Blueprint, chờ cuhoang test:**
+> 1. Branch thứ 2 (nhánh "Scale") so lại `ActiveMode == NewEnumerator2` y hệt Branch thứ nhất → không bao giờ True →
+>    `CaptureSnapshot("Scale")` không thể chạy. `NewEnumerator2` là mode nào của `E_ActiveMode` chưa xác nhận → chưa biết
+>    mode nào bị ghi nhầm tên entry. Test: Scale 1 món → xem tên entry trong History.
+> 2. Thả chuột khi gizmo đã tắt / `SelectedActor` đã mất giữa lúc kéo (vd Ctrl+Z giữa chừng) → rơi vào dead-end → khối dọn
+>    cờ KHÔNG chạy → nghi `bIsDraggingGizmo` kẹt True + Ignore Look Input kẹt → `Mouse Left Pressed` Step 3 (InputManager)
+>    chặn click chọn đồ. Giả thuyết, chưa test.
 
 ---
 
@@ -191,6 +205,7 @@ Branch IsValid(SelectedActor) AND bIsDraggingGizmo → True:
 |---|---|---|
 | 1.0 | 23/04/2026 | Logic gốc (fragment 16/04 — OnMouseReleased dùng PlayerController cast) |
 | 1.1 | 05/06/2026 — 20:00 ICT | T15: OnMousePressed thêm Cast → BP_PivotActor → RefreshOffsets. OnMouseReleased đổi sang Get All Actors(InputManager) → Cast → GET ActiveMode (thay Get Player Controller → BP_FoffPlayerController). |
+| 1.2 | 24/09/2026 — 20:25 ICT | `OnMouseReleased` ✓K2 export (36 node): khối dọn cờ chỉ chạy SAU `CaptureSnapshot` (v1.1 ghi "luôn chạy" — sai); 3 Branch gác nhánh False = dead-end; không có Cast. ⚠ 2 Branch chọn tên entry cùng so `NewEnumerator2`; ⚠ nghi kẹt `bIsDraggingGizmo` nếu thả chuột sau khi gizmo tắt giữa chừng — chờ test. |
 
 ---
 
@@ -198,18 +213,22 @@ Branch IsValid(SelectedActor) AND bIsDraggingGizmo → True:
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3a - Chọn đồ Gizmo Nhóm]] · [[Luồng 3d - Save Undo khởi động]]
+**Có mặt trong thao tác:** [[L04 · Chọn đồ|L04]] · [[L05 · Di chuyển và xoay đồ|L05]] · [[L13 · Hoàn tác và làm lại|L13]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3a - Chọn đồ Gizmo Nhóm]] · [[Kết nối 3d - Save Undo khởi động]]
 
 **Gọi / điều khiển →**
 - [[BP_TransformerPawn]] — giữ tham chiếu · TransformerPawnRef
-- [[BP_PivotActor]] — cập nhật trục lúc bấm · RefreshOffsets()
-- [[BP_FurnitureInputManager]] — hỏi chế độ hiện tại · GET ActiveMode
-- [[BP_UndoManager]] — chụp trạng thái khi kéo xong · CaptureSnapshot()
-- [[BP_UndoManager]] — lưu mốc sau khi kéo · CaptureSnapshot(Move/Rotate/Scale)
+- [[BP_PivotActor]] — cập nhật trục lúc bấm + dời pivot khi kéo · RefreshOffsets(), Set Actor Location
+- [[BP_FurnitureActor]] — dời món khi kéo (1 món) · Set Actor Location(SelectedActor)
+- [[BP_FurnitureInputManager]] — hỏi chế độ hiện tại · GET ActiveMode ✓K2
+- [[BP_UndoManager]] — chụp trạng thái khi kéo xong · CaptureSnapshot() ✓K2
+- [[BP_UndoManager]] — lưu mốc sau khi kéo · CaptureSnapshot(Move/Rotate/Scale) ✓K2
 
 **← Được gọi bởi**
 - [[BP_FurnitureInputManager]] — gọi lúc bấm chuột + giữ tham chiếu · OnMousePressed(), GizmoControllerRef
+- [[WBP_MeshControls]] — tắt rồi bật gizmo khi đổi chế độ · DeactivateGizmo() / ActivateGizmo() — lấy tham chiếu từ đâu ?
 
 <!-- BRAIN:END -->

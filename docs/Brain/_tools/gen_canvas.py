@@ -5,9 +5,13 @@ Nguồn DUY NHẤT vẫn là Architecture_Map; chạy lại script sau khi sửa
 Quy ước (giữ nghĩa diagram-contract): mũi tên liền ->> = ✓K2 (cạnh xanh lá, nhãn có ✓K2) · đứt -->> = theo doc (xám) ·
 nhãn có '?' = chưa rõ (đỏ). Màu chỉ là lớp phụ — trạng thái luôn có chữ trên nhãn/thẻ.
 """
-import re, os, json
+import re, os, sys, json
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.chdir(ROOT)
+sys.dont_write_bytecode = True   # không đẻ __pycache__ trong vault
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import brainlib as BL      # tra mục hàm trong doc → link trên thẻ
+FILES = BL.doc_files()
 DOC = {'MaterialSlotService': 'MaterialSlotService_Reference'}
 LANE_W, GAP, CARD_W, TOP = 380, 60, 330, 170
 
@@ -105,7 +109,9 @@ for sid, title, body in re.findall(r'### (5\w) — ([^\n]*)\n+```mermaid\n(.*?)`
         user = parts.get(a, '') == 'User'
         k2 = arrow == '->>' and not user; unk = '?' in msg
         state = 'thao tác người dùng' if user else ('✓K2' if k2 else ('chưa rõ ?' if unk else 'theo doc'))
-        text = f'{tag}**{step}.** {vi}' + (f'\n`{fn}`' if fn else '') + f'\n<small>{dstep}{who} · {state}</small>'
+        lk = BL.step_link({'msg': msg, 'fn': fn, 'A': BL.canon(parts[a]), 'B': BL.canon(parts[b]), 'user': user}, FILES)
+        text = (f'{tag}**{step}.** {vi}' + (f'\n`{fn}`' if fn else '')
+                + (f'\n↗ [[{lk[0]}#{BL.link_heading(lk[1])}|{lk[0]} › {lk[2]}]]' if lk else '') + f'\n<small>{dstep}{who} · {state}</small>')
         h = est_h(text); nid = f's{step}'
         node = {'id': nid, 'type': 'text', 'x': lx[b] + (LANE_W - CARD_W) // 2, 'y': y, 'width': CARD_W, 'height': h, 'text': text}
         if ctx and ctx[-1][0] == 'else': node['color'] = '3'
@@ -128,6 +134,7 @@ for sid, title, body in re.findall(r'### (5\w) — ([^\n]*)\n+```mermaid\n(.*?)`
         if lane_color(parts[pid]): g['color'] = lane_color(parts[pid])
         nodes.insert(0, g)
     fn = f'Brain/Canvas/{sid} - {re.sub(r"[/:]", "-", title)}.canvas'
+    os.makedirs(os.path.dirname(fn), exist_ok=True)
     json.dump({'nodes': nodes, 'edges': edges}, open(fn, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     out.append((fn, step))
 for fn, n in out: print(n, 'bước ->', fn)

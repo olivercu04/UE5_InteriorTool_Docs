@@ -1,0 +1,431 @@
+{
+ "nodes": [
+  {
+   "id": "lane_PREFS",
+   "type": "group",
+   "x": 3080,
+   "y": 110,
+   "width": 380,
+   "height": 3080,
+   "label": "BP_FurnitureUserPrefsManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_UM",
+   "type": "group",
+   "x": 2640,
+   "y": 110,
+   "width": 380,
+   "height": 3080,
+   "label": "BP_UndoManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_EIL",
+   "type": "group",
+   "x": 2200,
+   "y": 110,
+   "width": 380,
+   "height": 3080,
+   "label": "UEntityIdLibrary (C++)",
+   "color": "6"
+  },
+  {
+   "id": "lane_IM",
+   "type": "group",
+   "x": 1760,
+   "y": 110,
+   "width": 380,
+   "height": 3080,
+   "label": "BP_FurnitureInputManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_FA",
+   "type": "group",
+   "x": 1320,
+   "y": 110,
+   "width": 380,
+   "height": 3080,
+   "label": "BP_FurnitureActor (bóng → đồ thật)",
+   "color": "5"
+  },
+  {
+   "id": "lane_DO",
+   "type": "group",
+   "x": 880,
+   "y": 110,
+   "width": 380,
+   "height": 3080,
+   "label": "WBP_DragOverlay (lớp phủ lúc kéo)",
+   "color": "2"
+  },
+  {
+   "id": "lane_CARD",
+   "type": "group",
+   "x": 440,
+   "y": 110,
+   "width": 380,
+   "height": 3080,
+   "label": "WBP_FurnitureCard",
+   "color": "2"
+  },
+  {
+   "id": "lane_U",
+   "type": "group",
+   "x": 0,
+   "y": 110,
+   "width": 380,
+   "height": 3080,
+   "label": "User"
+  },
+  {
+   "id": "title",
+   "type": "text",
+   "x": 0,
+   "y": -120,
+   "width": 3460,
+   "height": 170,
+   "text": "# 5i — Kéo đồ từ kho thả vào phòng\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
+  },
+  {
+   "id": "h_U",
+   "type": "text",
+   "x": 25,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### User"
+  },
+  {
+   "id": "h_CARD",
+   "type": "text",
+   "x": 465,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_FurnitureCard]]",
+   "color": "2"
+  },
+  {
+   "id": "h_DO",
+   "type": "text",
+   "x": 905,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### WBP_DragOverlay (lớp phủ lúc kéo)",
+   "color": "2"
+  },
+  {
+   "id": "h_FA",
+   "type": "text",
+   "x": 1345,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureActor]]\n(bóng → đồ thật)",
+   "color": "5"
+  },
+  {
+   "id": "h_IM",
+   "type": "text",
+   "x": 1785,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureInputManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_EIL",
+   "type": "text",
+   "x": 2225,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### UEntityIdLibrary (C++)",
+   "color": "6"
+  },
+  {
+   "id": "h_UM",
+   "type": "text",
+   "x": 2665,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_UndoManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_PREFS",
+   "type": "text",
+   "x": 3105,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureUserPrefsManager]]",
+   "color": "5"
+  },
+  {
+   "id": "s1",
+   "type": "text",
+   "x": 465,
+   "y": 280,
+   "width": 330,
+   "height": 168,
+   "text": "**1.** nhấn giữ và kéo 1 thẻ đồ\n`On Drag Detected`\n↗ [[WBP_FurnitureCard#On Drag Detected|WBP_FurnitureCard › On Drag Detected]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s2",
+   "type": "text",
+   "x": 465,
+   "y": 488,
+   "width": 330,
+   "height": 102,
+   "text": "**2.** tắt gizmo trước tiên\n`DeactivateGizmo()`\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s3",
+   "type": "text",
+   "x": 1345,
+   "y": 630,
+   "width": 330,
+   "height": 168,
+   "text": "**3.** sinh đồ bóng, nạp mesh ngay (đồng bộ)\n`Spawn BP_FurnitureActor → Load Asset Blocking → Set Static Mesh`\n<small>← WBP_FurnitureCard · theo doc</small>"
+  },
+  {
+   "id": "s4",
+   "type": "text",
+   "x": 905,
+   "y": 838,
+   "width": 330,
+   "height": 168,
+   "text": "**4.** phủ lớp kéo-thả + gói kéo mang RowName\n`Create WBP_DragOverlay, BP_DragDropOperation_FurnitureCard`\n<small>← WBP_FurnitureCard · theo doc</small>"
+  },
+  {
+   "id": "s5",
+   "type": "text",
+   "x": 905,
+   "y": 1046,
+   "width": 330,
+   "height": 146,
+   "text": "↻ lặp: mỗi lần rê chuột\n**5.** tia từ chuột xuống cảnh, bỏ qua chính bóng\n`On Drag Over → Line Trace`\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s6",
+   "type": "text",
+   "x": 1345,
+   "y": 1232,
+   "width": 330,
+   "height": 168,
+   "text": "↻ lặp: mỗi lần rê chuột\n**6.** dời bóng, xoay theo mặt chạm\n`Set Actor Location, SET PlacementSurfaceType (Floor / Wall / Ceiling)`\n<small>← WBP_DragOverlay · theo doc</small>"
+  },
+  {
+   "id": "s7",
+   "type": "text",
+   "x": 905,
+   "y": 1440,
+   "width": 330,
+   "height": 212,
+   "text": "**7.** thả chuột\n`On Drop (nhánh Furniture)`\n↗ [[WBP_DragOverlay_FurnitureCard#On Drop — v1.10 S7.G5.3+G5.4 (material branch + dọn scaffolding, 11/09/2026)|WBP_DragOverlay_FurnitureCard › On Drop]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s8",
+   "type": "text",
+   "x": 1785,
+   "y": 1692,
+   "width": 330,
+   "height": 124,
+   "text": "**8.** tắt gizmo\n`GizmoControllerRef.DeactivateGizmo() ?`\n<small>← WBP_DragOverlay · chưa rõ ?</small>",
+   "color": "1"
+  },
+  {
+   "id": "s9",
+   "type": "text",
+   "x": 2225,
+   "y": 1856,
+   "width": 330,
+   "height": 190,
+   "text": "**9.** cấp danh tính cho đồ mới\n`EnsurePersistentId()`\n↗ [[EntityIdLibrary_Reference#Hàm 1 — EnsurePersistentId|EntityIdLibrary_Reference › EnsurePersistentId]]\n<small>← WBP_DragOverlay · theo doc</small>"
+  },
+  {
+   "id": "s10",
+   "type": "text",
+   "x": 1345,
+   "y": 2086,
+   "width": 330,
+   "height": 146,
+   "text": "**10.** biến bóng thành đồ thật\n`Set Static Mesh, SET MeshPath, SET RowName, ADD tag FurnitureSpawned`\n<small>← WBP_DragOverlay · theo doc</small>"
+  },
+  {
+   "id": "s11",
+   "type": "text",
+   "x": 1785,
+   "y": 2272,
+   "width": 330,
+   "height": 212,
+   "text": "**11.** đang sửa nhóm thì đồ mới vào nhóm đó\n`GetCurrentEditScope() → SET GroupID`\n↗ [[BP_FurnitureInputManager#GetCurrentEditScope() → String|BP_FurnitureInputManager › GetCurrentEditScope]]\n<small>← WBP_DragOverlay · theo doc</small>"
+  },
+  {
+   "id": "s12",
+   "type": "text",
+   "x": 2665,
+   "y": 2524,
+   "width": 330,
+   "height": 190,
+   "text": "**12.** ghi sổ 1 entry\n`CaptureSnapshot(\"Spawn\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← WBP_DragOverlay · theo doc</small>"
+  },
+  {
+   "id": "s13",
+   "type": "text",
+   "x": 3105,
+   "y": 2754,
+   "width": 330,
+   "height": 124,
+   "text": "**13.** thêm vào Gần đây\n`AddRecentMesh(RowName)`\n<small>← WBP_DragOverlay · theo doc</small>"
+  },
+  {
+   "id": "s14",
+   "type": "text",
+   "x": 905,
+   "y": 2918,
+   "width": 330,
+   "height": 102,
+   "text": "**14.** gỡ lớp phủ\n`Remove From Parent → Return true`\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "n23",
+   "type": "text",
+   "x": 20,
+   "y": 3060,
+   "width": 3420,
+   "height": 70,
+   "text": "📝 Đồ vừa thả KHÔNG tự được chọn (On Drop không gọi SelectActors). Đường ngược (6A) - Ctrl+Z → entry \"Spawn\" là Snapshot → 5e dựng lại cảnh trước khi thả.",
+   "color": "3"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e0",
+   "fromNode": "h_U",
+   "fromSide": "right",
+   "toNode": "s1",
+   "toSide": "left",
+   "label": "1"
+  },
+  {
+   "id": "e1",
+   "fromNode": "s1",
+   "fromSide": "bottom",
+   "toNode": "s2",
+   "toSide": "top",
+   "label": "2"
+  },
+  {
+   "id": "e2",
+   "fromNode": "s2",
+   "fromSide": "right",
+   "toNode": "s3",
+   "toSide": "left",
+   "label": "3"
+  },
+  {
+   "id": "e3",
+   "fromNode": "s3",
+   "fromSide": "left",
+   "toNode": "s4",
+   "toSide": "right",
+   "label": "4"
+  },
+  {
+   "id": "e4",
+   "fromNode": "s4",
+   "fromSide": "bottom",
+   "toNode": "s5",
+   "toSide": "top",
+   "label": "5"
+  },
+  {
+   "id": "e5",
+   "fromNode": "s5",
+   "fromSide": "right",
+   "toNode": "s6",
+   "toSide": "left",
+   "label": "6"
+  },
+  {
+   "id": "e6",
+   "fromNode": "s6",
+   "fromSide": "left",
+   "toNode": "s5",
+   "toSide": "right",
+   "label": "↻ lặp"
+  },
+  {
+   "id": "e7",
+   "fromNode": "s6",
+   "fromSide": "left",
+   "toNode": "s7",
+   "toSide": "right",
+   "label": "7"
+  },
+  {
+   "id": "e8",
+   "fromNode": "s7",
+   "fromSide": "right",
+   "toNode": "s8",
+   "toSide": "left",
+   "label": "8 ?",
+   "color": "1"
+  },
+  {
+   "id": "e9",
+   "fromNode": "s8",
+   "fromSide": "right",
+   "toNode": "s9",
+   "toSide": "left",
+   "label": "9"
+  },
+  {
+   "id": "e10",
+   "fromNode": "s9",
+   "fromSide": "left",
+   "toNode": "s10",
+   "toSide": "right",
+   "label": "10"
+  },
+  {
+   "id": "e11",
+   "fromNode": "s10",
+   "fromSide": "right",
+   "toNode": "s11",
+   "toSide": "left",
+   "label": "11"
+  },
+  {
+   "id": "e12",
+   "fromNode": "s11",
+   "fromSide": "right",
+   "toNode": "s12",
+   "toSide": "left",
+   "label": "12"
+  },
+  {
+   "id": "e13",
+   "fromNode": "s12",
+   "fromSide": "right",
+   "toNode": "s13",
+   "toSide": "left",
+   "label": "13"
+  },
+  {
+   "id": "e14",
+   "fromNode": "s13",
+   "fromSide": "left",
+   "toNode": "s14",
+   "toSide": "right",
+   "label": "14"
+  }
+ ]
+}

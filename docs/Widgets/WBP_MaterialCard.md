@@ -128,9 +128,15 @@ leak, không kẹt input).
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3e - Vật liệu Material]]
+**Có mặt trong thao tác:** [[L09 · Đổi vật liệu|L09]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3e - Vật liệu Material]]
+
+**Gọi / điều khiển →**
+- [[WBP_FurnitureInventory]] — bấm thẻ → áp cho món đang mở panel · ApplyMaterial(RowName)
+- [[WBP_DragOverlay_FurnitureCard]] — kéo thẻ → phủ lớp kéo-thả mang RowName · Create WBP_DragOverlay + BP_DragDropOperation_Material
 
 **← Được gọi bởi**
 - [[WBP_FurnitureInventory]] — đổ thẻ vật liệu vào lưới · TileView entry

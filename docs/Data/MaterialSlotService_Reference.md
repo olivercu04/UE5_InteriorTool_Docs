@@ -361,16 +361,20 @@ nào khác ngoài U2 đang xây).
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3d - Save Undo khởi động]] · [[Luồng 3e - Vật liệu Material]]
+**Có mặt trong thao tác:** [[L09 · Đổi vật liệu|L09]] · [[L10 · Chỉnh thông số vật liệu|L10]] · [[L12 · Lưu và mở cảnh|L12]] · [[L13 · Hoàn tác và làm lại|L13]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3d - Save Undo khởi động]] · [[Kết nối 3e - Vật liệu Material]]
 
 **← Được gọi bởi**
-- [[BP_UndoManager]] — đọc giá trị trước/sau + đảo 1 thông số · GetSlot*Param() / SetSlot*Param() (qua ApplyParamCommand)
+- [[BP_UndoManager]] — đọc giá trị trước/sau + đảo 1 thông số · GetSlot*Param() / SetSlot*Param() (qua ApplyParamCommand) ✓K2
 - [[WBP_FurnitureInventory]] — reset param / reset về mặc định · ResetSlotToAssetDefault() / ResetAllSlotsToAssetDefault() ✓K2
 - [[WBP_FurnitureInventory]] — gán vật liệu vào slot (kéo-thả G5) · ApplyLoadedMaterialToSlot() → LoadAndApplyMaterial ✓K2
 - [[WBP_ParamColorRow]] — parse hex khi commit ô Hex · HexToLinearColor()
 - [[WBP_FurnitureInventory]] — tra từ điển param theo material · GetControlsForMaterial(SlotMaterial, DT_ParamMap) ✓K2
 - [[WBP_FurnitureInventory]] — seed giá trị row = giá trị THẬT trên MID/MI (U2.5, thay Cast MID+fallback) · GetSlotScalarParam() / GetSlotVectorParam()
+- [[BP_FurnitureActor]] — gắn lại vật liệu + thông số từng slot sau khi tải mesh (Undo) · ApplyLoadedMaterialToSlot() → ApplyParamsJsonToSlot()
+- [[WBP_DragOverlay_FurnitureCard]] — tìm món + slot dưới điểm thả · TraceSlotUnderCursor() ✓K2
 
 <!-- BRAIN:END -->

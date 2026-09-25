@@ -1,4 +1,5 @@
 # MASTER PLAN — Multi-Select / Group / Combo / Material Edit v1.2
+**Ghi chú 25/09/2026:** người dùng đích đã chốt lại — người thiết kế / tư vấn nội thất có kỹ năng, dễ tiếp cận công nghệ, ngoài FOFF (xem mục "Triết lý thiết kế"). Chưa đổi roadmap / sprint theo quyết định này.
 **Phiên bản:** 3.0 | **Ngày:** 28/05/2026 | **Project:** Lighting_Mnger (UE5.5.4)
 **Trước đây:** MultiSelect_Group_ComboMesh_Plan_v2.md (deprecated)
 
@@ -27,6 +28,8 @@ Kế hoạch này gồm 8 file, mỗi file có vai trò riêng:
 ## TRIẾT LÝ THIẾT KẾ
 
 Ba góc nhìn định hình mọi quyết định:
+
+> ⚠ **Đính chính 25/09/2026:** "người dùng bình thường" dưới đây là giả định 28/05. Người dùng đích hiện hành = người có kỹ năng thiết kế và tư vấn nội thất tốt, dễ tiếp cận công nghệ, không phải nhân viên FOFF — `Plans/25-09-2026_Product_UX_Review_Plan_v1.md` mục 2.0. Tinh thần "nhanh, ít bước, nhìn là hiểu" vẫn giữ.
 
 **👤 Người dùng bình thường:** Không kiến thức kiến trúc/vật liệu. Cần thao tác nhanh, ít bước, ưng mắt là được. Giao diện phải trực quan — nhìn là hiểu.
 

@@ -6,7 +6,7 @@
    "x": 2200,
    "y": 110,
    "width": 380,
-   "height": 2356,
+   "height": 3302,
    "label": "WBP_MeshControls",
    "color": "2"
   },
@@ -16,7 +16,7 @@
    "x": 1760,
    "y": 110,
    "width": 380,
-   "height": 2356,
+   "height": 3302,
    "label": "WBP_FurnitureInventory",
    "color": "2"
   },
@@ -26,7 +26,7 @@
    "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 2356,
+   "height": 3302,
    "label": "BP_UndoManager",
    "color": "5"
   },
@@ -36,7 +36,7 @@
    "x": 880,
    "y": 110,
    "width": 380,
-   "height": 2356,
+   "height": 3302,
    "label": "BP_GizmoController",
    "color": "5"
   },
@@ -46,7 +46,7 @@
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 2356,
+   "height": 3302,
    "label": "BP_FurnitureInputManager",
    "color": "5"
   },
@@ -56,7 +56,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 2356,
+   "height": 3302,
    "label": "User"
   },
   {
@@ -133,108 +133,108 @@
    "x": 465,
    "y": 280,
    "width": 330,
-   "height": 146,
-   "text": "**1.** nhấn chuột\n`Mouse Left Pressed (chỉ ghi PendingClickActor, CHƯA chọn)`\n<small>← User · thao tác người dùng</small>"
+   "height": 212,
+   "text": "**1.** nhấn chuột\n`Mouse Left Pressed (chỉ ghi PendingClickActor, CHƯA chọn)`\n↗ [[BP_FurnitureInputManager#Mouse Left Pressed — FULL FLOW (v1.5)|BP_FurnitureInputManager › Mouse Left Pressed]]\n<small>← User · thao tác người dùng</small>"
   },
   {
    "id": "s2",
    "type": "text",
    "x": 465,
-   "y": 466,
+   "y": 532,
    "width": 330,
-   "height": 124,
-   "text": "**2.** thả chuột\n`OnLMBReleased (Sequence Then 2)`\n<small>← User · thao tác người dùng</small>"
+   "height": 234,
+   "text": "**2.** thả chuột\n`OnLMBReleased (Sequence Then 2)`\n↗ [[BP_FurnitureInputManager#OnLMBReleased — FULL FLOW (v1.6, ✓K2 12/09/2026 — G6.0 VERIFY) ⭐ đường chính chốt selection|BP_FurnitureInputManager › OnLMBReleased]]\n<small>← User · thao tác người dùng</small>"
   },
   {
    "id": "s3",
    "type": "text",
    "x": 465,
-   "y": 630,
+   "y": 806,
    "width": 330,
-   "height": 124,
-   "text": "▸ nếu click thường\n**3.** bỏ chọn cũ\n`DeselectAll()`\n<small>nội bộ · ✓K2</small>"
+   "height": 190,
+   "text": "▸ nếu click thường\n**3.** bỏ chọn cũ\n`DeselectAll()`\n↗ [[BP_FurnitureInputManager#DeselectAll (T5 → v1.6)|BP_FurnitureInputManager › DeselectAll]]\n<small>nội bộ · ✓K2</small>"
   },
   {
    "id": "s4",
    "type": "text",
    "x": 465,
-   "y": 794,
+   "y": 1036,
    "width": 330,
-   "height": 124,
-   "text": "▸ nếu click thường\n**4.** lấy cả group chứa món\n`ExpandSelectionWithGroups()`\n<small>nội bộ · ✓K2</small>"
+   "height": 212,
+   "text": "▸ nếu click thường\n**4.** lấy cả group chứa món\n`ExpandSelectionWithGroups()`\n↗ [[BP_FurnitureInputManager#ExpandSelectionWithGroups(RawActors) → Array<BP_FurnitureActor> ⭐ keystone|BP_FurnitureInputManager › ExpandSelectionWithGroups]]\n<small>nội bộ · ✓K2</small>"
   },
   {
    "id": "s5",
    "type": "text",
    "x": 465,
-   "y": 958,
+   "y": 1288,
    "width": 330,
-   "height": 124,
-   "text": "▸ nếu click thường\n**5.** chọn\n`SelectActors()`\n<small>nội bộ · ✓K2</small>"
+   "height": 190,
+   "text": "▸ nếu click thường\n**5.** chọn\n`SelectActors()`\n↗ [[BP_FurnitureInputManager#SelectActors(Actors) (T5)|BP_FurnitureInputManager › SelectActors]]\n<small>nội bộ · ✓K2</small>"
   },
   {
    "id": "s6",
    "type": "text",
    "x": 465,
-   "y": 1122,
+   "y": 1518,
    "width": 330,
-   "height": 124,
-   "text": "▸ nếu click thường\n**6.** tô viền\n`UpdateOutlineState()`\n<small>nội bộ · theo doc</small>"
+   "height": 190,
+   "text": "▸ nếu click thường\n**6.** tô viền\n`UpdateOutlineState()`\n↗ [[BP_FurnitureInputManager#UpdateOutlineState (T5)|BP_FurnitureInputManager › UpdateOutlineState]]\n<small>nội bộ · theo doc</small>"
   },
   {
    "id": "s7",
    "type": "text",
    "x": 905,
-   "y": 1286,
+   "y": 1748,
    "width": 330,
-   "height": 168,
-   "text": "▸ nếu click thường\n**7.** tắt rồi bật gizmo\n`UpdateGizmo → DeactivateGizmo() + ActivateGizmo()`\n<small>← BP_FurnitureInputManager · theo doc</small>"
+   "height": 212,
+   "text": "▸ nếu click thường\n**7.** tắt rồi bật gizmo\n`UpdateGizmo → DeactivateGizmo() + ActivateGizmo()`\n↗ [[BP_GizmoController#DeactivateGizmo|BP_GizmoController › DeactivateGizmo]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
   },
   {
    "id": "s8",
    "type": "text",
    "x": 1785,
-   "y": 1494,
+   "y": 2000,
    "width": 330,
-   "height": 168,
-   "text": "▸ nếu click thường\n**8.** báo tin\n`Broadcast OnSelectionChanged → OnSelectionChangedMaterial → OnMeshSelected`\n<small>← BP_FurnitureInputManager · theo doc</small>"
+   "height": 256,
+   "text": "▸ nếu click thường\n**8.** báo tin\n`Broadcast OnSelectionChanged → OnSelectionChangedMaterial → OnMeshSelected`\n↗ [[WBP_FurnitureInventory#OnSelectionChangedMaterial(Actors, Primary) — v2.4 MỚI|WBP_FurnitureInventory › OnSelectionChangedMaterial]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
   },
   {
    "id": "s9",
    "type": "text",
    "x": 2225,
-   "y": 1702,
+   "y": 2296,
    "width": 330,
-   "height": 168,
-   "text": "▸ nếu click thường\n**9.** báo tin\n`OnSelectionChanged → OnSelectionChangedInfoBar`\n<small>← BP_FurnitureInputManager · theo doc</small>"
+   "height": 256,
+   "text": "▸ nếu click thường\n**9.** báo tin\n`OnSelectionChanged → OnSelectionChangedInfoBar`\n↗ [[WBP_MeshControls#UpdateDetailPopup (Custom Event, bound to OnSelectionChanged) — v1.7|WBP_MeshControls › OnSelectionChanged]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
   },
   {
    "id": "s10",
    "type": "text",
    "x": 465,
-   "y": 1910,
+   "y": 2592,
    "width": 330,
-   "height": 146,
-   "text": "▸ ngược lại: Ctrl+click\n**10.** lấy cả group\n`ExpandSelectionWithGroups() → ToggleActor() từng món`\n<small>nội bộ · ✓K2</small>",
+   "height": 234,
+   "text": "▸ ngược lại: Ctrl+click\n**10.** lấy cả group\n`ExpandSelectionWithGroups() → ToggleActor() từng món`\n↗ [[BP_FurnitureInputManager#ExpandSelectionWithGroups(RawActors) → Array<BP_FurnitureActor> ⭐ keystone|BP_FurnitureInputManager › ExpandSelectionWithGroups]]\n<small>nội bộ · ✓K2</small>",
    "color": "3"
   },
   {
    "id": "s11",
    "type": "text",
    "x": 1345,
-   "y": 2096,
+   "y": 2866,
    "width": 330,
-   "height": 124,
-   "text": "**11.** chụp trạng thái\n`CaptureSnapshot(\"Select\")`\n<small>← BP_FurnitureInputManager · ✓K2</small>"
+   "height": 190,
+   "text": "**11.** chụp trạng thái\n`CaptureSnapshot(\"Select\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
   },
   {
    "id": "s12",
    "type": "text",
    "x": 1785,
-   "y": 2260,
+   "y": 3096,
    "width": 330,
-   "height": 146,
-   "text": "◇ khi: chỉ 1 món được chọn\n**12.** chọn slot vật liệu dưới chuột\n`NotifyViewportSlotClick()`\n<small>← BP_FurnitureInputManager · ✓K2</small>"
+   "height": 256,
+   "text": "◇ khi: chỉ 1 món được chọn\n**12.** chọn slot vật liệu dưới chuột\n`NotifyViewportSlotClick()`\n↗ [[WBP_FurnitureInventory#NotifyViewportSlotClick(ClickedActor BP_FurnitureActor, ScreenPos Vector2D) — Custom Event MỚI (S7.G6.1, 12/09/2026)|WBP_FurnitureInventory › NotifyViewportSlotClick]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
   }
  ],
  "edges": [

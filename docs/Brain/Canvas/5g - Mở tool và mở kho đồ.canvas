@@ -1,0 +1,349 @@
+{
+ "nodes": [
+  {
+   "id": "lane_PC",
+   "type": "group",
+   "x": 2200,
+   "y": 110,
+   "width": 380,
+   "height": 3016,
+   "label": "BP_FoffPlayerController",
+   "color": "5"
+  },
+  {
+   "id": "lane_INV",
+   "type": "group",
+   "x": 1760,
+   "y": 110,
+   "width": 380,
+   "height": 3016,
+   "label": "WBP_FurnitureInventory",
+   "color": "2"
+  },
+  {
+   "id": "lane_UM",
+   "type": "group",
+   "x": 1320,
+   "y": 110,
+   "width": 380,
+   "height": 3016,
+   "label": "BP_UndoManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_IM",
+   "type": "group",
+   "x": 880,
+   "y": 110,
+   "width": 380,
+   "height": 3016,
+   "label": "BP_FurnitureInputManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_TD",
+   "type": "group",
+   "x": 440,
+   "y": 110,
+   "width": 380,
+   "height": 3016,
+   "label": "WBP_FOFF_ToolDemo",
+   "color": "2"
+  },
+  {
+   "id": "lane_U",
+   "type": "group",
+   "x": 0,
+   "y": 110,
+   "width": 380,
+   "height": 3016,
+   "label": "User"
+  },
+  {
+   "id": "title",
+   "type": "text",
+   "x": 0,
+   "y": -120,
+   "width": 2580,
+   "height": 170,
+   "text": "# 5g — Mở tool và mở kho đồ\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
+  },
+  {
+   "id": "h_U",
+   "type": "text",
+   "x": 25,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### User"
+  },
+  {
+   "id": "h_TD",
+   "type": "text",
+   "x": 465,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_FOFF_ToolDemo]]",
+   "color": "2"
+  },
+  {
+   "id": "h_IM",
+   "type": "text",
+   "x": 905,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureInputManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_UM",
+   "type": "text",
+   "x": 1345,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_UndoManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_INV",
+   "type": "text",
+   "x": 1785,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_FurnitureInventory]]",
+   "color": "2"
+  },
+  {
+   "id": "h_PC",
+   "type": "text",
+   "x": 2225,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FoffPlayerController]]",
+   "color": "5"
+  },
+  {
+   "id": "s1",
+   "type": "text",
+   "x": 905,
+   "y": 280,
+   "width": 330,
+   "height": 146,
+   "text": "**1.** khởi động - sinh các manager (Input, Undo, Scene, Combo, UserPrefs)\n`Spawn (Event Construct, Then 0..13) ?`\n<small>← WBP_FOFF_ToolDemo · chưa rõ ?</small>",
+   "color": "1"
+  },
+  {
+   "id": "s2",
+   "type": "text",
+   "x": 1345,
+   "y": 466,
+   "width": 330,
+   "height": 190,
+   "text": "**2.** lưu mốc đầu tiên của sổ lịch sử\n`CaptureSnapshot(\"Initial\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← WBP_FOFF_ToolDemo · theo doc</small>"
+  },
+  {
+   "id": "s3",
+   "type": "text",
+   "x": 465,
+   "y": 696,
+   "width": 330,
+   "height": 124,
+   "text": "**3.** bấm nút Kho đồ\n`BTN_FurnitureInventory`\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s4",
+   "type": "text",
+   "x": 1785,
+   "y": 860,
+   "width": 330,
+   "height": 146,
+   "text": "**4.** mở kho - tạo 1 lần, các lần sau chỉ bật Visibility\n`Open widget`\n<small>← WBP_FOFF_ToolDemo · theo doc</small>"
+  },
+  {
+   "id": "s5",
+   "type": "text",
+   "x": 2225,
+   "y": 1046,
+   "width": 330,
+   "height": 212,
+   "text": "**5.** đổi sang bộ phím nội thất\n`AddFurnitureInput() → Add Mapping Context(LM_FurnitureInput)`\n↗ [[BP_FoffPlayerController#AddFurnitureInput|BP_FoffPlayerController › AddFurnitureInput]]\n<small>← WBP_FOFF_ToolDemo · theo doc</small>"
+  },
+  {
+   "id": "s6",
+   "type": "text",
+   "x": 1785,
+   "y": 1298,
+   "width": 330,
+   "height": 212,
+   "text": "**6.** Event Construct - dựng cây thư mục, lọc lần đầu\n`BuildFolderTree → PopulateTreeColumn → FilterByFolderPath()`\n↗ [[WBP_FurnitureInventory#FilterByFolderPath(FolderPath)|WBP_FurnitureInventory › FilterByFolderPath]]\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s7",
+   "type": "text",
+   "x": 1345,
+   "y": 1550,
+   "width": 330,
+   "height": 234,
+   "text": "**7.** nghe Undo xong để làm mới panel\n`Bind OnRestoreCompleted → OnSceneRestored`\n↗ [[WBP_FurnitureInventory#OnSceneRestored(RestoredSelectedActor) — v1.1 + SỬA (Replace UX Fix P4.3, 02/08/2026)|WBP_FurnitureInventory › OnSceneRestored]]\n<small>← WBP_FurnitureInventory · theo doc</small>"
+  },
+  {
+   "id": "s8",
+   "type": "text",
+   "x": 905,
+   "y": 1824,
+   "width": 330,
+   "height": 234,
+   "text": "**8.** nghe chọn đồ\n`Bind OnSelectionChanged → OnSelectionChangedMaterial`\n↗ [[WBP_FurnitureInventory#OnSelectionChangedMaterial(Actors, Primary) — v2.4 MỚI|WBP_FurnitureInventory › OnSelectionChangedMaterial]]\n<small>← WBP_FurnitureInventory · theo doc</small>"
+  },
+  {
+   "id": "s9",
+   "type": "text",
+   "x": 1785,
+   "y": 2098,
+   "width": 330,
+   "height": 212,
+   "text": "**9.** bấm X đóng kho\n`BTN_Close`\n↗ [[WBP_FurnitureInventory#BTN_Close — OnClicked (EventGraph) — SỬA (Replace UX Fix P4.2+P4.4, 02/08/2026)|WBP_FurnitureInventory › BTN_Close]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s10",
+   "type": "text",
+   "x": 905,
+   "y": 2350,
+   "width": 330,
+   "height": 146,
+   "text": "**10.** xoá 3 biến chế độ thay đồ\n`SET ReplaceTarget = None, MeshesToReplace, ComboRootGroupIDToReplace`\n<small>← WBP_FurnitureInventory · theo doc</small>"
+  },
+  {
+   "id": "s11",
+   "type": "text",
+   "x": 1785,
+   "y": 2536,
+   "width": 330,
+   "height": 190,
+   "text": "**11.** ẩn, KHÔNG huỷ widget\n`ExitReplaceMode() → SetVisibility(Collapsed)`\n↗ [[WBP_FurnitureInventory#ExitReplaceMode — v1.3 + C9.0c (24/07/2026)|WBP_FurnitureInventory › ExitReplaceMode]]\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s12",
+   "type": "text",
+   "x": 2225,
+   "y": 2766,
+   "width": 330,
+   "height": 190,
+   "text": "**12.** trả bộ phím cho project tổng\n`RemoveFurnitureInput()`\n↗ [[BP_FoffPlayerController#RemoveFurnitureInput|BP_FoffPlayerController › RemoveFurnitureInput]]\n<small>← WBP_FurnitureInventory · theo doc</small>"
+  },
+  {
+   "id": "n19",
+   "type": "text",
+   "x": 20,
+   "y": 2996,
+   "width": 2540,
+   "height": 70,
+   "text": "📝 Phím I (Level BP, InputAction OpenFurnitureInventory) cũng bật / tắt kho. Kho đóng thì phím tắt nội thất (Ctrl+Z, Ctrl+C…) không chạy vì LM_FurnitureInput đã bị gỡ.",
+   "color": "3"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e0",
+   "fromNode": "h_TD",
+   "fromSide": "right",
+   "toNode": "s1",
+   "toSide": "left",
+   "label": "1 ?",
+   "color": "1"
+  },
+  {
+   "id": "e1",
+   "fromNode": "s1",
+   "fromSide": "right",
+   "toNode": "s2",
+   "toSide": "left",
+   "label": "2"
+  },
+  {
+   "id": "e2",
+   "fromNode": "s2",
+   "fromSide": "left",
+   "toNode": "s3",
+   "toSide": "right",
+   "label": "3"
+  },
+  {
+   "id": "e3",
+   "fromNode": "s3",
+   "fromSide": "right",
+   "toNode": "s4",
+   "toSide": "left",
+   "label": "4"
+  },
+  {
+   "id": "e4",
+   "fromNode": "s4",
+   "fromSide": "right",
+   "toNode": "s5",
+   "toSide": "left",
+   "label": "5"
+  },
+  {
+   "id": "e5",
+   "fromNode": "s5",
+   "fromSide": "left",
+   "toNode": "s6",
+   "toSide": "right",
+   "label": "6"
+  },
+  {
+   "id": "e6",
+   "fromNode": "s6",
+   "fromSide": "left",
+   "toNode": "s7",
+   "toSide": "right",
+   "label": "7"
+  },
+  {
+   "id": "e7",
+   "fromNode": "s7",
+   "fromSide": "left",
+   "toNode": "s8",
+   "toSide": "right",
+   "label": "8"
+  },
+  {
+   "id": "e8",
+   "fromNode": "s8",
+   "fromSide": "right",
+   "toNode": "s9",
+   "toSide": "left",
+   "label": "9"
+  },
+  {
+   "id": "e9",
+   "fromNode": "s9",
+   "fromSide": "left",
+   "toNode": "s10",
+   "toSide": "right",
+   "label": "10"
+  },
+  {
+   "id": "e10",
+   "fromNode": "s10",
+   "fromSide": "right",
+   "toNode": "s11",
+   "toSide": "left",
+   "label": "11"
+  },
+  {
+   "id": "e11",
+   "fromNode": "s11",
+   "fromSide": "right",
+   "toNode": "s12",
+   "toSide": "left",
+   "label": "12"
+  }
+ ]
+}

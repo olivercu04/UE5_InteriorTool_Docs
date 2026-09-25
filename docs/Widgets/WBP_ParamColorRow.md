@@ -146,14 +146,15 @@ G8/G9.
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3e - Vật liệu Material]]
+**Thuộc mảng kết nối:** [[Kết nối 3e - Vật liệu Material]]
 
 **Gọi / điều khiển →**
 - [[InteriorColorPicker]] — nhúng picker, gọi SetColor/GetColor + nghe 3 dispatcher · InteriorColorPicker (UInteriorColorPickerWidget)
 - [[MaterialSlotService_Reference]] — parse hex khi commit ô Hex · HexToLinearColor()
-- [[WBP_FurnitureInventory]] — báo bắt đầu / đang chỉnh / thả · OnEditBegin(ParamName) → Handle_ColorBegin, OnPreviewChanged, OnEditCommitted
+- [[WBP_FurnitureInventory]] — báo đang chỉnh · OnPreviewChanged(ParamName, Value) ✓K2
+- [[WBP_FurnitureInventory]] — báo bắt đầu / thả · OnEditBegin(ParamName) → Handle_ColorBegin, OnEditCommitted
 
 **← Được gọi bởi**
 - [[WBP_FurnitureInventory]] — tạo row Color · Create WBP_ParamColorRow → Setup() ✓K2

@@ -1,4 +1,7 @@
 # Index — Toàn bộ tài liệu docs/
+**Cập nhật:** 25/09/2026 — Bản đồ não thành lộ trình tiếp nhận: +`Brain/Tư duy/` (4 note cách nghĩ) · +`Brain/Luồng/` (13 note theo hành trình L01–L13) · Architecture_Map Phần 5 đủ 20 luồng (5a–5t).
+**Cập nhật:** 25/09/2026 02:10 — +1 dòng "Sản phẩm / UX" trỏ tới plan review sản phẩm.
+**Cập nhật:** 25/09/2026 00:45 — +3 dòng đầu bảng "Muốn sửa X" trỏ sang Bản đồ não (`Brain/`).
 **Cập nhật:** 14/07/2026 (bổ sung docs/Data — 3+ tuần chưa cập nhật: `ComboSerializer_Reference.md` mới + 3 Blueprint Combo bị sót trước đó) | **Tổng số file:** 104 .md files (đếm thật `find docs -iname *.md`, 14/07/2026)
 **Ghi chú:** File này là index điều hướng — không chứa nội dung kỹ thuật.
 
@@ -8,6 +11,12 @@
 
 | Muốn sửa / hiểu | File |
 |---|---|
+| **Người mới / AI mới vào dự án:** lộ trình tiếp nhận 4 chặng (tổng quát → tư duy → 13 luồng → Session_State) | [Brain/Bản đồ não.md](<../Brain/Bản đồ não.md>) |
+| Cách nghĩ của dự án: sản phẩm & người dùng · kiến trúc · cách làm việc · cách viết doc | `Brain/Tư duy/` (4 note) |
+| 1 việc người dùng làm (mở kho, kéo đồ, chọn, gizmo, nhóm, menu, thay đồ, vật liệu, combo, lưu cảnh, Undo) chạy thế nào | `Brain/Luồng/L01…L13` |
+| Hàm / biến X nằm ở luồng nào · ai ghi, ai đọc biến (Q10) | [Brain/Chỉ mục hàm & biến.md](<../Brain/Chỉ mục hàm & biến.md>) (tự sinh) |
+| 1 thao tác chạy qua hàm nào, theo thứ tự nào | [Architecture_Map.md](Architecture_Map.md) Phần 5 (mục 5x) + `Brain/Canvas/5x` |
+| Sản phẩm / UX: người dùng là ai, app cần cải thiện gì, kịch bản test người dùng | [Plans/25-09-2026_Product_UX_Review_Plan_v1.md](<../Plans/25-09-2026_Product_UX_Review_Plan_v1.md>) (PLAN) |
 | Select / multi-select / box select / group / edit mode / clipboard / nudge | [Blueprints/BP_FurnitureInputManager.md](../Blueprints/BP_FurnitureInputManager.md) |
 | Undo / Redo / snapshot / CaptureSnapshot / RestoreSnapshot | [Blueprints/BP_UndoManager.md](../Blueprints/BP_UndoManager.md) (Bug B1 + bIsRestoring: xem [01_Session_State.md](01_Session_State.md)) |
 | Toolbar / info bar / breadcrumb / nút edit mode / snap fields | [Widgets/WBP_MeshControls.md](../Widgets/WBP_MeshControls.md) |

@@ -115,9 +115,11 @@ Restore) hoàn tất đầy đủ.
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] v1.5 (Phần 3). ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
+> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
 
-**Thuộc luồng:** [[Luồng 3c - Inventory + Cây thư mục]] · [[Luồng 3d - Save Undo khởi động]]
+**Có mặt trong thao tác:** [[L03 · Kéo đồ vào phòng|L03]] · [[L12 · Lưu và mở cảnh|L12]]
+
+**Thuộc mảng kết nối:** [[Kết nối 3c - Inventory + Cây thư mục]] · [[Kết nối 3d - Save Undo khởi động]]
 
 **← Được gọi bởi**
 - [[WBP_DragOverlay_FurnitureCard]] — sinh ID cho đồ kéo-thả (producer thứ 4, U1.2 21/09) · EnsurePersistentId()

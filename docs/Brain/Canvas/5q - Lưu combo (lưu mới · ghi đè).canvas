@@ -1,0 +1,405 @@
+{
+ "nodes": [
+  {
+   "id": "lane_TH",
+   "type": "group",
+   "x": 2640,
+   "y": 110,
+   "width": 380,
+   "height": 3608,
+   "label": "UComboThumbnail"
+  },
+  {
+   "id": "lane_SER",
+   "type": "group",
+   "x": 2200,
+   "y": 110,
+   "width": 380,
+   "height": 3608,
+   "label": "UComboSerializer (C++)",
+   "color": "6"
+  },
+  {
+   "id": "lane_CM",
+   "type": "group",
+   "x": 1760,
+   "y": 110,
+   "width": 380,
+   "height": 3608,
+   "label": "BP_ComboManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_DLG",
+   "type": "group",
+   "x": 1320,
+   "y": 110,
+   "width": 380,
+   "height": 3608,
+   "label": "WBP_SaveComboDialog",
+   "color": "2"
+  },
+  {
+   "id": "lane_INV",
+   "type": "group",
+   "x": 880,
+   "y": 110,
+   "width": 380,
+   "height": 3608,
+   "label": "WBP_FurnitureInventory",
+   "color": "2"
+  },
+  {
+   "id": "lane_IM",
+   "type": "group",
+   "x": 440,
+   "y": 110,
+   "width": 380,
+   "height": 3608,
+   "label": "BP_FurnitureInputManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_U",
+   "type": "group",
+   "x": 0,
+   "y": 110,
+   "width": 380,
+   "height": 3608,
+   "label": "User"
+  },
+  {
+   "id": "title",
+   "type": "text",
+   "x": 0,
+   "y": -120,
+   "width": 3020,
+   "height": 170,
+   "text": "# 5q — Lưu combo (lưu mới · ghi đè)\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
+  },
+  {
+   "id": "h_U",
+   "type": "text",
+   "x": 25,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### User"
+  },
+  {
+   "id": "h_IM",
+   "type": "text",
+   "x": 465,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureInputManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_INV",
+   "type": "text",
+   "x": 905,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_FurnitureInventory]]",
+   "color": "2"
+  },
+  {
+   "id": "h_DLG",
+   "type": "text",
+   "x": 1345,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_SaveComboDialog]]",
+   "color": "2"
+  },
+  {
+   "id": "h_CM",
+   "type": "text",
+   "x": 1785,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_ComboManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_SER",
+   "type": "text",
+   "x": 2225,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### UComboSerializer (C++)",
+   "color": "6"
+  },
+  {
+   "id": "h_TH",
+   "type": "text",
+   "x": 2665,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[UComboThumbnail]]"
+  },
+  {
+   "id": "s1",
+   "type": "text",
+   "x": 465,
+   "y": 280,
+   "width": 330,
+   "height": 146,
+   "text": "**1.** chọn từ 2 món → chuột phải \"Lưu combo\"\n`CB_SaveCombo → CB_SaveCombo_Handler`\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s2",
+   "type": "text",
+   "x": 465,
+   "y": 466,
+   "width": 330,
+   "height": 124,
+   "text": "**2.** dưới 2 món → chặn im lặng, không báo gì\n`Branch(Length ≥ 2)`\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s3",
+   "type": "text",
+   "x": 465,
+   "y": 630,
+   "width": 330,
+   "height": 212,
+   "text": "**3.** tính điểm neo (tâm XY + đáy theo sàn / trần)\n`CalculateComboAnchor(SelectedActors)`\n↗ [[BP_FurnitureInputManager#CalculateComboAnchor(InActors Array\\<BP_FurnitureActor\\>) → Vector (C4)|BP_FurnitureInputManager › CalculateComboAnchor]]\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s4",
+   "type": "text",
+   "x": 465,
+   "y": 882,
+   "width": 330,
+   "height": 234,
+   "text": "**4.** đang đứng trong 1 combo có sẵn → cho phép Ghi đè\n`ResolveActiveComboForSave() ?`\n↗ [[BP_FurnitureInputManager#ResolveActiveComboForSave() → (ComboID, RootGroupID String, ItemCount Int, bCanOverwrite Bool, ReasonText String)|BP_FurnitureInputManager › ResolveActiveComboForSave]]\n<small>nội bộ · chưa rõ ?</small>",
+   "color": "1"
+  },
+  {
+   "id": "s5",
+   "type": "text",
+   "x": 905,
+   "y": 1156,
+   "width": 330,
+   "height": 300,
+   "text": "**5.** mở hộp thoại, đóng băng danh sách đồ\n`OpenSaveComboDialog(SelectedActors, Center)`\n↗ [[WBP_FurnitureInventory#OpenSaveComboDialog(SelectedActors Array BP_FurnitureActor, Center Vector, ActiveComboID String, bCanOverwrite Bool, ReasonText String) — Custom Event|WBP_FurnitureInventory › OpenSaveComboDialog]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
+  },
+  {
+   "id": "s6",
+   "type": "text",
+   "x": 1345,
+   "y": 1496,
+   "width": 330,
+   "height": 190,
+   "text": "**6.** tạo hộp thoại điền sẵn tên / thư mục / tag, gắn 3 nút\n`Create WBP_SaveComboDialog → Bind OnDialogConfirmed, OnDialogConfirmedOverwrite, OnDialogCancelled`\n<small>← WBP_FurnitureInventory · theo doc</small>"
+  },
+  {
+   "id": "s7",
+   "type": "text",
+   "x": 1345,
+   "y": 1726,
+   "width": 330,
+   "height": 124,
+   "text": "**7.** chọn thư mục, đặt tên → Lưu mới / Ghi đè / Huỷ\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s8",
+   "type": "text",
+   "x": 905,
+   "y": 1890,
+   "width": 330,
+   "height": 146,
+   "text": "**8.** báo tin nút đã bấm\n`Broadcast OnDialogConfirmed / OnDialogConfirmedOverwrite / OnDialogCancelled`\n<small>← WBP_SaveComboDialog · theo doc</small>"
+  },
+  {
+   "id": "s9",
+   "type": "text",
+   "x": 1785,
+   "y": 2076,
+   "width": 330,
+   "height": 322,
+   "text": "**9.** lưu (Ghi đè = bOverwrite true + ComboID cũ)\n`SaveComboFromSelection(PendingSelectedActors, PendingCenter, tên, mô tả, thư mục, tags)`\n↗ [[BP_ComboManager#SaveComboFromSelection(SelectedActors, Center, ComboName, Description, FolderPath, Tags, bOverwrite, OverwriteComboID) ✓TEST 07/08/2026 (T4 DONE — Overwrite Flow)|BP_ComboManager › SaveComboFromSelection]]\n<small>← WBP_FurnitureInventory · theo doc</small>"
+  },
+  {
+   "id": "s10",
+   "type": "text",
+   "x": 1785,
+   "y": 2438,
+   "width": 330,
+   "height": 146,
+   "text": "**10.** gom nhóm con (LCA) → token g0, g1… → từng món (RowName, vị trí tương đối, MaterialSlots) + BoundingBoxExtent\n`Make FComboData`\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s11",
+   "type": "text",
+   "x": 2225,
+   "y": 2624,
+   "width": 330,
+   "height": 212,
+   "text": "**11.** ghi file JSON\n`ComboToJson() → SaveStringToFile`\n↗ [[ComboSerializer_Reference#ComboToJson(Combo) → FString / JsonToCombo(Json, OutCombo) → bool|ComboSerializer_Reference › ComboToJson]]\n<small>← BP_ComboManager · theo doc</small>"
+  },
+  {
+   "id": "s12",
+   "type": "text",
+   "x": 2665,
+   "y": 2876,
+   "width": 330,
+   "height": 234,
+   "text": "**12.** chụp ảnh bìa ở studio ảo xa phòng\n`BeginThumbnailCapture() → BeginComboCapture / FinishComboCapture`\n↗ [[BP_ComboManager#BeginThumbnailCapture(ComboID String, DeltaYaw Float) — MỚI P2 Gate F (21/07/2026)|BP_ComboManager › BeginThumbnailCapture]]\n<small>← BP_ComboManager · ✓K2</small>"
+  },
+  {
+   "id": "s13",
+   "type": "text",
+   "x": 905,
+   "y": 3150,
+   "width": 330,
+   "height": 146,
+   "text": "**13.** chụp xong mới báo tin → tab Combo nạp lại\n`Broadcast OnComboLibraryChanged`\n<small>← BP_ComboManager · theo doc</small>"
+  },
+  {
+   "id": "s14",
+   "type": "text",
+   "x": 905,
+   "y": 3336,
+   "width": 330,
+   "height": 212,
+   "text": "**14.** đóng hộp thoại, trả lại input cho viewport\n`OnSaveComboDialogClosed → Set Input Mode Game And UI`\n↗ [[WBP_FurnitureInventory#OnSaveComboDialogClosed — Custom Event|WBP_FurnitureInventory › OnSaveComboDialogClosed]]\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "n22",
+   "type": "text",
+   "x": 20,
+   "y": 3588,
+   "width": 2980,
+   "height": 70,
+   "text": "📝 Lưu combo KHÔNG ghi sổ Undo - đây là thao tác thư viện (file JSON), cảnh không đổi.",
+   "color": "3"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e0",
+   "fromNode": "h_U",
+   "fromSide": "right",
+   "toNode": "s1",
+   "toSide": "left",
+   "label": "1"
+  },
+  {
+   "id": "e1",
+   "fromNode": "s1",
+   "fromSide": "bottom",
+   "toNode": "s2",
+   "toSide": "top",
+   "label": "2 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e2",
+   "fromNode": "s2",
+   "fromSide": "bottom",
+   "toNode": "s3",
+   "toSide": "top",
+   "label": "3 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e3",
+   "fromNode": "s3",
+   "fromSide": "bottom",
+   "toNode": "s4",
+   "toSide": "top",
+   "label": "4 ?",
+   "color": "1"
+  },
+  {
+   "id": "e4",
+   "fromNode": "s4",
+   "fromSide": "right",
+   "toNode": "s5",
+   "toSide": "left",
+   "label": "5 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e5",
+   "fromNode": "s5",
+   "fromSide": "right",
+   "toNode": "s6",
+   "toSide": "left",
+   "label": "6"
+  },
+  {
+   "id": "e6",
+   "fromNode": "s6",
+   "fromSide": "bottom",
+   "toNode": "s7",
+   "toSide": "top",
+   "label": "7"
+  },
+  {
+   "id": "e7",
+   "fromNode": "s7",
+   "fromSide": "left",
+   "toNode": "s8",
+   "toSide": "right",
+   "label": "8"
+  },
+  {
+   "id": "e8",
+   "fromNode": "s8",
+   "fromSide": "right",
+   "toNode": "s9",
+   "toSide": "left",
+   "label": "9"
+  },
+  {
+   "id": "e9",
+   "fromNode": "s9",
+   "fromSide": "bottom",
+   "toNode": "s10",
+   "toSide": "top",
+   "label": "10"
+  },
+  {
+   "id": "e10",
+   "fromNode": "s10",
+   "fromSide": "right",
+   "toNode": "s11",
+   "toSide": "left",
+   "label": "11"
+  },
+  {
+   "id": "e11",
+   "fromNode": "s11",
+   "fromSide": "right",
+   "toNode": "s12",
+   "toSide": "left",
+   "label": "12 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e12",
+   "fromNode": "s12",
+   "fromSide": "left",
+   "toNode": "s13",
+   "toSide": "right",
+   "label": "13"
+  },
+  {
+   "id": "e13",
+   "fromNode": "s13",
+   "fromSide": "bottom",
+   "toNode": "s14",
+   "toSide": "top",
+   "label": "14"
+  }
+ ]
+}

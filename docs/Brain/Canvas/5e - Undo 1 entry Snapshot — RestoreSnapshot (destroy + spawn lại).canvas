@@ -6,7 +6,7 @@
    "x": 2200,
    "y": 110,
    "width": 380,
-   "height": 2838,
+   "height": 4058,
    "label": "MaterialSlotService (C++)",
    "color": "6"
   },
@@ -16,7 +16,7 @@
    "x": 1760,
    "y": 110,
    "width": 380,
-   "height": 2838,
+   "height": 4058,
    "label": "WBP_FurnitureInventory",
    "color": "2"
   },
@@ -26,7 +26,7 @@
    "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 2838,
+   "height": 4058,
    "label": "WBP_MeshControls",
    "color": "2"
   },
@@ -36,7 +36,7 @@
    "x": 880,
    "y": 110,
    "width": 380,
-   "height": 2838,
+   "height": 4058,
    "label": "BP_FurnitureActor (mỗi món)",
    "color": "5"
   },
@@ -46,7 +46,7 @@
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 2838,
+   "height": 4058,
    "label": "BP_FurnitureInputManager",
    "color": "5"
   },
@@ -56,7 +56,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 2838,
+   "height": 4058,
    "label": "BP_UndoManager",
    "color": "5"
   },
@@ -135,32 +135,32 @@
    "x": 25,
    "y": 280,
    "width": 330,
-   "height": 124,
-   "text": "**1.** đọc entry ở CurrentIndex → Snapshot → CurrentIndex−1\n`RestoreSnapshot(N−1, PreviousActor)`\n<small>nội bộ · ✓K2</small>"
+   "height": 212,
+   "text": "**1.** đọc entry ở CurrentIndex → Snapshot → CurrentIndex−1\n`RestoreSnapshot(N−1, PreviousActor)`\n↗ [[BP_UndoManager#RestoreSnapshot(IndexHistory, PreviousActor) — v1.10 hợp nhất spawn path qua SpawnFurnitureCopy|BP_UndoManager › RestoreSnapshot]]\n<small>nội bộ · ✓K2</small>"
   },
   {
    "id": "s2",
    "type": "text",
    "x": 465,
-   "y": 444,
+   "y": 532,
    "width": 330,
-   "height": 124,
-   "text": "**2.** bỏ chọn tất cả\n`DeselectAll()`\n<small>Step 1 doc · ← BP_UndoManager · theo doc</small>"
+   "height": 190,
+   "text": "**2.** bỏ chọn tất cả\n`DeselectAll()`\n↗ [[BP_FurnitureInputManager#DeselectAll (T5 → v1.6)|BP_FurnitureInputManager › DeselectAll]]\n<small>Step 1 doc · ← BP_UndoManager · theo doc</small>"
   },
   {
    "id": "s3",
    "type": "text",
    "x": 1785,
-   "y": 608,
+   "y": 762,
    "width": 330,
-   "height": 146,
-   "text": "**3.** báo tin\n`OnSelectionChanged([], None) → OnMeshSelected (Cancel seam, bỏ Target)`\n<small>← BP_FurnitureInputManager · theo doc</small>"
+   "height": 256,
+   "text": "**3.** báo tin\n`OnSelectionChanged([], None) → OnMeshSelected (Cancel seam, bỏ Target)`\n↗ [[WBP_FurnitureInventory#OnMeshSelected(SelectedActor) — handler nội bộ — SỬA (Save As/Save đè T2, node-verified K2Node 03/08/2026)|WBP_FurnitureInventory › OnMeshSelected]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
   },
   {
    "id": "s4",
    "type": "text",
    "x": 25,
-   "y": 794,
+   "y": 1058,
    "width": 330,
    "height": 146,
    "text": "**4.** xoá hết đồ\n`Destroy All Actors tag \"FurnitureSpawned\"`\n<small>Step 2 doc · nội bộ · theo doc</small>"
@@ -169,102 +169,111 @@
    "id": "s5",
    "type": "text",
    "x": 465,
-   "y": 980,
+   "y": 1244,
    "width": 330,
-   "height": 168,
-   "text": "↻ lặp: 4. mỗi món trong ảnh\n**5.** spawn lại, không tự chọn, không nhồi Recent\n`SpawnFurnitureCopy(bAutoSelect=False, bAddToRecent=False)`\n<small>← BP_UndoManager · ✓K2</small>"
+   "height": 300,
+   "text": "↻ lặp: 4. mỗi món trong ảnh\n**5.** spawn lại, không tự chọn, không nhồi Recent\n`SpawnFurnitureCopy(bAutoSelect=False, bAddToRecent=False)`\n↗ [[BP_FurnitureInputManager#SpawnFurnitureCopy(...) → NewActorCopy — FULL NODE FLOW ( ✓K2 export 21/09/2026 — U1 prep + ✓ensure PersistentID chèn 21/09/2026, U1.2 )|BP_FurnitureInputManager › SpawnFurnitureCopy]]\n<small>← BP_UndoManager · ✓K2</small>"
   },
   {
    "id": "s6",
    "type": "text",
    "x": 905,
-   "y": 1188,
+   "y": 1584,
    "width": 330,
-   "height": 146,
-   "text": "↻ lặp: 4. mỗi món trong ảnh\n**6.** bắt đầu tải mesh (async)\n`LoadMeshAsync()`\n<small>← BP_FurnitureInputManager · ✓K2</small>"
+   "height": 234,
+   "text": "↻ lặp: 4. mỗi món trong ảnh\n**6.** bắt đầu tải mesh (async)\n`LoadMeshAsync()`\n↗ [[BP_FurnitureActor#LoadMeshAsync(MeshPath String) — Custom Event — SỬA 07/09/2026 (S7.G3, fix race)|BP_FurnitureActor › LoadMeshAsync]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
   },
   {
    "id": "s7",
    "type": "text",
    "x": 905,
-   "y": 1374,
+   "y": 1858,
    "width": 330,
-   "height": 146,
-   "text": "↻ lặp: 4. mỗi món trong ảnh\n**7.** gắn lại danh tính\n`SET RowName · GroupID · PersistentID (guard) · MaterialSlots`\n<small>← BP_UndoManager · ✓K2</small>"
+   "height": 124,
+   "text": "↻ lặp: 4. mỗi món trong ảnh\n**7.** gắn lại mã đồ\n`SET RowName`\n<small>← BP_UndoManager · ✓K2</small>"
   },
   {
    "id": "s8",
    "type": "text",
-   "x": 465,
-   "y": 1560,
+   "x": 905,
+   "y": 2022,
    "width": 330,
-   "height": 146,
-   "text": "**8.** chọn lại đồ trong ảnh\n`SelectActors(RestoredActors) → viền + gizmo + OnSelectionChanged`\n<small>Step 5 doc · ← BP_UndoManager · theo doc</small>"
+   "height": 168,
+   "text": "↻ lặp: 4. mỗi món trong ảnh\n**8.** gắn lại nhóm + danh tính + slot\n`SET GroupID · PersistentID (guard) · MaterialSlots`\n<small>← BP_UndoManager · theo doc</small>"
   },
   {
    "id": "s9",
    "type": "text",
    "x": 465,
-   "y": 1746,
+   "y": 2230,
    "width": 330,
-   "height": 146,
-   "text": "**9.** khôi phục nhóm + edit mode\n`SET Groups, EditModeStack → ValidateEditMode()`\n<small>Step 5b doc · ← BP_UndoManager · theo doc</small>"
+   "height": 212,
+   "text": "**9.** chọn lại đồ trong ảnh\n`SelectActors(RestoredActors) → viền + gizmo + OnSelectionChanged`\n↗ [[BP_FurnitureInputManager#SelectActors(Actors) (T5)|BP_FurnitureInputManager › SelectActors]]\n<small>Step 5 doc · ← BP_UndoManager · theo doc</small>"
   },
   {
    "id": "s10",
    "type": "text",
-   "x": 1345,
-   "y": 1932,
+   "x": 465,
+   "y": 2482,
    "width": 330,
-   "height": 124,
-   "text": "**10.** nút mode theo ảnh\n`RefreshButtonState(ActiveMode) ?`\n<small>Step 6 doc · ← BP_UndoManager · chưa rõ ?</small>",
-   "color": "1"
+   "height": 212,
+   "text": "**10.** khôi phục nhóm + edit mode\n`SET Groups, EditModeStack → ValidateEditMode()`\n↗ [[BP_UndoManager#ValidateEditMode() — v1.7 MỚI|BP_UndoManager › ValidateEditMode]]\n<small>Step 5b doc · ← BP_UndoManager · theo doc</small>"
   },
   {
    "id": "s11",
    "type": "text",
-   "x": 465,
-   "y": 2096,
+   "x": 1345,
+   "y": 2734,
    "width": 330,
-   "height": 124,
-   "text": "**11.** chọn lại lần nữa cho info bar\n`SelectActors() (lần 2 → lý do B-gizmo)`\n<small>Step 6b doc · ← BP_UndoManager · theo doc</small>"
+   "height": 190,
+   "text": "**11.** nút mode theo ảnh\n`RefreshButtonState(ActiveMode) ?`\n↗ [[WBP_MeshControls#RefreshButtonState(ActiveMode)|WBP_MeshControls › RefreshButtonState]]\n<small>Step 6 doc · ← BP_UndoManager · chưa rõ ?</small>",
+   "color": "1"
   },
   {
    "id": "s12",
    "type": "text",
-   "x": 1785,
-   "y": 2260,
+   "x": 465,
+   "y": 2964,
    "width": 330,
-   "height": 146,
-   "text": "**12.** báo tin\n`Broadcast OnRestoreCompleted(RestoredBPActor) → OnSceneRestored`\n<small>Step 7 doc · ← BP_UndoManager · theo doc</small>"
+   "height": 190,
+   "text": "**12.** chọn lại lần nữa cho info bar\n`SelectActors() (lần 2 → lý do B-gizmo)`\n↗ [[BP_FurnitureInputManager#SelectActors(Actors) (T5)|BP_FurnitureInputManager › SelectActors]]\n<small>Step 6b doc · ← BP_UndoManager · theo doc</small>"
   },
   {
    "id": "s13",
    "type": "text",
    "x": 1785,
-   "y": 2446,
+   "y": 3194,
    "width": 330,
-   "height": 124,
-   "text": "**13.** hẹn 0.1s\n`Timer → ApplyRestoredActor() → RefreshSlotSwatches + RefreshParamPanel()`\n<small>nội bộ · theo doc</small>"
+   "height": 234,
+   "text": "**13.** báo tin\n`Broadcast OnRestoreCompleted(RestoredBPActor) → OnSceneRestored`\n↗ [[WBP_FurnitureInventory#OnSceneRestored(RestoredSelectedActor) — v1.1 + SỬA (Replace UX Fix P4.3, 02/08/2026)|WBP_FurnitureInventory › OnSceneRestored]]\n<small>Step 7 doc · ← BP_UndoManager · theo doc</small>"
   },
   {
-   "id": "n20",
+   "id": "s14",
+   "type": "text",
+   "x": 1785,
+   "y": 3468,
+   "width": 330,
+   "height": 212,
+   "text": "**14.** hẹn 0.1s\n`Timer → ApplyRestoredActor() → RefreshSlotSwatches + RefreshParamPanel()`\n↗ [[WBP_FurnitureInventory#ApplyRestoredActor — v1.2 (T4 18/09 Equal-guard + seam 6 RefreshParamPanel)|WBP_FurnitureInventory › ApplyRestoredActor]]\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "n21",
    "type": "text",
    "x": 900,
-   "y": 2610,
+   "y": 3720,
    "width": 1660,
    "height": 70,
    "text": "📝 vài frame sau (async): LoadMeshAsync.Completed → RestoreMyMaterialSlots → Rst_LoadNextSlot từng slot",
    "color": "3"
   },
   {
-   "id": "s14",
+   "id": "s15",
    "type": "text",
    "x": 2225,
-   "y": 2720,
+   "y": 3830,
    "width": 330,
-   "height": 168,
-   "text": "**14.** gắn lại vật liệu + thông số từng slot\n`ApplyLoadedMaterialToSlot() → ApplyParamsJsonToSlot()`\n<small>← BP_FurnitureActor · theo doc</small>"
+   "height": 278,
+   "text": "**15.** gắn lại vật liệu + thông số từng slot\n`ApplyLoadedMaterialToSlot() → ApplyParamsJsonToSlot()`\n↗ [[MaterialSlotService_Reference#ApplyLoadedMaterialToSlot(Mesh, Records&, SlotName, HintIndex, LoadedMI, RowName, PathFallback) → bool|MaterialSlotService_Reference › ApplyLoadedMaterialToSlot]]\n<small>← BP_FurnitureActor · theo doc</small>"
   }
  ],
  "edges": [
@@ -331,74 +340,82 @@
   {
    "id": "e7",
    "fromNode": "s7",
+   "fromSide": "bottom",
+   "toNode": "s8",
+   "toSide": "top",
+   "label": "8"
+  },
+  {
+   "id": "e8",
+   "fromNode": "s8",
    "fromSide": "left",
    "toNode": "s5",
    "toSide": "right",
    "label": "↻ lặp"
   },
   {
-   "id": "e8",
-   "fromNode": "s7",
-   "fromSide": "left",
-   "toNode": "s8",
-   "toSide": "right",
-   "label": "8"
-  },
-  {
    "id": "e9",
    "fromNode": "s8",
-   "fromSide": "bottom",
+   "fromSide": "left",
    "toNode": "s9",
-   "toSide": "top",
+   "toSide": "right",
    "label": "9"
   },
   {
    "id": "e10",
    "fromNode": "s9",
-   "fromSide": "right",
+   "fromSide": "bottom",
    "toNode": "s10",
-   "toSide": "left",
-   "label": "10 ?",
-   "color": "1"
+   "toSide": "top",
+   "label": "10"
   },
   {
    "id": "e11",
    "fromNode": "s10",
-   "fromSide": "left",
+   "fromSide": "right",
    "toNode": "s11",
-   "toSide": "right",
-   "label": "11"
+   "toSide": "left",
+   "label": "11 ?",
+   "color": "1"
   },
   {
    "id": "e12",
    "fromNode": "s11",
-   "fromSide": "right",
+   "fromSide": "left",
    "toNode": "s12",
-   "toSide": "left",
+   "toSide": "right",
    "label": "12"
   },
   {
    "id": "e13",
    "fromNode": "s12",
-   "fromSide": "bottom",
+   "fromSide": "right",
    "toNode": "s13",
-   "toSide": "top",
+   "toSide": "left",
    "label": "13"
   },
   {
    "id": "e14",
    "fromNode": "s13",
    "fromSide": "bottom",
-   "toNode": "n20",
-   "toSide": "top"
-  },
-  {
-   "id": "e15",
-   "fromNode": "n20",
-   "fromSide": "bottom",
    "toNode": "s14",
    "toSide": "top",
    "label": "14"
+  },
+  {
+   "id": "e15",
+   "fromNode": "s14",
+   "fromSide": "bottom",
+   "toNode": "n21",
+   "toSide": "top"
+  },
+  {
+   "id": "e16",
+   "fromNode": "n21",
+   "fromSide": "bottom",
+   "toNode": "s15",
+   "toSide": "top",
+   "label": "15"
   }
  ]
 }

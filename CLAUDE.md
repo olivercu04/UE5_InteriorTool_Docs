@@ -85,3 +85,14 @@ chủ yếu để PHÂN PHỐI delta vào doc — không phải để viết l�
 
 ## Giọng & ngôn ngữ
 - Tiếng Việt thuần, thuật ngữ/node giữ tiếng Anh, style terse đúng như doc hiện có
+
+## Bản đồ não (`docs/Brain/`, Obsidian) — khi nào mở gì
+- Hiểu tổng quát / người mới vào dự án → `docs/Brain/Bản đồ não.md` (lộ trình tiếp nhận: Tổng quát → `Brain/Tư duy/` →
+  `Brain/Luồng/L01…L13`, mỗi note = 1 việc người dùng làm, nhúng sơ đồ 5x).
+- Sắp sửa / debug / audit 1 hàm, 1 biến, 1 thao tác (Q10) → `docs/Brain/Chỉ mục hàm & biến.md` → mục 5x trong
+  `docs/00_Core/Architecture_Map.md` Phần 5 → doc BP (▶→). KHÔNG đọc cả thư mục Brain đầu phiên.
+- Sửa `Architecture_Map.md` xong → chạy `python docs/Brain/_tools/build.py` → mở `docs/Brain/Kiểm tra bản đồ.md`:
+  mục ❌, ⚠ và 🔗 (link gãy) phải bằng 0. Thêm mục 5x mới → nhúng vào đúng 1 note `Brain/Luồng/Lxx`.
+- TỰ SINH, không sửa tay: `docs/Brain/Canvas/*`, `Brain/Tổng quát/*.canvas` (nội dung ở `_tools/gen_tong_quat.py`),
+  `Kiểm tra bản đồ.md`, `Chỉ mục hàm & biến.md`, `Brain/Kết nối/*`, `Brain/Chưa có doc/*`, mục 🧠 Kết nối cuối mỗi doc.
+- VIẾT TAY: `Bản đồ não.md`, `Brain/Tư duy/*`, `Brain/Luồng/*`.

@@ -1,0 +1,423 @@
+{
+ "nodes": [
+  {
+   "id": "lane_PREFS",
+   "type": "group",
+   "x": 2640,
+   "y": 110,
+   "width": 380,
+   "height": 3772,
+   "label": "BP_FurnitureUserPrefsManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_UM",
+   "type": "group",
+   "x": 2200,
+   "y": 110,
+   "width": 380,
+   "height": 3772,
+   "label": "BP_UndoManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_FA",
+   "type": "group",
+   "x": 1760,
+   "y": 110,
+   "width": 380,
+   "height": 3772,
+   "label": "BP_FurnitureActor (mỗi món)",
+   "color": "5"
+  },
+  {
+   "id": "lane_CARD",
+   "type": "group",
+   "x": 1320,
+   "y": 110,
+   "width": 380,
+   "height": 3772,
+   "label": "WBP_FurnitureCard",
+   "color": "2"
+  },
+  {
+   "id": "lane_INV",
+   "type": "group",
+   "x": 880,
+   "y": 110,
+   "width": 380,
+   "height": 3772,
+   "label": "WBP_FurnitureInventory",
+   "color": "2"
+  },
+  {
+   "id": "lane_IM",
+   "type": "group",
+   "x": 440,
+   "y": 110,
+   "width": 380,
+   "height": 3772,
+   "label": "BP_FurnitureInputManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_U",
+   "type": "group",
+   "x": 0,
+   "y": 110,
+   "width": 380,
+   "height": 3772,
+   "label": "User"
+  },
+  {
+   "id": "title",
+   "type": "text",
+   "x": 0,
+   "y": -120,
+   "width": 3020,
+   "height": 170,
+   "text": "# 5n — Thay đồ (Replace)\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
+  },
+  {
+   "id": "h_U",
+   "type": "text",
+   "x": 25,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### User"
+  },
+  {
+   "id": "h_IM",
+   "type": "text",
+   "x": 465,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureInputManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_INV",
+   "type": "text",
+   "x": 905,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_FurnitureInventory]]",
+   "color": "2"
+  },
+  {
+   "id": "h_CARD",
+   "type": "text",
+   "x": 1345,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[WBP_FurnitureCard]]",
+   "color": "2"
+  },
+  {
+   "id": "h_FA",
+   "type": "text",
+   "x": 1785,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureActor]]\n(mỗi món)",
+   "color": "5"
+  },
+  {
+   "id": "h_UM",
+   "type": "text",
+   "x": 2225,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_UndoManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_PREFS",
+   "type": "text",
+   "x": 2665,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureUserPrefsManager]]",
+   "color": "5"
+  },
+  {
+   "id": "s1",
+   "type": "text",
+   "x": 465,
+   "y": 280,
+   "width": 330,
+   "height": 234,
+   "text": "**1.** chọn đồ → chuột phải \"Thay đồ\"\n`CB_Replace`\n↗ [[BP_FurnitureInputManager#CB_Replace — Custom Event (EventGraph, verified qua K2Node export 03/08/2026 — Save As/Save đè T2)|BP_FurnitureInputManager › CB_Replace]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s2",
+   "type": "text",
+   "x": 465,
+   "y": 554,
+   "width": 330,
+   "height": 102,
+   "text": "**2.** đang thay thì tắt, chưa thì bật\n`Branch IsReplaceModeActive()`\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s3",
+   "type": "text",
+   "x": 465,
+   "y": 696,
+   "width": 330,
+   "height": 234,
+   "text": "**3.** món thuộc combo (không đang sửa bên trong) → thay cả combo, xem 5s\n`ShouldRouteReplaceToCombo()`\n↗ [[BP_FurnitureInputManager#ShouldRouteReplaceToCombo(Actor BP_FurnitureActor) → (bRouteToCombo Bool, ComboID, RootGroupID String)|BP_FurnitureInputManager › ShouldRouteReplaceToCombo]]\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s4",
+   "type": "text",
+   "x": 465,
+   "y": 970,
+   "width": 330,
+   "height": 278,
+   "text": "**4.** nhớ các món cần thay + tra thư mục gốc của món\n`StartReplaceMode(SelectedActors) → SET MeshesToReplace, ReplaceTarget = Mesh → GetDataTableRow().MeshFolderPath`\n↗ [[BP_FurnitureInputManager#StartReplaceMode(Actors Array<BP_FurnitureActor>) — v2.4, verified qua K2Node export (24/07/2026)|BP_FurnitureInputManager › StartReplaceMode]]\n<small>nội bộ · ✓K2</small>"
+  },
+  {
+   "id": "s5",
+   "type": "text",
+   "x": 905,
+   "y": 1288,
+   "width": 330,
+   "height": 234,
+   "text": "**5.** mở kho đúng thư mục của món\n`EnterReplaceMode() → FilterByFolderPathWithUI(FolderPath)`\n↗ [[WBP_FurnitureInventory#EnterReplaceMode — v1.3 + v2.4 + C9.0c (24/07/2026) + bổ sung state 30/07/2026|WBP_FurnitureInventory › EnterReplaceMode]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
+  },
+  {
+   "id": "s6",
+   "type": "text",
+   "x": 1345,
+   "y": 1562,
+   "width": 330,
+   "height": 146,
+   "text": "**6.** mọi thẻ hiện nút Thay\n`Regenerate All Entries → Button_ChangeMesh Visible (ReplaceTarget == Mesh)`\n<small>← WBP_FurnitureInventory · theo doc</small>"
+  },
+  {
+   "id": "s7",
+   "type": "text",
+   "x": 1345,
+   "y": 1748,
+   "width": 330,
+   "height": 190,
+   "text": "**7.** bấm Thay trên thẻ đồ muốn dùng\n`BTN_ChangeMesh → F_ExecuteReplace()`\n↗ [[WBP_FurnitureCard#BTN_ChangeMesh OnClicked|WBP_FurnitureCard › BTN_ChangeMesh]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s8",
+   "type": "text",
+   "x": 465,
+   "y": 1978,
+   "width": 330,
+   "height": 124,
+   "text": "**8.** lấy danh sách món cần thay\n`GetAllActorsOfClass → GET MeshesToReplace`\n<small>← WBP_FurnitureCard · ✓K2</small>"
+  },
+  {
+   "id": "s9",
+   "type": "text",
+   "x": 1785,
+   "y": 2142,
+   "width": 330,
+   "height": 190,
+   "text": "↻ lặp: mỗi món cũ\n**9.** sinh món mới cùng vị trí, xoay, mặt đặt, nhóm → xoá món cũ\n`Spawn BP_FurnitureActor → SET RowName, GroupID → Destroy Actor(OldActor)`\n<small>← WBP_FurnitureCard · theo doc</small>"
+  },
+  {
+   "id": "s10",
+   "type": "text",
+   "x": 465,
+   "y": 2372,
+   "width": 330,
+   "height": 212,
+   "text": "**10.** chọn các món mới\n`DeselectAll() → SelectActors(LocalNewActors)`\n↗ [[BP_FurnitureInputManager#DeselectAll (T5 → v1.6)|BP_FurnitureInputManager › DeselectAll]]\n<small>← WBP_FurnitureCard · theo doc</small>"
+  },
+  {
+   "id": "s11",
+   "type": "text",
+   "x": 2225,
+   "y": 2624,
+   "width": 330,
+   "height": 190,
+   "text": "**11.** ghi sổ\n`CaptureSnapshot(\"Replace\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← WBP_FurnitureCard · theo doc</small>"
+  },
+  {
+   "id": "s12",
+   "type": "text",
+   "x": 2665,
+   "y": 2854,
+   "width": 330,
+   "height": 124,
+   "text": "**12.** thêm vào Gần đây\n`AddRecentMesh(CardRowName)`\n<small>← WBP_FurnitureCard · theo doc</small>"
+  },
+  {
+   "id": "s13",
+   "type": "text",
+   "x": 465,
+   "y": 3018,
+   "width": 330,
+   "height": 146,
+   "text": "**13.** vẫn ở chế độ thay → bấm thẻ khác để thay tiếp\n`SET MeshesToReplace = LocalNewActors`\n<small>← WBP_FurnitureCard · theo doc</small>"
+  },
+  {
+   "id": "s14",
+   "type": "text",
+   "x": 905,
+   "y": 3204,
+   "width": 330,
+   "height": 234,
+   "text": "**14.** thoát - bấm X, hoặc click nền trống, hoặc chuột phải \"Thay đồ\" lần nữa\n`BTN_Close`\n↗ [[WBP_FurnitureInventory#BTN_Close — OnClicked (EventGraph) — SỬA (Replace UX Fix P4.2+P4.4, 02/08/2026)|WBP_FurnitureInventory › BTN_Close]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s15",
+   "type": "text",
+   "x": 465,
+   "y": 3478,
+   "width": 330,
+   "height": 234,
+   "text": "**15.** xoá 3 biến thay đồ\n`SET ReplaceTarget = None, MeshesToReplace, ComboRootGroupIDToReplace → ExitReplaceMode()`\n↗ [[WBP_FurnitureInventory#ExitReplaceMode — v1.3 + C9.0c (24/07/2026)|WBP_FurnitureInventory › ExitReplaceMode]]\n<small>← WBP_FurnitureInventory · theo doc</small>"
+  },
+  {
+   "id": "n23",
+   "type": "text",
+   "x": 20,
+   "y": 3752,
+   "width": 2980,
+   "height": 70,
+   "text": "📝 Lối vào khác - nút Thay trên thanh công cụ (WBP_MeshControls BTN_Replace) và nút Thay trong popup chi tiết (WBP_DetailPopup) cùng gọi StartReplaceMode.",
+   "color": "3"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e0",
+   "fromNode": "h_U",
+   "fromSide": "right",
+   "toNode": "s1",
+   "toSide": "left",
+   "label": "1"
+  },
+  {
+   "id": "e1",
+   "fromNode": "s1",
+   "fromSide": "bottom",
+   "toNode": "s2",
+   "toSide": "top",
+   "label": "2 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e2",
+   "fromNode": "s2",
+   "fromSide": "bottom",
+   "toNode": "s3",
+   "toSide": "top",
+   "label": "3 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e3",
+   "fromNode": "s3",
+   "fromSide": "bottom",
+   "toNode": "s4",
+   "toSide": "top",
+   "label": "4 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e4",
+   "fromNode": "s4",
+   "fromSide": "right",
+   "toNode": "s5",
+   "toSide": "left",
+   "label": "5 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e5",
+   "fromNode": "s5",
+   "fromSide": "right",
+   "toNode": "s6",
+   "toSide": "left",
+   "label": "6"
+  },
+  {
+   "id": "e6",
+   "fromNode": "s6",
+   "fromSide": "bottom",
+   "toNode": "s7",
+   "toSide": "top",
+   "label": "7"
+  },
+  {
+   "id": "e7",
+   "fromNode": "s7",
+   "fromSide": "left",
+   "toNode": "s8",
+   "toSide": "right",
+   "label": "8 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e8",
+   "fromNode": "s8",
+   "fromSide": "right",
+   "toNode": "s9",
+   "toSide": "left",
+   "label": "9"
+  },
+  {
+   "id": "e9",
+   "fromNode": "s9",
+   "fromSide": "left",
+   "toNode": "s10",
+   "toSide": "right",
+   "label": "10"
+  },
+  {
+   "id": "e10",
+   "fromNode": "s10",
+   "fromSide": "right",
+   "toNode": "s11",
+   "toSide": "left",
+   "label": "11"
+  },
+  {
+   "id": "e11",
+   "fromNode": "s11",
+   "fromSide": "right",
+   "toNode": "s12",
+   "toSide": "left",
+   "label": "12"
+  },
+  {
+   "id": "e12",
+   "fromNode": "s12",
+   "fromSide": "left",
+   "toNode": "s13",
+   "toSide": "right",
+   "label": "13"
+  },
+  {
+   "id": "e13",
+   "fromNode": "s13",
+   "fromSide": "right",
+   "toNode": "s14",
+   "toSide": "left",
+   "label": "14"
+  },
+  {
+   "id": "e14",
+   "fromNode": "s14",
+   "fromSide": "left",
+   "toNode": "s15",
+   "toSide": "right",
+   "label": "15"
+  }
+ ]
+}
