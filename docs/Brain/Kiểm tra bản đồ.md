@@ -3,7 +3,7 @@
 > Sinh bằng `Brain/_tools/build.py` từ [[Architecture_Map]] — ĐỪNG sửa tay. Mục ❌, ⚠ và 🔗 phải về 0 thì bản đồ mới khớp và dùng được.
 > ← [[Bản đồ não]] · [[Chỉ mục hàm & biến]]
 
-**Tóm tắt:** ❌ thiếu cạnh 0 · ⚠ Phần 3 tụt bằng chứng 0 · 🔗 link gãy 0 · ℹ Phần 5 có thể tụt 1 · ? tồn đọng 17 · thẻ chưa có link 29 · mục 5x chưa thuộc luồng 0 · luồng thiếu dòng Kiểm chứng/Nguồn 0
+**Tóm tắt:** ❌ thiếu cạnh 0 · ⚠ Phần 3 tụt bằng chứng 0 · 🔗 link gãy 0 · ℹ Phần 5 có thể tụt 1 · ? tồn đọng 12 · thẻ chưa có link 31 · mục 5x chưa thuộc luồng 0 · luồng thiếu dòng Kiểm chứng/Nguồn 0
 
 ## ❌ Cặp gọi nhau ở Phần 5 nhưng Phần 3 không có cạnh (0)
 > Thêm cạnh vào sơ đồ 3x phù hợp (nét đứt nếu chỉ theo doc), rồi chạy lại.
@@ -29,22 +29,19 @@
 
 - [[5e - Undo 1 entry Snapshot — RestoreSnapshot (destroy + spawn lại).canvas|5e]]: 1 mũi tên có `?` · 1 dòng **?** dưới sơ đồ
 - [[5f - Kéo gizmo Move (1 món · nhiều món qua Pivot).canvas|5f]]: 1 mũi tên có `?` · 1 dòng **?** dưới sơ đồ
-- [[5g - Mở tool và mở kho đồ.canvas|5g]]: 1 mũi tên có `?` · 1 dòng **?** dưới sơ đồ
+- [[5g - Mở tool và mở kho đồ.canvas|5g]]: 0 mũi tên có `?` · 2 dòng **?** dưới sơ đồ
 - [[5i - Kéo đồ từ kho thả vào phòng.canvas|5i]]: 1 mũi tên có `?` · 1 dòng **?** dưới sơ đồ
-- [[5l - Nhóm đồ và vào - ra sửa nhóm.canvas|5l]]: 2 mũi tên có `?` · 1 dòng **?** dưới sơ đồ
 - [[5m - Menu chuột phải và phím tắt (copy · dán · nhân bản · xoá).canvas|5m]]: 1 mũi tên có `?` · 1 dòng **?** dưới sơ đồ
-- [[5q - Lưu combo (lưu mới · ghi đè).canvas|5q]]: 1 mũi tên có `?` · 0 dòng **?** dưới sơ đồ
 - [[5r - Đặt combo từ thư viện vào phòng.canvas|5r]]: 0 mũi tên có `?` · 1 dòng **?** dưới sơ đồ
-- [[5t - Lưu cảnh và mở lại cảnh (EMS).canvas|5t]]: 1 mũi tên có `?` · 1 dòng **?** dưới sơ đồ
+- [[5t - Lưu cảnh và mở lại cảnh (EMS).canvas|5t]]: 0 mũi tên có `?` · 1 dòng **?** dưới sơ đồ
 
 ## 🎯 K2 đáng xin nhất — mũi tên đứt dùng ở nhiều luồng nhất
 > 1 export nâng được nhiều mũi tên nhất. Export đúng hàm ở cột "Hàm / biến".
 
 | Luồng | Từ → Tới | Hàm / biến |
 |---|---|---|
-| 4: 5j, 5k, 5l, 5m | `BP_FurnitureInputManager` → `BP_UndoManager` | `CaptureSnapshot` |
 | 3: 5e, 5p, 5t | `BP_FurnitureActor` → `MaterialSlotService_Reference` | `ApplyLoadedMaterialToSlot` |
-| 3: 5b, 5c, 5d | `BP_UndoManager` → `WBP_FurnitureInventory` | `RefreshParamPanel` |
+| 3: 5k, 5l, 5m | `BP_FurnitureInputManager` → `BP_UndoManager` | `CaptureSnapshot` |
 | 2: 5a, 5e | `BP_FurnitureInputManager` → `WBP_FurnitureInventory` | `OnSelectionChanged` |
 | 1: 5r | `BP_ComboManager` → `BP_FurnitureInputManager` | `DeselectAll` |
 | 1: 5r | `BP_ComboManager` → `BP_FurnitureInputManager` | `ExitEditModeFull` |
@@ -52,8 +49,9 @@
 | 1: 5r | `BP_ComboManager` → `BP_FurnitureInputManager` | `SpawnFurnitureCopy` |
 | 1: 5r | `BP_ComboManager` → `BP_UndoManager` | `CaptureSnapshot` |
 | 1: 5s | `BP_ComboManager` → `BP_UndoManager` | `RestoreCurrentSnapshot` |
+| 1: 5q | `BP_ComboManager` → `ComboSerializer_Reference` | `ComboToJson` |
 
-## Thẻ Canvas có tên hàm nhưng chưa tìm được mục trong doc (29)
+## Thẻ Canvas có tên hàm nhưng chưa tìm được mục trong doc (31)
 > Doc chưa có heading cho hàm này (hoặc tên lệch) → thẻ không có link ↗.
 
 - [[5b - Chỉnh 1 thông số vật liệu (U2 Interactive Edit Session).canvas|5b b2]] `WBP_ParamScalarRow→WBP_FurnitureInventory` báo tin · `OnEditBegin(ParamName) → Handle_ScalarBegin` — tìm: OnEditBegin
@@ -80,9 +78,11 @@
 - [[5o - Đổi vật liệu bằng cách bấm thẻ (1 hoặc nhiều món).canvas|5o b11]] `WBP_FurnitureInventory→BP_FurnitureUserPrefsManager` thêm vào Gần đây · `AddRecentMaterial(PendingRowName)` — tìm: AddRecentMaterial
 - [[5p - Đổi vật liệu bằng cách kéo thẻ thả lên đồ.canvas|5p b6]] `WBP_DragOverlay_FurnitureCard→BP_FurnitureSceneManager` báo lỗi nhẹ · `ToastRef.ShowToast("Chỉ áp vật liệu lên đồ nội thất")` — tìm: ShowToast
 - [[5p - Đổi vật liệu bằng cách kéo thẻ thả lên đồ.canvas|5p b11]] `BP_FurnitureActor→BP_FurnitureUserPrefsManager` thêm vào Gần đây · `AddRecentMaterial(Apply_PendingRowName)` — tìm: AddRecentMaterial
-- [[5q - Lưu combo (lưu mới · ghi đè).canvas|5q b6]] `WBP_FurnitureInventory→WBP_SaveComboDialog` tạo hộp thoại điền sẵn tên / thư mục / tag, gắn 3 nút · `Create WBP_SaveComboDialog → Bind OnDialogConfirmed, OnDialogConfirmedOverwrite, OnDialogCancelled` — tìm: OnDialogConfirmed, OnDialogConfirmedOverwrite, OnDialogCancelled
-- [[5q - Lưu combo (lưu mới · ghi đè).canvas|5q b8]] `WBP_SaveComboDialog→WBP_FurnitureInventory` báo tin nút đã bấm · `Broadcast OnDialogConfirmed / OnDialogConfirmedOverwrite / OnDialogCancelled` — tìm: OnDialogConfirmed, OnDialogConfirmedOverwrite, OnDialogCancelled
-- [[5q - Lưu combo (lưu mới · ghi đè).canvas|5q b13]] `BP_ComboManager→WBP_FurnitureInventory` chụp xong mới báo tin → tab Combo nạp lại · `Broadcast OnComboLibraryChanged` — tìm: OnComboLibraryChanged
+- [[5q - Lưu combo (lưu mới · ghi đè).canvas|5q b4]] `BP_FurnitureInputManager→BP_FurnitureInputManager` tìm kho đồ, không có thì chỉ in log · `GetAllWidgetsOfClass(WBP_FurnitureInventory) → IsValid` — tìm: GetAllWidgetsOfClass
+- [[5q - Lưu combo (lưu mới · ghi đè).canvas|5q b7]] `BP_FurnitureInputManager→BP_FurnitureInputManager` đóng menu chuột phải · `ContextMenuRef.Hide() → SET ContextMenuRef = None` — tìm: Hide
+- [[5q - Lưu combo (lưu mới · ghi đè).canvas|5q b8]] `WBP_FurnitureInventory→WBP_SaveComboDialog` tạo hộp thoại điền sẵn tên / thư mục / tag, gắn 3 nút · `Create WBP_SaveComboDialog → Bind OnDialogConfirmed, OnDialogConfirmedOverwrite, OnDialogCancelled` — tìm: OnDialogConfirmed, OnDialogConfirmedOverwrite, OnDialogCancelled
+- [[5q - Lưu combo (lưu mới · ghi đè).canvas|5q b10]] `WBP_SaveComboDialog→WBP_FurnitureInventory` báo tin nút đã bấm · `Broadcast OnDialogConfirmed / OnDialogConfirmedOverwrite / OnDialogCancelled` — tìm: OnDialogConfirmed, OnDialogConfirmedOverwrite, OnDialogCancelled
+- [[5q - Lưu combo (lưu mới · ghi đè).canvas|5q b15]] `BP_ComboManager→WBP_FurnitureInventory` chụp xong mới báo tin → tab Combo nạp lại · `Broadcast OnComboLibraryChanged` — tìm: OnComboLibraryChanged
 - [[5t - Lưu cảnh và mở lại cảnh (EMS).canvas|5t b6]] `BP_FurnitureActor→BP_FurnitureActor` chờ EMS nạp xong biến SaveGame, MeshPath rỗng thì tự huỷ · `Event ActorLoaded → AsyncWaitForOperation(CT_Load)` — tìm: AsyncWaitForOperation
 - [[5t - Lưu cảnh và mở lại cảnh (EMS).canvas|5t b8]] `BP_FurnitureActor→BP_FurnitureActor` nạp mesh (đồng bộ) · `LoadAsset_Blocking(MeshPath) → SetStaticMesh` — tìm: LoadAsset_Blocking
 

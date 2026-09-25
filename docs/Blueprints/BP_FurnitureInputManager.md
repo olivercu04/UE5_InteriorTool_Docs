@@ -1,4 +1,16 @@
 # BP_FurnitureInputManager
+**Phiên bản:** 3.16 | **Cập nhật:** 25/09/2026 11:00 — Người gọi `OnLMBReleased` = Enhanced Input `IA_LeftRelease` (Triggered → IsValid(self) → OnLMBReleased), xác nhận Find References 25/09. Thả chuột = 2 handler 2 hệ input, không phụ thuộc thứ tự.
+
+**Phiên bản:** 3.15 | **Cập nhật:** 25/09/2026 10:55 — Mouse Left Pressed + Released (Input Key LMB) as-built ✓K2 25/09: bỏ `LocalWasGizmoActive`, thêm khối Close Context Menu (menu mở = nuốt lượt bấm), Step 3 đọc `GizmoControllerRef.bIsDraggingGizmo`; Released chỉ gọi `OnMouseReleased` của gizmo.
+
+**Phiên bản:** 3.14 | **Cập nhật:** 25/09/2026 10:40 — `CB_SaveCombo_Handler` ✓K2 25/09: có `ResolveActiveComboForSave()` sau guard inventory, 3 pin xuống `OpenSaveComboDialog` → đóng DOC-DEBT 07/08.
+
+**Phiên bản:** 3.13 | **Cập nhật:** 25/09/2026 10:30 — Mục Spawn Order viết lại theo K2 `WBP_FOFF_ToolDemo` Event Construct Then 11 (✓K2 25/09): nơi sinh là widget, không phải Level BP; IM sinh trước Gizmo; ToastRef gán vào SceneManager.
+
+**Phiên bản:** 3.12 | **Cập nhật:** 25/09/2026 10:15 — Fix `Bug-BoxSelectCtrl-MultiSnapshot`: nhánh Ctrl của `FinishBoxSelect` chuyển `CaptureSnapshot("BoxSelect")` từ Loop Body sang `ForEachLoop.Completed`. PIE PASS 3/3.
+
+**Phiên bản:** 3.11 | **Cập nhật:** 25/09/2026 10:05 — `FinishBoxSelect` as-built ✓K2 25/09: CÓ gọi `ExpandSelectionWithGroups` (quét khung lấy cả nhóm); nghi vấn nhánh Ctrl ghi `CaptureSnapshot` trong Loop Body (N mốc) — chờ PIE.
+
 **Phiên bản:** 3.10 | **Cập nhật:** 25/09/2026 09:10 — Event BeginPlay as-built ✓K2 25/09 (EnableInput + `AddMappingContext(LM_FurnitureInput, Priority 5)` — Gate 1.5 B2 (18/08): InputManager tự `AddMappingContext(LM_FurnitureInput)` ở BeginPlay, giữ suốt phiên; các Input Action nội thất nằm trong InputManager). +mục "Enhanced Input Actions" + Function `IsGizmoDragging` (chặn Undo/Redo khi đang kéo gizmo — PIE PASS 3/3).
 
 **Phiên bản:** 3.9 | **Cập nhật:** 24/09/2026 16:10 — **Đóng B-gizmo (treo từ 15/06).** `UpdateGizmo` nhánh `== 1` +`DeactivateGizmo` TRƯỚC `ActivateGizmo` (y hệt nhánh `>= 2` đã vá 03/06). Root cause: `ActivateGizmo` là CÔNG TẮC (đang bật mà gọi nữa = tắt); `RestoreSnapshot` gọi `SelectActors` 2 lần (Step 5 + Step 6b) → 1 actor: bật rồi tắt → mất gizmo sau Undo. Chứng: 1 ghế Move→Undo mất gizmo, 2 ghế thì không (đúng dự đoán). Test G1–G6 PASS (G5: click lại đúng ghế đang chọn → gizmo vẫn còn). Chưa K2.
@@ -210,35 +222,41 @@ món MỚI theo chuột → lúc thả ghi mốc "Move" thừa, cắt nhánh Red
 Test PIE 3/3 PASS: Ctrl+Z giữa lúc kéo bị bỏ qua → thả = đúng 1 `SNAP: Move` · Undo/Redo sau đó đúng · Undo/Redo lúc không kéo như cũ.
 Q8: Function (không latent) + 2 IA event | IsValid(GizmoControllerRef) ✓ | L2: nhánh cụt cuối chuỗi, đúng ý | No latent | 6A: thả xong Undo bình thường.
 
+### IA_LeftRelease — người gọi `OnLMBReleased` (✓ ảnh chụp graph 25/09/2026, Find References)
+```
+EnhancedInputAction IA_LeftRelease (Triggered)
+▶→ Branch( IsValid(self) )          ← luôn True (self của actor đang chạy), vô hại — không cần sửa
+     True  ▶→ OnLMBReleased()       ← Custom Event: SET bLMBHeld = False → Sequence Then 0/1/2
+     False → (trống)
+```
+**1 lần thả chuột = 2 handler ở 2 hệ input khác nhau:** Input Key `LeftMouseButton` Released (legacy) → `GizmoControllerRef.OnMouseReleased()` · Enhanced Input `IA_LeftRelease` → `OnLMBReleased()`. UE không cam kết thứ tự giữa 2 hệ này → **không được viết logic phụ thuộc cái nào chạy trước.** Hiện không có phụ thuộc: gizmo chỉ ghi sổ + dọn cờ kéo; `OnLMBReleased` chỉ đụng selection khi `bIsPendingBoxSelect` / `bIsBoxSelecting` (Pressed đã dừng ở Step 3 khi cầm trục → 2 cờ này không bật).
+
 ---
 
-## Mouse Left Pressed — FULL FLOW (v1.5)
+## Mouse Left Pressed — FULL FLOW (v1.5 → as-built ✓K2 25/09/2026)
+Input Key event `Left Mouse Button` (không phải Enhanced Input). Comment box trong graph: Step 0 / Close Context Menu / step 2 / Step 3 / step4 / Step 5 / Step 6 / Step 7.
 ```
-Step 0 : SET bLMBHeld = True                              ← v1.5 (đầu tiên!)
-Step 0b: Set Input Mode Game And UI
-Step 1 : SET LocalWasGizmoActive = GizmoControllerRef.bGizmoActive
-Step 2 : GizmoController → OnMousePressed
-Step 3 : Branch bIsDraggingGizmo == True → True: STOP     ← đang cầm gizmo thì bỏ qua
-Step 4 : GetHitResultUnderCursorByChannel(CAMERA) → Hit Actor, ReturnValue
-
-Step 5 : Branch ReturnValue == True:
-           False (bấm vào khoảng không) →
-             Get Mouse Position on Viewport → SET BoxStartPos
-             SET bIsPendingBoxSelect = True
-             → STOP                                       ← KHÔNG check Ctrl lúc bấm; KHÔNG DeselectAll ngay (defer tới thả)
-
-Step 6 : Branch ActorHasTag(Hit Actor, "FurnitureSpawned"):
-           False (bấm trúng đồ KHÔNG phải furniture, vd tường) →
-             Get Mouse Position on Viewport → SET BoxStartPos
-             SET bIsPendingBoxSelect = True
-             → STOP
-
-Step 7 : DEFER cho MỌI click trúng furniture (v1.6 — bỏ nhánh Ctrl):
-           SET PendingClickActor = (HitActor as BP_FurnitureActor)
-           Get Mouse Position on Viewport → SET BoxStartPos
-           SET bIsPendingBoxSelect = True
-           → STOP
+InputKey LeftMouseButton — Pressed
+▶→ Step 0 : SET bLMBHeld = True
+▶→ Step 0b: Set Input Mode Game And UI (GetPlayerController(0), Widget=None, DoNotLock, HideCursorDuringCapture=True, FlushInput=False)
+▶→ Close Context Menu: Branch( IsValid(ContextMenuRef) )
+     True  ▶→ Branch( ContextMenuRef.IsInViewport )
+                True  → DỪNG (dead-end) — menu đang mở: lượt bấm bị NUỐT, gizmo/box không nhận. Menu đóng ở OnLMBReleased Then 0.
+                False ▶→ SET ContextMenuRef = None ▶→ (Step 2)
+     False ▶→ (Step 2)
+▶→ Step 2 : GizmoControllerRef.OnMousePressed()                       ⚠ không IsValid(GizmoControllerRef) (L1)
+▶→ Step 3 : Branch( GizmoControllerRef.bIsDraggingGizmo )
+              True  → DỪNG (đang cầm trục gizmo)
+              False ▶→ Step 4 : Branch( GetHitResultUnderCursorByChannel(PC0, TraceTypeQuery2, TraceComplex=True) )
+                 False (trúng khoảng không) ▶→ Step 5: SET BoxStartPos ●← Get Mouse Position on Viewport ▶→ SET bIsPendingBoxSelect = True
+                 True  ▶→ Step 6: Branch( ActorHasTag(HitActor, "FurnitureSpawned") )
+                    False (tường, sàn…) ▶→ SET BoxStartPos ▶→ SET bIsPendingBoxSelect = True
+                    True  ▶→ Step 7: Cast To BP_FurnitureActor(HitActor)
+                               then ▶→ SET PendingClickActor ▶→ SET BoxStartPos ▶→ SET bIsPendingBoxSelect = True
+                               CastFailed → DỪNG (dead-end — actor có tag nhưng không phải BP_FurnitureActor: không ghi gì)
 ```
+**Đính chính v1.5 (K2 25/09):** (1) Step 1 `LocalWasGizmoActive` KHÔNG còn. (2) Có khối "Close Context Menu" trước Step 2 — menu đang hiện thì nuốt lượt bấm. (3) `bIsDraggingGizmo` ở Step 3 là `GizmoControllerRef.bIsDraggingGizmo` (IM không có biến riêng). (4) Không có IsValid `GizmoControllerRef` trước Step 2/3 — an toàn nhờ spawn order (Gizmo gán ngay sau khi IM sinh) nhưng vẫn là nợ L1, chưa sửa (KP3).
+
 **Khác v1.4:** Step 5/6/7 trước đây select/deselect NGAY. Giờ chỉ ghi nhận + defer.
 **Khác v1.5 (v1.6 fix Ctrl+click group):** Step 7 BỎ Branch `IsInputKeyDown(Left Ctrl)` + nhánh ToggleActor-ngay. Lý do: nhánh Ctrl cũ toggle 1 đồ đơn rồi STOP → không bao giờ tới OnLMBReleased (nơi expand group) → Ctrl+click group không cộng dồn. Giờ **MỌI click defer**; phân giải single/group/Ctrl chuyển hết về **OnLMBReleased Then2** (IsValid PendingClickActor → Ctrl? → ExpandSelectionWithGroups → ToggleActor / DeselectAll+SelectActors → CaptureSnapshot → SET PendingClickActor=None). Quyết định cuối ở OnLMBReleased.
 
@@ -409,29 +427,38 @@ K2Node export đối chiếu 12/09/2026 — khớp thiết kế, đúng vị tr�
 
 ---
 
-## FinishBoxSelect(EndPos : Vector2D) — Function (v1.5)
+## FinishBoxSelect(EndPos : Vector2D) — Function (v1.5 → as-built ✓K2 25/09/2026)
+Locals: `TopLeft`, `BottomRight`, `ScreenPos`, `ScreenPosFixed` (Vector2D) · `bOnScreen`, `bInX`, `bInY` (Bool) · `bp` (BP_FurnitureActor) · `LocalSelected`, `ExpandedActors` (Array BP_FurnitureActor). Không có Return node (hết exec = kết thúc hàm).
 ```
-Min/Max → TopLeft = (Min X, Min Y), BottomRight = (Max X, Max Y) từ BoxStartPos & EndPos
-CLEAR LocalSelected (local array)
-
-Get All Actors With Tag("FurnitureSpawned") → ForEach (Actor):
-  Branch (Actor != PendingClickActor):                 ← loại mesh mà ta bắt đầu kéo box TỪ TRÊN nó
-    True →
-      Cast To BP_FurnitureActor → IsValid →
-      Get Actor Location → Project World To Screen → ScreenPos
-      ← ⚠️ FIX DPI: chia ScreenPos cho Get Viewport Scale (Widget Layout Library) = ScreenPosFixed
-      Branch (ScreenPosFixed.X >= TopLeft.X AND <= BottomRight.X)   [nested Branch, không dùng AND node]
-        AND (ScreenPosFixed.Y >= TopLeft.Y AND <= BottomRight.Y):
-          True → ADD Actor → LocalSelected
-
-Completed:
-  Branch LENGTH(LocalSelected) > 0:
-    True →
-      Branch IsInputKeyDown(Left Ctrl):
-        True  → ForEach LocalSelected → ToggleActor   ← Ctrl: cộng dồn vào selection cũ
-        False → DeselectAll → SelectActors(LocalSelected)
-      → CaptureSnapshot("BoxSelect")
+Function FinishBoxSelect(EndPos)
+▶→ SET TopLeft     ●← Make Vector2D( Min(BoxStartPos.X, EndPos.X), Min(BoxStartPos.Y, EndPos.Y) )
+▶→ SET BottomRight ●← Make Vector2D( Max(BoxStartPos.X, EndPos.X), Max(BoxStartPos.Y, EndPos.Y) )
+▶→ Get All Actors With Tag("FurnitureSpawned") ●→ ForEachLoop
+     Loop Body ▶→ Branch( IsValid(Array Element) )                       False → bỏ qua
+        True ▶→ Cast To BP_FurnitureActor(Array Element)                  CastFailed → bỏ qua
+           ▶→ SET bp ●← As BP Furniture Actor
+           ▶→ Branch( bp != PendingClickActor )                           False → bỏ qua (món bắt đầu kéo khung)
+              True ▶→ SET ScreenPos ●← Project World To Screen(GetPlayerController(0), bp.GetActorLocation, bPlayerViewportRelative=False)
+                   ▶→ SET bOnScreen ●← Project World To Screen.ReturnValue
+                   ▶→ Branch( Get Viewport Scale > 0 )                    False → bỏ qua (chống chia 0)
+                      True ▶→ SET ScreenPosFixed ●← (ScreenPos.X ÷ ViewportScale, ScreenPos.Y ÷ ViewportScale)   ← FIX DPI
+                           ▶→ SET bInX ●← ScreenPosFixed.X >= TopLeft.X AND <= BottomRight.X
+                           ▶→ SET bInY ●← ScreenPosFixed.Y >= TopLeft.Y AND <= BottomRight.Y
+                           ▶→ Branch( bOnScreen AND bInX AND bInY )       False → bỏ qua
+                              True ▶→ ADD bp → LocalSelected
+     Completed ▶→ Branch( LocalSelected.Length > 0 )                       False → hết hàm (khung rỗng: không đổi selection, không ghi sổ)
+        True ▶→ ExpandSelectionWithGroups(RawActors = LocalSelected)       ← QUÉT KHUNG LẤY CẢ NHÓM
+             ▶→ SET ExpandedActors ●← .Result
+             ▶→ Branch( IsInputKeyDown(GetPlayerController(0), Left Ctrl) )
+                True  ▶→ ForEachLoop(ExpandedActors)
+                           Loop Body ▶→ ToggleActor(Array Element)       (then để trống — hợp lệ trong Loop Body)
+                           Completed ▶→ CaptureSnapshot("BoxSelect")     ← 1 mốc (fix 25/09)
+                False ▶→ DeselectAll ▶→ SelectActors(ExpandedActors)
+                        ▶→ CaptureSnapshot("BoxSelect")                   ← 1 mốc (dùng chung node với nhánh True qua Knot)
 ```
+**Đính chính v1.5 (K2 25/09):** (1) có gọi `ExpandSelectionWithGroups` — quét trúng 1 món trong nhóm = lấy cả nhóm (đóng CONFLICT ở Architecture_Map 5j). (2) `IsValid` đứng TRƯỚC Cast; điều kiện trong khung dùng AND node + cờ `bOnScreen` (không phải nested Branch). (3) Không có bước CLEAR — `LocalSelected` là local, mỗi lần gọi tự rỗng. (4) Khung rỗng → không `CaptureSnapshot`.
+**Bug đã trả giá (25/09, `Bug-BoxSelectCtrl-MultiSnapshot`):** bản cũ nối `ToggleActor.then` → `CaptureSnapshot` trong Loop Body → Ctrl+quét N món ghi N mốc, Ctrl+Z phải bấm N lần. Fix: nối `Completed`. PIE PASS 3/3.
+
 **⚠️ Bug đã trả giá — DPI mismatch:** `Get Mouse Position on Viewport` trả tọa độ LOGICAL (đã chia DPI); `Project World To Screen` trả PIXEL THÔ. So sánh trực tiếp → chọn nhầm/lệch đồ. Phải chia `Project World To Screen` cho `Get Viewport Scale` để cùng hệ tọa độ với mouse.
 
 **Lưu ý chủ đích (KHÔNG phải bug):** chọn theo **PIVOT/origin** của đồ (1 điểm), không theo bounding box. Đồ chỉ "vào khung" khi điểm gốc nằm trong khung. Đúng ý đồ thiết kế.
@@ -1137,16 +1164,18 @@ CB_Replace        → [STUB — TODO, làm tiếp session sau]
 CB_SaveCombo      → CB_SaveCombo_Handler
 ```
 
-### CB_SaveCombo_Handler (C3b 24/06/2026 · C4 CalculateComboAnchor · ✓K2 04/08/2026)
+### CB_SaveCombo_Handler (C3b 24/06/2026 · C4 CalculateComboAnchor · ✓K2 04/08/2026 · ✓K2 25/09/2026 Save đè)
 ```
-CB_SaveCombo_Handler  (Custom Event)   ✓K2 04/08/2026
+CB_SaveCombo_Handler  (Custom Event, không param)   ✓K2 25/09/2026
 ▶→ Branch( Array_Length(SelectedActors) >= 2 )
      False ▶→ (TRỐNG — chặn im lặng, không toast/log)
      True  ▶→ CalculateComboAnchor(InActors=SelectedActors) ─→ ReturnVec
            ▶→ GetAllWidgetsOfClass(WBP_FurnitureInventory) ─→ FoundWidgets
            ▶→ Branch( IsValid( FoundWidgets[0] ) )
                 False ▶→ Print "CB_SaveCombo: Inventory ref not found" [DevelopmentOnly]
-                True  ▶→ Inventory.OpenSaveComboDialog(SelectedActors, Center=ReturnVec)
+                True  ▶→ ResolveActiveComboForSave() ─→ ComboID, bCanOverwrite, ReasonText   (impure, gọi 1 lần)
+                      ▶→ Inventory.OpenSaveComboDialog(SelectedActors, Center=ReturnVec,
+                              ActiveComboID ●← ComboID, bCanOverwrite ●← bCanOverwrite, ReasonText ●← ReasonText)
                       ▶→ Branch( IsValid(ContextMenuRef) )
                            True  ▶→ ContextMenuRef.Hide ▶→ SET ContextMenuRef = None
                            False ▶→ (trống — cuối chain, L2 hợp lệ)
@@ -1165,6 +1194,8 @@ kiểu `WBP_FurnitureInventory_C`; phần tử `FoundWidgets[0]` cắm thẳng v
 self pin của `OpenSaveComboDialog`. Ai tìm biến `InventoryRef` ở hàm này sẽ không thấy — đừng tự
 tạo biến trùng vai (cùng loại drift với ca `ReplaceTarget` 2 bản trùng tên, xem mục
 `ResolveSelectedComboRoot`/Aliasing trong `Widgets/WBP_FurnitureInventory.md`).
+
+**K2 25/09/2026 — đóng DOC-DEBT 07/08:** `ResolveActiveComboForSave()` ĐÃ nằm trong handler — đứng SAU guard `IsValid(FoundWidgets[0])` (không phải "đầu nhánh True của guard ≥2" như plan 7b.1 — lệch vị trí vô hại: inventory không có thì cũng không cần resolve), 3 pin `ComboID`/`bCanOverwrite`/`ReasonText` cắm thẳng vào `OpenSaveComboDialog`. `RootGroupID`/`ItemCount` bỏ trống.
 
 > Không gọi SaveComboFromSelection trực tiếp — delegate sang inventory để inventory đóng băng selection + quản lý dialog async.
 
@@ -1192,11 +1223,13 @@ Completed → DeselectAll → CaptureSnapshot("Delete")
 
 ---
 
-## Mouse Left Released (gizmo) — v1.4
+## Mouse Left Released (gizmo) — v1.4 → as-built ✓K2 25/09/2026
 ```
-GizmoController → OnMouseReleased
-[T15: CaptureSnapshot khi SelectedActor là Pivot — đã làm]
+InputKey LeftMouseButton — Released
+▶→ GizmoControllerRef.OnMouseReleased()        ← node DUY NHẤT; hết chuỗi. ⚠ không IsValid (L1)
 ```
+Nhánh Released KHÔNG gọi `OnLMBReleased` và KHÔNG `SET bLMBHeld = False` — hai việc đó nằm trong Custom Event `OnLMBReleased`, do Enhanced Input `IA_LeftRelease` gọi (xem mục Enhanced Input Actions).
+[T15: CaptureSnapshot khi SelectedActor là Pivot — đã làm, nằm trong `BP_GizmoController.OnMouseReleased`]
 
 ---
 
@@ -1313,12 +1346,28 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast
 
 ---
 
-## Level Blueprint — Spawn Order
+## Spawn Order — WBP_FOFF_ToolDemo Event Construct (Then 11) — as-built ✓K2 25/09/2026
+Người sinh các manager là **widget `WBP_FOFF_ToolDemo`** (màn hình tool), KHÔNG phải Level Blueprint như bản cũ ghi. Then 0..10 của Sequence là code project tổng (không thuộc tool, không export); tool chỉ dùng Then 11.
 ```
-1. BP_UndoManager   2. BP_FurnitureSceneManager   3. BP_TransformerPawn
-4. BP_GizmoController   5. BP_FurnitureInputManager (SET GizmoControllerRef)
-6. WBP_MeshControls (SET CurrentMeshControls)   7. CaptureSnapshot("Initial")
+Event Construct ▶→ Sequence
+  Then 0..10 → (project tổng — ngoài phạm vi tool)
+  Then 11 ▶→ SET GetPlayerController(0).bShowMouseCursor = True
+          ▶→ Spawn Actor BP_UndoManager
+          ▶→ Spawn Actor BP_FurnitureSceneManager
+          ▶→ Spawn Actor BP_TransformerPawn
+          ▶→ Spawn Actor BP_FurnitureInputManager            ← IM sinh TRƯỚC Gizmo (BeginPlay của IM chạy lúc này)
+          ▶→ Spawn Actor BP_GizmoController
+          ▶→ SET (GetAllActorsOfClass(BP_FurnitureInputManager)[0]).GizmoControllerRef ●← Spawn GizmoController.ReturnValue
+          ▶→ Spawn Actor BP_GroupsContainer
+          ▶→ Create Widget WBP_MeshControls ▶→ Add to Viewport (ZOrder 0)
+          ▶→ SET (GetAllActorsOfClass(BP_FurnitureInputManager)[0]).CurrentMeshControls ●← Create Widget.ReturnValue
+          ▶→ Spawn Actor BP_FurnitureUserPrefsManager
+          ▶→ Spawn Actor BP_ComboManager
+          ▶→ Create Widget WBP_Toast ▶→ Add to Viewport (ZOrder 100)
+          ▶→ SET (GetAllActorsOfClass(BP_FurnitureSceneManager)[0]).ToastRef ●← Create Widget.ReturnValue
+          ▶→ CaptureSnapshot("Initial") trên GetAllActorsOfClass(BP_UndoManager)[0]      ← CUỐI CÙNG, hết chuỗi
 ```
+**Đính chính (K2 25/09):** (1) nơi sinh = `WBP_FOFF_ToolDemo` Then 11, không phải Level BP. (2) IM sinh trước GizmoController → `GizmoControllerRef` được gán SAU BeginPlay của IM — BeginPlay không được đọc `GizmoControllerRef`. (3) Có thêm `BP_GroupsContainer`, `BP_FurnitureUserPrefsManager`, `BP_ComboManager`, `WBP_Toast`. (4) `ToastRef` gán vào **`BP_FurnitureSceneManager`**, không thấy gán `Foff_GameInstance.ToastRef` trong chuỗi này. (5) Không Cast (GetAllActorsOfClass với class cụ thể trả đúng kiểu); return value của các Spawn khác bỏ trống.
 
 ---
 
@@ -1677,6 +1726,12 @@ từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 | 3.4 | 04/08/2026 13:15 | **`CB_Replace` re-export ✓K2 03/08/2026 — đóng caveat v3.3.** Bản mô tả cũ (✓K2 24/07) đọc lúc CHƯA re-export sau T2 — SUPERSEDED, giữ lại làm lịch sử (không xóa). Bản mới: nhánh BẬT thêm `ShouldRouteReplaceToCombo(Actor=PrimarySelectedActor)` → `Branch(bRouteToCombo)` → `StartReplaceComboMode`/`StartReplaceMode` (node CŨ giữ nguyên ở nhánh False); nhánh TẮT thêm `SET ComboRootGroupIDToReplace=""` (thiếu ở bản cũ). Xác nhận: đủ 2 call site T2 (`OnMeshSelected` + `CB_Replace`), test 2 trial chuột phải PASS 03/08. Bug fix Branch dư (24/07) không bị cuốn lại. |
 
 | 3.8 | 21/09/2026 | U1.2 (PersistentIdentity) — `SpawnFurnitureCopy` FULL NODE FLOW vào doc canonical lần đầu (✓K2 export thật) + đính chính task card (không có IsValid(NewActor) guard). Then0 +ensure `PersistentID`. PIE PASS (ID-01, ID-03). |
+| 3.16 | 25/09/2026 11:00 | +`IA_LeftRelease` → `OnLMBReleased` (Find References). Ghi luật: 2 handler lúc thả chuột không được phụ thuộc thứ tự. |
+| 3.15 | 25/09/2026 10:55 | Mouse Left Pressed / Released ✓K2 (Input Key LMB). Nợ L1: thiếu IsValid `GizmoControllerRef` (báo, chưa sửa). |
+| 3.14 | 25/09/2026 10:40 | `CB_SaveCombo_Handler` ✓K2 — thêm `ResolveActiveComboForSave()` + 3 pin xuống `OpenSaveComboDialog` (đóng DOC-DEBT 07/08). |
+| 3.13 | 25/09/2026 10:30 | Spawn Order ✓K2 (`WBP_FOFF_ToolDemo` Event Construct Then 11) thay mục "Level Blueprint — Spawn Order". |
+| 3.12 | 25/09/2026 10:15 | Fix `Bug-BoxSelectCtrl-MultiSnapshot` — `CaptureSnapshot` nhánh Ctrl chuyển sang `ForEachLoop.Completed`. PIE PASS 3/3. |
+| 3.11 | 25/09/2026 10:05 | **`FinishBoxSelect` ✓K2.** Có `ExpandSelectionWithGroups` (đóng CONFLICT 5j); IsValid trước Cast; AND + `bOnScreen`; guard `ViewportScale > 0`; khung rỗng không ghi sổ. Nghi vấn: nhánh Ctrl `CaptureSnapshot` trong Loop Body — chờ PIE. |
 | 3.10 | 25/09/2026 09:10 | Event BeginPlay as-built ✓K2 (EnableInput + AddMappingContext LM_FurnitureInput P5, bọc IsValid subsystem). +mục Enhanced Input Actions (Gate 1.5 B2) + Function `IsGizmoDragging` + guard trong IA_FurnitureUndo/Redo — PIE PASS 3/3. |
 | 3.9 | 24/09/2026 16:10 | **Đóng B-gizmo.** `UpdateGizmo` nhánh `==1` +`DeactivateGizmo` trước `ActivateGizmo`. Root cause toggle + `SelectActors` gọi 2 lần trong RestoreSnapshot. Test G1–G6 PASS. Chưa K2. |
 
@@ -1699,14 +1754,15 @@ từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 - [[BP_UndoManager]] — chụp mốc Select/Deselect · CaptureSnapshot(Select / Deselect) ✓K2
 - [[BP_FurnitureSceneManager]] — tìm singleton, đọc tham chiếu inventory · GetAllActorsOfClass, GET FurnitureInventoryRef ✓K2
 - [[WBP_FurnitureInventory]] — báo click-vào-mesh chọn slot · NotifyViewportSlotClick(ClickedActor, ScreenPos) ✓K2
-- [[BP_GizmoController]] — gọi lúc bấm chuột + giữ tham chiếu · OnMousePressed(), GizmoControllerRef
+- [[BP_GizmoController]] — gọi lúc bấm / thả chuột + giữ tham chiếu [K2 2026-09-25] · OnMousePressed(), OnMouseReleased(), GizmoControllerRef ✓K2
 - [[BP_TransformerPawn]] — giữ tham chiếu · TransformerPawnRef
 - [[BP_GroupsContainer]] — đọc-ghi số đếm nhóm · GroupNameCounter, Groups
 - [[BP_PivotActor]] — tạo & huỷ trục xoay · SpawnOrUpdatePivot() / DestroyPivot()
 - [[BP_FurnitureActor]] — đọc đồ đang chọn · Cast + GET PrimarySelectedActor
 - [[WBP_MeshControls]] — giữ tham chiếu thanh công cụ · CurrentMeshControls
 - [[BP_UndoManager]] — phím Undo / Redo (bỏ qua khi đang kéo gizmo) · IsGizmoDragging() → UndoLastAction() / RedoLastAction()
-- [[BP_UndoManager]] — chụp mốc các thao tác khác · CaptureSnapshot(BoxSelect / CreateGroup / Ungroup / PasteMulti / DuplicateMulti / Delete / Nudge / SelectSimilar / ResetRotation)
+- [[BP_UndoManager]] — chụp mốc quét khung [K2 2026-09-25] · CaptureSnapshot(BoxSelect) ✓K2
+- [[BP_UndoManager]] — chụp mốc các thao tác khác · CaptureSnapshot(CreateGroup / Ungroup / PasteMulti / DuplicateMulti / Delete / Nudge / SelectSimilar / ResetRotation)
 - [[BP_FurnitureActor]] — dời / gán nhóm / xoá đồ đang chọn · Add Actor World Offset (NudgeMesh), SET GroupID (CreateGroup), Destroy Actor (DeleteSelected)
 - [[BP_PivotActor]] — dời pivot theo nhóm khi nhích phím · Set Actor Location → RefreshOffsets()
 - [[BP_ComboManager]] — ra lệnh đổi combo · ExecuteComboReplace() → ReplaceCombo() ✓K2
@@ -1732,7 +1788,7 @@ từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 - [[WBP_FurnitureInventory]] — vào chế độ thay đồ · StartReplaceMode() / ShouldRouteReplaceToCombo() ✓K2
 - [[WBP_FurnitureCard]] — lấy tham chiếu manager · GetAllActorsOfClass (F_ExecuteReplace) ✓K2
 - [[WBP_DragOverlay_FurnitureCard]] — tắt gizmo khi thả · GizmoControllerRef.DeactivateGizmo()
-- [[WBP_FOFF_ToolDemo]] — sinh ra các manager · Spawn (Event Construct, Then 0..13)
+- [[WBP_FOFF_ToolDemo]] — sinh ra + gán GizmoControllerRef, CurrentMeshControls [K2 2026-09-25] · Spawn (Event Construct Then 11) ✓K2
 - [[BP_UndoManager]] — spawn lại đồ khi Undo, không tự chọn, không nhồi Recent · SpawnFurnitureCopy(bAutoSelect=False, bAddToRecent=False) ✓K2
 - [[BP_UndoManager]] — chọn lại / bỏ chọn sau khôi phục · SelectActors() / DeselectAll()
 - [[WBP_DetailPopup]] — vào chế độ thay đồ · StartReplaceMode() ✓K2

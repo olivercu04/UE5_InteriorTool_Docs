@@ -882,6 +882,6 @@ không giật thêm dù RT giờ 2048²).
 - [[BP_ComboItemView]] — dùng chung bộ nhớ ảnh bìa · Cmb_ThumbnailCache
 - [[WBP_FurnitureInventory]] — lưu combo (mới / ghi đè) · SaveComboFromSelection()
 - [[WBP_DragOverlay_FurnitureCard]] — đặt combo khi thả · SpawnComboByID(ComboID, SpawnLocation)
-- [[WBP_FOFF_ToolDemo]] — sinh ra (⚠ doc còn ghi Level BP) · Spawn
+- [[WBP_FOFF_ToolDemo]] — sinh ra [K2 2026-09-25] · Spawn ✓K2
 
 <!-- BRAIN:END -->

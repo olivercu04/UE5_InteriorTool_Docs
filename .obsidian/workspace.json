@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/00_Core/CrossCheck_PreGate2_02aug2026.md",
+                "file": "docs/Plans/25-09-2026_Product_UX_Review_Plan_v1.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "CrossCheck_PreGate2_02aug2026"
+              "title": "25-09-2026_Product_UX_Review_Plan_v1"
             }
           }
         ]
@@ -187,17 +187,20 @@
   },
   "active": "5ff223a103752ffb",
   "lastOpenFiles": [
+    "docs/00_Core/sedkNdsUO",
+    "docs/Brain/Tư duy/Tư duy 1 · Sản phẩm và người dùng.md",
+    "import_raw/Design.md",
+    "docs/00_Core/Architecture_Map.md",
+    "docs/00_Core/CrossCheck_PreGate2_02aug2026.md",
     "docs/Brain/Tổng quát/2 · Phía sau màn hình.canvas",
     "docs/Brain/Tổng quát/1 · Một buổi dựng phòng.canvas",
     "docs/Brain/Bản đồ não.md",
     "docs/00_Core/00_INDEX.md",
     "docs/Plans/18-09-2026_UndoArchitecture_Foundation_v1.md",
     "docs/Brain/Tư duy/Tư duy 2 · Kiến trúc và nguyên tắc code.md",
-    "docs/Brain/Tư duy/Tư duy 1 · Sản phẩm và người dùng.md",
     "docs/Brain/Canvas/5t - Lưu cảnh và mở lại cảnh (EMS).canvas",
     "docs/Brain/Canvas/5h - Tìm đồ trong kho (gõ tìm · thư mục · Gần đây · Yêu thích).canvas",
     "docs/Brain/Canvas/5p - Đổi vật liệu bằng cách kéo thẻ thả lên đồ.canvas",
-    "docs/00_Core/Architecture_Map.md",
     "docs/Plans/25-09-2026_Product_UX_Review_Plan_v1.md",
     "docs/Brain/Tổng quát/ảnh/tq_gizmo_nho.png",
     "docs/Brain/Tổng quát/ảnh/tq_vong_mau.png",
@@ -236,8 +239,6 @@
     "docs/Brain/Luồng 3e - Vật liệu Material.md",
     "docs/Brain/Luồng 3d - Save Undo khởi động.md",
     "docs/Brain/Chưa có doc/WBP_SlotSwatch.md",
-    "docs/Brain/Chưa có doc/WBP_FOFF_ToolDemo.md",
-    "docs/Brain/Chưa có doc/WBP_ContextMenuItem.md",
-    "docs/Brain/Chưa có doc/WBP_ContextMenu.md"
+    "docs/Brain/Chưa có doc/WBP_FOFF_ToolDemo.md"
   ]
 }

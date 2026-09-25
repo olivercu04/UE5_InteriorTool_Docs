@@ -1,5 +1,23 @@
 # Architecture Map — UE5 Interior Tool
 
+**Phiên bản:** 1.20 | **Cập nhật:** 25/09/2026 11:00 — `OnLMBReleased` do Enhanced Input `IA_LeftRelease` gọi (Find References 25/09) → 5a, 5d, 5j ghi rõ; 5d đóng `?` (3): 2 handler lúc thả thuộc 2 hệ input, thứ tự không cam kết, logic không phụ thuộc.
+
+**Phiên bản:** 1.19 | **Cập nhật:** 25/09/2026 10:55 — K2 IM Input Key LMB (Pressed + Released) 25/09: 5d bước bấm/thả sang nét liền, đóng `?` (2) (`bIsDraggingGizmo` = `GizmoControllerRef.bIsDraggingGizmo`); 3a `IM→GIZMO` nâng `==>`; 5a thêm bước menu chuột phải nuốt lượt bấm.
+
+**Phiên bản:** 1.18 | **Cập nhật:** 25/09/2026 10:40 — K2 `CB_SaveCombo_Handler` 25/09: đóng CONFLICT 5q — `ResolveActiveComboForSave()` có thật (sau guard inventory), 3 tham số xuống `OpenSaveComboDialog`.
+
+**Phiên bản:** 1.17 | **Cập nhật:** 25/09/2026 10:30 — K2 `WBP_FOFF_ToolDemo` Event Construct Then 11: đóng CONFLICT 5g (widget sinh manager, không phải Level BP); cạnh `TOOLDEMO→IM/UNDO/SCENE/COMBO/PREFS/TOAST` nâng `==>`; ToastRef gán vào SceneManager (không phải GI) — ghi `?` cho các chỗ còn ghi `GI.ToastRef`.
+
+**Phiên bản:** 1.16 | **Cập nhật:** 25/09/2026 10:15 — 5j: fix Bug-BoxSelectCtrl-MultiSnapshot → 1 mốc BoxSelect cho cả 2 nhánh (PIE PASS).
+
+**Phiên bản:** 1.15 | **Cập nhật:** 25/09/2026 10:05 — K2 `FinishBoxSelect` 25/09: 5j đóng CONFLICT (quét khung CÓ `ExpandSelectionWithGroups`), thân hàm nét liền; 3a tách cạnh `IM==>UNDO CaptureSnapshot(BoxSelect)`; ghi nghi vấn Ctrl = N mốc BoxSelect.
+
+**Phiên bản:** 1.14 | **Cập nhật:** 25/09/2026 09:40 — K2 Inventory Event Construct 25/09: Bind `UndoManagerRef.OnHistoryChanged → Handle_HistoryChanged → RefreshParamPanel` ✓ → cặp `UNDO↔INV` (OnHistoryChanged) nâng `==>` ở 3d; 5b, 5d mũi tên báo tin nét liền (5c giữ đứt: broadcast ở nhánh Undo/Redo chưa K2).
+
+**Phiên bản:** 1.13 | **Cập nhật:** 25/09/2026 09:35 — `AppendEntry` ✓K2 25/09 → 5d bước "đưa vào sổ" nét liền; phía Inventory nghe `OnHistoryChanged` chờ K2.
+
+**Phiên bản:** 1.12 | **Cập nhật:** 25/09/2026 09:30 — Đóng `?` bằng tra cứu + PIE của cuhoang: Ctrl+G / Ctrl+Shift+G = `IA_GroupCreate` / `IA_Ungroup` trong InputManager (5l); lưu / mở cảnh qua menu Save/Load (phím **M**), KHÔNG có Ctrl+S; sổ Undo KHÔNG xoá khi Load (5t).
+
 **Phiên bản:** 1.11 | **Cập nhật:** 25/09/2026 09:10 — **Sửa drift Input (Gate 1.5 B2):** Input Action nội thất nằm trong `BP_FurnitureInputManager` (BeginPlay `AddMappingContext` ✓K2 25/09), không qua `BP_FoffPlayerController` → bỏ `PC` khỏi 3a/3c/3d, 5c/5g/5k/5m vẽ lại từ IM. +guard `IsGizmoDragging` (Undo/Redo bỏ qua khi đang kéo gizmo, PIE PASS) ở 5c/5f.
 
 **Phiên bản:** 1.10 | **Cập nhật:** 25/09/2026 08:50 — `OnMouseReleased` F2 phần A: kẹt cờ khi Ctrl+Z giữa lúc kéo đã sửa (PIE PASS) — cập nhật ⚠ 5f.
@@ -408,7 +426,7 @@ flowchart TB
   IM ==>|"tìm singleton, đọc tham chiếu inventory · GetAllActorsOfClass, GET FurnitureInventoryRef"| SCENE
   SCENE ==>|"gọi thoát Replace Mode · .FurnitureInventoryRef.ExitReplaceMode()"| INV
   IM ==>|"báo click-vào-mesh chọn slot · NotifyViewportSlotClick(ClickedActor, ScreenPos)"| INV
-  IM -.->|"gọi lúc bấm chuột + giữ tham chiếu · OnMousePressed(), GizmoControllerRef"| GIZMO
+  IM ==>|"gọi lúc bấm / thả chuột + giữ tham chiếu [K2 2026-09-25] · OnMousePressed(), OnMouseReleased(), GizmoControllerRef"| GIZMO
   IM -.->|"giữ tham chiếu · TransformerPawnRef"| TPAWN
   IM -.->|"đọc-ghi số đếm nhóm · GroupNameCounter, Groups"| GROUPS
   IM -.->|"tạo & huỷ trục xoay · SpawnOrUpdatePivot() / DestroyPivot()"| PIVOT
@@ -428,7 +446,8 @@ flowchart TB
   IM -.->|"phím Undo / Redo (bỏ qua khi đang kéo gizmo) · IsGizmoDragging() → UndoLastAction() / RedoLastAction()"| UNDO
   UNDO -.->|"chọn lại đồ sau khôi phục + báo tin · SelectActors(), Broadcast OnEditModeChanged"| IM
   UNDO -.->|"đặt nút mode theo ảnh sau khôi phục · RefreshButtonState(ActiveMode) — lấy tham chiếu từ đâu ?"| MESHCTRL
-  IM -.->|"chụp mốc các thao tác khác · CaptureSnapshot(BoxSelect / CreateGroup / Ungroup / PasteMulti / DuplicateMulti / Delete / Nudge / SelectSimilar / ResetRotation)"| UNDO
+  IM ==>|"chụp mốc quét khung [K2 2026-09-25] · CaptureSnapshot(BoxSelect)"| UNDO
+  IM -.->|"chụp mốc các thao tác khác · CaptureSnapshot(CreateGroup / Ungroup / PasteMulti / DuplicateMulti / Delete / Nudge / SelectSimilar / ResetRotation)"| UNDO
   IM -.->|"dời / gán nhóm / xoá đồ đang chọn · Add Actor World Offset (NudgeMesh), SET GroupID (CreateGroup), Destroy Actor (DeleteSelected)"| FA
   IM -.->|"dời pivot theo nhóm khi nhích phím · Set Actor Location → RefreshOffsets()"| PIVOT
   CTXITEM -.->|"dòng menu được bấm → callback của IM · CB_Copy / CB_Paste / CB_Duplicate / CB_Delete … — bind trong OnRightClick ?"| IM
@@ -660,13 +679,13 @@ flowchart TB
   SGMENU>"SaveGameMenu"]
   UPS>"BP_UserPreferencesSave"]
 
-  TOOLDEMO -.->|"sinh ra các manager · Spawn (Event Construct, Then 0..13)"| IM
-  TOOLDEMO -.->|"sinh ra · Spawn"| UNDO
-  TOOLDEMO -.->|"sinh ra (⚠ doc còn ghi Level BP) · Spawn"| COMBO
-  TOOLDEMO -.->|"sinh ra · Spawn"| SCENE
-  TOOLDEMO -.->|"sinh ra · Spawn"| PREFS
-  TOOLDEMO -.->|"tạo toast + gắn vào GameInstance · Create + SET GI.ToastRef"| TOAST
-  TOOLDEMO -.->|"lưu mốc đầu tiên · CaptureSnapshot(Initial)"| UNDO
+  TOOLDEMO ==>|"sinh ra + gán GizmoControllerRef, CurrentMeshControls [K2 2026-09-25] · Spawn (Event Construct Then 11)"| IM
+  TOOLDEMO ==>|"sinh ra [K2 2026-09-25] · Spawn"| UNDO
+  TOOLDEMO ==>|"sinh ra [K2 2026-09-25] · Spawn"| COMBO
+  TOOLDEMO ==>|"sinh ra + gán ToastRef [K2 2026-09-25] · Spawn, SET SceneManager.ToastRef"| SCENE
+  TOOLDEMO ==>|"sinh ra [K2 2026-09-25] · Spawn"| PREFS
+  TOOLDEMO ==>|"tạo toast [K2 2026-09-25] · Create Widget WBP_Toast + Add to Viewport (Z 100)"| TOAST
+  TOOLDEMO ==>|"lưu mốc đầu tiên [K2 2026-09-25] · CaptureSnapshot(Initial)"| UNDO
   TOOLDEMO -.->|"mở inventory khi bấm nút · Open widget"| INV
   UNDO ==>|"spawn lại đồ khi Undo, không tự chọn, không nhồi Recent · SpawnFurnitureCopy(bAutoSelect=False, bAddToRecent=False)"| IM
   IM ==>|"spawn đồ + bắt đầu tải mesh (async) · SpawnFurnitureCopy → LoadMeshAsync()"| FA
@@ -688,8 +707,9 @@ flowchart TB
   INV -.->|"mở / chốt / hủy phiên chỉnh param (U2.4-2.5) · BeginInteractiveEdit() / CommitInteractiveEdit() / CancelInteractiveEdit()"| UNDO
   UNDO ==>|"tìm lại đồ theo ID khi undo/chốt param — caller đầu tiên của Resolver · ResolveByPersistentId()"| SCENE
   UNDO ==>|"đọc giá trị trước/sau + đảo 1 thông số · GetSlot*Param() / SetSlot*Param() (qua ApplyParamCommand)"| MSS
-  UNDO -.->|"báo lịch sử vừa đổi (undo/redo param) · Broadcast OnHistoryChanged"| INV
-  INV -.->|"nghe lịch sử đổi → refresh panel · Bind OnHistoryChanged → RefreshParamPanel()"| UNDO
+  UNDO ==>|"báo lịch sử vừa đổi (cuối AppendEntry) · Broadcast OnHistoryChanged"| INV
+  UNDO -.->|"báo lịch sử vừa đổi (cuối nhánh Undo / Redo) · Broadcast OnHistoryChanged (Undo/Redo)"| INV
+  INV ==>|"nghe lịch sử đổi → refresh panel · Bind OnHistoryChanged → RefreshParamPanel()"| UNDO
   SGMENU -.->|"báo tin bấm Load · OnLoadButtonClicked"| SCENE
 
   classDef bp fill:#e8eef7,stroke:#33415c;
@@ -706,6 +726,7 @@ flowchart TB
 **[24/09 v1.7]** nâng: `UNDO→SCENE`, `UNDO→MSS` — **[K2 2026-09-24]** (export `BeginInteractiveEdit`/`CommitInteractiveEdit`, U2.7; `ApplyParamCommand` review K2 U2.3) · `UNDO→IM SpawnFurnitureCopy(bAddToRecent=False)` — **[K2 2026-07-21]** (K3) · `IM→FA LoadMeshAsync` — **[K2 2026-09-21]** (thân `SpawnFurnitureCopy`) · `GIZMO→UNDO` — **[K2 2026-09-24]** (nhánh "Scale" đã sửa 25/09 — Branch 2 so `ActiveMode == Scale`, PIE PASS 3/3, xem `BP_GizmoController.md` v1.3). Tách `UNDO→FA`: `SET RowName` liền (03/08), `PersistentID`/`GroupID`/`MaterialSlots` đứt. Cạnh cũ `UNDO→FA "tạo lại đồ · SpawnFurnitureCopy()"` sai đích (`SpawnFurnitureCopy` là hàm của InputManager) → chuyển thành `UNDO→IM`.
 **[25/09 v1.8]** rút từ luồng 5g, 5t: +`[DOC]` `TOOLDEMO→PC` (Caller Diagram trong `BP_FoffPlayerController.md`), `SGMENU→SCENE`.
 **[25/09 v1.11]** Bỏ `PC` (`PC→UNDO`, `TOOLDEMO→PC`) — Input nằm trong `IM` từ Gate 1.5 B2; `IM` BeginPlay `AddMappingContext(LM_FurnitureInput)` ✓K2 25/09.
+**[25/09 v1.14]** nâng `UNDO→INV` (Broadcast cuối `AppendEntry`, ✓K2 25/09) + `INV→UNDO` (Bind `OnHistoryChanged` → `Handle_HistoryChanged` → `RefreshParamPanel`, ✓K2 25/09) → **[K2 2026-09-25]**. Broadcast ở cuối nhánh Undo/Redo tách cạnh riêng, còn `[DOC]`.
 
 ### 3e — Vật liệu (Material)
 
@@ -882,7 +903,8 @@ sequenceDiagram
   participant INV as WBP_FurnitureInventory
   participant MC as WBP_MeshControls
   U->>IM: nhấn chuột · Mouse Left Pressed (chỉ ghi PendingClickActor, CHƯA chọn)
-  U->>IM: thả chuột · OnLMBReleased (Sequence Then 2)
+  Note over U,IM: Menu chuột phải đang hiện thì lượt bấm bị nuốt (Close Context Menu → dừng) - menu đóng lúc thả (OnLMBReleased Then 0).
+  U->>IM: thả chuột · IA_LeftRelease → OnLMBReleased (Sequence Then 2)
   alt click thường
     IM->>IM: bỏ chọn cũ · DeselectAll()
     IM->>IM: lấy cả group chứa món · ExpandSelectionWithGroups()
@@ -930,13 +952,13 @@ sequenceDiagram
     INV-->>UM: chốt phiên · CommitInteractiveEdit()
     UM->>MSS: đọc After · GetSlotScalarParam()
     UM->>UM: After khác Before → BuildSceneSnapshotBase() + AppendEntry() = 1 entry
-    UM-->>INV: báo tin · Broadcast OnHistoryChanged → RefreshParamPanel()
+    UM->>INV: báo tin · Broadcast OnHistoryChanged → RefreshParamPanel()
   else hủy giữa chừng (đổi ghế · đổi slot · đóng panel · Ctrl+Z)
     INV-->>UM: hủy phiên · CancelInteractiveEdit()
     UM-->>MSS: về Before, 0 entry · ApplyParamCommand() → SetSlotScalarParam()
   end
 ```
-**Kiểm chứng K2:** thân `BeginInteractiveEdit` + `CommitInteractiveEdit` (Resolve / GetSlot…Param / Build+Append) — 2026-09-24 · `ROW→INV OnPreviewChanged` (`Slider_Value.OnValueChanged`, T2/T4) · `ResolveByPersistentId` (2026-09-21). Còn lại theo doc (PIE PASS U2.4/U2.5): 2 handler Begin/Commit + Preview bên Inventory, `OnEditBegin`/`OnEditCommitted` phía row, `CancelInteractiveEdit`, broadcast `OnHistoryChanged` từ AppendEntry. Row màu (`WBP_ParamColorRow`) đối xứng, thay `GetSlotVectorParam`/`SetSlotVectorParam`.
+**Kiểm chứng K2:** thân `BeginInteractiveEdit` + `CommitInteractiveEdit` (Resolve / GetSlot…Param / Build+Append) — 2026-09-24 · `ROW→INV OnPreviewChanged` (`Slider_Value.OnValueChanged`, T2/T4) · `ResolveByPersistentId` (2026-09-21). Còn lại theo doc (PIE PASS U2.4/U2.5): 2 handler Begin/Commit + Preview bên Inventory, `OnEditBegin`/`OnEditCommitted` phía row, `CancelInteractiveEdit`, ~~broadcast `OnHistoryChanged` từ AppendEntry~~ (✓K2 25/09: `AppendEntry` + Inventory bind). Row màu (`WBP_ParamColorRow`) đối xứng, thay `GetSlotVectorParam`/`SetSlotVectorParam`.
 Nguồn: `Blueprints/BP_UndoManager.md` v1.22 · `Widgets/WBP_FurnitureInventory.md` v3.33 · `WBP_ParamScalarRow.md` v1.2 · `Data/MaterialSlotService_Reference.md`.
 
 ### 5c — Undo / Redo — tổng quan (dispatch theo EntryKind)
@@ -962,10 +984,10 @@ sequenceDiagram
   else entry là Snapshot
     UM->>UM: khôi phục ảnh full entry N−1, destroy + spawn lại · RestoreSnapshot() (chi tiết 5e)
   end
-  UM-->>INV: báo tin · Broadcast OnHistoryChanged → RefreshParamPanel()
+  UM-->>INV: báo tin · Broadcast OnHistoryChanged (Undo/Redo) → RefreshParamPanel()
   Note over IM,UM: Redo = Ctrl+Shift+Z → IA_FurnitureRedo → RedoLastAction(): Command → After · Snapshot → ảnh của chính entry N
 ```
-**Kiểm chứng K2:** dispatch `EntryKind` trong Undo/Redo + thân `ApplyParamCommand` — review K2 U2.3 (2026-09-24) · `ResolveByPersistentId` (2026-09-21). Còn lại theo doc: phím → `UndoLastAction` nằm trong `BP_FurnitureInputManager` (Gate 1.5 B2, cuhoang 25/09; check Shift theo doc cũ + guard `IsGizmoDragging` PIE PASS 25/09 — chưa K2 event), `CancelInteractiveEdit()` node đầu + broadcast (U2.4–U2.6, PIE PASS, chưa K2).
+**Kiểm chứng K2:** dispatch `EntryKind` trong Undo/Redo + thân `ApplyParamCommand` — review K2 U2.3 (2026-09-24) · `ResolveByPersistentId` (2026-09-21). Còn lại theo doc: phím → `UndoLastAction` nằm trong `BP_FurnitureInputManager` (Gate 1.5 B2, cuhoang 25/09; check Shift theo doc cũ + guard `IsGizmoDragging` PIE PASS 25/09 — chưa K2 event), `CancelInteractiveEdit()` node đầu + broadcast cuối nhánh Undo/Redo (U2.4–U2.6, PIE PASS, chưa K2 — phía Inventory nghe đã ✓K2 25/09).
 Nguồn: `Blueprints/BP_UndoManager.md` v1.22 · `BP_FurnitureInputManager.md` v3.10 (Enhanced Input Actions).
 
 ### 5d — Ghi sổ lịch sử — 1 thao tác thành 1 entry (CaptureSnapshot)
@@ -987,12 +1009,12 @@ sequenceDiagram
   UM-->>IM: đọc nhóm + edit mode · GetGroupsForSnapshot() (hàm của UM), GET EditModeStack
   UM-->>UM: quét mọi actor tag FurnitureSpawned → S_FurniturePlacement (vị trí, RowName, GroupID, MaterialSlots, PersistentID)
   UM-->>IM: đọc đồ đang chọn + mode · GET SelectedActors, ActiveMode
-  UM-->>UM: đưa vào sổ · AppendEntry(Entry)
+  UM->>UM: đưa vào sổ · AppendEntry(Entry)
   Note over UM: AppendEntry: đang ở giữa sổ → cắt bỏ nhánh Redo · đủ MaxSteps → bỏ entry cũ nhất · ADD · CurrentIndex+1
-  UM-->>INV: báo tin · Broadcast OnHistoryChanged → RefreshParamPanel()
+  UM->>INV: báo tin · Broadcast OnHistoryChanged → RefreshParamPanel()
   Note over U,INV: Nguồn ghi sổ khác cùng đường CaptureSnapshot: Select/Deselect/BoxSelect/Group (InputManager) · Replace · Reset vật liệu · Combo. Riêng chỉnh thông số vật liệu đi CommitInteractiveEdit (5b), cũng kết thúc bằng AppendEntry.
 ```
-**Kiểm chứng K2:** ngoài `GZ→UM`, không cạnh nào trong sơ đồ này là K2 trọn vẹn — `BuildSceneSnapshotBase` mới soi K2 ~40% đầu (U2.3), `AppendEntry`/`CaptureSnapshot` 2-node theo doc + PIE (W7, REG-01..05). Nguồn ghi sổ `IM→UM CaptureSnapshot("Select")` là K2 (2026-09-12, xem 5a). `GZ→UM` ✓K2 2026-09-24 (export `OnMouseReleased` — nhánh "Scale" so nhầm `NewEnumerator2`, đã sửa 25/09 — Branch 2 so `ActiveMode == Scale`, PIE PASS 3/3, xem `BP_GizmoController.md` v1.3).
+**Kiểm chứng K2:** ngoài `GZ→UM`, không cạnh nào trong sơ đồ này là K2 trọn vẹn — `BuildSceneSnapshotBase` mới soi K2 ~40% đầu (U2.3), `AppendEntry` ✓K2 2026-09-25 (thân khớp doc: cắt Redo → bỏ cũ nhất → ADD → +1 → Broadcast); `CaptureSnapshot` 2-node theo doc + PIE (W7, REG-01..05). `UM→INV` Broadcast → `Handle_HistoryChanged` → `RefreshParamPanel` ✓K2 2026-09-25 (bind ở Inventory Event Construct Then 6). Nguồn ghi sổ `IM→UM CaptureSnapshot("Select")` là K2 (2026-09-12, xem 5a). `GZ→UM` ✓K2 2026-09-24 (export `OnMouseReleased` — nhánh "Scale" so nhầm `NewEnumerator2`, đã sửa 25/09 — Branch 2 so `ActiveMode == Scale`, PIE PASS 3/3, xem `BP_GizmoController.md` v1.3).
 Nguồn: `Blueprints/BP_UndoManager.md` v1.22 (BuildSceneSnapshotBase, AppendEntry, CaptureSnapshot) · `BP_GizmoController.md`.
 
 ### 5e — Undo 1 entry Snapshot — RestoreSnapshot (destroy + spawn lại)
@@ -1053,12 +1075,12 @@ sequenceDiagram
   MC-->>IM: đặt chế độ · SET ActiveMode = Move
   MC-->>GZ: tắt rồi bật lại gizmo kiểu kéo · DeactivateGizmo() → ActivateGizmo(GizmoPivotActor nếu ≥2 món, không thì SelectedFurnitureActor, Translation) ?
   U->>IM: nhấn chuột lên 1 trục gizmo · Mouse Left Pressed (Step 0 SET bLMBHeld = True)
-  IM-->>GZ: 2. chuyển lượt bấm cho gizmo · OnMousePressed()
+  IM->>GZ: 2. chuyển lượt bấm cho gizmo · GizmoControllerRef.OnMousePressed()
   GZ-->>GZ: tia chỉ trúng gizmo → nhớ trục + mốc, khoá xoay camera · LineTrace(GizmoTrace) → Cast BaseGizmo → SET ActiveAxis, bIsDraggingGizmo = True, InitialActorLocation, PreviousMousePosition, DragPlane · Set Ignore Look Input = True
   opt đang chọn ≥2 món (SelectedActor là Pivot)
     GZ-->>PV: chụp vị trí tương đối từng món so với pivot · Cast BP_PivotActor → RefreshOffsets()
   end
-  IM-->>IM: 3. đang cầm trục → DỪNG, không ghi PendingClickActor, không mở box select · Branch bIsDraggingGizmo == True
+  IM->>IM: 3. đang cầm trục → DỪNG, không ghi PendingClickActor, không mở box select · Branch GizmoControllerRef.bIsDraggingGizmo
   loop mỗi frame khi còn giữ chuột
     U->>GZ: rê chuột (không bắn event, GZ tự đọc chuột mỗi frame)
     GZ-->>IM: hỏi chế độ · Event Tick → GET ActiveMode (= Move)
@@ -1071,20 +1093,20 @@ sequenceDiagram
     end
   end
   U->>IM: thả chuột
-  IM-->>GZ: chuyển lượt thả cho gizmo · Mouse Left Released (gizmo) → OnMouseReleased()
+  IM->>GZ: chuyển lượt thả cho gizmo · Mouse Left Released (gizmo) → OnMouseReleased()
   GZ->>GZ: 3 lớp chặn, trượt lớp nào là dừng luôn (dead-end) · Branch bGizmoActive → IsValid(SelectedActor) → bIsDraggingGizmo
   GZ->>IM: hỏi chế độ · Get All Actors Of Class → Get(0).ActiveMode (= Move)
   GZ->>UM: ghi sổ 1 entry "Move" · CaptureSnapshot("Move") → chi tiết 5d
   Note over GZ,UM: CaptureSnapshot quét tag FurnitureSpawned → ghi vị trí MỚI của từng món. Pivot mang tag FurniturePivot → KHÔNG vào sổ.
   GZ->>GZ: dọn cờ kéo, mở lại xoay camera — CHỈ chạy sau CaptureSnapshot · SET bIsDraggingGizmo = False, ActiveAxis = "" · Set Ignore Look Input = False
-  IM-->>IM: phần chọn đồ của lượt thả không làm gì · OnLMBReleased → Then 2 thấy bIsPendingBoxSelect = False → selection giữ nguyên
-  Note over MC,UM: 1 lượt thả chạy 2 handler (Mouse Left Released gizmo + OnLMBReleased) — doc không ghi cái nào trước (?). Ở luồng Move không ảnh hưởng vì OnLMBReleased không đụng selection.
+  IM->>IM: phần chọn đồ của lượt thả không làm gì · OnLMBReleased → Then 2 thấy bIsPendingBoxSelect = False → selection giữ nguyên
+  Note over MC,UM: 1 lượt thả chạy 2 handler ở 2 hệ input - Input Key LMB Released → OnMouseReleased, Enhanced Input IA_LeftRelease → OnLMBReleased. Thứ tự không cam kết - logic không được phụ thuộc. Luồng Move không phụ thuộc vì OnLMBReleased không đụng selection.
   Note over U,UM: Đường ngược (6A) — Ctrl+Z → 5c → entry "Move" là Snapshot → 5e dựng lại cả scene từ ảnh trước khi kéo.
 ```
-**Kiểm chứng K2:** thân `BP_GizmoController.OnMouseReleased` ✓K2 2026-09-24 (3 lớp chặn · GET ActiveMode · CaptureSnapshot · dọn cờ). Còn lại theo doc. Thân `OnLMBReleased` là ✓K2 (2026-09-12, xem 5a) nhưng kết luận "selection giữ nguyên" dựa vào Step 3 của `Mouse Left Pressed` (theo doc) → giữ nét đứt.
-**?** (1) `WBP_MeshControls` gọi `DeactivateGizmo`/`ActivateGizmo` nhưng doc không ghi lấy tham chiếu `BP_GizmoController` từ đâu. (2) Step 3 đọc `bIsDraggingGizmo` — biến này KHÔNG có trong Variables của InputManager → nhiều khả năng là `GizmoControllerRef.bIsDraggingGizmo`, chờ K2. (3) Thứ tự 2 handler lúc thả chuột.
+**Kiểm chứng K2:** thân `BP_GizmoController.OnMouseReleased` ✓K2 2026-09-24 (3 lớp chặn · GET ActiveMode · CaptureSnapshot · dọn cờ). IM Input Key LMB Pressed (Step 0–7) + Released — 2026-09-25 → bước bấm/thả và "selection giữ nguyên" nét liền. Còn lại theo doc.
+**?** (1) `WBP_MeshControls` gọi `DeactivateGizmo`/`ActivateGizmo` nhưng doc không ghi lấy tham chiếu `BP_GizmoController` từ đâu. (2) ~~Step 3 đọc biến nào~~ — ✓K2 25/09: `GizmoControllerRef.bIsDraggingGizmo`. (3) ~~Thứ tự 2 handler lúc thả chuột~~ — đóng 25/09: `OnLMBReleased` do `IA_LeftRelease` (Enhanced Input) gọi, gizmo do Input Key LMB Released gọi; 2 hệ khác nhau, thứ tự không cam kết, hiện không có phụ thuộc.
 **⚠ Từ K2 24/09:** (1) ~~dọn cờ chỉ chạy sau CaptureSnapshot → kẹt `bIsDraggingGizmo` + Ignore Look Input khi Ctrl+Z lúc đang kéo~~ — đã sửa 25/09 (lớp chặn 1–2 → Branch mới `bIsDraggingGizmo` → dọn cờ, không ghi sổ), PIE PASS. Mốc "Move" thừa khi Undo về mốc có selection — đã chặn ở cửa vào: IA Undo/Redo bỏ qua khi đang kéo (`IsGizmoDragging`), PIE PASS 25/09. (2) ~~2 Branch chọn tên entry cùng so `ActiveMode == NewEnumerator2` → nhánh "Scale" không bao giờ chạy~~ — đã sửa 25/09 — Branch 2 so `ActiveMode == Scale`, PIE PASS 3/3. Chi tiết `BP_GizmoController.md` v1.3.
-**K2 cần để nâng nét liền (ưu tiên):** ① ~~`OnMouseReleased`~~ xong 24/09 · ② `BP_FurnitureInputManager` Mouse Left Pressed Step 0–3 + Mouse Left Released (gizmo) · ③ `BP_GizmoController` Event Tick nhánh Move (Then 1) · ④ `WBP_MeshControls` BTN_Move OnClicked.
+**K2 cần để nâng nét liền (ưu tiên):** ① ~~`OnMouseReleased`~~ xong 24/09 · ② ~~IM Mouse Left Pressed + Released~~ xong 25/09 · ③ `BP_GizmoController` Event Tick nhánh Move (Then 1) · ④ `WBP_MeshControls` BTN_Move OnClicked.
 **Lệch Phần 3a:** đã bổ sung ở v1.7 (`MESHCTRL→IM`, `MESHCTRL→GIZMO`, `GIZMO→FA`).
 Nguồn: `Blueprints/BP_GizmoController.md` v1.1 (ActivateGizmo, DeactivateGizmo, OnMousePressed, OnMouseReleased, Event Tick — Movement) · `BP_FurnitureInputManager.md` v3.9 (Mouse Left Pressed v1.5, Mouse Left Released (gizmo) v1.4, OnLMBReleased ✓K2, SpawnOrUpdatePivot, UpdateGizmo) · `BP_PivotActor.md` v1.1 (RefreshOffsets, ApplyTransformToChildren, tag FurniturePivot) · `Widgets/WBP_MeshControls.md` v1.8 (Pattern BTN_Move).
 
@@ -1101,9 +1123,9 @@ sequenceDiagram
   participant IM as BP_FurnitureInputManager
   participant UM as BP_UndoManager
   participant INV as WBP_FurnitureInventory
-  TD-->>IM: khởi động - sinh các manager (Input, Undo, Scene, Combo, UserPrefs) · Spawn (Event Construct, Then 0..13) ?
+  TD->>IM: khởi động - sinh các manager (Undo, Scene, Input, Gizmo, Groups, UserPrefs, Combo) + Toast · Spawn (Event Construct Then 11)
   IM->>IM: bật bộ phím nội thất 1 lần, giữ suốt phiên · BeginPlay → EnableInput → AddMappingContext(LM_FurnitureInput, Priority 5)
-  TD-->>UM: lưu mốc đầu tiên của sổ lịch sử · CaptureSnapshot("Initial")
+  TD->>UM: lưu mốc đầu tiên của sổ lịch sử · CaptureSnapshot("Initial")
   U->>TD: bấm nút Kho đồ · BTN_FurnitureInventory
   TD-->>INV: mở kho - tạo 1 lần, các lần sau chỉ bật Visibility · Open widget
   INV-->>INV: Event Construct - dựng cây thư mục, lọc lần đầu · BuildFolderTree → PopulateTreeColumn → FilterByFolderPath()
@@ -1116,7 +1138,8 @@ sequenceDiagram
 ```
 **Kiểm chứng K2:** `IM` Event BeginPlay (`EnableInput` → `AddMappingContext(LM_FurnitureInput, P5)`) — 2026-09-25. Còn lại theo doc.
 **[25/09 v1.11] Sửa drift:** bản v1.8 vẽ `AddFurnitureInput` / `RemoveFurnitureInput` qua `BP_FoffPlayerController` theo doc cũ — sai từ Gate 1.5 B2 (18/08), đã bỏ.
-**CONFLICT:** Phần 3d ghi `WBP_FOFF_ToolDemo` Event Construct (Then 0..13) sinh các manager, còn `BP_FurnitureInputManager.md` mục "Level Blueprint — Spawn Order" ghi Level BP sinh theo thứ tự UndoManager → SceneManager → TransformerPawn → GizmoController → InputManager → MeshControls → `CaptureSnapshot("Initial")`. Vẽ theo 3d, giữ `?` tới khi có K2 `WBP_FOFF_ToolDemo` Event Construct.
+**Kiểm chứng K2 (tiếp):** `WBP_FOFF_ToolDemo` Event Construct Then 11 (spawn + `CaptureSnapshot("Initial")`) — 2026-09-25. CONFLICT Level BP đã đóng: widget sinh, IM sinh TRƯỚC Gizmo.
+**?** `ToastRef` trong chuỗi khởi động gán vào `BP_FurnitureSceneManager`; các chỗ ghi `Foff_GameInstance.ToastRef` (bảng Phần 1, cạnh `COMBO→GI`, `INV→GI`) chưa có K2 — có thể là đường cũ.
 **?** `WBP_FOFF_ToolDemo` chưa có doc canonical — mũi tên mở kho rút từ 3d.
 Nguồn: `Blueprints/BP_FurnitureInputManager.md` v3.10 (Event BeginPlay ✓K2) · `Widgets/WBP_FurnitureInventory.md` (Event Construct, BTN_Close, Level Blueprint) · `BP_FurnitureInputManager.md` (Level Blueprint — Spawn Order) · Phần 3d.
 
@@ -1208,20 +1231,21 @@ sequenceDiagram
     IM->>IM: kéo quá 5px → thành quét khung · SET bIsBoxSelecting = True, bIsPendingBoxSelect = False
     IM->>BX: hiện và vẽ khung theo chuột · ShowBox() → UpdateBox(BoxStartPos, chuột)
   end
-  U->>IM: thả chuột · OnLMBReleased (Sequence Then 1)
+  U->>IM: thả chuột · IA_LeftRelease → OnLMBReleased (Sequence Then 1)
   IM->>IM: chốt khung · FinishBoxSelect(EndPos)
-  IM-->>IM: lấy đồ có ĐIỂM GỐC nằm trong khung (không theo bounding box) · Project World To Screen ÷ Get Viewport Scale
+  IM->>IM: lấy đồ có ĐIỂM GỐC nằm trong khung (không theo bounding box) · Project World To Screen ÷ Get Viewport Scale → ADD LocalSelected
+  IM->>IM: trúng 1 món trong nhóm thì lấy cả nhóm · ExpandSelectionWithGroups(LocalSelected) → ExpandedActors
   alt giữ Ctrl
-    IM-->>IM: cộng dồn vào selection cũ · ToggleActor() từng món
+    IM->>IM: cộng dồn vào selection cũ · ToggleActor() từng món
   else không giữ Ctrl
-    IM-->>IM: thay selection · DeselectAll() → SelectActors(LocalSelected)
+    IM->>IM: thay selection · DeselectAll() → SelectActors(ExpandedActors)
   end
-  IM-->>UM: ghi sổ · CaptureSnapshot("BoxSelect")
+  IM->>UM: ghi sổ 1 lần (cả 2 nhánh) · CaptureSnapshot("BoxSelect")
   IM->>BX: ẩn khung, dọn cờ · HideBox() → SET bIsBoxSelecting = False, PendingClickActor = None
   Note over U,UM: Kéo chưa tới 5px thì là click đơn → 5a. Tick còn 1 nhánh dự phòng (thả chuột lọt giữa 2 frame) cũng gọi FinishBoxSelect.
 ```
-**Kiểm chứng K2:** nhánh box của Event Tick (`SET bIsBoxSelecting`, `ShowBox`, `UpdateBox`) — 2026-07-24 (C9.0c) · `OnLMBReleased` Then 1 (gọi `FinishBoxSelect`, `HideBox`) — 2026-09-12 (G6.0). Thân `FinishBoxSelect` theo doc v1.5.
-**CONFLICT:** `ExpandSelectionWithGroups` ghi "Dùng ở: … box select (FinishBoxSelect)", nhưng thân `FinishBoxSelect` v1.5 không có node này → chưa rõ quét khung có lấy cả nhóm không. Cần K2 `FinishBoxSelect`.
+**Kiểm chứng K2:** nhánh box của Event Tick (`SET bIsBoxSelecting`, `ShowBox`, `UpdateBox`) — 2026-07-24 (C9.0c) · `OnLMBReleased` Then 1 (gọi `FinishBoxSelect`, `HideBox`) — 2026-09-12 (G6.0). Thân `FinishBoxSelect` — 2026-09-25 (CONFLICT cũ đã đóng: có `ExpandSelectionWithGroups`; khung rỗng thì không ghi sổ).
+Bug-BoxSelectCtrl-MultiSnapshot (nhánh Ctrl ghi N mốc) đã fix 25/09, PIE PASS.
 Nguồn: `Blueprints/BP_FurnitureInputManager.md` (TƯƠNG TÁC 3 ĐIỂM, Mouse Left Pressed, Event Tick — Box Select branch ✓K2 24/07, OnLMBReleased ✓K2 12/09, FinishBoxSelect) · `Widgets/WBP_BoxSelectOverlay.md`.
 
 ### 5k — Nhích đồ bằng phím mũi tên (Nudge)
@@ -1263,7 +1287,7 @@ sequenceDiagram
   participant GRP as BP_GroupsContainer
   participant FA as BP_FurnitureActor (mỗi món)
   participant UM as BP_UndoManager
-  U->>IM: chọn từ 2 món trở lên rồi Ctrl+G · IA_GroupCreate → CreateGroup() (nơi bắt phím chưa ghi ?)
+  U->>IM: chọn từ 2 món trở lên rồi Ctrl+G · IA_GroupCreate → CreateGroup()
   IM-->>IM: gom đơn vị - nhóm con giữ nguyên + đồ rời, cần ≥2 đơn vị · ComputeSelectionUnits()
   IM-->>GRP: đặt tên "Nhóm N" rồi tăng bộ đếm · GET / SET GroupNameCounter
   IM-->>IM: nhóm con đổi cha thành nhóm mới · GenerateGroupID() → Rebuild Groups (ParentGroupID = NewGID)
@@ -1277,11 +1301,11 @@ sequenceDiagram
   Note over MC,UM: Đang sửa nhóm - click chỉ chọn thành viên trực tiếp (ResolveSelectionUnit), đồ mới thả / dán tự vào nhóm (GetCurrentEditScope).
   U->>MC: "Lên 1 cấp" hoặc "Thoát" · BTN_ExitOneLevel / BTN_ExitFull
   MC-->>IM: ra 1 cấp hoặc ra hẳn, chọn lại cả cây vừa sửa · ExitEditModeOneLevel() / ExitEditModeFull()
-  U->>IM: Ctrl+Shift+G bỏ nhóm (bóc đúng 1 lớp) · IA_GroupUngroup → UngroupActors(GroupID) ?
+  U->>IM: Ctrl+Shift+G bỏ nhóm (bóc đúng 1 lớp) · IA_Ungroup → UngroupActors(GroupID)
   IM-->>UM: ghi sổ 1 lần ở cuối · CaptureSnapshot("Ungroup")
 ```
 **Kiểm chứng K2:** chưa có — toàn bộ theo doc (CreateGroup v1.9, UngroupActors v1.8, Edit Mode v1.7).
-**?** Doc chỉ ghi Ctrl+G / Ctrl+Shift+G là `IA_GroupCreate` / `IA_GroupUngroup` (`Data_Structures.md`), không ghi Blueprint nào bắt 2 phím này. Vào / ra sửa nhóm không ghi sổ Undo riêng — `EditModeStack` đi kèm mọi snapshot.
+**Đã đóng `?` (25/09, Find in Blueprints — cuhoang):** 2 event `IA_GroupCreate` và `IA_Ungroup` nằm trong `BP_FurnitureInputManager` (tên thật `IA_Ungroup`, `Data_Structures.md` ghi `IA_GroupUngroup` — lệch tên). Thân event chưa K2. Vào / ra sửa nhóm không ghi sổ Undo riêng — `EditModeStack` đi kèm mọi snapshot.
 Nguồn: `Blueprints/BP_FurnitureInputManager.md` (CreateGroup, UngroupActors, SyncGroupsToContainer, EDIT MODE FUNCTIONS, ResolveSelectionUnit) · `Blueprint_Logic_NodeFlow.md` (OnClicked BTN_EnterEdit / ExitOneLevel / ExitFull, caller Ctrl+Shift+G) · `Widgets/WBP_MeshControls.md`.
 
 ### 5m — Menu chuột phải và phím tắt (copy · dán · nhân bản · xoá)
@@ -1450,8 +1474,10 @@ sequenceDiagram
   U->>IM: chọn từ 2 món → chuột phải "Lưu combo" · CB_SaveCombo → CB_SaveCombo_Handler
   IM->>IM: dưới 2 món → chặn im lặng, không báo gì · Branch(Length ≥ 2)
   IM->>IM: tính điểm neo (tâm XY + đáy theo sàn / trần) · CalculateComboAnchor(SelectedActors)
-  IM-->>IM: đang đứng trong 1 combo có sẵn → cho phép Ghi đè · ResolveActiveComboForSave() ?
-  IM->>INV: mở hộp thoại, đóng băng danh sách đồ · OpenSaveComboDialog(SelectedActors, Center)
+  IM->>IM: tìm kho đồ, không có thì chỉ in log · GetAllWidgetsOfClass(WBP_FurnitureInventory) → IsValid
+  IM->>IM: đang đứng trong 1 combo có sẵn → cho phép Ghi đè · ResolveActiveComboForSave()
+  IM->>INV: mở hộp thoại, đóng băng danh sách đồ · OpenSaveComboDialog(SelectedActors, Center, ActiveComboID, bCanOverwrite, ReasonText)
+  IM->>IM: đóng menu chuột phải · ContextMenuRef.Hide() → SET ContextMenuRef = None
   INV-->>DLG: tạo hộp thoại điền sẵn tên / thư mục / tag, gắn 3 nút · Create WBP_SaveComboDialog → Bind OnDialogConfirmed, OnDialogConfirmedOverwrite, OnDialogCancelled
   U->>DLG: chọn thư mục, đặt tên → Lưu mới / Ghi đè / Huỷ
   DLG-->>INV: báo tin nút đã bấm · Broadcast OnDialogConfirmed / OnDialogConfirmedOverwrite / OnDialogCancelled
@@ -1463,8 +1489,7 @@ sequenceDiagram
   INV-->>INV: đóng hộp thoại, trả lại input cho viewport · OnSaveComboDialogClosed → Set Input Mode Game And UI
   Note over U,TH: Lưu combo KHÔNG ghi sổ Undo - đây là thao tác thư viện (file JSON), cảnh không đổi.
 ```
-**Kiểm chứng K2:** thân `CB_SaveCombo_Handler` (guard ≥2, `CalculateComboAnchor`, `OpenSaveComboDialog`) — 2026-08-04 · Bước 7 chụp ảnh bìa (`BeginThumbnailCapture`) — tái xác nhận 2026-08-04. Còn lại theo doc + test (Save As / Ghi đè ✓TEST 07/08).
-**CONFLICT:** `WBP_FurnitureInventory.md` ghi `OpenSaveComboDialog` đã mở rộng +3 tham số (`ActiveComboID`, `bCanOverwrite`, `ReasonText`) lấy từ `ResolveActiveComboForSave()` chèn vào `CB_SaveCombo_Handler`, nhưng bản K2 04/08 của handler KHÔNG có node đó (việc chèn "chưa phân phối vào doc InputManager") → mũi tên `ResolveActiveComboForSave` giữ `?`.
+**Kiểm chứng K2:** thân `CB_SaveCombo_Handler` (guard ≥2, `CalculateComboAnchor`, `OpenSaveComboDialog`) — 2026-08-04; `ResolveActiveComboForSave` + 3 tham số — 2026-09-25 · Bước 7 chụp ảnh bìa (`BeginThumbnailCapture`) — tái xác nhận 2026-08-04. Còn lại theo doc + test (Save As / Ghi đè ✓TEST 07/08).
 Nguồn: `Blueprints/BP_FurnitureInputManager.md` (CB_SaveCombo_Handler ✓K2 04/08, ResolveActiveComboForSave) · `Widgets/WBP_FurnitureInventory.md` (C3b — OpenSaveComboDialog, OnSaveComboConfirmed, HandleSaveComboOverwriteConfirmed, OnSaveComboDialogClosed) · `Widgets/WBP_SaveComboDialog.md` · `Blueprints/BP_ComboManager.md` (SaveComboFromSelection) · `Data/ComboSerializer_Reference.md`.
 
 ### 5r — Đặt combo từ thư viện vào phòng
@@ -1547,20 +1572,22 @@ sequenceDiagram
   participant FA as BP_FurnitureActor (mỗi món)
   participant EIL as UEntityIdLibrary (C++)
   participant MSS as MaterialSlotService (C++)
-  U->>SM: lưu cảnh (Ctrl+S ?) · SaveFurnitureScene() → Save Game Actors (Level Only)
+  U->>SGM: phím M mở menu Save/Load → chọn / đặt tên slot → Save
   Note over U,MSS: EMS ghi mọi actor có biến SaveGame - mỗi món (MeshPath, RowName, PlacementSurfaceType, GroupID, PersistentID, MaterialSlots) và BP_GroupsContainer (Groups, GroupNameCounter).
   U->>SGM: bấm Load trong menu Save/Load
   SGM-->>SM: báo tin, SM tự bind lại mỗi Tick khi menu mới xuất hiện · OnLoadButtonClicked
   SM-->>IM: bỏ chọn + tắt gizmo TRƯỚC khi xoá · DeselectMesh()
   SM-->>FA: xoá hết đồ đang có · Destroy Actor (tag FurnitureSpawned)
-  Note over SM,FA: EMS nạp lại actor từ slot (Load Game Actors, Full Reload). SM có LoadFurnitureScene() nhưng doc chưa ghi ai gọi (?).
+  Note over SM,FA: EMS nạp lại actor từ slot (Load Game Actors, Full Reload). SM có định nghĩa SaveFurnitureScene() / LoadFurnitureScene() nhưng chưa rõ menu có gọi 2 event này không (?).
   FA-->>FA: chờ EMS nạp xong biến SaveGame, MeshPath rỗng thì tự huỷ · Event ActorLoaded → AsyncWaitForOperation(CT_Load)
   FA-->>EIL: giữ danh tính cũ, chỉ sinh mới khi rỗng · EnsurePersistentId()
   FA-->>FA: nạp mesh (đồng bộ) · LoadAsset_Blocking(MeshPath) → SetStaticMesh
   FA-->>MSS: gắn lại vật liệu + thông số từng slot · RestoreMyMaterialSlots → Rst_LoadNextSlot → ApplyLoadedMaterialToSlot() → ApplyParamsJsonToSlot()
+  Note over U,MSS: ⚠ Sổ Undo KHÔNG bị xoá khi Load — Ctrl+Z ngay sau Load đưa về cảnh TRƯỚC Load (PIE 25/09). Xem Open_Bugs Bug-UndoAcrossLoad.
 ```
 **Kiểm chứng K2:** chưa có mũi tên liền. `Event ActorLoaded` bản 07/09 dịch từ K2 (delta S7.G3), bản hiện hành chèn thêm `EnsurePersistentId` 21/09 (PIE, chưa K2).
-**?** (1) Phím / nút nào gọi `SaveFurnitureScene` và `LoadFurnitureScene` — danh sách phím tắt ghi "Ctrl+S/O = Save/Load" nhưng không ghi Input Action hay handler. (2) Sổ Undo sau khi Load — doc không ghi có xoá hay ghi mốc mới không.
+**Đã rõ (25/09, PIE — cuhoang):** lưu / mở cảnh qua **menu Save/Load của project (phím M)** — nút Load / Save / Delete / Back; Ctrl+S / Ctrl+O KHÔNG có (danh sách phím tắt cũ ghi sai, đã sửa). Sổ Undo KHÔNG xoá khi Load.
+**?** `SaveFurnitureScene` / `LoadFurnitureScene` định nghĩa ở `BP_FurnitureSceneManager` — chưa rõ menu có gọi không (có thể không dùng).
 Nguồn: `Blueprints/BP_FurnitureSceneManager.md` (Event Tick, OnLoadButtonClicked, SaveFurnitureScene, LoadFurnitureScene) · `Blueprints/BP_FurnitureActor.md` (Event ActorLoaded, RestoreMyMaterialSlots, Rst_LoadNextSlot) · `Widgets/WBP_FurnitureInventory.md` (Keyboard Shortcuts, EMS).
 
 ---

@@ -1,5 +1,7 @@
 # WBP_FurnitureInventory
 **HỢP NHẤT TỪ 4 file:** v2.2 + v2.3 Resize patch + v2.3 Inventory_Card patch (08/06) → WBP_FurnitureInventory.md (11/06) + v2.4 dispatcher refactor (10/06)
+**Phiên bản:** 3.35 | **Cập nhật:** 25/09/2026 09:40 — Event Construct **✓K2 export 25/09**: Sequence Then 2 (`GetAllActorsOfClass(BP_UndoManager)[0]` → SET `UndoManagerRef` → Bind `OnRestoreCompleted`) + Then 6 (tạo Inspector + 3 bind + Bind `UndoManagerRef.OnHistoryChanged → Handle_HistoryChanged → RefreshParamPanel`) — khớp doc.
+**Phiên bản:** 3.34 | **Cập nhật:** 25/09/2026 09:30 — sửa dòng Keyboard Shortcuts: lưu / mở cảnh = phím **M** (menu Save/Load của project), KHÔNG có Ctrl+S/O (PIE cuhoang 25/09).
 **Phiên bản:** 3.33 | **Cập nhật:** 24/09/2026 16:10 — **U2.4 + U2.5 (Undo Architecture, Interactive Edit Session) — PASS.** +2 Custom Event `Handle_ScalarBegin`/`Handle_ColorBegin` (bind `OnEditBegin` → `BeginInteractiveEdit`) · `Handle_ScalarCommit`/`Handle_ColorCommit` đổi `CaptureSnapshot(...)` → `CommitInteractiveEdit()` · +4 Cancel seam (`OnMeshSelected` nhánh Material, `CloseMaterialInspector`, `NotifyViewportSlotClick`, `OnSlotSwatchClicked`) · seam #6 mới: Event Construct bind `UndoManagerRef.OnHistoryChanged → Handle_HistoryChanged → RefreshParamPanel` · `RefreshParamPanel` seed đọc qua `GetSlotScalarParam`/`GetSlotVectorParam` (C++) thay cụm `Cast MI→MID + fallback hằng số` — hết hiện 0/FFFFFF cho slot chưa chỉnh. **Mức bằng chứng:** cuhoang build theo hướng dẫn, compile xanh + PIE PASS — CHƯA soi K2 export. Preview handler KHÔNG thêm guard `Sess_Active` (D-11). Xem `BP_UndoManager.md` v1.21, `DEVIATIONS.md` D-5..D-12.
 **Phiên bản:** 3.32 | **Cập nhật:** 18/09/2026 (tiếp 2) — **S7G7T4 GATE ĐÓNG — PASS.** Thân thật 5 handler: `Handle_ScalarPreview`/`Handle_ScalarCommit` (`SetSlotScalarParam`, live/snapshot), `Handle_ColorPreview`/`Handle_ColorCommit` (`SetSlotVectorParam`), `Handle_ResetParamsRequested` (thay STUB — `ClearSlotParams`+snapshot+RefreshParamPanel). 4 handler bind qua dispatcher 2-input `(ParamName, Value)` — xem `WBP_ParamScalarRow`/`WBP_ParamColorRow` v1.1 (dispatcher +`ParamName`). Snapshot chỉ khi service `ok=true` (nhất quán 5 handler). **Giới hạn chấp nhận (Hướng 1):** undo/redo VALUE đúng, nhưng slot-highlight mất sau undo do Undo = destroy+respawn actor (`SelectedSlotIndex`/`Name` là widget-state, không sống qua respawn) → Inspector về placeholder, user click lại slot. Root cause + hướng fix proper: `00_Core/DEVIATIONS.md` mục "Param-Undo slot-context" + `Bugs/Open_Bugs.md` backlog. 2 fix undo phụ (Equal-guard `OnMeshSelected` [K2 18/09] + `ApplyRestoredActor`) build kèm — inert cho undo path (respawn actor) nhưng đúng cho reselect-same-actor thường. Seam #6 (`RefreshParamPanel` ở `ApplyRestoredActor`) DONE. Seam #7 (`EndParamSession`, T4b) CHƯA. **CHƯA đóng dấu `[CHỨA AS-BUILT]`** — đã merge thẳng canonical.
 **Phiên bản:** 3.31 | **Cập nhật:** 18/09/2026 (tiếp) — **Đóng `Bug-MaterialEdit-EnableState`.** Root cause thật: 2 lỗi cộng dồn, cả 2 đều "entry point cũ không rà lại khi seam mới ra đời" — (1) `RefreshSlotSwatches()` rebuild list không tự gọi `HighlightSwatchByIndex` → thêm 1 dòng `Completed ▶→ HighlightSwatchByIndex(SelectedSlotIndex)` cuối hàm; (2) `BTN_ResetSlot`/`BTN_ResetAll` (S7.G2, có trước Inspector) không gọi `RefreshParamPanel()` → thêm 1 dòng cuối mỗi nhánh. Seam #5 (`SwitchInventoryMode`) thêm `Branch(SelectedSlotIndex>=0)→SetIsEnabled(BTN_MaterialEdit)` — chèn TRƯỚC `Branch(IsInspectorVisible())` đã có, đúng vị trí "CUỐI nhánh Material". Cả 3 test PASS. Nguồn rule mới `AI_Implementation_Rules.md` Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit), viết từ chính 2 bug này.
@@ -622,7 +624,7 @@ Function UpdateInspectorVisibility()
      False → (dead-end)
 ```
 
-### Event Construct — APPEND (18/09/2026)
+### Event Construct — APPEND (18/09/2026) — ✓K2 25/09/2026 (Sequence Then 6)
 ```
 ▶→ Create Widget(WBP_MaterialInspector) ●→ SET MaterialInspectorRef
 ▶→ MaterialInspectorRef.SetVisibility(Collapsed)
@@ -634,6 +636,7 @@ Function UpdateInspectorVisibility()
 ```
 > ⚠ `UndoManagerRef` phải được SET TRƯỚC node Bind này — bind vào None thì im lặng không bao giờ bắn. PIE U2.5 PASS
 > (slider tự về đúng giá trị sau Undo/Redo command) → thực tế đã đúng thứ tự.
+> **✓K2 25/09:** `UndoManagerRef` SET ở Sequence **Then 2** (`GetAllActorsOfClass(BP_UndoManager)[0]` → SET → Bind `OnRestoreCompleted`), khối trên ở **Then 6** → thứ tự đúng. Bind `OnHistoryChanged` KHÔNG có `IsValid(UndoManagerRef)` trước (L1) — UndoManager chưa sinh lúc Construct thì bind vào None, im lặng. Ghi nhận, chưa sửa.
 
 ```
 Handle_HistoryChanged()   ← Custom Event (v3.33)
@@ -1284,8 +1287,8 @@ SET ComboManagerRef = None
 `Plans/03-08-2026_SaveAsOverwrite_Execution_Plan.md` mục 7b.3, ✓ as-built theo 7c, hạ tầng dựng
 TRƯỚC phiên T3, lần đầu phân phối vào file canonical này 07/08/2026]. 3 param nhận từ
 `ResolveActiveComboForSave()` (`BP_FurnitureInputManager`) tại call site `CB_SaveCombo_Handler`
-— **việc chèn `ResolveActiveComboForSave()` vào `CB_SaveCombo_Handler` CHƯA được phân phối vào
-`BP_FurnitureInputManager.md`**, xem cảnh báo cuối file (báo cáo merge 07/08/2026).
+— việc chèn `ResolveActiveComboForSave()` vào `CB_SaveCombo_Handler` đã phân phối vào
+`BP_FurnitureInputManager.md` v3.14 (✓K2 25/09/2026).
 ```
 SET PendingSelectedActors = SelectedActors
 SET PendingCenter = Center
@@ -2438,7 +2441,7 @@ Lỗi: Int Divide rồi Ceil → mất phần dư → TotalPages thấp hơn th�
 ---
 
 ## Keyboard Shortcuts
-Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Ctrl+Z / Ctrl+Shift+Z = Undo/Redo (sửa 24/09 — trước ghi nhầm Alt+Z) | Ctrl+S/O = Save/Load | I = Inventory | Esc = Deselect | Ctrl+G / Ctrl+Shift+G = Group/Ungroup (Sprint 3)
+Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Ctrl+Z / Ctrl+Shift+Z = Undo/Redo (sửa 24/09 — trước ghi nhầm Alt+Z) | M = menu Save/Load của project (sửa 25/09 — trước ghi nhầm Ctrl+S/O) | I = Inventory | Esc = Deselect | Ctrl+G / Ctrl+Shift+G = Group/Ungroup (Sprint 3)
 
 ---
 
@@ -2533,6 +2536,7 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Ctrl+Z / Ctrl+Shift+Z = Und
 | 3.30 | 18/09/2026 — S7G7T3.3+T3.4 PASS | `RefreshParamPanel()` build đầy đủ (nhánh Scalar+Color, fallback MID trắng/MinValue, empty-state, bounds, `ForEach.Completed→Return`) — thay trạng thái "đang xây" v3.29. 4 var S7G7T3 nay đều có chỗ SET thật. Function mới: `UpdateInspectorVisibility`, `OpenMaterialInspector`/`CloseMaterialInspector` (dùng `Set Background Color` — task card rev6 ghi nhầm `SetHighlight`, hàm không tồn tại), `Handle_InspectorCloseRequested`, `Handle_ResetSlotRequested` (PASS); `Handle_ResetParamsRequested` (stub, chờ T4). Event Construct/Destruct +lifecycle inspector (R4). 5 seam APPEND vào routine có sẵn (`OnSlotSwatchClicked`/`NotifyViewportSlotClick`/`OnMeshSelected`/`LoadAndApplyMaterial`/`SwitchInventoryMode`) — seam #5 sửa vị trí: CUỐI nhánh Material (rev6 ghi ĐẦU hàm là SAI, gây highlight fail im lặng vì swatch chưa Visible). rev6 seam #6/#7 (`OnSceneRestored`/`EndParamSession`) CHƯA build — T4/T4b. Bug mới `Bug-MaterialEdit-EnableState` [OPEN] — nút Material Edit không disable đúng lúc, nghi seam #3. Nguồn: `Sprints/Sprint7/18-09-2026_S7G7_T3-T4_ASBUILT_delta.md`. |
 | 3.31 | 18/09/2026 (tiếp) — Đóng `Bug-MaterialEdit-EnableState` | Root cause thật (K2-verified) khác nghi vấn ban đầu: KHÔNG phải seam #3 không chạy — mà 2 lỗi "entry point cũ không rà lại khi seam mới ra đời": (1) `RefreshSlotSwatches()` v1.2 thêm `Completed ▶→ HighlightSwatchByIndex(SelectedSlotIndex)`; (2) `BTN_ResetSlot`/`BTN_ResetAll` thêm `RefreshParamPanel()` cuối mỗi nhánh; (3) seam #5 `SwitchInventoryMode` thêm `Branch(SelectedSlotIndex>=0)→SetIsEnabled(BTN_MaterialEdit)` chèn TRƯỚC `Branch(IsInspectorVisible())` đã có (cuối nhánh Material). Cả 3 test PASS. Sinh rule mới `Rules/AI_Implementation_Rules.md` Q10 — FLOW COVERAGE GATE (Cross-Flow Impact Audit), đặt trước Q9. |
 | 3.32 | 18/09/2026 (tiếp 2) — **S7G7T4 GATE ĐÓNG** | Thân thật 5 handler: `Handle_ScalarPreview`/`Commit` (`SetSlotScalarParam`), `Handle_ColorPreview`/`Commit` (`SetSlotVectorParam`), `Handle_ResetParamsRequested` (`ClearSlotParams`+snapshot+RefreshParamPanel, thay STUB). Dispatcher 2 row nâng 2-input `(ParamName,Value)` (xem `WBP_ParamScalarRow`/`WBP_ParamColorRow` v1.1). Snapshot chỉ khi `ok=true`. Live-preview + undo/redo VALUE PASS. Bug B3 (sót wire ParamName → preview màu hỏng ngầm) fix ở row. 2 fix undo phụ: Equal-guard `OnMeshSelected` [K2 `6adf2603`] + `ApplyRestoredActor` v1.2 (+seam #6 RefreshParamPanel). **Giới hạn Hướng 1:** undo value đúng nhưng mất slot-highlight (Undo=destroy+respawn actor) — xem `DEVIATIONS.md` + `Open_Bugs.md` backlog Hướng 3. Seam #7 (`EndParamSession`) CHƯA (T4b). |
+| 3.35 | 25/09/2026 09:40 | Event Construct ✓K2 (Then 2 SET UndoManagerRef + Bind OnRestoreCompleted; Then 6 Inspector + Bind OnHistoryChanged → Handle_HistoryChanged → RefreshParamPanel). Khớp doc. Ghi nhận thiếu IsValid trước Bind (L1). |
 | 3.33 | 24/09/2026 16:10 — **U2.4 + U2.5 PASS** | +`Handle_ScalarBegin`/`Handle_ColorBegin` (bind `OnEditBegin` → `BeginInteractiveEdit`). 2 handler Commit: `CaptureSnapshot` → `CommitInteractiveEdit()`. +4 Cancel seam (`OnMeshSelected` nhánh Material đầu, `CloseMaterialInspector` đầu, `NotifyViewportSlotClick` trước SET slot, `OnSlotSwatchClicked` đầu). Seam #6: bind `OnHistoryChanged → Handle_HistoryChanged → RefreshParamPanel`. `RefreshParamPanel` seed qua `GetSlot*Param` (C++) thay Cast MID + fallback hằng số. Chưa K2. `DEVIATIONS.md` D-5..D-12. |
 
 ---
@@ -2570,7 +2574,7 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Ctrl+Z / Ctrl+Shift+Z = Und
 - [[BP_FurnitureUserPrefsManager]] — đọc danh sách Gần đây / Yêu thích · GET UserPrefs → RecentMeshes / FavoriteMeshes
 - [[BP_UndoManager]] — nghe khôi phục xong · Bind OnRestoreCompleted
 - [[BP_UndoManager]] — mở / chốt / hủy phiên chỉnh param (U2.4-2.5) · BeginInteractiveEdit() / CommitInteractiveEdit() / CancelInteractiveEdit()
-- [[BP_UndoManager]] — nghe lịch sử đổi → refresh panel · Bind OnHistoryChanged → RefreshParamPanel()
+- [[BP_UndoManager]] — nghe lịch sử đổi → refresh panel · Bind OnHistoryChanged → RefreshParamPanel() ✓K2
 - [[FurnitureFilterLibrary_Reference]] — lọc vật liệu · FilterMaterialItems() (C++)
 - [[MaterialSlotService_Reference]] — reset param / reset về mặc định · ResetSlotToAssetDefault() / ResetAllSlotsToAssetDefault() ✓K2
 - [[MaterialSlotService_Reference]] — gán vật liệu vào slot (kéo-thả G5) · ApplyLoadedMaterialToSlot() → LoadAndApplyMaterial ✓K2
@@ -2598,7 +2602,8 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Ctrl+Z / Ctrl+Shift+Z = Und
 - [[BP_FurnitureInputManager]] — mở kho ở chế độ thay đồ · EnterReplaceMode() → FilterByFolderPathWithUI() ✓K2
 - [[WBP_FOFF_ToolDemo]] — mở inventory khi bấm nút · Open widget
 - [[BP_UndoManager]] — báo tin: khôi phục xong · Broadcast OnRestoreCompleted
-- [[BP_UndoManager]] — báo lịch sử vừa đổi (undo/redo param) · Broadcast OnHistoryChanged
+- [[BP_UndoManager]] — báo lịch sử vừa đổi (cuối AppendEntry) · Broadcast OnHistoryChanged ✓K2
+- [[BP_UndoManager]] — báo lịch sử vừa đổi (cuối nhánh Undo / Redo) · Broadcast OnHistoryChanged (Undo/Redo)
 - [[WBP_ParamScalarRow]] — báo đang kéo · OnPreviewChanged(ParamName, Value) ✓K2
 - [[WBP_ParamScalarRow]] — báo bắt đầu / thả · OnEditBegin(ParamName) → Handle_ScalarBegin, OnEditCommitted
 - [[WBP_ParamColorRow]] — báo đang chỉnh · OnPreviewChanged(ParamName, Value) ✓K2

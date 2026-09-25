@@ -365,7 +365,7 @@ IA_RightClick           (Boolean) — Right Mouse Button
 ### Mới — Sprint 3
 ```
 IA_GroupCreate          (Boolean) — Ctrl+G
-IA_GroupUngroup         (Boolean) — Ctrl+Shift+G
+IA_GroupUngroup         (Boolean) — Ctrl+Shift+G   ← tên THẬT trong project: `IA_Ungroup` (Find in Blueprints 25/09); event ở BP_FurnitureInputManager
 ```
 
 ### Mới — Sprint 6

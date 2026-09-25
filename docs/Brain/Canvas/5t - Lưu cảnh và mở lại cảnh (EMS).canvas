@@ -6,7 +6,7 @@
    "x": 2640,
    "y": 110,
    "width": 380,
-   "height": 2370,
+   "height": 2392,
    "label": "MaterialSlotService (C++)",
    "color": "6"
   },
@@ -16,7 +16,7 @@
    "x": 2200,
    "y": 110,
    "width": 380,
-   "height": 2370,
+   "height": 2392,
    "label": "UEntityIdLibrary (C++)",
    "color": "6"
   },
@@ -26,7 +26,7 @@
    "x": 1760,
    "y": 110,
    "width": 380,
-   "height": 2370,
+   "height": 2392,
    "label": "BP_FurnitureActor (mỗi món)",
    "color": "5"
   },
@@ -36,7 +36,7 @@
    "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 2370,
+   "height": 2392,
    "label": "BP_FurnitureInputManager",
    "color": "5"
   },
@@ -46,7 +46,7 @@
    "x": 880,
    "y": 110,
    "width": 380,
-   "height": 2370,
+   "height": 2392,
    "label": "BP_FurnitureSceneManager",
    "color": "5"
   },
@@ -56,7 +56,7 @@
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 2370,
+   "height": 2392,
    "label": "SaveGameMenu (menu Save/Load của project tổng)"
   },
   {
@@ -65,7 +65,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 2370,
+   "height": 2392,
    "label": "User"
   },
   {
@@ -148,18 +148,17 @@
   {
    "id": "s1",
    "type": "text",
-   "x": 905,
+   "x": 465,
    "y": 280,
    "width": 330,
-   "height": 212,
-   "text": "**1.** lưu cảnh (Ctrl+S ?)\n`SaveFurnitureScene() → Save Game Actors (Level Only)`\n↗ [[BP_FurnitureSceneManager#SaveFurnitureScene|BP_FurnitureSceneManager › SaveFurnitureScene]]\n<small>← User · thao tác người dùng</small>",
-   "color": "1"
+   "height": 124,
+   "text": "**1.** phím M mở menu Save/Load → chọn / đặt tên slot → Save\n<small>← User · thao tác người dùng</small>"
   },
   {
    "id": "n9",
    "type": "text",
    "x": 20,
-   "y": 532,
+   "y": 444,
    "width": 2980,
    "height": 70,
    "text": "📝 EMS ghi mọi actor có biến SaveGame - mỗi món (MeshPath, RowName, PlacementSurfaceType, GroupID, PersistentID, MaterialSlots) và BP_GroupsContainer (Groups, GroupNameCounter).",
@@ -169,7 +168,7 @@
    "id": "s2",
    "type": "text",
    "x": 465,
-   "y": 642,
+   "y": 554,
    "width": 330,
    "height": 102,
    "text": "**2.** bấm Load trong menu Save/Load\n<small>← User · thao tác người dùng</small>"
@@ -178,7 +177,7 @@
    "id": "s3",
    "type": "text",
    "x": 905,
-   "y": 784,
+   "y": 696,
    "width": 330,
    "height": 190,
    "text": "**3.** báo tin, SM tự bind lại mỗi Tick khi menu mới xuất hiện\n`OnLoadButtonClicked`\n↗ [[BP_FurnitureSceneManager#OnLoadButtonClicked|BP_FurnitureSceneManager › OnLoadButtonClicked]]\n<small>← SaveGameMenu · theo doc</small>"
@@ -187,7 +186,7 @@
    "id": "s4",
    "type": "text",
    "x": 1345,
-   "y": 1014,
+   "y": 926,
    "width": 330,
    "height": 190,
    "text": "**4.** bỏ chọn + tắt gizmo TRƯỚC khi xoá\n`DeselectMesh()`\n↗ [[BP_FurnitureInputManager#DeselectMesh (Function — single, cũ → v1.6)|BP_FurnitureInputManager › DeselectMesh]]\n<small>← BP_FurnitureSceneManager · theo doc</small>"
@@ -196,7 +195,7 @@
    "id": "s5",
    "type": "text",
    "x": 1785,
-   "y": 1244,
+   "y": 1156,
    "width": 330,
    "height": 124,
    "text": "**5.** xoá hết đồ đang có\n`Destroy Actor (tag FurnitureSpawned)`\n<small>← BP_FurnitureSceneManager · theo doc</small>"
@@ -205,17 +204,17 @@
    "id": "n14",
    "type": "text",
    "x": 900,
-   "y": 1408,
+   "y": 1320,
    "width": 1220,
    "height": 70,
-   "text": "📝 EMS nạp lại actor từ slot (Load Game Actors, Full Reload). SM có LoadFurnitureScene() nhưng doc chưa ghi ai gọi (?).",
+   "text": "📝 EMS nạp lại actor từ slot (Load Game Actors, Full Reload). SM có định nghĩa SaveFurnitureScene() / LoadFurnitureScene() nhưng chưa rõ menu có gọi 2 event này không (?).",
    "color": "3"
   },
   {
    "id": "s6",
    "type": "text",
    "x": 1785,
-   "y": 1518,
+   "y": 1430,
    "width": 330,
    "height": 146,
    "text": "**6.** chờ EMS nạp xong biến SaveGame, MeshPath rỗng thì tự huỷ\n`Event ActorLoaded → AsyncWaitForOperation(CT_Load)`\n<small>nội bộ · theo doc</small>"
@@ -224,7 +223,7 @@
    "id": "s7",
    "type": "text",
    "x": 2225,
-   "y": 1704,
+   "y": 1616,
    "width": 330,
    "height": 212,
    "text": "**7.** giữ danh tính cũ, chỉ sinh mới khi rỗng\n`EnsurePersistentId()`\n↗ [[EntityIdLibrary_Reference#Hàm 1 — EnsurePersistentId|EntityIdLibrary_Reference › EnsurePersistentId]]\n<small>← BP_FurnitureActor · theo doc</small>"
@@ -233,7 +232,7 @@
    "id": "s8",
    "type": "text",
    "x": 1785,
-   "y": 1956,
+   "y": 1868,
    "width": 330,
    "height": 124,
    "text": "**8.** nạp mesh (đồng bộ)\n`LoadAsset_Blocking(MeshPath) → SetStaticMesh`\n<small>nội bộ · theo doc</small>"
@@ -242,10 +241,20 @@
    "id": "s9",
    "type": "text",
    "x": 2665,
-   "y": 2120,
+   "y": 2032,
    "width": 330,
    "height": 300,
    "text": "**9.** gắn lại vật liệu + thông số từng slot\n`RestoreMyMaterialSlots → Rst_LoadNextSlot → ApplyLoadedMaterialToSlot() → ApplyParamsJsonToSlot()`\n↗ [[MaterialSlotService_Reference#ApplyLoadedMaterialToSlot(Mesh, Records&, SlotName, HintIndex, LoadedMI, RowName, PathFallback) → bool|MaterialSlotService_Reference › ApplyLoadedMaterialToSlot]]\n<small>← BP_FurnitureActor · theo doc</small>"
+  },
+  {
+   "id": "n19",
+   "type": "text",
+   "x": 20,
+   "y": 2372,
+   "width": 2980,
+   "height": 70,
+   "text": "📝 ⚠ Sổ Undo KHÔNG bị xoá khi Load — Ctrl+Z ngay sau Load đưa về cảnh TRƯỚC Load (PIE 25/09). Xem Open_Bugs Bug-UndoAcrossLoad.",
+   "color": "3"
   }
  ],
  "edges": [
@@ -255,8 +264,7 @@
    "fromSide": "right",
    "toNode": "s1",
    "toSide": "left",
-   "label": "1 ?",
-   "color": "1"
+   "label": "1"
   },
   {
    "id": "e1",

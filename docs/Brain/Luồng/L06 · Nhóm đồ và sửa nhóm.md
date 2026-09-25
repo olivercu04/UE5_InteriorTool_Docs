@@ -38,7 +38,7 @@ Vào g_A, click Ghế1          → con trực tiếp của g_A là g_B → ch�
 Ctrl+Shift+G bóc 1 lớp · Lên 1 cấp / Thoát · Ctrl+Z (`CreateGroup`, `Ungroup`).
 
 ## Còn mở
-- Blueprint nào bắt `IA_GroupCreate` / `IA_GroupUngroup` — doc không ghi (`?`).
+- ~~Blueprint nào bắt Ctrl+G / Ctrl+Shift+G~~ → đã rõ 25/09: `IA_GroupCreate` và `IA_Ungroup` trong InputManager (thân event chưa K2).
 - Toàn luồng theo doc (CreateGroup v1.9, UngroupActors v1.8) — chưa K2.
 
 ## Nhảy tới code

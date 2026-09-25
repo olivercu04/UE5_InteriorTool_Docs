@@ -35,6 +35,7 @@ Giống **bấm chuông cửa**: nhấn chưa phải là mở cửa — người
 - **Tại sao không chọn ngay lúc nhấn?** Để phân biệt "click chọn" với "bắt đầu kéo khung từ trên 1 món".
 - **Tại sao chốt ở OnLMBReleased mà không ở Tick?** Gọi `ActivateGizmo` trong Tick làm gizmo nháy 1 frame (race với plugin RuntimeTransformer). Input event chạy trước Tick.
 - **Không dùng `Is Input Key Down(Left Mouse)`** — không tin được khi viewport giữ chuột → dùng cờ `bLMBHeld`.
+- **Quét khung trúng 1 món trong nhóm = lấy cả nhóm** (`ExpandSelectionWithGroups`, ✓K2 25/09) — giống click đơn.
 - **Quét khung chọn theo ĐIỂM GỐC của món**, không theo bounding box — đúng thiết kế. Toạ độ phải chia `Get Viewport Scale` (lệch DPI đã trả giá).
 - **Tick còn đường dự phòng không lấy nhóm** (`SelectSingleActor` trực tiếp) khi thả chuột lọt giữa 2 frame — bug đang sống `Bug-TickFallback-GroupNotExpanded` ([[Open_Bugs]]).
 - `SelectActors` báo tin `OnSelectionChanged` **đồng bộ** — kho vật liệu và info bar đổi ngay trong cùng lượt.
@@ -43,7 +44,7 @@ Giống **bấm chuông cửa**: nhấn chưa phải là mở cửa — người
 Click nền = bỏ chọn; Ctrl+click lần nữa = bớt khỏi lựa chọn; Ctrl+Z quay lại lựa chọn trước (mốc Select / Deselect / BoxSelect).
 
 ## Còn mở
-- **CONFLICT** quét khung có lấy cả nhóm không (`ExpandSelectionWithGroups` ghi "dùng ở FinishBoxSelect", thân hàm v1.5 không có) → xin K2 `FinishBoxSelect`.
+- (không còn mục mở ở thân `FinishBoxSelect` — Bug-BoxSelectCtrl-MultiSnapshot fix 25/09)
 
 ## Nhảy tới code
 | Hàm | Doc |

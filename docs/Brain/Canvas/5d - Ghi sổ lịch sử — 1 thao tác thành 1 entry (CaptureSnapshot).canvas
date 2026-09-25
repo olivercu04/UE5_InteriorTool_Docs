@@ -177,14 +177,14 @@
    "x": 905,
    "y": 1643,
    "width": 330,
-   "height": 168,
-   "text": "**7.** đưa vào sổ\n`AppendEntry(Entry)`\n↗ [[BP_UndoManager#AppendEntry(Entry S_SceneSnapshot) — Function MỚI (U2.3, 24/09/2026)|BP_UndoManager › AppendEntry]]\n<small>nội bộ · theo doc</small>"
+   "height": 190,
+   "text": "**7.** đưa vào sổ\n`AppendEntry(Entry)`\n↗ [[BP_UndoManager#AppendEntry(Entry S_SceneSnapshot) — Function MỚI (U2.3, 24/09/2026) — ✓K2 25/09/2026|BP_UndoManager › AppendEntry]]\n<small>nội bộ · ✓K2</small>"
   },
   {
    "id": "n14",
    "type": "text",
    "x": 900,
-   "y": 1851,
+   "y": 1873,
    "width": 340,
    "height": 119,
    "text": "📝 AppendEntry: đang ở giữa sổ → cắt bỏ nhánh Redo · đủ MaxSteps → bỏ entry cũ nhất · ADD · CurrentIndex+1",
@@ -194,10 +194,10 @@
    "id": "s8",
    "type": "text",
    "x": 1785,
-   "y": 2010,
+   "y": 2032,
    "width": 330,
-   "height": 234,
-   "text": "**8.** báo tin\n`Broadcast OnHistoryChanged → RefreshParamPanel()`\n↗ [[WBP_FurnitureInventory#`RefreshParamPanel()` — Function — AS-BUILT ĐẦY ĐỦ 18/09/2026 (K2Node export thật)|WBP_FurnitureInventory › RefreshParamPanel]]\n<small>← BP_UndoManager · theo doc</small>"
+   "height": 212,
+   "text": "**8.** báo tin\n`Broadcast OnHistoryChanged → RefreshParamPanel()`\n↗ [[WBP_FurnitureInventory#`RefreshParamPanel()` — Function — AS-BUILT ĐẦY ĐỦ 18/09/2026 (K2Node export thật)|WBP_FurnitureInventory › RefreshParamPanel]]\n<small>← BP_UndoManager · ✓K2</small>"
   },
   {
    "id": "n16",
@@ -273,7 +273,8 @@
    "fromSide": "left",
    "toNode": "s7",
    "toSide": "right",
-   "label": "7"
+   "label": "7 ✓K2",
+   "color": "4"
   },
   {
    "id": "e8",
@@ -288,7 +289,8 @@
    "fromSide": "bottom",
    "toNode": "s8",
    "toSide": "top",
-   "label": "8"
+   "label": "8 ✓K2",
+   "color": "4"
   }
  ]
 }

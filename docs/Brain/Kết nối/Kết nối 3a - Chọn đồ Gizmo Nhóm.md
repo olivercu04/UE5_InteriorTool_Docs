@@ -29,7 +29,7 @@
 - [[BP_FurnitureInputManager]] → [[BP_FurnitureSceneManager]] — tìm singleton, đọc tham chiếu inventory · GetAllActorsOfClass, GET FurnitureInventoryRef ✓K2
 - [[BP_FurnitureSceneManager]] → [[WBP_FurnitureInventory]] — gọi thoát Replace Mode · .FurnitureInventoryRef.ExitReplaceMode() ✓K2
 - [[BP_FurnitureInputManager]] → [[WBP_FurnitureInventory]] — báo click-vào-mesh chọn slot · NotifyViewportSlotClick(ClickedActor, ScreenPos) ✓K2
-- [[BP_FurnitureInputManager]] → [[BP_GizmoController]] — gọi lúc bấm chuột + giữ tham chiếu · OnMousePressed(), GizmoControllerRef
+- [[BP_FurnitureInputManager]] → [[BP_GizmoController]] — gọi lúc bấm / thả chuột + giữ tham chiếu [K2 2026-09-25] · OnMousePressed(), OnMouseReleased(), GizmoControllerRef ✓K2
 - [[BP_FurnitureInputManager]] → [[BP_TransformerPawn]] — giữ tham chiếu · TransformerPawnRef
 - [[BP_FurnitureInputManager]] → [[BP_GroupsContainer]] — đọc-ghi số đếm nhóm · GroupNameCounter, Groups
 - [[BP_FurnitureInputManager]] → [[BP_PivotActor]] — tạo & huỷ trục xoay · SpawnOrUpdatePivot() / DestroyPivot()
@@ -49,7 +49,8 @@
 - [[BP_FurnitureInputManager]] → [[BP_UndoManager]] — phím Undo / Redo (bỏ qua khi đang kéo gizmo) · IsGizmoDragging() → UndoLastAction() / RedoLastAction()
 - [[BP_UndoManager]] → [[BP_FurnitureInputManager]] — chọn lại đồ sau khôi phục + báo tin · SelectActors(), Broadcast OnEditModeChanged
 - [[BP_UndoManager]] → [[WBP_MeshControls]] — đặt nút mode theo ảnh sau khôi phục · RefreshButtonState(ActiveMode) — lấy tham chiếu từ đâu ?
-- [[BP_FurnitureInputManager]] → [[BP_UndoManager]] — chụp mốc các thao tác khác · CaptureSnapshot(BoxSelect / CreateGroup / Ungroup / PasteMulti / DuplicateMulti / Delete / Nudge / SelectSimilar / ResetRotation)
+- [[BP_FurnitureInputManager]] → [[BP_UndoManager]] — chụp mốc quét khung [K2 2026-09-25] · CaptureSnapshot(BoxSelect) ✓K2
+- [[BP_FurnitureInputManager]] → [[BP_UndoManager]] — chụp mốc các thao tác khác · CaptureSnapshot(CreateGroup / Ungroup / PasteMulti / DuplicateMulti / Delete / Nudge / SelectSimilar / ResetRotation)
 - [[BP_FurnitureInputManager]] → [[BP_FurnitureActor]] — dời / gán nhóm / xoá đồ đang chọn · Add Actor World Offset (NudgeMesh), SET GroupID (CreateGroup), Destroy Actor (DeleteSelected)
 - [[BP_FurnitureInputManager]] → [[BP_PivotActor]] — dời pivot theo nhóm khi nhích phím · Set Actor Location → RefreshOffsets()
 - [[WBP_ContextMenuItem]] → [[BP_FurnitureInputManager]] — dòng menu được bấm → callback của IM · CB_Copy / CB_Paste / CB_Duplicate / CB_Delete … — bind trong OnRightClick ?

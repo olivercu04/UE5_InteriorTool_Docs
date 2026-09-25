@@ -84,6 +84,6 @@ Create Widget(WBP_Toast) → Add to Viewport(ZOrder=100)
 **Thuộc mảng kết nối:** [[Kết nối 3d - Save Undo khởi động]]
 
 **← Được gọi bởi**
-- [[WBP_FOFF_ToolDemo]] — tạo toast + gắn vào GameInstance · Create + SET GI.ToastRef
+- [[WBP_FOFF_ToolDemo]] — tạo toast [K2 2026-09-25] · Create Widget WBP_Toast + Add to Viewport (Z 100) ✓K2
 
 <!-- BRAIN:END -->

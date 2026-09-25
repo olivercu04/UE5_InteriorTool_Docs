@@ -20,6 +20,8 @@
 Bộ phím giống **chùm chìa khoá đeo sẵn từ lúc vào làm**: InputManager đeo chùm `LM_FurnitureInput` (Ctrl+Z, Ctrl+C, mũi tên…) ngay ở BeginPlay (ưu tiên 5, trên bộ phím project tổng) và không tháo ra — từ Gate 1.5 B2 tool tự lo bộ phím, không nhờ PlayerController của project tổng.
 
 ## Dễ hiểu sai
+- **Ai sinh các manager:** widget `WBP_FOFF_ToolDemo`, Event Construct, **Then 11** (Then 0..10 là của project tổng). Thứ tự: Undo → Scene → TransformerPawn → **Input → Gizmo** → Groups → MeshControls → UserPrefs → Combo → Toast → `CaptureSnapshot("Initial")` cuối cùng (✓K2 25/09). Doc cũ ghi "Level Blueprint" là sai.
+- **InputManager sinh trước GizmoController** → lúc BeginPlay của IM chạy, `GizmoControllerRef` còn rỗng (được gán ngay sau). Đừng đọc `GizmoControllerRef` trong BeginPlay.
 - **Đóng kho ≠ huỷ kho.** `BTN_Close` chỉ `SetVisibility(Collapsed)` — mọi biến trong kho còn nguyên (Sprint D đổi sang 1 bản duy nhất). Vì thế chặn quét khung dùng `Get Visibility == Visible`, không dùng `Is In Viewport`.
 - **Đóng kho cũng thoát chế độ thay đồ** — `BTN_Close` xoá 3 biến `ReplaceTarget`, `MeshesToReplace`, `ComboRootGroupIDToReplace` (thiếu 1 biến = lần sau mở kho còn kẹt ở chế độ thay).
 - Tham chiếu tới kho có 2 đường: `Foff_GameInstance.FurnitureInventoryRef` (code cũ) và `BP_FurnitureSceneManager.FurnitureInventoryRef` (đã xác nhận K2 11/09 và 12/09 cho các đường mới) — cùng trỏ 1 widget.
@@ -28,7 +30,7 @@ Bộ phím giống **chùm chìa khoá đeo sẵn từ lúc vào làm**: InputMa
 Mở kho ↔ đóng kho (X / phím I): chế độ thay đồ được thoát; bộ phím giữ nguyên. Khởi động không có đường ngược trong tool.
 
 ## Còn mở
-- **CONFLICT** ai sinh các manager: Phần 3d ghi `WBP_FOFF_ToolDemo` Event Construct, doc InputManager ghi Level Blueprint. Cần K2 `WBP_FOFF_ToolDemo` Event Construct.
+- **?** `ToastRef` lúc khởi động gán vào SceneManager (✓K2 25/09); doc cũ còn ghi `Foff_GameInstance.ToastRef` — chưa rõ GI còn dùng không.
 - `WBP_FOFF_ToolDemo` chưa có doc canonical.
 
 ## Nhảy tới code
@@ -37,5 +39,5 @@ Mở kho ↔ đóng kho (X / phím I): chế độ thay đồ được thoát; b
 | Event BeginPlay (`AddMappingContext` ✓K2 25/09) · Enhanced Input Actions | [[BP_FurnitureInputManager]] |
 | `AddFurnitureInput` / `RemoveFurnitureInput` — **mô tả cũ, lỗi thời từ Gate 1.5 B2** | [[BP_FoffPlayerController]] |
 | Event Construct · `BTN_Close` · Level Blueprint · Keyboard Shortcuts | [[WBP_FurnitureInventory]] |
-| Level Blueprint — Spawn Order · Cách BP khác lấy reference | [[BP_FurnitureInputManager]] |
+| Spawn Order — WBP_FOFF_ToolDemo Event Construct (Then 11) ✓K2 · Cách BP khác lấy reference | [[BP_FurnitureInputManager]] |
 | Tham chiếu `ToastRef` / `FurnitureInventoryRef` | [[BP_FurnitureSceneManager]] |

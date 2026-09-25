@@ -32,7 +32,7 @@
 Pivot giống **cái khay**: lúc bắt đầu kéo, ghi lại mỗi món đặt ở đâu trên khay (`RefreshOffsets`); sau đó chỉ cần dời khay, món nào cũng tự về đúng chỗ.
 
 ## Dễ hiểu sai
-- **Nhấn lên trục mà không bị bỏ chọn / quét khung** — `Mouse Left Pressed` dừng ở Step 3 (`bIsDraggingGizmo == True`) trước khi bật cờ quét khung.
+- **Nhấn lên trục mà không bị bỏ chọn / quét khung** — `Mouse Left Pressed` dừng ở Step 3 (`GizmoControllerRef.bIsDraggingGizmo`, ✓K2 25/09) trước khi bật cờ quét khung.
 - **Chọn nhiều món thì gizmo kéo Pivot**, Pivot mới kéo từng món (công thức tuyệt đối mỗi frame → không cộng dồn sai số).
 - **Thứ tự lúc thả là luật cứng:** `CaptureSnapshot` TRƯỚC, `SET bIsDraggingGizmo = False` SAU (✓K2 24/09).
 - **Ctrl+Z giữa lúc kéo** từng làm kẹt cờ kéo + khoá xoay camera (tool "đơ") — **đã sửa 25/09**: trượt lớp chặn 1–2 mà đang kéo thì vẫn dọn cờ, không ghi sổ. Và từ 25/09 **Ctrl+Z / Ctrl+Shift+Z bị bỏ qua khi đang giữ chuột kéo gizmo** (`IsGizmoDragging` trong InputManager) — trước đó Undo chen giữa cú kéo làm gizmo kéo tiếp món mới sinh lại và ghi mốc "Move" thừa, mất Redo. Lỗi thứ 2 (chế độ Scale bị ghi mốc tên "Move" do 2 Branch cùng so `NewEnumerator2`) **đã sửa 25/09**, PIE PASS — [[BP_GizmoController]] v1.3.
@@ -45,7 +45,7 @@ Ctrl+Z → entry `Move` / `Nudge` là Snapshot → dựng lại cảnh trước 
 
 ## Còn mở
 - `WBP_MeshControls` lấy tham chiếu GizmoController từ đâu (`?`) · `bIsDraggingGizmo` ở Step 3 thật ra là biến của ai (`?`) · thứ tự 2 handler lúc thả (`?`).
-- K2 nên xin: InputManager `Mouse Left Pressed` Step 0–3 + `Mouse Left Released (gizmo)` · Gizmo `Event Tick` nhánh Move · `BTN_Move` OnClicked.
+- K2 nên xin: Gizmo `Event Tick` nhánh Move · `BTN_Move` OnClicked.
 
 ## Nhảy tới code
 | Hàm | Doc |

@@ -165,7 +165,7 @@
    "y": 956,
    "width": 570,
    "height": 100,
-   "text": "### ⑦ Lưu cảnh\nlưu cả phòng để mở lại (menu Save/Load của project) <small>— phím / nút gọi lưu chưa rõ (?)</small>\n<small>↗ [[L12 · Lưu và mở cảnh|L12]]</small>",
+   "text": "### ⑦ Lưu cảnh\nbấm **M** → menu Save/Load của project → Save / Load (lưu cả phòng để mở lại)\n<small>↗ [[L12 · Lưu và mở cảnh|L12]]</small>",
    "color": "5"
   },
   {

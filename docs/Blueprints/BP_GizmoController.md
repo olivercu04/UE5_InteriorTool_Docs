@@ -242,7 +242,7 @@ Branch IsValid(SelectedActor) AND bIsDraggingGizmo → True:
 - [[BP_UndoManager]] — lưu mốc sau khi kéo · CaptureSnapshot(Move/Rotate/Scale) ✓K2
 
 **← Được gọi bởi**
-- [[BP_FurnitureInputManager]] — gọi lúc bấm chuột + giữ tham chiếu · OnMousePressed(), GizmoControllerRef
+- [[BP_FurnitureInputManager]] — gọi lúc bấm / thả chuột + giữ tham chiếu [K2 2026-09-25] · OnMousePressed(), OnMouseReleased(), GizmoControllerRef ✓K2
 - [[WBP_MeshControls]] — tắt rồi bật gizmo khi đổi chế độ · DeactivateGizmo() / ActivateGizmo() — lấy tham chiếu từ đâu ?
 
 <!-- BRAIN:END -->

@@ -1,5 +1,6 @@
 # BP_UndoManager
 **HỢP NHẤT TỪ 6 file:** v1.2 (16/05) → v1.4 (04/06) → v1.5 (07/06) → **v1.6 base** (10/06) + v1.7_patch (12/06) + v1.8_patch (15/06)
+**Phiên bản:** 1.23 | **Cập nhật:** 25/09/2026 09:35 — `AppendEntry` **✓K2 export 25/09** (13 node, không lỗi compile): khớp 100% khối doc v1.22 (resize redo → trim MaxSteps → ADD → CurrentIndex+1 → Broadcast OnHistoryChanged).
 **Phiên bản:** 1.22 | **Cập nhật:** 24/09/2026 16:40 (U2.6 History-UI — PASS) — `Broadcast OnHistoryChanged` phủ đủ: +cuối `AppendEntry` (→ Capture + Commit), +cuối nhánh Snapshot của Undo/Redo (sửa lại D-10). +mục §History-UI accessors: `JumpToHistoryIndex` **✓K2 export 24/09** (44 node, không lỗi); 4 accessor Get build từ U2.3. PIE HISTUI-01/02/03 PASS, panel không nháy khi thả slider.
 
 **Phiên bản:** 1.21 | **Cập nhật:** 24/09/2026 16:10 (U2.4 + U2.5 — ĐÓNG, PASS) — Interactive Edit Session: +enum `E_ParamSessionPhase` (None|Previewing) · +3 session var `Sess_Active`/`Sess_Cmd`/`Sess_Phase` + var tạm `CommitEdit_Label` · `ApplyParamCommand` (thân đã có từ U2.3, D-4 K2-reviewed — U2.4 rà lại theo cùng spec; lần đầu CHẠY THẬT) · +`CommitInteractiveEdit`/`BeginInteractiveEdit`/`CancelInteractiveEdit` (Custom Event) · `UndoLastAction`/`RedoLastAction` +`CancelInteractiveEdit()` node đầu (SESS-07) +`Broadcast OnHistoryChanged` cuối nhánh Command · Event End Play +`SET Sess_Active=False`. **Câu hỏi nhị phân U2 = XANH:** undo param → đảo đúng giá trị, KHÔNG respawn, slot/Inspector/gizmo còn nguyên; redo áp lại đúng. **Mức bằng chứng:** build theo node flow Sonnet dẫn + cuhoang xác nhận compile xanh + PIE (log Print) — **CHƯA soi K2 export** phiên này. Deviations D-5..D-12 (`DEVIATIONS.md`). Task card §5.2–5.8, §8 U2.4/U2.5.
@@ -229,7 +230,7 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Length → Branch > 0:
 
 ---
 
-## AppendEntry(Entry : S_SceneSnapshot) — Function MỚI (U2.3, 24/09/2026)
+## AppendEntry(Entry : S_SceneSnapshot) — Function MỚI (U2.3, 24/09/2026) — ✓K2 25/09/2026
 
 > **U2.3:** gộp phần "quản lý stack" cũ: resize redo-stack (Step 1 cũ) + trim MaxSteps (Step 5 cũ) + ADD +
 > tăng `CurrentIndex`. Độc lập biến với `BuildSceneSnapshotBase` (không đụng Temp*). Thứ tự **build trước,
@@ -246,6 +247,7 @@ Entry ▶→ Branch[CurrentIndex < Array_Length(SnapshotHistory) − 1]
        ▶→ SET CurrentIndex = CurrentIndex + 1
        ▶→ Broadcast OnHistoryChanged                                 ← v1.22 (U2.6) — node CUỐI; phủ CaptureSnapshot + CommitInteractiveEdit
 ```
+> **✓K2 25/09/2026:** export khớp từng node với khối trên (2 Branch merge đúng, `Array_Remove` index 0 = RemoveIndex, Broadcast là node cuối). Không drift.
 > v1.20 chưa broadcast (hoãn U2.6). v1.22 thêm — hệ quả: `RefreshParamPanel` chạy cả sau mỗi Capture/Commit (thừa nhưng
 > vô hại; H5 xác nhận panel không nháy khi thả slider).
 
@@ -719,6 +721,7 @@ Event End Play →
 | 1.21 | 24/09/2026 16:10 | **U2.4 + U2.5 ĐÓNG — PASS (câu hỏi nhị phân U2 XANH).** +enum `E_ParamSessionPhase`; +var `Sess_Active`/`Sess_Cmd`/`Sess_Phase`/`CommitEdit_Label`; `ApplyParamCommand` (có từ U2.3, lần đầu chạy thật); +`CommitInteractiveEdit`/`BeginInteractiveEdit`/`CancelInteractiveEdit`; Undo/Redo +`CancelInteractiveEdit()` đầu + `Broadcast OnHistoryChanged` cuối nhánh Command; +dispatcher `OnHistoryChanged`; End Play +`SET Sess_Active=False`. Build theo thứ tự phụ thuộc Apply→Commit→Begin→Cancel (D-5). PIE: SESS-01/03/04/05/07, HIST-01, interleave, U6b chống ghi mồ côi, Color W3 PASS. Chưa soi K2 export. Print tạm dọn ở U2.7. D-5..D-12. |
 | 1.22 | 24/09/2026 16:40 | **U2.6 PASS.** Broadcast `OnHistoryChanged` +cuối `AppendEntry` +cuối nhánh Snapshot Undo/Redo (D-10 sửa lại). +mục History-UI accessors, `JumpToHistoryIndex` ✓K2. HISTUI-01/02/03 PASS. |
 | 1.22 (tiếp) | 24/09/2026 17:40 | **U2.7 — U2 ĐÓNG.** Dọn toàn bộ Print tạm (+ probe W7 U2.3), smoke PASS. ✓K2 `CommitInteractiveEdit` + `BeginInteractiveEdit` (ghi as-built: Struct Ref tham chiếu). §11 PASS 7/7. |
+| 1.23 | 25/09/2026 09:35 | `AppendEntry` ✓K2 export — khớp doc, không sửa node. |
 | 1.22 (tiếp 2) | 24/09/2026 19:15 | Sửa phím tắt ở 2 heading: Undo = **Ctrl+Z**, Redo = **Ctrl+Shift+Z** (trước ghi nhầm Alt+Z — nguồn đúng `BP_FoffPlayerController.md` IA_FurnitureUndo/Redo, cuhoang xác nhận). |
 
 ---
@@ -743,25 +746,27 @@ Event End Play →
 - [[WBP_FurnitureInventory]] — báo tin: khôi phục xong · Broadcast OnRestoreCompleted
 - [[BP_FurnitureSceneManager]] — tìm lại đồ theo ID khi undo/chốt param — caller đầu tiên của Resolver · ResolveByPersistentId() ✓K2
 - [[MaterialSlotService_Reference]] — đọc giá trị trước/sau + đảo 1 thông số · GetSlot*Param() / SetSlot*Param() (qua ApplyParamCommand) ✓K2
-- [[WBP_FurnitureInventory]] — báo lịch sử vừa đổi (undo/redo param) · Broadcast OnHistoryChanged
+- [[WBP_FurnitureInventory]] — báo lịch sử vừa đổi (cuối AppendEntry) · Broadcast OnHistoryChanged ✓K2
+- [[WBP_FurnitureInventory]] — báo lịch sử vừa đổi (cuối nhánh Undo / Redo) · Broadcast OnHistoryChanged (Undo/Redo)
 
 **← Được gọi bởi**
 - [[BP_FurnitureInputManager]] — chụp mốc Select/Deselect · CaptureSnapshot(Select / Deselect) ✓K2
 - [[BP_GizmoController]] — chụp trạng thái khi kéo xong · CaptureSnapshot() ✓K2
 - [[BP_FurnitureInputManager]] — phím Undo / Redo (bỏ qua khi đang kéo gizmo) · IsGizmoDragging() → UndoLastAction() / RedoLastAction()
-- [[BP_FurnitureInputManager]] — chụp mốc các thao tác khác · CaptureSnapshot(BoxSelect / CreateGroup / Ungroup / PasteMulti / DuplicateMulti / Delete / Nudge / SelectSimilar / ResetRotation)
+- [[BP_FurnitureInputManager]] — chụp mốc quét khung [K2 2026-09-25] · CaptureSnapshot(BoxSelect) ✓K2
+- [[BP_FurnitureInputManager]] — chụp mốc các thao tác khác · CaptureSnapshot(CreateGroup / Ungroup / PasteMulti / DuplicateMulti / Delete / Nudge / SelectSimilar / ResetRotation)
 - [[BP_ComboManager]] — giữ tham chiếu + gọi quay lui · UndoManagerRef, RestoreCurrentSnapshot()
 - [[BP_ComboManager]] — ghi sổ khi đặt / thay combo · CaptureSnapshot(SpawnCombo / ReplaceCombo)
 - [[WBP_FurnitureInventory]] — giữ tham chiếu + nghe khôi phục + chụp trạng thái · UndoManagerRef, Bind OnRestoreCompleted
 - [[WBP_FurnitureCard]] — chụp trạng thái khi thay đồ · CaptureSnapshot(Replace)
 - [[WBP_DragOverlay_FurnitureCard]] — ghi sổ khi thả đồ · CaptureSnapshot(Spawn)
-- [[WBP_FOFF_ToolDemo]] — sinh ra · Spawn
-- [[WBP_FOFF_ToolDemo]] — lưu mốc đầu tiên · CaptureSnapshot(Initial)
+- [[WBP_FOFF_ToolDemo]] — sinh ra [K2 2026-09-25] · Spawn ✓K2
+- [[WBP_FOFF_ToolDemo]] — lưu mốc đầu tiên [K2 2026-09-25] · CaptureSnapshot(Initial) ✓K2
 - [[BP_ComboManager]] — quay lui khi đổi combo lỗi · RestoreCurrentSnapshot()
 - [[BP_GizmoController]] — lưu mốc sau khi kéo · CaptureSnapshot(Move/Rotate/Scale) ✓K2
 - [[WBP_FurnitureInventory]] — nghe khôi phục xong · Bind OnRestoreCompleted
 - [[WBP_FurnitureInventory]] — mở / chốt / hủy phiên chỉnh param (U2.4-2.5) · BeginInteractiveEdit() / CommitInteractiveEdit() / CancelInteractiveEdit()
-- [[WBP_FurnitureInventory]] — nghe lịch sử đổi → refresh panel · Bind OnHistoryChanged → RefreshParamPanel()
+- [[WBP_FurnitureInventory]] — nghe lịch sử đổi → refresh panel · Bind OnHistoryChanged → RefreshParamPanel() ✓K2
 - [[WBP_DetailPopup]] — lưu mốc khi khoá / reset scale · CaptureSnapshot(Scale)
 - [[WBP_FurnitureInventory]] — mở/chốt/hủy phiên chỉnh (chi tiết ở 3d) · Begin/Commit/CancelInteractiveEdit()
 - [[BP_FurnitureActor]] — ghi sổ sau khi đổi vật liệu · CaptureSnapshot(ApplyMaterial)

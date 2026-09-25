@@ -59,7 +59,7 @@ st = [('①', 'Mở kho đồ', 'bấm **Inventory** trên thanh công cụ', ln
       ('⑤', 'Đổi vật liệu', 'tab MATERIAL: chọn slot (quả cầu) · bấm hoặc kéo vật liệu vào đồ · MATERIAL EDIT → bảng bên phải: độ nhám, màu',
        ln('L09', 'L10'), 130),
       ('⑥', 'Lưu / dùng lại cả cụm', 'tab COMBO: lưu cụm đồ thành combo · kéo combo có sẵn vào phòng · thay cả combo', ln('L11'), 100),
-      ('⑦', 'Lưu cảnh', 'lưu cả phòng để mở lại (menu Save/Load của project) <small>— phím / nút gọi lưu chưa rõ (?)</small>', ln('L12'), 100)]
+      ('⑦', 'Lưu cảnh', 'bấm **M** → menu Save/Load của project → Save / Load (lưu cả phòng để mở lại)', ln('L12'), 100)]
 y = 150
 for i, (n, name, txt, lk, h) in enumerate(st):
     c.card(f's{i}', 1040, y, 570, h, f'### {n} {name}\n{txt}\n<small>↗ {lk}</small>', MAIN)

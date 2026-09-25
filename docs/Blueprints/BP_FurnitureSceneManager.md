@@ -125,7 +125,7 @@ Q8: Function (pure resolver) | Cast tự guard AsActor (không cần IsValid ri�
 
 **← Được gọi bởi**
 - [[BP_FurnitureInputManager]] — tìm singleton, đọc tham chiếu inventory · GetAllActorsOfClass, GET FurnitureInventoryRef ✓K2
-- [[WBP_FOFF_ToolDemo]] — sinh ra · Spawn
+- [[WBP_FOFF_ToolDemo]] — sinh ra + gán ToastRef [K2 2026-09-25] · Spawn, SET SceneManager.ToastRef ✓K2
 - [[BP_UndoManager]] — tìm lại đồ theo ID khi undo/chốt param — caller đầu tiên của Resolver · ResolveByPersistentId() ✓K2
 - [[SaveGameMenu]] — báo tin bấm Load · OnLoadButtonClicked
 - [[WBP_DragOverlay_FurnitureCard]] — báo thả trúng kiến trúc · ToastRef.ShowToast() ✓K2

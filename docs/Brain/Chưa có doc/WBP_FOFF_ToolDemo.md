@@ -15,13 +15,13 @@
 **Thuộc mảng kết nối:** [[Kết nối 3d - Save Undo khởi động]]
 
 **Gọi / điều khiển →**
-- [[BP_FurnitureInputManager]] — sinh ra các manager · Spawn (Event Construct, Then 0..13)
-- [[BP_UndoManager]] — sinh ra · Spawn
-- [[BP_ComboManager]] — sinh ra (⚠ doc còn ghi Level BP) · Spawn
-- [[BP_FurnitureSceneManager]] — sinh ra · Spawn
-- [[BP_FurnitureUserPrefsManager]] — sinh ra · Spawn
-- [[WBP_Toast]] — tạo toast + gắn vào GameInstance · Create + SET GI.ToastRef
-- [[BP_UndoManager]] — lưu mốc đầu tiên · CaptureSnapshot(Initial)
+- [[BP_FurnitureInputManager]] — sinh ra + gán GizmoControllerRef, CurrentMeshControls [K2 2026-09-25] · Spawn (Event Construct Then 11) ✓K2
+- [[BP_UndoManager]] — sinh ra [K2 2026-09-25] · Spawn ✓K2
+- [[BP_ComboManager]] — sinh ra [K2 2026-09-25] · Spawn ✓K2
+- [[BP_FurnitureSceneManager]] — sinh ra + gán ToastRef [K2 2026-09-25] · Spawn, SET SceneManager.ToastRef ✓K2
+- [[BP_FurnitureUserPrefsManager]] — sinh ra [K2 2026-09-25] · Spawn ✓K2
+- [[WBP_Toast]] — tạo toast [K2 2026-09-25] · Create Widget WBP_Toast + Add to Viewport (Z 100) ✓K2
+- [[BP_UndoManager]] — lưu mốc đầu tiên [K2 2026-09-25] · CaptureSnapshot(Initial) ✓K2
 - [[WBP_FurnitureInventory]] — mở inventory khi bấm nút · Open widget
 
 <!-- BRAIN:END -->

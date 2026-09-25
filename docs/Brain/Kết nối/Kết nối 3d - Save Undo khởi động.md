@@ -25,13 +25,13 @@
 
 ## Ai gọi ai
 
-- [[WBP_FOFF_ToolDemo]] → [[BP_FurnitureInputManager]] — sinh ra các manager · Spawn (Event Construct, Then 0..13)
-- [[WBP_FOFF_ToolDemo]] → [[BP_UndoManager]] — sinh ra · Spawn
-- [[WBP_FOFF_ToolDemo]] → [[BP_ComboManager]] — sinh ra (⚠ doc còn ghi Level BP) · Spawn
-- [[WBP_FOFF_ToolDemo]] → [[BP_FurnitureSceneManager]] — sinh ra · Spawn
-- [[WBP_FOFF_ToolDemo]] → [[BP_FurnitureUserPrefsManager]] — sinh ra · Spawn
-- [[WBP_FOFF_ToolDemo]] → [[WBP_Toast]] — tạo toast + gắn vào GameInstance · Create + SET GI.ToastRef
-- [[WBP_FOFF_ToolDemo]] → [[BP_UndoManager]] — lưu mốc đầu tiên · CaptureSnapshot(Initial)
+- [[WBP_FOFF_ToolDemo]] → [[BP_FurnitureInputManager]] — sinh ra + gán GizmoControllerRef, CurrentMeshControls [K2 2026-09-25] · Spawn (Event Construct Then 11) ✓K2
+- [[WBP_FOFF_ToolDemo]] → [[BP_UndoManager]] — sinh ra [K2 2026-09-25] · Spawn ✓K2
+- [[WBP_FOFF_ToolDemo]] → [[BP_ComboManager]] — sinh ra [K2 2026-09-25] · Spawn ✓K2
+- [[WBP_FOFF_ToolDemo]] → [[BP_FurnitureSceneManager]] — sinh ra + gán ToastRef [K2 2026-09-25] · Spawn, SET SceneManager.ToastRef ✓K2
+- [[WBP_FOFF_ToolDemo]] → [[BP_FurnitureUserPrefsManager]] — sinh ra [K2 2026-09-25] · Spawn ✓K2
+- [[WBP_FOFF_ToolDemo]] → [[WBP_Toast]] — tạo toast [K2 2026-09-25] · Create Widget WBP_Toast + Add to Viewport (Z 100) ✓K2
+- [[WBP_FOFF_ToolDemo]] → [[BP_UndoManager]] — lưu mốc đầu tiên [K2 2026-09-25] · CaptureSnapshot(Initial) ✓K2
 - [[WBP_FOFF_ToolDemo]] → [[WBP_FurnitureInventory]] — mở inventory khi bấm nút · Open widget
 - [[BP_UndoManager]] → [[BP_FurnitureInputManager]] — spawn lại đồ khi Undo, không tự chọn, không nhồi Recent · SpawnFurnitureCopy(bAutoSelect=False, bAddToRecent=False) ✓K2
 - [[BP_FurnitureInputManager]] → [[BP_FurnitureActor]] — spawn đồ + bắt đầu tải mesh (async) · SpawnFurnitureCopy → LoadMeshAsync() ✓K2
@@ -53,6 +53,7 @@
 - [[WBP_FurnitureInventory]] → [[BP_UndoManager]] — mở / chốt / hủy phiên chỉnh param (U2.4-2.5) · BeginInteractiveEdit() / CommitInteractiveEdit() / CancelInteractiveEdit()
 - [[BP_UndoManager]] → [[BP_FurnitureSceneManager]] — tìm lại đồ theo ID khi undo/chốt param — caller đầu tiên của Resolver · ResolveByPersistentId() ✓K2
 - [[BP_UndoManager]] → [[MaterialSlotService_Reference]] — đọc giá trị trước/sau + đảo 1 thông số · GetSlot*Param() / SetSlot*Param() (qua ApplyParamCommand) ✓K2
-- [[BP_UndoManager]] → [[WBP_FurnitureInventory]] — báo lịch sử vừa đổi (undo/redo param) · Broadcast OnHistoryChanged
-- [[WBP_FurnitureInventory]] → [[BP_UndoManager]] — nghe lịch sử đổi → refresh panel · Bind OnHistoryChanged → RefreshParamPanel()
+- [[BP_UndoManager]] → [[WBP_FurnitureInventory]] — báo lịch sử vừa đổi (cuối AppendEntry) · Broadcast OnHistoryChanged ✓K2
+- [[BP_UndoManager]] → [[WBP_FurnitureInventory]] — báo lịch sử vừa đổi (cuối nhánh Undo / Redo) · Broadcast OnHistoryChanged (Undo/Redo)
+- [[WBP_FurnitureInventory]] → [[BP_UndoManager]] — nghe lịch sử đổi → refresh panel · Bind OnHistoryChanged → RefreshParamPanel() ✓K2
 - [[SaveGameMenu]] → [[BP_FurnitureSceneManager]] — báo tin bấm Load · OnLoadButtonClicked

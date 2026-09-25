@@ -6,7 +6,7 @@
    "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 2688,
+   "height": 3006,
    "label": "BP_UndoManager",
    "color": "5"
   },
@@ -16,7 +16,7 @@
    "x": 880,
    "y": 110,
    "width": 380,
-   "height": 2688,
+   "height": 3006,
    "label": "WBP_BoxSelectOverlay",
    "color": "2"
   },
@@ -26,7 +26,7 @@
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 2688,
+   "height": 3006,
    "label": "BP_FurnitureInputManager",
    "color": "5"
   },
@@ -36,7 +36,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 2688,
+   "height": 3006,
    "label": "User"
   },
   {
@@ -93,14 +93,14 @@
    "x": 465,
    "y": 280,
    "width": 330,
-   "height": 234,
-   "text": "**1.** nhấn chuột (nền hoặc lên đồ) - chỉ ghi nhận, chưa chọn\n`Mouse Left Pressed → SET BoxStartPos, bIsPendingBoxSelect = True`\n↗ [[BP_FurnitureInputManager#Mouse Left Pressed — FULL FLOW (v1.5)|BP_FurnitureInputManager › Mouse Left Pressed]]\n<small>← User · thao tác người dùng</small>"
+   "height": 256,
+   "text": "**1.** nhấn chuột (nền hoặc lên đồ) - chỉ ghi nhận, chưa chọn\n`Mouse Left Pressed → SET BoxStartPos, bIsPendingBoxSelect = True`\n↗ [[BP_FurnitureInputManager#Mouse Left Pressed — FULL FLOW (v1.5 → as-built ✓K2 25/09/2026)|BP_FurnitureInputManager › Mouse Left Pressed]]\n<small>← User · thao tác người dùng</small>"
   },
   {
    "id": "s2",
    "type": "text",
    "x": 465,
-   "y": 554,
+   "y": 576,
    "width": 330,
    "height": 168,
    "text": "↻ lặp: mỗi frame khi còn giữ chuột (Event Tick, chỉ khi kho đang mở)\n**2.** kéo quá 5px → thành quét khung\n`SET bIsBoxSelecting = True, bIsPendingBoxSelect = False`\n<small>nội bộ · ✓K2</small>"
@@ -109,7 +109,7 @@
    "id": "s3",
    "type": "text",
    "x": 905,
-   "y": 762,
+   "y": 784,
    "width": 330,
    "height": 234,
    "text": "↻ lặp: mỗi frame khi còn giữ chuột (Event Tick, chỉ khi kho đang mở)\n**3.** hiện và vẽ khung theo chuột\n`ShowBox() → UpdateBox(BoxStartPos, chuột)`\n↗ [[WBP_BoxSelectOverlay#ShowBox|WBP_BoxSelectOverlay › ShowBox]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
@@ -118,71 +118,80 @@
    "id": "s4",
    "type": "text",
    "x": 465,
-   "y": 1036,
+   "y": 1058,
    "width": 330,
-   "height": 234,
-   "text": "**4.** thả chuột\n`OnLMBReleased (Sequence Then 1)`\n↗ [[BP_FurnitureInputManager#OnLMBReleased — FULL FLOW (v1.6, ✓K2 12/09/2026 — G6.0 VERIFY) ⭐ đường chính chốt selection|BP_FurnitureInputManager › OnLMBReleased]]\n<small>← User · thao tác người dùng</small>"
+   "height": 256,
+   "text": "**4.** thả chuột\n`IA_LeftRelease → OnLMBReleased (Sequence Then 1)`\n↗ [[BP_FurnitureInputManager#IA_LeftRelease — người gọi `OnLMBReleased` (✓ ảnh chụp graph 25/09/2026, Find References)|BP_FurnitureInputManager › IA_LeftRelease]]\n<small>← User · thao tác người dùng</small>"
   },
   {
    "id": "s5",
    "type": "text",
    "x": 465,
-   "y": 1310,
+   "y": 1354,
    "width": 330,
    "height": 190,
-   "text": "**5.** chốt khung\n`FinishBoxSelect(EndPos)`\n↗ [[BP_FurnitureInputManager#FinishBoxSelect(EndPos Vector2D) — Function (v1.5)|BP_FurnitureInputManager › FinishBoxSelect]]\n<small>nội bộ · ✓K2</small>"
+   "text": "**5.** chốt khung\n`FinishBoxSelect(EndPos)`\n↗ [[BP_FurnitureInputManager#FinishBoxSelect(EndPos Vector2D) — Function (v1.5 → as-built ✓K2 25/09/2026)|BP_FurnitureInputManager › FinishBoxSelect]]\n<small>nội bộ · ✓K2</small>"
   },
   {
    "id": "s6",
    "type": "text",
    "x": 465,
-   "y": 1540,
+   "y": 1584,
    "width": 330,
    "height": 146,
-   "text": "**6.** lấy đồ có ĐIỂM GỐC nằm trong khung (không theo bounding box)\n`Project World To Screen ÷ Get Viewport Scale`\n<small>nội bộ · theo doc</small>"
+   "text": "**6.** lấy đồ có ĐIỂM GỐC nằm trong khung (không theo bounding box)\n`Project World To Screen ÷ Get Viewport Scale → ADD LocalSelected`\n<small>nội bộ · ✓K2</small>"
   },
   {
    "id": "s7",
    "type": "text",
    "x": 465,
-   "y": 1726,
+   "y": 1770,
    "width": 330,
-   "height": 190,
-   "text": "▸ nếu giữ Ctrl\n**7.** cộng dồn vào selection cũ\n`ToggleActor() từng món`\n↗ [[BP_FurnitureInputManager#ToggleActor(Actor) (T5, T7)|BP_FurnitureInputManager › ToggleActor]]\n<small>nội bộ · theo doc</small>"
+   "height": 234,
+   "text": "**7.** trúng 1 món trong nhóm thì lấy cả nhóm\n`ExpandSelectionWithGroups(LocalSelected) → ExpandedActors`\n↗ [[BP_FurnitureInputManager#ExpandSelectionWithGroups(RawActors) → Array<BP_FurnitureActor> ⭐ keystone|BP_FurnitureInputManager › ExpandSelectionWithGroups]]\n<small>nội bộ · ✓K2</small>"
   },
   {
    "id": "s8",
    "type": "text",
    "x": 465,
-   "y": 1956,
+   "y": 2044,
    "width": 330,
-   "height": 212,
-   "text": "▸ ngược lại: không giữ Ctrl\n**8.** thay selection\n`DeselectAll() → SelectActors(LocalSelected)`\n↗ [[BP_FurnitureInputManager#DeselectAll (T5 → v1.6)|BP_FurnitureInputManager › DeselectAll]]\n<small>nội bộ · theo doc</small>",
-   "color": "3"
+   "height": 190,
+   "text": "▸ nếu giữ Ctrl\n**8.** cộng dồn vào selection cũ\n`ToggleActor() từng món`\n↗ [[BP_FurnitureInputManager#ToggleActor(Actor) (T5, T7)|BP_FurnitureInputManager › ToggleActor]]\n<small>nội bộ · ✓K2</small>"
   },
   {
    "id": "s9",
    "type": "text",
-   "x": 1345,
-   "y": 2208,
+   "x": 465,
+   "y": 2274,
    "width": 330,
-   "height": 190,
-   "text": "**9.** ghi sổ\n`CaptureSnapshot(\"BoxSelect\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
+   "height": 212,
+   "text": "▸ ngược lại: không giữ Ctrl\n**9.** thay selection\n`DeselectAll() → SelectActors(ExpandedActors)`\n↗ [[BP_FurnitureInputManager#DeselectAll (T5 → v1.6)|BP_FurnitureInputManager › DeselectAll]]\n<small>nội bộ · ✓K2</small>",
+   "color": "3"
   },
   {
    "id": "s10",
    "type": "text",
-   "x": 905,
-   "y": 2438,
+   "x": 1345,
+   "y": 2526,
    "width": 330,
    "height": 190,
-   "text": "**10.** ẩn khung, dọn cờ\n`HideBox() → SET bIsBoxSelecting = False, PendingClickActor = None`\n↗ [[WBP_BoxSelectOverlay#HideBox|WBP_BoxSelectOverlay › HideBox]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
+   "text": "**10.** ghi sổ 1 lần (cả 2 nhánh)\n`CaptureSnapshot(\"BoxSelect\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
   },
   {
-   "id": "n15",
+   "id": "s11",
+   "type": "text",
+   "x": 905,
+   "y": 2756,
+   "width": 330,
+   "height": 190,
+   "text": "**11.** ẩn khung, dọn cờ\n`HideBox() → SET bIsBoxSelecting = False, PendingClickActor = None`\n↗ [[WBP_BoxSelectOverlay#HideBox|WBP_BoxSelectOverlay › HideBox]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
+  },
+  {
+   "id": "n16",
    "type": "text",
    "x": 20,
-   "y": 2668,
+   "y": 2986,
    "width": 1660,
    "height": 70,
    "text": "📝 Kéo chưa tới 5px thì là click đơn → 5a. Tick còn 1 nhánh dự phòng (thả chuột lọt giữa 2 frame) cũng gọi FinishBoxSelect.",
@@ -247,7 +256,8 @@
    "fromSide": "bottom",
    "toNode": "s6",
    "toSide": "top",
-   "label": "6"
+   "label": "6 ✓K2",
+   "color": "4"
   },
   {
    "id": "e7",
@@ -255,39 +265,52 @@
    "fromSide": "bottom",
    "toNode": "s7",
    "toSide": "top",
-   "label": "7"
+   "label": "7 ✓K2",
+   "color": "4"
   },
   {
    "id": "e8",
-   "fromNode": "s6",
+   "fromNode": "s7",
    "fromSide": "bottom",
    "toNode": "s8",
    "toSide": "top",
-   "label": "8"
+   "label": "8 ✓K2",
+   "color": "4"
   },
   {
    "id": "e9",
    "fromNode": "s7",
-   "fromSide": "right",
+   "fromSide": "bottom",
    "toNode": "s9",
-   "toSide": "left",
-   "label": "9"
+   "toSide": "top",
+   "label": "9 ✓K2",
+   "color": "4"
   },
   {
    "id": "e10",
    "fromNode": "s8",
    "fromSide": "right",
-   "toNode": "s9",
+   "toNode": "s10",
    "toSide": "left",
-   "label": "9"
+   "label": "10 ✓K2",
+   "color": "4"
   },
   {
    "id": "e11",
    "fromNode": "s9",
-   "fromSide": "left",
+   "fromSide": "right",
    "toNode": "s10",
-   "toSide": "right",
+   "toSide": "left",
    "label": "10 ✓K2",
+   "color": "4"
+  },
+  {
+   "id": "e12",
+   "fromNode": "s10",
+   "fromSide": "left",
+   "toNode": "s11",
+   "toSide": "right",
+   "label": "11 ✓K2",
    "color": "4"
   }
  ]

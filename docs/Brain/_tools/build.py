@@ -71,6 +71,30 @@ for f in FL:
 owned = {sid for sids in LN.values() for sid in sids}
 orphan = [f for f in FL if f['sid'] not in owned]
 
+# ---- chỉ mục (ghi TRƯỚC khi soát link để soát bản mới nhất)
+def uses(lst): return ' · '.join(f"{cv(f, st['n'])} {EV(st)}".replace('|', '\\|') for f, st in lst)   # trong bảng: | của alias phải escape
+def who(lst):
+    g = {}
+    for f, st in lst: g.setdefault(st['A'], []).append((f, st))
+    return '<br>'.join(f"← `{a}` " + uses(x) for a, x in g.items())
+sid2ln = {sid: ln for ln, sids in LN.items() for sid in sids}
+def tasks(lst):
+    ls = BL._dedupe([sid2ln[f['sid']] for f, _ in lst if f['sid'] in sid2ln])
+    return ' '.join(f"[[{l}\\|{l.split(' · ')[0]}]]" for l in ls) or '—'
+I = ['# Chỉ mục hàm & biến (tự sinh)', '',
+     '> Sinh bằng `Brain/_tools/build.py` từ [[Architecture_Map]] Phần 5 — ĐỪNG sửa tay. `5f b21` = luồng 5f, bước 21 trên Canvas. Cột "Thao tác" = note luồng `L01…L13` chứa bước đó.',
+     '> Dùng cho **Q10**: sắp sửa 1 hàm / đổi 1 biến → xem nó nằm ở luồng nào để rà. ⚠ Chỉ phủ các luồng ĐÃ vẽ ở Phần 5 — Q10 vẫn phải quét toàn project.',
+     '> ← [[Bản đồ não]] · [[Kiểm tra bản đồ]]', '',
+     f'## Hàm / sự kiện ({len(fidx)})', '', '| Hàm | Mục trong doc | Thao tác | Xuất hiện ở |', '|---|---|---|---|']
+for t in sorted(fidx, key=str.lower):
+    o = fidx[t]['owner']; h = BL.find_heading(o, [t], FILES) if o else None
+    I.append(f"| `{t}` | " + (f"[[{o}#{BL.link_heading(h[0])}\\|{o}]]" if h else '—') + f" | {tasks(fidx[t]['uses'])} | {uses(fidx[t]['uses'])} |")
+I += ['', f'## Biến ({len(vidx)})', '> "Của" = actor giữ biến (bên nhận mũi tên). Ghi/Đọc = ai SET/GET, ở bước nào — chính là cột Producer/Consumer của Q10.', '',
+      '| Biến | Của | Ghi (SET) | Đọc (GET) |', '|---|---|---|---|']
+for v in sorted(vidx, key=str.lower):
+    d = vidx[v]; I.append(f"| `{v}` | [[{d['owner']}]] | {who(d['SET']) or '—'} | {who(d['GET']) or '—'} |")
+open(os.path.join('Brain', 'Chỉ mục hàm & biến.md'), 'w', encoding='utf-8', newline='\n').write('\n'.join(I) + '\n')
+
 # ---- link gãy trong Brain/ (note + canvas) và Architecture_Map
 VAULT = os.path.dirname(BL.ROOT)
 names = {}
@@ -138,26 +162,4 @@ L += [f'- {cv(f)} {f["title"]}' for f in orphan] or ['- (không có)']
 L += ['', f'## Mục 5x thiếu dòng "Kiểm chứng K2:" hoặc "Nguồn:" ({len(meta)})', ''] + ([f'- {s}' for s in meta] or ['- (không có)'])
 open(os.path.join('Brain', 'Kiểm tra bản đồ.md'), 'w', encoding='utf-8', newline='\n').write('\n'.join(L) + '\n')
 
-def uses(lst): return ' · '.join(f"{cv(f, st['n'])} {EV(st)}".replace('|', '\\|') for f, st in lst)   # trong bảng: | của alias phải escape
-def who(lst):
-    g = {}
-    for f, st in lst: g.setdefault(st['A'], []).append((f, st))
-    return '<br>'.join(f"← `{a}` " + uses(x) for a, x in g.items())
-sid2ln = {sid: ln for ln, sids in LN.items() for sid in sids}
-def tasks(lst):
-    ls = BL._dedupe([sid2ln[f['sid']] for f, _ in lst if f['sid'] in sid2ln])
-    return ' '.join(f"[[{l}\\|{l.split(' · ')[0]}]]" for l in ls) or '—'
-I = ['# Chỉ mục hàm & biến (tự sinh)', '',
-     '> Sinh bằng `Brain/_tools/build.py` từ [[Architecture_Map]] Phần 5 — ĐỪNG sửa tay. `5f b21` = luồng 5f, bước 21 trên Canvas. Cột "Thao tác" = note luồng `L01…L13` chứa bước đó.',
-     '> Dùng cho **Q10**: sắp sửa 1 hàm / đổi 1 biến → xem nó nằm ở luồng nào để rà. ⚠ Chỉ phủ các luồng ĐÃ vẽ ở Phần 5 — Q10 vẫn phải quét toàn project.',
-     '> ← [[Bản đồ não]] · [[Kiểm tra bản đồ]]', '',
-     f'## Hàm / sự kiện ({len(fidx)})', '', '| Hàm | Mục trong doc | Thao tác | Xuất hiện ở |', '|---|---|---|---|']
-for t in sorted(fidx, key=str.lower):
-    o = fidx[t]['owner']; h = BL.find_heading(o, [t], FILES) if o else None
-    I.append(f"| `{t}` | " + (f"[[{o}#{BL.link_heading(h[0])}\\|{o}]]" if h else '—') + f" | {tasks(fidx[t]['uses'])} | {uses(fidx[t]['uses'])} |")
-I += ['', f'## Biến ({len(vidx)})', '> "Của" = actor giữ biến (bên nhận mũi tên). Ghi/Đọc = ai SET/GET, ở bước nào — chính là cột Producer/Consumer của Q10.', '',
-      '| Biến | Của | Ghi (SET) | Đọc (GET) |', '|---|---|---|---|']
-for v in sorted(vidx, key=str.lower):
-    d = vidx[v]; I.append(f"| `{v}` | [[{d['owner']}]] | {who(d['SET']) or '—'} | {who(d['GET']) or '—'} |")
-open(os.path.join('Brain', 'Chỉ mục hàm & biến.md'), 'w', encoding='utf-8', newline='\n').write('\n'.join(I) + '\n')
 print(L[5]); print('chỉ mục:', len(fidx), 'hàm ·', len(vidx), 'biến')

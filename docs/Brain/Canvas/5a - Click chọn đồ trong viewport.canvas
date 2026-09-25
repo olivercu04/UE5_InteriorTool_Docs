@@ -6,7 +6,7 @@
    "x": 2200,
    "y": 110,
    "width": 380,
-   "height": 3302,
+   "height": 3456,
    "label": "WBP_MeshControls",
    "color": "2"
   },
@@ -16,7 +16,7 @@
    "x": 1760,
    "y": 110,
    "width": 380,
-   "height": 3302,
+   "height": 3456,
    "label": "WBP_FurnitureInventory",
    "color": "2"
   },
@@ -26,7 +26,7 @@
    "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 3302,
+   "height": 3456,
    "label": "BP_UndoManager",
    "color": "5"
   },
@@ -36,7 +36,7 @@
    "x": 880,
    "y": 110,
    "width": 380,
-   "height": 3302,
+   "height": 3456,
    "label": "BP_GizmoController",
    "color": "5"
   },
@@ -46,7 +46,7 @@
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 3302,
+   "height": 3456,
    "label": "BP_FurnitureInputManager",
    "color": "5"
   },
@@ -56,7 +56,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 3302,
+   "height": 3456,
    "label": "User"
   },
   {
@@ -133,23 +133,33 @@
    "x": 465,
    "y": 280,
    "width": 330,
-   "height": 212,
-   "text": "**1.** nhấn chuột\n`Mouse Left Pressed (chỉ ghi PendingClickActor, CHƯA chọn)`\n↗ [[BP_FurnitureInputManager#Mouse Left Pressed — FULL FLOW (v1.5)|BP_FurnitureInputManager › Mouse Left Pressed]]\n<small>← User · thao tác người dùng</small>"
+   "height": 234,
+   "text": "**1.** nhấn chuột\n`Mouse Left Pressed (chỉ ghi PendingClickActor, CHƯA chọn)`\n↗ [[BP_FurnitureInputManager#Mouse Left Pressed — FULL FLOW (v1.5 → as-built ✓K2 25/09/2026)|BP_FurnitureInputManager › Mouse Left Pressed]]\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "n8",
+   "type": "text",
+   "x": 20,
+   "y": 554,
+   "width": 780,
+   "height": 70,
+   "text": "📝 Menu chuột phải đang hiện thì lượt bấm bị nuốt (Close Context Menu → dừng) - menu đóng lúc thả (OnLMBReleased Then 0).",
+   "color": "3"
   },
   {
    "id": "s2",
    "type": "text",
    "x": 465,
-   "y": 532,
+   "y": 664,
    "width": 330,
-   "height": 234,
-   "text": "**2.** thả chuột\n`OnLMBReleased (Sequence Then 2)`\n↗ [[BP_FurnitureInputManager#OnLMBReleased — FULL FLOW (v1.6, ✓K2 12/09/2026 — G6.0 VERIFY) ⭐ đường chính chốt selection|BP_FurnitureInputManager › OnLMBReleased]]\n<small>← User · thao tác người dùng</small>"
+   "height": 256,
+   "text": "**2.** thả chuột\n`IA_LeftRelease → OnLMBReleased (Sequence Then 2)`\n↗ [[BP_FurnitureInputManager#IA_LeftRelease — người gọi `OnLMBReleased` (✓ ảnh chụp graph 25/09/2026, Find References)|BP_FurnitureInputManager › IA_LeftRelease]]\n<small>← User · thao tác người dùng</small>"
   },
   {
    "id": "s3",
    "type": "text",
    "x": 465,
-   "y": 806,
+   "y": 960,
    "width": 330,
    "height": 190,
    "text": "▸ nếu click thường\n**3.** bỏ chọn cũ\n`DeselectAll()`\n↗ [[BP_FurnitureInputManager#DeselectAll (T5 → v1.6)|BP_FurnitureInputManager › DeselectAll]]\n<small>nội bộ · ✓K2</small>"
@@ -158,7 +168,7 @@
    "id": "s4",
    "type": "text",
    "x": 465,
-   "y": 1036,
+   "y": 1190,
    "width": 330,
    "height": 212,
    "text": "▸ nếu click thường\n**4.** lấy cả group chứa món\n`ExpandSelectionWithGroups()`\n↗ [[BP_FurnitureInputManager#ExpandSelectionWithGroups(RawActors) → Array<BP_FurnitureActor> ⭐ keystone|BP_FurnitureInputManager › ExpandSelectionWithGroups]]\n<small>nội bộ · ✓K2</small>"
@@ -167,7 +177,7 @@
    "id": "s5",
    "type": "text",
    "x": 465,
-   "y": 1288,
+   "y": 1442,
    "width": 330,
    "height": 190,
    "text": "▸ nếu click thường\n**5.** chọn\n`SelectActors()`\n↗ [[BP_FurnitureInputManager#SelectActors(Actors) (T5)|BP_FurnitureInputManager › SelectActors]]\n<small>nội bộ · ✓K2</small>"
@@ -176,7 +186,7 @@
    "id": "s6",
    "type": "text",
    "x": 465,
-   "y": 1518,
+   "y": 1672,
    "width": 330,
    "height": 190,
    "text": "▸ nếu click thường\n**6.** tô viền\n`UpdateOutlineState()`\n↗ [[BP_FurnitureInputManager#UpdateOutlineState (T5)|BP_FurnitureInputManager › UpdateOutlineState]]\n<small>nội bộ · theo doc</small>"
@@ -185,7 +195,7 @@
    "id": "s7",
    "type": "text",
    "x": 905,
-   "y": 1748,
+   "y": 1902,
    "width": 330,
    "height": 212,
    "text": "▸ nếu click thường\n**7.** tắt rồi bật gizmo\n`UpdateGizmo → DeactivateGizmo() + ActivateGizmo()`\n↗ [[BP_GizmoController#DeactivateGizmo|BP_GizmoController › DeactivateGizmo]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
@@ -194,7 +204,7 @@
    "id": "s8",
    "type": "text",
    "x": 1785,
-   "y": 2000,
+   "y": 2154,
    "width": 330,
    "height": 256,
    "text": "▸ nếu click thường\n**8.** báo tin\n`Broadcast OnSelectionChanged → OnSelectionChangedMaterial → OnMeshSelected`\n↗ [[WBP_FurnitureInventory#OnSelectionChangedMaterial(Actors, Primary) — v2.4 MỚI|WBP_FurnitureInventory › OnSelectionChangedMaterial]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
@@ -203,7 +213,7 @@
    "id": "s9",
    "type": "text",
    "x": 2225,
-   "y": 2296,
+   "y": 2450,
    "width": 330,
    "height": 256,
    "text": "▸ nếu click thường\n**9.** báo tin\n`OnSelectionChanged → OnSelectionChangedInfoBar`\n↗ [[WBP_MeshControls#UpdateDetailPopup (Custom Event, bound to OnSelectionChanged) — v1.7|WBP_MeshControls › OnSelectionChanged]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
@@ -212,7 +222,7 @@
    "id": "s10",
    "type": "text",
    "x": 465,
-   "y": 2592,
+   "y": 2746,
    "width": 330,
    "height": 234,
    "text": "▸ ngược lại: Ctrl+click\n**10.** lấy cả group\n`ExpandSelectionWithGroups() → ToggleActor() từng món`\n↗ [[BP_FurnitureInputManager#ExpandSelectionWithGroups(RawActors) → Array<BP_FurnitureActor> ⭐ keystone|BP_FurnitureInputManager › ExpandSelectionWithGroups]]\n<small>nội bộ · ✓K2</small>",
@@ -222,7 +232,7 @@
    "id": "s11",
    "type": "text",
    "x": 1345,
-   "y": 2866,
+   "y": 3020,
    "width": 330,
    "height": 190,
    "text": "**11.** chụp trạng thái\n`CaptureSnapshot(\"Select\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
@@ -231,7 +241,7 @@
    "id": "s12",
    "type": "text",
    "x": 1785,
-   "y": 3096,
+   "y": 3250,
    "width": 330,
    "height": 256,
    "text": "◇ khi: chỉ 1 món được chọn\n**12.** chọn slot vật liệu dưới chuột\n`NotifyViewportSlotClick()`\n↗ [[WBP_FurnitureInventory#NotifyViewportSlotClick(ClickedActor BP_FurnitureActor, ScreenPos Vector2D) — Custom Event MỚI (S7.G6.1, 12/09/2026)|WBP_FurnitureInventory › NotifyViewportSlotClick]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
@@ -250,12 +260,19 @@
    "id": "e1",
    "fromNode": "s1",
    "fromSide": "bottom",
+   "toNode": "n8",
+   "toSide": "top"
+  },
+  {
+   "id": "e2",
+   "fromNode": "n8",
+   "fromSide": "bottom",
    "toNode": "s2",
    "toSide": "top",
    "label": "2"
   },
   {
-   "id": "e2",
+   "id": "e3",
    "fromNode": "s2",
    "fromSide": "bottom",
    "toNode": "s3",
@@ -264,7 +281,7 @@
    "color": "4"
   },
   {
-   "id": "e3",
+   "id": "e4",
    "fromNode": "s3",
    "fromSide": "bottom",
    "toNode": "s4",
@@ -273,7 +290,7 @@
    "color": "4"
   },
   {
-   "id": "e4",
+   "id": "e5",
    "fromNode": "s4",
    "fromSide": "bottom",
    "toNode": "s5",
@@ -282,7 +299,7 @@
    "color": "4"
   },
   {
-   "id": "e5",
+   "id": "e6",
    "fromNode": "s5",
    "fromSide": "bottom",
    "toNode": "s6",
@@ -290,7 +307,7 @@
    "label": "6"
   },
   {
-   "id": "e6",
+   "id": "e7",
    "fromNode": "s6",
    "fromSide": "right",
    "toNode": "s7",
@@ -298,7 +315,7 @@
    "label": "7"
   },
   {
-   "id": "e7",
+   "id": "e8",
    "fromNode": "s7",
    "fromSide": "right",
    "toNode": "s8",
@@ -306,7 +323,7 @@
    "label": "8"
   },
   {
-   "id": "e8",
+   "id": "e9",
    "fromNode": "s8",
    "fromSide": "right",
    "toNode": "s9",
@@ -314,7 +331,7 @@
    "label": "9"
   },
   {
-   "id": "e9",
+   "id": "e10",
    "fromNode": "s2",
    "fromSide": "bottom",
    "toNode": "s10",
@@ -323,7 +340,7 @@
    "color": "4"
   },
   {
-   "id": "e10",
+   "id": "e11",
    "fromNode": "s9",
    "fromSide": "left",
    "toNode": "s11",
@@ -332,7 +349,7 @@
    "color": "4"
   },
   {
-   "id": "e11",
+   "id": "e12",
    "fromNode": "s10",
    "fromSide": "right",
    "toNode": "s11",
@@ -341,7 +358,7 @@
    "color": "4"
   },
   {
-   "id": "e12",
+   "id": "e13",
    "fromNode": "s11",
    "fromSide": "right",
    "toNode": "s12",

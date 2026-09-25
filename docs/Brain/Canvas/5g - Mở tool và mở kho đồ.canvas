@@ -6,7 +6,7 @@
    "x": 1760,
    "y": 110,
    "width": 380,
-   "height": 2720,
+   "height": 2698,
    "label": "WBP_FurnitureInventory",
    "color": "2"
   },
@@ -16,7 +16,7 @@
    "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 2720,
+   "height": 2698,
    "label": "BP_UndoManager",
    "color": "5"
   },
@@ -26,7 +26,7 @@
    "x": 880,
    "y": 110,
    "width": 380,
-   "height": 2720,
+   "height": 2698,
    "label": "BP_FurnitureInputManager",
    "color": "5"
   },
@@ -36,7 +36,7 @@
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 2720,
+   "height": 2698,
    "label": "WBP_FOFF_ToolDemo",
    "color": "2"
   },
@@ -46,7 +46,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 2720,
+   "height": 2698,
    "label": "User"
   },
   {
@@ -114,8 +114,7 @@
    "y": 280,
    "width": 330,
    "height": 146,
-   "text": "**1.** khởi động - sinh các manager (Input, Undo, Scene, Combo, UserPrefs)\n`Spawn (Event Construct, Then 0..13) ?`\n<small>← WBP_FOFF_ToolDemo · chưa rõ ?</small>",
-   "color": "1"
+   "text": "**1.** khởi động - sinh các manager (Undo, Scene, Input, Gizmo, Groups, UserPrefs, Combo) + Toast\n`Spawn (Event Construct Then 11)`\n<small>← WBP_FOFF_ToolDemo · ✓K2</small>"
   },
   {
    "id": "s2",
@@ -132,14 +131,14 @@
    "x": 1345,
    "y": 652,
    "width": 330,
-   "height": 190,
-   "text": "**3.** lưu mốc đầu tiên của sổ lịch sử\n`CaptureSnapshot(\"Initial\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← WBP_FOFF_ToolDemo · theo doc</small>"
+   "height": 168,
+   "text": "**3.** lưu mốc đầu tiên của sổ lịch sử\n`CaptureSnapshot(\"Initial\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← WBP_FOFF_ToolDemo · ✓K2</small>"
   },
   {
    "id": "s4",
    "type": "text",
    "x": 465,
-   "y": 882,
+   "y": 860,
    "width": 330,
    "height": 124,
    "text": "**4.** bấm nút Kho đồ\n`BTN_FurnitureInventory`\n<small>← User · thao tác người dùng</small>"
@@ -148,7 +147,7 @@
    "id": "s5",
    "type": "text",
    "x": 1785,
-   "y": 1046,
+   "y": 1024,
    "width": 330,
    "height": 146,
    "text": "**5.** mở kho - tạo 1 lần, các lần sau chỉ bật Visibility\n`Open widget`\n<small>← WBP_FOFF_ToolDemo · theo doc</small>"
@@ -157,7 +156,7 @@
    "id": "s6",
    "type": "text",
    "x": 1785,
-   "y": 1232,
+   "y": 1210,
    "width": 330,
    "height": 212,
    "text": "**6.** Event Construct - dựng cây thư mục, lọc lần đầu\n`BuildFolderTree → PopulateTreeColumn → FilterByFolderPath()`\n↗ [[WBP_FurnitureInventory#FilterByFolderPath(FolderPath)|WBP_FurnitureInventory › FilterByFolderPath]]\n<small>nội bộ · theo doc</small>"
@@ -166,7 +165,7 @@
    "id": "s7",
    "type": "text",
    "x": 1345,
-   "y": 1484,
+   "y": 1462,
    "width": 330,
    "height": 234,
    "text": "**7.** nghe Undo xong để làm mới panel\n`Bind OnRestoreCompleted → OnSceneRestored`\n↗ [[WBP_FurnitureInventory#OnSceneRestored(RestoredSelectedActor) — v1.1 + SỬA (Replace UX Fix P4.3, 02/08/2026)|WBP_FurnitureInventory › OnSceneRestored]]\n<small>← WBP_FurnitureInventory · theo doc</small>"
@@ -175,7 +174,7 @@
    "id": "s8",
    "type": "text",
    "x": 905,
-   "y": 1758,
+   "y": 1736,
    "width": 330,
    "height": 234,
    "text": "**8.** nghe chọn đồ\n`Bind OnSelectionChanged → OnSelectionChangedMaterial`\n↗ [[WBP_FurnitureInventory#OnSelectionChangedMaterial(Actors, Primary) — v2.4 MỚI|WBP_FurnitureInventory › OnSelectionChangedMaterial]]\n<small>← WBP_FurnitureInventory · theo doc</small>"
@@ -184,7 +183,7 @@
    "id": "s9",
    "type": "text",
    "x": 1785,
-   "y": 2032,
+   "y": 2010,
    "width": 330,
    "height": 212,
    "text": "**9.** bấm X đóng kho\n`BTN_Close`\n↗ [[WBP_FurnitureInventory#BTN_Close — OnClicked (EventGraph) — SỬA (Replace UX Fix P4.2+P4.4, 02/08/2026)|WBP_FurnitureInventory › BTN_Close]]\n<small>← User · thao tác người dùng</small>"
@@ -193,7 +192,7 @@
    "id": "s10",
    "type": "text",
    "x": 905,
-   "y": 2284,
+   "y": 2262,
    "width": 330,
    "height": 146,
    "text": "**10.** xoá 3 biến chế độ thay đồ\n`SET ReplaceTarget = None, MeshesToReplace, ComboRootGroupIDToReplace`\n<small>← WBP_FurnitureInventory · theo doc</small>"
@@ -202,7 +201,7 @@
    "id": "s11",
    "type": "text",
    "x": 1785,
-   "y": 2470,
+   "y": 2448,
    "width": 330,
    "height": 190,
    "text": "**11.** ẩn, KHÔNG huỷ widget\n`ExitReplaceMode() → SetVisibility(Collapsed)`\n↗ [[WBP_FurnitureInventory#ExitReplaceMode — v1.3 + C9.0c (24/07/2026)|WBP_FurnitureInventory › ExitReplaceMode]]\n<small>nội bộ · theo doc</small>"
@@ -211,7 +210,7 @@
    "id": "n17",
    "type": "text",
    "x": 20,
-   "y": 2700,
+   "y": 2678,
    "width": 2100,
    "height": 70,
    "text": "📝 Phím I (Level BP, InputAction OpenFurnitureInventory) cũng bật / tắt kho. Đóng kho KHÔNG tắt phím tắt nội thất — LM_FurnitureInput bật suốt phiên từ BeginPlay của InputManager (Gate 1.5 B2).",
@@ -225,8 +224,8 @@
    "fromSide": "right",
    "toNode": "s1",
    "toSide": "left",
-   "label": "1 ?",
-   "color": "1"
+   "label": "1 ✓K2",
+   "color": "4"
   },
   {
    "id": "e1",
@@ -243,7 +242,8 @@
    "fromSide": "right",
    "toNode": "s3",
    "toSide": "left",
-   "label": "3"
+   "label": "3 ✓K2",
+   "color": "4"
   },
   {
    "id": "e3",

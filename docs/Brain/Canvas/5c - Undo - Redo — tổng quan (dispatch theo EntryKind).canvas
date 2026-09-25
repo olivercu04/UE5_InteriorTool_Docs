@@ -198,7 +198,7 @@
    "y": 2110,
    "width": 330,
    "height": 234,
-   "text": "**8.** báo tin\n`Broadcast OnHistoryChanged → RefreshParamPanel()`\n↗ [[WBP_FurnitureInventory#`RefreshParamPanel()` — Function — AS-BUILT ĐẦY ĐỦ 18/09/2026 (K2Node export thật)|WBP_FurnitureInventory › RefreshParamPanel]]\n<small>← BP_UndoManager · theo doc</small>"
+   "text": "**8.** báo tin\n`Broadcast OnHistoryChanged (Undo/Redo) → RefreshParamPanel()`\n↗ [[WBP_FurnitureInventory#`RefreshParamPanel()` — Function — AS-BUILT ĐẦY ĐỦ 18/09/2026 (K2Node export thật)|WBP_FurnitureInventory › RefreshParamPanel]]\n<small>← BP_UndoManager · theo doc</small>"
   },
   {
    "id": "n15",

@@ -92,7 +92,7 @@ Gọi từ `WBP_FurnitureInventory.HandleDeleteComboConfirmed` khi xóa combo �
 - [[WBP_FurnitureCard]] — gọi thêm Gần đây / Yêu thích · AddRecentMesh()
 - [[WBP_FurnitureInventory]] — đọc danh sách Gần đây / Yêu thích · GET UserPrefs → RecentMeshes / FavoriteMeshes
 - [[WBP_DragOverlay_FurnitureCard]] — thêm đồ vừa thả vào Gần đây · AddRecentMesh()
-- [[WBP_FOFF_ToolDemo]] — sinh ra · Spawn
+- [[WBP_FOFF_ToolDemo]] — sinh ra [K2 2026-09-25] · Spawn ✓K2
 - [[WBP_FurnitureInventory]] — thêm vật liệu vào Gần đây · AddRecentMaterial() ✓K2
 - [[BP_FurnitureActor]] — thêm vật liệu vào Gần đây · AddRecentMaterial()
 

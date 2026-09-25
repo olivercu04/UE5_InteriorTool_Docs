@@ -42,7 +42,7 @@ Combo giống **công thức xếp bàn tiệc**: không lưu chiếc bàn thậ
 Ctrl+Z xoá cụm vừa đặt / trả cụm cũ sau thay (1 entry cho cả cụm) · lỗi thay → `RestoreCurrentSnapshot` tự khôi phục · xoá combo khỏi thư viện: nút Xoá trên thẻ combo → hộp xác nhận ("Không thể hoàn tác" — xoá file, không vào sổ lịch sử).
 
 ## Còn mở
-- **CONFLICT** `ResolveActiveComboForSave` (cho phép Ghi đè) đã chèn vào `CB_SaveCombo_Handler` theo doc Inventory nhưng không có trong K2 04/08.
+- (đã đóng 25/09) `ResolveActiveComboForSave` có trong `CB_SaveCombo_Handler` ✓K2 — Ghi đè được bật khi đang đứng trong 1 combo.
 - Ai tạo lớp kéo-thả khi kéo thẻ combo — doc thẻ combo không ghi.
 - Thỏa thuận thương mại combo với đồng nghiệp chưa chốt ([[Tư duy 1 · Sản phẩm và người dùng|Tư duy 1]] mục 7).
 
@@ -50,7 +50,7 @@ Ctrl+Z xoá cụm vừa đặt / trả cụm cũ sau thay (1 entry cho cả cụ
 | Hàm | Doc |
 |---|---|
 | `SaveComboFromSelection` · `SpawnComboByID` · `F_LoadComboData` · `F_RegisterComboGroups` · `ReplaceCombo` · `BeginThumbnailCapture` | [[BP_ComboManager]] |
-| `CB_SaveCombo_Handler` (✓K2 04/08) · `ResolveActiveComboForSave` · `StartReplaceComboMode` · `ExecuteComboReplace` · `DestroyComboCluster` | [[BP_FurnitureInputManager]] |
+| `CB_SaveCombo_Handler` (✓K2 25/09) · `ResolveActiveComboForSave` · `StartReplaceComboMode` · `ExecuteComboReplace` · `DestroyComboCluster` | [[BP_FurnitureInputManager]] |
 | `OpenSaveComboDialog` · `OnSaveComboConfirmed` · `HandleSaveComboOverwriteConfirmed` · `LoadComboLibrary` · `RequestDeleteCombo` | [[WBP_FurnitureInventory]] |
 | Hộp thoại · thẻ · bóng | [[WBP_SaveComboDialog]] · [[WBP_ComboCard]] · [[BP_ComboGhostActor]] |
 | Định dạng JSON · đọc / ghi file | [[ComboSerializer_Reference]] · [[Data_Structures]] |

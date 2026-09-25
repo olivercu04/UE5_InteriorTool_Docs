@@ -6,7 +6,7 @@
    "x": 2640,
    "y": 110,
    "width": 380,
-   "height": 5262,
+   "height": 5284,
    "label": "BP_UndoManager",
    "color": "5"
   },
@@ -16,7 +16,7 @@
    "x": 2200,
    "y": 110,
    "width": 380,
-   "height": 5262,
+   "height": 5284,
    "label": "BP_FurnitureActor (mỗi món)",
    "color": "5"
   },
@@ -26,7 +26,7 @@
    "x": 1760,
    "y": 110,
    "width": 380,
-   "height": 5262,
+   "height": 5284,
    "label": "BP_PivotActor (khi ≥2 món)",
    "color": "5"
   },
@@ -36,7 +36,7 @@
    "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 5262,
+   "height": 5284,
    "label": "BP_GizmoController",
    "color": "5"
   },
@@ -46,7 +46,7 @@
    "x": 880,
    "y": 110,
    "width": 380,
-   "height": 5262,
+   "height": 5284,
    "label": "BP_FurnitureInputManager",
    "color": "5"
   },
@@ -56,7 +56,7 @@
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 5262,
+   "height": 5284,
    "label": "WBP_MeshControls",
    "color": "2"
   },
@@ -66,7 +66,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 5262,
+   "height": 5284,
    "label": "User"
   },
   {
@@ -191,23 +191,23 @@
    "x": 905,
    "y": 948,
    "width": 330,
-   "height": 212,
-   "text": "**4.** nhấn chuột lên 1 trục gizmo\n`Mouse Left Pressed (Step 0 SET bLMBHeld = True)`\n↗ [[BP_FurnitureInputManager#Mouse Left Pressed — FULL FLOW (v1.5)|BP_FurnitureInputManager › Mouse Left Pressed]]\n<small>← User · thao tác người dùng</small>"
+   "height": 234,
+   "text": "**4.** nhấn chuột lên 1 trục gizmo\n`Mouse Left Pressed (Step 0 SET bLMBHeld = True)`\n↗ [[BP_FurnitureInputManager#Mouse Left Pressed — FULL FLOW (v1.5 → as-built ✓K2 25/09/2026)|BP_FurnitureInputManager › Mouse Left Pressed]]\n<small>← User · thao tác người dùng</small>"
   },
   {
    "id": "s5",
    "type": "text",
    "x": 1345,
-   "y": 1200,
+   "y": 1222,
    "width": 330,
    "height": 190,
-   "text": "**5.** chuyển lượt bấm cho gizmo\n`OnMousePressed()`\n↗ [[BP_GizmoController#OnMousePressed — v1.1 (T15 thêm RefreshOffsets cho Pivot)|BP_GizmoController › OnMousePressed]]\n<small>Step 2 doc · ← BP_FurnitureInputManager · theo doc</small>"
+   "text": "**5.** chuyển lượt bấm cho gizmo\n`GizmoControllerRef.OnMousePressed()`\n↗ [[BP_GizmoController#OnMousePressed — v1.1 (T15 thêm RefreshOffsets cho Pivot)|BP_GizmoController › OnMousePressed]]\n<small>Step 2 doc · ← BP_FurnitureInputManager · ✓K2</small>"
   },
   {
    "id": "s6",
    "type": "text",
    "x": 1345,
-   "y": 1430,
+   "y": 1452,
    "width": 330,
    "height": 212,
    "text": "**6.** tia chỉ trúng gizmo → nhớ trục + mốc, khoá xoay camera\n`LineTrace(GizmoTrace) → Cast BaseGizmo → SET ActiveAxis, bIsDraggingGizmo = True, InitialActorLocation, PreviousMousePosition, DragPlane · Set Ignore Look Input = True`\n<small>nội bộ · theo doc</small>"
@@ -216,7 +216,7 @@
    "id": "s7",
    "type": "text",
    "x": 1785,
-   "y": 1682,
+   "y": 1704,
    "width": 330,
    "height": 256,
    "text": "◇ khi: đang chọn ≥2 món (SelectedActor là Pivot)\n**7.** chụp vị trí tương đối từng món so với pivot\n`Cast BP_PivotActor → RefreshOffsets()`\n↗ [[BP_PivotActor#Function `RefreshOffsets` — v1.1 (Transform Composition)|BP_PivotActor › RefreshOffsets]]\n<small>← BP_GizmoController · theo doc</small>"
@@ -225,16 +225,16 @@
    "id": "s8",
    "type": "text",
    "x": 905,
-   "y": 1978,
+   "y": 2000,
    "width": 330,
    "height": 146,
-   "text": "**8.** đang cầm trục → DỪNG, không ghi PendingClickActor, không mở box select\n`Branch bIsDraggingGizmo == True`\n<small>Step 3 doc · nội bộ · theo doc</small>"
+   "text": "**8.** đang cầm trục → DỪNG, không ghi PendingClickActor, không mở box select\n`Branch GizmoControllerRef.bIsDraggingGizmo`\n<small>Step 3 doc · nội bộ · ✓K2</small>"
   },
   {
    "id": "s9",
    "type": "text",
    "x": 1345,
-   "y": 2164,
+   "y": 2186,
    "width": 330,
    "height": 146,
    "text": "↻ lặp: mỗi frame khi còn giữ chuột\n**9.** rê chuột (không bắn event, GZ tự đọc chuột mỗi frame)\n<small>← User · thao tác người dùng</small>"
@@ -243,7 +243,7 @@
    "id": "s10",
    "type": "text",
    "x": 905,
-   "y": 2350,
+   "y": 2372,
    "width": 330,
    "height": 146,
    "text": "↻ lặp: mỗi frame khi còn giữ chuột\n**10.** hỏi chế độ\n`Event Tick → GET ActiveMode (= Move)`\n<small>← BP_GizmoController · theo doc</small>"
@@ -252,7 +252,7 @@
    "id": "s11",
    "type": "text",
    "x": 1345,
-   "y": 2536,
+   "y": 2558,
    "width": 330,
    "height": 168,
    "text": "↻ lặp: mỗi frame khi còn giữ chuột\n**11.** tia chuột cắt mặt phẳng kéo → điểm mới → làm tròn theo lưới\n`ray-plane intersection → Snap (SnapStep = 10, 0 = tự do)`\n<small>nội bộ · theo doc</small>"
@@ -261,7 +261,7 @@
    "id": "s12",
    "type": "text",
    "x": 2225,
-   "y": 2744,
+   "y": 2766,
    "width": 330,
    "height": 168,
    "text": "↻ lặp: mỗi frame khi còn giữ chuột\n▸ nếu 1 món\n**12.** dời món\n`Set Actor Location(SelectedActor)`\n<small>← BP_GizmoController · theo doc</small>"
@@ -270,7 +270,7 @@
    "id": "s13",
    "type": "text",
    "x": 1785,
-   "y": 2952,
+   "y": 2974,
    "width": 330,
    "height": 190,
    "text": "↻ lặp: mỗi frame khi còn giữ chuột\n▸ ngược lại: ≥2 món\n**13.** dời pivot\n`Set Actor Location(SelectedActor = Pivot)`\n<small>← BP_GizmoController · theo doc</small>",
@@ -280,7 +280,7 @@
    "id": "s14",
    "type": "text",
    "x": 2225,
-   "y": 3182,
+   "y": 3204,
    "width": 330,
    "height": 300,
    "text": "↻ lặp: mỗi frame khi còn giữ chuột\n▸ ngược lại: ≥2 món\n**14.** Tick ghép vị trí tương đối với pivot mới → từng món đi theo\n`ApplyTransformToChildren() → Set Actor Transform (Teleport = True)`\n↗ [[BP_PivotActor#Function `ApplyTransformToChildren` — v1.1 (Transform Composition)|BP_PivotActor › ApplyTransformToChildren]]\n<small>← BP_PivotActor · theo doc</small>",
@@ -290,7 +290,7 @@
    "id": "s15",
    "type": "text",
    "x": 905,
-   "y": 3522,
+   "y": 3544,
    "width": 330,
    "height": 102,
    "text": "**15.** thả chuột\n<small>← User · thao tác người dùng</small>"
@@ -299,16 +299,16 @@
    "id": "s16",
    "type": "text",
    "x": 1345,
-   "y": 3664,
+   "y": 3686,
    "width": 330,
    "height": 234,
-   "text": "**16.** chuyển lượt thả cho gizmo\n`Mouse Left Released (gizmo) → OnMouseReleased()`\n↗ [[BP_GizmoController#OnMouseReleased — v1.2 ( ✓K2 export 24/09/2026 — as-built, thay mô tả v1.1)|BP_GizmoController › OnMouseReleased]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
+   "text": "**16.** chuyển lượt thả cho gizmo\n`Mouse Left Released (gizmo) → OnMouseReleased()`\n↗ [[BP_GizmoController#OnMouseReleased — v1.2 ( ✓K2 export 24/09/2026 — as-built, thay mô tả v1.1)|BP_GizmoController › OnMouseReleased]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
   },
   {
    "id": "s17",
    "type": "text",
    "x": 1345,
-   "y": 3938,
+   "y": 3960,
    "width": 330,
    "height": 146,
    "text": "**17.** 3 lớp chặn, trượt lớp nào là dừng luôn (dead-end)\n`Branch bGizmoActive → IsValid(SelectedActor) → bIsDraggingGizmo`\n<small>nội bộ · ✓K2</small>"
@@ -317,7 +317,7 @@
    "id": "s18",
    "type": "text",
    "x": 905,
-   "y": 4124,
+   "y": 4146,
    "width": 330,
    "height": 146,
    "text": "**18.** hỏi chế độ\n`Get All Actors Of Class → Get(0).ActiveMode (= Move)`\n<small>← BP_GizmoController · ✓K2</small>"
@@ -326,7 +326,7 @@
    "id": "s19",
    "type": "text",
    "x": 2665,
-   "y": 4310,
+   "y": 4332,
    "width": 330,
    "height": 190,
    "text": "**19.** ghi sổ 1 entry \"Move\"\n`CaptureSnapshot(\"Move\") → chi tiết 5d`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_GizmoController · ✓K2</small>"
@@ -335,7 +335,7 @@
    "id": "n28",
    "type": "text",
    "x": 1340,
-   "y": 4540,
+   "y": 4562,
    "width": 1660,
    "height": 70,
    "text": "📝 CaptureSnapshot quét tag FurnitureSpawned → ghi vị trí MỚI của từng món. Pivot mang tag FurniturePivot → KHÔNG vào sổ.",
@@ -345,7 +345,7 @@
    "id": "s20",
    "type": "text",
    "x": 1345,
-   "y": 4650,
+   "y": 4672,
    "width": 330,
    "height": 146,
    "text": "**20.** dọn cờ kéo, mở lại xoay camera — CHỈ chạy sau CaptureSnapshot\n`SET bIsDraggingGizmo = False, ActiveAxis = \"\" · Set Ignore Look Input = False`\n<small>nội bộ · ✓K2</small>"
@@ -354,26 +354,26 @@
    "id": "s21",
    "type": "text",
    "x": 905,
-   "y": 4836,
+   "y": 4858,
    "width": 330,
    "height": 256,
-   "text": "**21.** phần chọn đồ của lượt thả không làm gì\n`OnLMBReleased → Then 2 thấy bIsPendingBoxSelect = False → selection giữ nguyên`\n↗ [[BP_FurnitureInputManager#OnLMBReleased — FULL FLOW (v1.6, ✓K2 12/09/2026 — G6.0 VERIFY) ⭐ đường chính chốt selection|BP_FurnitureInputManager › OnLMBReleased]]\n<small>nội bộ · theo doc</small>"
+   "text": "**21.** phần chọn đồ của lượt thả không làm gì\n`OnLMBReleased → Then 2 thấy bIsPendingBoxSelect = False → selection giữ nguyên`\n↗ [[BP_FurnitureInputManager#OnLMBReleased — FULL FLOW (v1.6, ✓K2 12/09/2026 — G6.0 VERIFY) ⭐ đường chính chốt selection|BP_FurnitureInputManager › OnLMBReleased]]\n<small>nội bộ · ✓K2</small>"
   },
   {
    "id": "n31",
    "type": "text",
    "x": 460,
-   "y": 5132,
+   "y": 5154,
    "width": 2540,
    "height": 70,
-   "text": "📝 1 lượt thả chạy 2 handler (Mouse Left Released gizmo + OnLMBReleased) — doc không ghi cái nào trước (?). Ở luồng Move không ảnh hưởng vì OnLMBReleased không đụng selection.",
+   "text": "📝 1 lượt thả chạy 2 handler ở 2 hệ input - Input Key LMB Released → OnMouseReleased, Enhanced Input IA_LeftRelease → OnLMBReleased. Thứ tự không cam kết - logic không được phụ thuộc. Luồng Move không phụ thuộc vì OnLMBReleased không đụng selection.",
    "color": "3"
   },
   {
    "id": "n32",
    "type": "text",
    "x": 20,
-   "y": 5242,
+   "y": 5264,
    "width": 2980,
    "height": 70,
    "text": "📝 Đường ngược (6A) — Ctrl+Z → 5c → entry \"Move\" là Snapshot → 5e dựng lại cả scene từ ảnh trước khi kéo.",
@@ -427,7 +427,8 @@
    "fromSide": "right",
    "toNode": "s5",
    "toSide": "left",
-   "label": "5"
+   "label": "5 ✓K2",
+   "color": "4"
   },
   {
    "id": "e6",
@@ -451,7 +452,8 @@
    "fromSide": "left",
    "toNode": "s8",
    "toSide": "right",
-   "label": "8"
+   "label": "8 ✓K2",
+   "color": "4"
   },
   {
    "id": "e9",
@@ -459,7 +461,8 @@
    "fromSide": "left",
    "toNode": "s8",
    "toSide": "right",
-   "label": "8 · nếu không"
+   "label": "8 ✓K2 · nếu không",
+   "color": "4"
   },
   {
    "id": "e10",
@@ -547,7 +550,8 @@
    "fromSide": "right",
    "toNode": "s16",
    "toSide": "left",
-   "label": "16"
+   "label": "16 ✓K2",
+   "color": "4"
   },
   {
    "id": "e21",
@@ -598,7 +602,8 @@
    "fromSide": "left",
    "toNode": "s21",
    "toSide": "right",
-   "label": "21"
+   "label": "21 ✓K2",
+   "color": "4"
   }
  ]
 }

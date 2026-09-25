@@ -8,7 +8,7 @@
 ## Người dùng làm gì → thấy gì
 | Làm | Thấy |
 |---|---|
-| Lưu cảnh (Ctrl+S theo danh sách phím tắt — `?`) | Không có phản hồi riêng trong tool |
+| Bấm **M** → menu Save/Load (Projects Manager) → chọn / đặt tên slot → **Save** | Slot có ảnh preview, thời gian lưu |
 | Bấm **Load** trong menu Save/Load của project | Phòng trống trong chốc lát rồi đồ hiện lại, vật liệu về sau vài frame |
 
 Lưu cảnh **không ghi sổ lịch sử** (không đổi cảnh).
@@ -28,11 +28,11 @@ EMS giống **chụp danh sách kiểm kê**: chỉ ghi các cột được đá
 - `MeshPath` rỗng khi nạp → món tự huỷ. Nhóm được lưu qua `BP_GroupsContainer` (Groups, GroupNameCounter).
 
 ## Đường ngược (6A)
-Mở lại bản lưu trước. Undo sau khi Load: chưa rõ sổ lịch sử được xoá hay giữ (`?`).
+Mở lại bản lưu trước. ⚠ Sổ Undo **không** bị xoá khi Load: Ctrl+Z ngay sau Load quay về cảnh trước Load (PIE 25/09) — `Bug-UndoAcrossLoad` ([[Open_Bugs]]).
 
 ## Còn mở
-- Phím / nút nào gọi `SaveFurnitureScene` / `LoadFurnitureScene` — doc không ghi.
-- Sổ Undo sau khi Load — doc không ghi.
+- `SaveFurnitureScene` / `LoadFurnitureScene` định nghĩa ở SceneManager nhưng chưa rõ menu Save/Load có gọi không.
+- Cần quyết cách xử lý sổ Undo khi Load (`Bug-UndoAcrossLoad`).
 - `Event ActorLoaded` bản hiện hành (chèn `EnsurePersistentId` 21/09) chưa K2.
 
 ## Nhảy tới code

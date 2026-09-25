@@ -6,7 +6,7 @@
    "x": 2200,
    "y": 110,
    "width": 380,
-   "height": 3926,
+   "height": 3904,
    "label": "MaterialSlotService (C++)",
    "color": "6"
   },
@@ -16,7 +16,7 @@
    "x": 1760,
    "y": 110,
    "width": 380,
-   "height": 3926,
+   "height": 3904,
    "label": "BP_FurnitureSceneManager",
    "color": "5"
   },
@@ -26,7 +26,7 @@
    "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 3926,
+   "height": 3904,
    "label": "BP_UndoManager",
    "color": "5"
   },
@@ -36,7 +36,7 @@
    "x": 880,
    "y": 110,
    "width": 380,
-   "height": 3926,
+   "height": 3904,
    "label": "WBP_FurnitureInventory",
    "color": "2"
   },
@@ -46,7 +46,7 @@
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 3926,
+   "height": 3904,
    "label": "WBP_ParamScalarRow",
    "color": "2"
   },
@@ -56,7 +56,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 3926,
+   "height": 3904,
    "label": "User"
   },
   {
@@ -241,14 +241,14 @@
    "x": 905,
    "y": 3062,
    "width": 330,
-   "height": 256,
-   "text": "▸ nếu thả tay\n**13.** báo tin\n`Broadcast OnHistoryChanged → RefreshParamPanel()`\n↗ [[WBP_FurnitureInventory#`RefreshParamPanel()` — Function — AS-BUILT ĐẦY ĐỦ 18/09/2026 (K2Node export thật)|WBP_FurnitureInventory › RefreshParamPanel]]\n<small>← BP_UndoManager · theo doc</small>"
+   "height": 234,
+   "text": "▸ nếu thả tay\n**13.** báo tin\n`Broadcast OnHistoryChanged → RefreshParamPanel()`\n↗ [[WBP_FurnitureInventory#`RefreshParamPanel()` — Function — AS-BUILT ĐẦY ĐỦ 18/09/2026 (K2Node export thật)|WBP_FurnitureInventory › RefreshParamPanel]]\n<small>← BP_UndoManager · ✓K2</small>"
   },
   {
    "id": "s14",
    "type": "text",
    "x": 1345,
-   "y": 3358,
+   "y": 3336,
    "width": 330,
    "height": 256,
    "text": "▸ ngược lại: hủy giữa chừng (đổi ghế · đổi slot · đóng panel · Ctrl+Z)\n**14.** hủy phiên\n`CancelInteractiveEdit()`\n↗ [[BP_UndoManager#CancelInteractiveEdit() — Custom Event (v1.21, U2.4) — 6A của session|BP_UndoManager › CancelInteractiveEdit]]\n<small>← WBP_FurnitureInventory · theo doc</small>",
@@ -258,7 +258,7 @@
    "id": "s15",
    "type": "text",
    "x": 2225,
-   "y": 3654,
+   "y": 3632,
    "width": 330,
    "height": 322,
    "text": "▸ ngược lại: hủy giữa chừng (đổi ghế · đổi slot · đóng panel · Ctrl+Z)\n**15.** về Before, 0 entry\n`ApplyParamCommand() → SetSlotScalarParam()`\n↗ [[MaterialSlotService_Reference#SetSlotScalarParam / SetSlotVectorParam / SetSlotTextureParam(Mesh, Records&, SlotName, HintIndex, ParamName, Value) → bool|MaterialSlotService_Reference › SetSlotScalarParam]]\n<small>← BP_UndoManager · theo doc</small>",
@@ -381,7 +381,8 @@
    "fromSide": "left",
    "toNode": "s13",
    "toSide": "right",
-   "label": "13"
+   "label": "13 ✓K2",
+   "color": "4"
   },
   {
    "id": "e14",
