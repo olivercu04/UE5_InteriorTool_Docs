@@ -748,7 +748,7 @@ Event End Play →
 **← Được gọi bởi**
 - [[BP_FurnitureInputManager]] — chụp mốc Select/Deselect · CaptureSnapshot(Select / Deselect) ✓K2
 - [[BP_GizmoController]] — chụp trạng thái khi kéo xong · CaptureSnapshot() ✓K2
-- [[BP_FoffPlayerController]] — phím Undo / Redo · UndoLastAction() / RedoLastAction()
+- [[BP_FurnitureInputManager]] — phím Undo / Redo (bỏ qua khi đang kéo gizmo) · IsGizmoDragging() → UndoLastAction() / RedoLastAction()
 - [[BP_FurnitureInputManager]] — chụp mốc các thao tác khác · CaptureSnapshot(BoxSelect / CreateGroup / Ungroup / PasteMulti / DuplicateMulti / Delete / Nudge / SelectSimilar / ResetRotation)
 - [[BP_ComboManager]] — giữ tham chiếu + gọi quay lui · UndoManagerRef, RestoreCurrentSnapshot()
 - [[BP_ComboManager]] — ghi sổ khi đặt / thay combo · CaptureSnapshot(SpawnCombo / ReplaceCombo)

@@ -1,4 +1,6 @@
 # BP_FurnitureInputManager
+**Phiên bản:** 3.10 | **Cập nhật:** 25/09/2026 09:10 — Event BeginPlay as-built ✓K2 25/09 (EnableInput + `AddMappingContext(LM_FurnitureInput, Priority 5)` — Gate 1.5 B2 (18/08): InputManager tự `AddMappingContext(LM_FurnitureInput)` ở BeginPlay, giữ suốt phiên; các Input Action nội thất nằm trong InputManager). +mục "Enhanced Input Actions" + Function `IsGizmoDragging` (chặn Undo/Redo khi đang kéo gizmo — PIE PASS 3/3).
+
 **Phiên bản:** 3.9 | **Cập nhật:** 24/09/2026 16:10 — **Đóng B-gizmo (treo từ 15/06).** `UpdateGizmo` nhánh `== 1` +`DeactivateGizmo` TRƯỚC `ActivateGizmo` (y hệt nhánh `>= 2` đã vá 03/06). Root cause: `ActivateGizmo` là CÔNG TẮC (đang bật mà gọi nữa = tắt); `RestoreSnapshot` gọi `SelectActors` 2 lần (Step 5 + Step 6b) → 1 actor: bật rồi tắt → mất gizmo sau Undo. Chứng: 1 ghế Move→Undo mất gizmo, 2 ghế thì không (đúng dự đoán). Test G1–G6 PASS (G5: click lại đúng ghế đang chọn → gizmo vẫn còn). Chưa K2.
 
 **Phiên bản:** 3.8 | **Cập nhật:** 21/09/2026 (U1.2, PersistentIdentity) — `SpawnFurnitureCopy` FULL NODE FLOW đưa vào doc canonical lần đầu (✓K2 export thật) + đính chính task card giả định sai (không có IsValid(NewActor) nào bọc spawn); Then0 +ensure `NewActorCopy.PersistentID = EnsurePersistentId(...)` ngay sau SET NewActorCopy. PIE PASS (ID-01, ID-03). Xem `Sprints/Sprint7/21-09-2026_U1_PersistentIdentity_TaskCard.md` | Actor riêng — input hub + multi-select hub + box-select hub + context-menu hub + group hub + edit-mode hub
@@ -169,16 +171,44 @@ OnEditModeChanged(bActive : Boolean, GroupID : String)   ← v1.7 Sprint 4
 
 ---
 
-## Event BeginPlay (v1.5)
+## Event BeginPlay (v1.5 → as-built ✓K2 25/09/2026)
 ```
-Enable Input
-SET CurrentMeshControls = None, SET SelectedFurnitureActor = None
-Get All Actors Of Class(BP_TransformerPawn) → Get(0) → SET TransformerPawnRef
-← v1.5 Box Select:
-Create Widget(WBP_BoxSelectOverlay) → SET BoxSelectOverlayRef
-  → Add to Viewport(Z-Order 100)
-  → Call HideBox (ẩn ban đầu)
+Event BeginPlay
+▶→ EnableInput(PlayerController ●← GetPlayerController(0))
+▶→ IsValid( EnhancedInputLocalPlayerSubsystem ●← GetSubsystemFromPC(GetPlayerController(0)) )
+     Is Valid ▶→ AddMappingContext(MappingContext = LM_FurnitureInput, Priority = 5,
+                                   bIgnoreAllPressedKeysUntilRelease = True, bForceImmediately = False, bNotifyUserSettings = False)
+              ▶→ SET CurrentMeshControls = None ▶→ SET SelectedFurnitureActor = None
+              ▶→ Get All Actors Of Class(BP_TransformerPawn) → [0] → SET TransformerPawnRef
+              ▶→ Create Widget(WBP_BoxSelectOverlay) → SET BoxSelectOverlayRef → Add to Viewport(Z-Order 100) → HideBox()
+     Is Not Valid → (dead-end)
 ```
+> **Bộ phím nội thất bật 1 lần ở đây và giữ suốt phiên** (Gate 1.5 B2 (18/08): InputManager tự `AddMappingContext(LM_FurnitureInput)` ở BeginPlay, giữ suốt phiên; các Input Action nội thất nằm trong InputManager). Mở / đóng inventory KHÔNG đổi bộ phím —
+> `BP_FoffPlayerController.AddFurnitureInput/RemoveFurnitureInput` là mô tả cũ (xem banner trong doc đó).
+> ⚠ `Is Not Valid` cụt → subsystem chưa sẵn lúc BeginPlay thì toàn bộ khởi tạo phía sau (kể cả BoxSelectOverlay) KHÔNG chạy. Chưa gặp, ghi nhận.
+
+## Enhanced Input Actions (trong InputManager từ Gate 1.5 B2) — 25/09/2026
+> Các event Input Action nội thất (Undo / Redo / Nudge / Copy / Paste / Duplicate …) nằm ở EventGraph InputManager — theo cuhoang
+> 25/09 + quyết định B2. Node flow từng event CHƯA K2 (chờ export). Mô tả routing cũ qua PlayerController trong `BP_FoffPlayerController.md`,
+> `Flows/Nudge_Flow.md`, `Flows/CopyPaste_Flow.md` là LỖI THỜI.
+
+### IsGizmoDragging() → bDragging : Boolean — Function MỚI 25/09/2026 (F2 phần B)
+```
+▶→ Branch( IsValid(GizmoControllerRef) )
+     True  ▶→ Return( bDragging ●← GizmoControllerRef.bIsDraggingGizmo )
+     False ▶→ Return( bDragging = False )
+```
+### IA_FurnitureUndo / IA_FurnitureRedo — chèn guard 25/09/2026
+```
+… (node có sẵn, vd check Shift ở Undo) ▶→ IsGizmoDragging ●→ bDragging
+▶→ Branch( bDragging )
+     True  → (dead-end — đang kéo gizmo: BỎ QUA Undo/Redo)
+     False ▶→ … UndoLastAction() / RedoLastAction()   ← node cũ
+```
+**Vì sao:** Ctrl+Z giữa lúc kéo → `RestoreSnapshot` dựng lại cảnh, chọn lại + bật gizmo nhưng cờ kéo vẫn True → gizmo tiếp tục dời
+món MỚI theo chuột → lúc thả ghi mốc "Move" thừa, cắt nhánh Redo (xác nhận Print 25/09). Chặn ở cửa vào (giống Blender / Unreal Editor).
+Test PIE 3/3 PASS: Ctrl+Z giữa lúc kéo bị bỏ qua → thả = đúng 1 `SNAP: Move` · Undo/Redo sau đó đúng · Undo/Redo lúc không kéo như cũ.
+Q8: Function (không latent) + 2 IA event | IsValid(GizmoControllerRef) ✓ | L2: nhánh cụt cuối chuỗi, đúng ý | No latent | 6A: thả xong Undo bình thường.
 
 ---
 
@@ -1647,6 +1677,7 @@ từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 | 3.4 | 04/08/2026 13:15 | **`CB_Replace` re-export ✓K2 03/08/2026 — đóng caveat v3.3.** Bản mô tả cũ (✓K2 24/07) đọc lúc CHƯA re-export sau T2 — SUPERSEDED, giữ lại làm lịch sử (không xóa). Bản mới: nhánh BẬT thêm `ShouldRouteReplaceToCombo(Actor=PrimarySelectedActor)` → `Branch(bRouteToCombo)` → `StartReplaceComboMode`/`StartReplaceMode` (node CŨ giữ nguyên ở nhánh False); nhánh TẮT thêm `SET ComboRootGroupIDToReplace=""` (thiếu ở bản cũ). Xác nhận: đủ 2 call site T2 (`OnMeshSelected` + `CB_Replace`), test 2 trial chuột phải PASS 03/08. Bug fix Branch dư (24/07) không bị cuốn lại. |
 
 | 3.8 | 21/09/2026 | U1.2 (PersistentIdentity) — `SpawnFurnitureCopy` FULL NODE FLOW vào doc canonical lần đầu (✓K2 export thật) + đính chính task card (không có IsValid(NewActor) guard). Then0 +ensure `PersistentID`. PIE PASS (ID-01, ID-03). |
+| 3.10 | 25/09/2026 09:10 | Event BeginPlay as-built ✓K2 (EnableInput + AddMappingContext LM_FurnitureInput P5, bọc IsValid subsystem). +mục Enhanced Input Actions (Gate 1.5 B2) + Function `IsGizmoDragging` + guard trong IA_FurnitureUndo/Redo — PIE PASS 3/3. |
 | 3.9 | 24/09/2026 16:10 | **Đóng B-gizmo.** `UpdateGizmo` nhánh `==1` +`DeactivateGizmo` trước `ActivateGizmo`. Root cause toggle + `SelectActors` gọi 2 lần trong RestoreSnapshot. Test G1–G6 PASS. Chưa K2. |
 
 ---
@@ -1674,6 +1705,7 @@ từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 - [[BP_PivotActor]] — tạo & huỷ trục xoay · SpawnOrUpdatePivot() / DestroyPivot()
 - [[BP_FurnitureActor]] — đọc đồ đang chọn · Cast + GET PrimarySelectedActor
 - [[WBP_MeshControls]] — giữ tham chiếu thanh công cụ · CurrentMeshControls
+- [[BP_UndoManager]] — phím Undo / Redo (bỏ qua khi đang kéo gizmo) · IsGizmoDragging() → UndoLastAction() / RedoLastAction()
 - [[BP_UndoManager]] — chụp mốc các thao tác khác · CaptureSnapshot(BoxSelect / CreateGroup / Ungroup / PasteMulti / DuplicateMulti / Delete / Nudge / SelectSimilar / ResetRotation)
 - [[BP_FurnitureActor]] — dời / gán nhóm / xoá đồ đang chọn · Add Actor World Offset (NudgeMesh), SET GroupID (CreateGroup), Destroy Actor (DeleteSelected)
 - [[BP_PivotActor]] — dời pivot theo nhóm khi nhích phím · Set Actor Location → RefreshOffsets()
@@ -1691,7 +1723,6 @@ từ `WBP_ComboCard.BTN_ChangeCombo` (xem `Widgets/WBP_ComboCard.md`).
 - [[WBP_MeshControls]] — đặt chế độ Move / Rotate / Scale / Select · SET ActiveMode
 - [[BP_FurnitureSceneManager]] — yêu cầu bỏ chọn · DeselectMesh()
 - [[BP_UndoManager]] — chọn lại đồ sau khôi phục + báo tin · SelectActors(), Broadcast OnEditModeChanged
-- [[BP_FoffPlayerController]] — phím tắt nhích / copy / dán / nhân bản · NudgeMesh() / CopyMesh() / PasteMesh() / DuplicateMesh()
 - [[WBP_ContextMenuItem]] — dòng menu được bấm → callback của IM · CB_Copy / CB_Paste / CB_Duplicate / CB_Delete … — bind trong OnRightClick ?
 - [[WBP_MeshControls]] — bật / tắt thay đồ · BTN_Replace → StartReplaceMode(SelectedActors), IsReplaceModeActive() ✓K2
 - [[WBP_MeshControls]] — vào / ra sửa nhóm · TryEnterEditFromSelection() / ExitEditModeOneLevel() / ExitEditModeFull()

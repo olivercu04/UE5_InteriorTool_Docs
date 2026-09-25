@@ -3,61 +3,51 @@
   {
    "id": "lane_UM",
    "type": "group",
-   "x": 2640,
+   "x": 2200,
    "y": 110,
    "width": 380,
-   "height": 4046,
+   "height": 3882,
    "label": "BP_UndoManager",
    "color": "5"
   },
   {
    "id": "lane_FA",
    "type": "group",
-   "x": 2200,
+   "x": 1760,
    "y": 110,
    "width": 380,
-   "height": 4046,
+   "height": 3882,
    "label": "BP_FurnitureActor (mỗi món)",
    "color": "5"
   },
   {
    "id": "lane_CI",
    "type": "group",
-   "x": 1760,
+   "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 4046,
+   "height": 3882,
    "label": "WBP_ContextMenuItem",
    "color": "2"
   },
   {
    "id": "lane_CTX",
    "type": "group",
-   "x": 1320,
+   "x": 880,
    "y": 110,
    "width": 380,
-   "height": 4046,
+   "height": 3882,
    "label": "WBP_ContextMenu",
    "color": "2"
   },
   {
    "id": "lane_IM",
    "type": "group",
-   "x": 880,
-   "y": 110,
-   "width": 380,
-   "height": 4046,
-   "label": "BP_FurnitureInputManager",
-   "color": "5"
-  },
-  {
-   "id": "lane_PC",
-   "type": "group",
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 4046,
-   "label": "BP_FoffPlayerController",
+   "height": 3882,
+   "label": "BP_FurnitureInputManager",
    "color": "5"
   },
   {
@@ -66,7 +56,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 4046,
+   "height": 3882,
    "label": "User"
   },
   {
@@ -74,7 +64,7 @@
    "type": "text",
    "x": 0,
    "y": -120,
-   "width": 3020,
+   "width": 2580,
    "height": 170,
    "text": "# 5m — Menu chuột phải và phím tắt (copy · dán · nhân bản · xoá)\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
   },
@@ -88,19 +78,9 @@
    "text": "### User"
   },
   {
-   "id": "h_PC",
-   "type": "text",
-   "x": 465,
-   "y": 140,
-   "width": 330,
-   "height": 90,
-   "text": "### [[BP_FoffPlayerController]]",
-   "color": "5"
-  },
-  {
    "id": "h_IM",
    "type": "text",
-   "x": 905,
+   "x": 465,
    "y": 140,
    "width": 330,
    "height": 90,
@@ -110,7 +90,7 @@
   {
    "id": "h_CTX",
    "type": "text",
-   "x": 1345,
+   "x": 905,
    "y": 140,
    "width": 330,
    "height": 90,
@@ -120,7 +100,7 @@
   {
    "id": "h_CI",
    "type": "text",
-   "x": 1785,
+   "x": 1345,
    "y": 140,
    "width": 330,
    "height": 90,
@@ -130,7 +110,7 @@
   {
    "id": "h_FA",
    "type": "text",
-   "x": 2225,
+   "x": 1785,
    "y": 140,
    "width": 330,
    "height": 90,
@@ -140,7 +120,7 @@
   {
    "id": "h_UM",
    "type": "text",
-   "x": 2665,
+   "x": 2225,
    "y": 140,
    "width": 330,
    "height": 90,
@@ -150,7 +130,7 @@
   {
    "id": "s1",
    "type": "text",
-   "x": 905,
+   "x": 465,
    "y": 280,
    "width": 330,
    "height": 168,
@@ -159,7 +139,7 @@
   {
    "id": "s2",
    "type": "text",
-   "x": 905,
+   "x": 465,
    "y": 488,
    "width": 330,
    "height": 146,
@@ -168,7 +148,7 @@
   {
    "id": "s3",
    "type": "text",
-   "x": 1345,
+   "x": 905,
    "y": 674,
    "width": 330,
    "height": 146,
@@ -177,7 +157,7 @@
   {
    "id": "s4",
    "type": "text",
-   "x": 1785,
+   "x": 1345,
    "y": 860,
    "width": 330,
    "height": 146,
@@ -186,7 +166,7 @@
   {
    "id": "s5",
    "type": "text",
-   "x": 1785,
+   "x": 1345,
    "y": 1046,
    "width": 330,
    "height": 124,
@@ -195,7 +175,7 @@
   {
    "id": "s6",
    "type": "text",
-   "x": 905,
+   "x": 465,
    "y": 1210,
    "width": 330,
    "height": 168,
@@ -208,104 +188,94 @@
    "x": 465,
    "y": 1418,
    "width": 330,
-   "height": 124,
-   "text": "▸ ngược lại: phím tắt, không qua menu\n**7.** Ctrl+C / Ctrl+V / Ctrl+D\n<small>← User · thao tác người dùng</small>",
+   "height": 190,
+   "text": "▸ ngược lại: phím tắt, không qua menu\n**7.** Ctrl+C / Ctrl+V / Ctrl+D\n`IA_FurnitureCopy / Paste / Duplicate → CopyMesh() / PasteMesh() / DuplicateMesh()`\n<small>← User · thao tác người dùng</small>",
    "color": "3"
   },
   {
    "id": "s8",
    "type": "text",
-   "x": 905,
-   "y": 1582,
+   "x": 465,
+   "y": 1648,
    "width": 330,
-   "height": 190,
-   "text": "▸ ngược lại: phím tắt, không qua menu\n**8.** chuyển thẳng\n`IA_FurnitureCopy / Paste / Duplicate → CopyMesh() / PasteMesh() / DuplicateMesh()`\n<small>← BP_FoffPlayerController · theo doc</small>",
-   "color": "3"
+   "height": 146,
+   "text": "▸ nếu Sao chép\n**8.** chép vị trí so với tâm nhóm + RowName + MaterialSlots\n`CopyMesh() → ClipboardActors`\n<small>nội bộ · theo doc</small>"
   },
   {
    "id": "s9",
    "type": "text",
-   "x": 905,
-   "y": 1812,
+   "x": 465,
+   "y": 1834,
    "width": 330,
-   "height": 146,
-   "text": "▸ nếu Sao chép\n**9.** chép vị trí so với tâm nhóm + RowName + MaterialSlots\n`CopyMesh() → ClipboardActors`\n<small>nội bộ · theo doc</small>"
+   "height": 300,
+   "text": "▸ ngược lại: Dán\n**9.** tia chuột → tâm dán, sinh từng món giữ đội hình\n`PasteMesh() → SpawnFurnitureCopy(bAutoSelect=False) → SET RowName`\n↗ [[BP_FurnitureInputManager#SpawnFurnitureCopy(...) → NewActorCopy — FULL NODE FLOW ( ✓K2 export 21/09/2026 — U1 prep + ✓ensure PersistentID chèn 21/09/2026, U1.2 )|BP_FurnitureInputManager › SpawnFurnitureCopy]]\n<small>nội bộ · theo doc</small>",
+   "color": "3"
   },
   {
    "id": "s10",
    "type": "text",
-   "x": 905,
-   "y": 1998,
+   "x": 2225,
+   "y": 2174,
    "width": 330,
-   "height": 300,
-   "text": "▸ ngược lại: Dán\n**10.** tia chuột → tâm dán, sinh từng món giữ đội hình\n`PasteMesh() → SpawnFurnitureCopy(bAutoSelect=False) → SET RowName`\n↗ [[BP_FurnitureInputManager#SpawnFurnitureCopy(...) → NewActorCopy — FULL NODE FLOW ( ✓K2 export 21/09/2026 — U1 prep + ✓ensure PersistentID chèn 21/09/2026, U1.2 )|BP_FurnitureInputManager › SpawnFurnitureCopy]]\n<small>nội bộ · theo doc</small>",
+   "height": 212,
+   "text": "▸ ngược lại: Dán\n**10.** ghi sổ\n`CaptureSnapshot(\"PasteMulti\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · theo doc</small>",
    "color": "3"
   },
   {
    "id": "s11",
    "type": "text",
-   "x": 2665,
-   "y": 2338,
+   "x": 465,
+   "y": 2426,
    "width": 330,
-   "height": 212,
-   "text": "▸ ngược lại: Dán\n**11.** ghi sổ\n`CaptureSnapshot(\"PasteMulti\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · theo doc</small>",
+   "height": 300,
+   "text": "▸ ngược lại: Nhân bản\n**11.** copy rồi dán sát cạnh phải nhóm (+20)\n`DuplicateMesh() → CopyMesh() → SpawnFurnitureCopy()`\n↗ [[BP_FurnitureInputManager#SpawnFurnitureCopy(...) → NewActorCopy — FULL NODE FLOW ( ✓K2 export 21/09/2026 — U1 prep + ✓ensure PersistentID chèn 21/09/2026, U1.2 )|BP_FurnitureInputManager › SpawnFurnitureCopy]]\n<small>nội bộ · theo doc</small>",
    "color": "3"
   },
   {
    "id": "s12",
    "type": "text",
-   "x": 905,
-   "y": 2590,
+   "x": 2225,
+   "y": 2766,
    "width": 330,
-   "height": 300,
-   "text": "▸ ngược lại: Nhân bản\n**12.** copy rồi dán sát cạnh phải nhóm (+20)\n`DuplicateMesh() → CopyMesh() → SpawnFurnitureCopy()`\n↗ [[BP_FurnitureInputManager#SpawnFurnitureCopy(...) → NewActorCopy — FULL NODE FLOW ( ✓K2 export 21/09/2026 — U1 prep + ✓ensure PersistentID chèn 21/09/2026, U1.2 )|BP_FurnitureInputManager › SpawnFurnitureCopy]]\n<small>nội bộ · theo doc</small>",
+   "height": 212,
+   "text": "▸ ngược lại: Nhân bản\n**12.** ghi sổ\n`CaptureSnapshot(\"DuplicateMulti\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · theo doc</small>",
    "color": "3"
   },
   {
    "id": "s13",
    "type": "text",
-   "x": 2665,
-   "y": 2930,
+   "x": 1785,
+   "y": 3018,
    "width": 330,
-   "height": 212,
-   "text": "▸ ngược lại: Nhân bản\n**13.** ghi sổ\n`CaptureSnapshot(\"DuplicateMulti\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · theo doc</small>",
+   "height": 234,
+   "text": "▸ ngược lại: Xoá\n**13.** xoá từng món đang chọn\n`DeleteSelected() → Destroy Actor(phần tử mảng)`\n↗ [[BP_FurnitureInputManager#DeleteSelected (T6)|BP_FurnitureInputManager › DeleteSelected]]\n<small>← BP_FurnitureInputManager · theo doc</small>",
    "color": "3"
   },
   {
    "id": "s14",
    "type": "text",
    "x": 2225,
-   "y": 3182,
+   "y": 3292,
    "width": 330,
    "height": 234,
-   "text": "▸ ngược lại: Xoá\n**14.** xoá từng món đang chọn\n`DeleteSelected() → Destroy Actor(phần tử mảng)`\n↗ [[BP_FurnitureInputManager#DeleteSelected (T6)|BP_FurnitureInputManager › DeleteSelected]]\n<small>← BP_FurnitureInputManager · theo doc</small>",
+   "text": "▸ ngược lại: Xoá\n**14.** bỏ chọn rồi ghi sổ\n`DeselectAll() → CaptureSnapshot(\"Delete\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · theo doc</small>",
    "color": "3"
   },
   {
    "id": "s15",
    "type": "text",
-   "x": 2665,
-   "y": 3456,
-   "width": 330,
-   "height": 234,
-   "text": "▸ ngược lại: Xoá\n**15.** bỏ chọn rồi ghi sổ\n`DeselectAll() → CaptureSnapshot(\"Delete\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · theo doc</small>",
-   "color": "3"
-  },
-  {
-   "id": "s16",
-   "type": "text",
-   "x": 1345,
-   "y": 3730,
+   "x": 905,
+   "y": 3566,
    "width": 330,
    "height": 256,
-   "text": "**16.** đóng menu (hoặc click ra ngoài - OnLMBReleased Then 0)\n`Hide()`\n↗ [[BP_FurnitureInputManager#OnLMBReleased — FULL FLOW (v1.6, ✓K2 12/09/2026 — G6.0 VERIFY) ⭐ đường chính chốt selection|BP_FurnitureInputManager › OnLMBReleased]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
+   "text": "**15.** đóng menu (hoặc click ra ngoài - OnLMBReleased Then 0)\n`Hide()`\n↗ [[BP_FurnitureInputManager#OnLMBReleased — FULL FLOW (v1.6, ✓K2 12/09/2026 — G6.0 VERIFY) ⭐ đường chính chốt selection|BP_FurnitureInputManager › OnLMBReleased]]\n<small>← BP_FurnitureInputManager · ✓K2</small>"
   },
   {
-   "id": "n24",
+   "id": "n22",
    "type": "text",
    "x": 20,
-   "y": 4026,
-   "width": 2980,
+   "y": 3862,
+   "width": 2540,
    "height": 70,
    "text": "📝 Các dòng khác trong menu - Thay đồ (5n), Lưu combo (5q), Chọn tương tự, Đặt lại xoay, Undo / Redo (5c). Ctrl+Shift+C / V là copy VẬT LIỆU, không phải copy đồ.",
    "color": "3"
@@ -374,23 +344,23 @@
   },
   {
    "id": "e7",
-   "fromNode": "s7",
-   "fromSide": "right",
+   "fromNode": "s6",
+   "fromSide": "bottom",
    "toNode": "s8",
-   "toSide": "left",
+   "toSide": "top",
    "label": "8"
   },
   {
    "id": "e8",
-   "fromNode": "s6",
+   "fromNode": "s7",
    "fromSide": "bottom",
-   "toNode": "s9",
+   "toNode": "s8",
    "toSide": "top",
-   "label": "9"
+   "label": "8"
   },
   {
    "id": "e9",
-   "fromNode": "s8",
+   "fromNode": "s6",
    "fromSide": "bottom",
    "toNode": "s9",
    "toSide": "top",
@@ -398,47 +368,47 @@
   },
   {
    "id": "e10",
-   "fromNode": "s6",
+   "fromNode": "s7",
    "fromSide": "bottom",
-   "toNode": "s10",
+   "toNode": "s9",
    "toSide": "top",
-   "label": "10"
+   "label": "9"
   },
   {
    "id": "e11",
-   "fromNode": "s8",
-   "fromSide": "bottom",
+   "fromNode": "s9",
+   "fromSide": "right",
    "toNode": "s10",
-   "toSide": "top",
+   "toSide": "left",
    "label": "10"
   },
   {
    "id": "e12",
-   "fromNode": "s10",
-   "fromSide": "right",
+   "fromNode": "s6",
+   "fromSide": "bottom",
    "toNode": "s11",
-   "toSide": "left",
+   "toSide": "top",
    "label": "11"
   },
   {
    "id": "e13",
-   "fromNode": "s6",
+   "fromNode": "s7",
    "fromSide": "bottom",
-   "toNode": "s12",
+   "toNode": "s11",
    "toSide": "top",
-   "label": "12"
+   "label": "11"
   },
   {
    "id": "e14",
-   "fromNode": "s8",
-   "fromSide": "bottom",
+   "fromNode": "s11",
+   "fromSide": "right",
    "toNode": "s12",
-   "toSide": "top",
+   "toSide": "left",
    "label": "12"
   },
   {
    "id": "e15",
-   "fromNode": "s12",
+   "fromNode": "s6",
    "fromSide": "right",
    "toNode": "s13",
    "toSide": "left",
@@ -446,15 +416,15 @@
   },
   {
    "id": "e16",
-   "fromNode": "s6",
+   "fromNode": "s7",
    "fromSide": "right",
-   "toNode": "s14",
+   "toNode": "s13",
    "toSide": "left",
-   "label": "14"
+   "label": "13"
   },
   {
    "id": "e17",
-   "fromNode": "s8",
+   "fromNode": "s13",
    "fromSide": "right",
    "toNode": "s14",
    "toSide": "left",
@@ -462,46 +432,38 @@
   },
   {
    "id": "e18",
-   "fromNode": "s14",
+   "fromNode": "s8",
    "fromSide": "right",
    "toNode": "s15",
    "toSide": "left",
-   "label": "15"
+   "label": "15 ✓K2",
+   "color": "4"
   },
   {
    "id": "e19",
-   "fromNode": "s9",
-   "fromSide": "right",
-   "toNode": "s16",
-   "toSide": "left",
-   "label": "16 ✓K2",
+   "fromNode": "s10",
+   "fromSide": "left",
+   "toNode": "s15",
+   "toSide": "right",
+   "label": "15 ✓K2",
    "color": "4"
   },
   {
    "id": "e20",
-   "fromNode": "s11",
+   "fromNode": "s12",
    "fromSide": "left",
-   "toNode": "s16",
+   "toNode": "s15",
    "toSide": "right",
-   "label": "16 ✓K2",
+   "label": "15 ✓K2",
    "color": "4"
   },
   {
    "id": "e21",
-   "fromNode": "s13",
+   "fromNode": "s14",
    "fromSide": "left",
-   "toNode": "s16",
+   "toNode": "s15",
    "toSide": "right",
-   "label": "16 ✓K2",
-   "color": "4"
-  },
-  {
-   "id": "e22",
-   "fromNode": "s15",
-   "fromSide": "left",
-   "toNode": "s16",
-   "toSide": "right",
-   "label": "16 ✓K2",
+   "label": "15 ✓K2",
    "color": "4"
   }
  ]

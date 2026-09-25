@@ -1,28 +1,211 @@
 {
-	"nodes":[
-		{"id":"g1","type":"group","x":0,"y":170,"width":440,"height":900,"color":"2","label":"① Người dùng thấy — màn hình"},
-		{"id":"gn","type":"group","x":900,"y":900,"width":860,"height":170,"label":"Nền — ít khi phải nghĩ tới"},
-		{"id":"t","type":"text","text":"# 2 · Phía sau màn hình có gì\n**Mọi thao tác đều đổi CẢNH · mọi thay đổi được SỔ LỊCH SỬ chụp lại để Ctrl+Z.** Đọc trái → phải: ① → ② → ③ → ④","x":0,"y":0,"width":1720,"height":110},
-		{"id":"r1","type":"text","text":"**Thanh công cụ**\n![[tq_toolbar.png|360]]\n<small>chọn Move / Rotate / Scale · xoá · snap</small>","x":20,"y":195,"width":400,"height":105,"color":"2"},
-		{"id":"r2","type":"text","text":"**Phòng 3D**\n![[tq_phong_ban_gizmo.png|170]]\n<small>click chọn đồ · kéo trục gizmo</small>","x":20,"y":320,"width":400,"height":235,"color":"2"},
-		{"id":"r3","type":"text","text":"**Cửa sổ Furniture Warehouse**\n![[tq_warehouse.png|300]]\n<small>kho đồ · vật liệu · combo — kéo thẻ vào phòng</small>","x":20,"y":575,"width":400,"height":245,"color":"2"},
-		{"id":"r4","type":"text","text":"**Bảng Material**\n![[tq_bang_material_tren.png|120]]\n<small>chỉnh độ nhám, màu của 1 slot</small>","x":20,"y":840,"width":400,"height":215,"color":"2"},
-		{"id":"canh","type":"text","text":"# ③ CẢNH\ncác món đồ đang đặt trong phòng: vị trí, nhóm, vật liệu từng slot\n\n→ màn hình tự cập nhật theo (viền trắng, gizmo, bảng Material)\n<small>↗ [[BP_FurnitureActor|FurnitureActor]] · [[BP_FurnitureSceneManager|SceneManager]]</small>","x":990,"y":520,"width":360,"height":230,"color":"5"},
-		{"id":"f","type":"text","text":"<small>Bản tóm tắt để HIỂU — không phân ✓K2 / theo doc. Từng hàm + bằng chứng: note luồng L01…L13 → sơ đồ Phần 5 → canvas làn bơi.</small>","x":0,"y":1100,"width":1760,"height":50},
-		{"id":"so","type":"text","text":"## ④ SỔ LỊCH SỬ\nmỗi thao tác xong = **1 mốc** · Ctrl+Z = về mốc trước\n<small>↗ [[BP_UndoManager|UndoManager]] · [[L13 · Hoàn tác và làm lại|L13]]</small>","x":1460,"y":540,"width":260,"height":190,"color":"5"},
-		{"id":"n1","type":"text","text":"**Combo** — lưu / đặt cả cụm đồ (tab COMBO), đặt vào CẢNH\n<small>↗ [[BP_ComboManager]] · [[L11 · Combo|L11]]</small>","x":915,"y":925,"width":265,"height":130},
-		{"id":"n2","type":"text","text":"**Dịch vụ C++** — lọc danh sách, đọc/ghi vật liệu theo slot, ID bền vững, file combo\n<small>↗ [[MaterialSlotService_Reference|MaterialSlot]] · [[FurnitureFilterLibrary_Reference|Filter]]</small>","x":1195,"y":925,"width":265,"height":130},
-		{"id":"n3","type":"text","text":"**Lưu trữ** — Save / Load cảnh · Gần đây / Yêu thích\n<small>↗ [[BP_FurnitureSceneManager|Save/Load]] · [[BP_FurnitureUserPrefsManager|Prefs]] · [[L12 · Lưu và mở cảnh|L12]]</small>","x":1475,"y":925,"width":265,"height":130},
-		{"id":"next","type":"text","text":"### Đọc tiếp →\n[[docs/Brain/Tổng quát/3 · Khuôn 4 bước.canvas|3 · Khuôn 4 bước]]\n<small>4 bước mà mọi thao tác ở đây đều đi qua</small>","x":1460,"y":760,"width":300,"height":110},
-		{"id":"dk","type":"text","text":"## ② ĐIỀU KHIỂN\nnhận click, kéo gizmo, phím tắt → quyết định làm gì\n<small>↗ [[BP_FurnitureInputManager|InputManager]] · [[BP_GizmoController|Gizmo]] · [[BP_PivotActor|Pivot]]</small>","x":690,"y":215,"width":300,"height":170,"color":"5"}
-	],
-	"edges":[
-		{"id":"e0","fromNode":"r1","fromSide":"right","toNode":"dk","toSide":"left","color":"5","label":"chọn chế độ"},
-		{"id":"e1","fromNode":"r2","fromSide":"right","toNode":"dk","toSide":"left","color":"5","label":"click · kéo gizmo"},
-		{"id":"e2","fromNode":"dk","fromSide":"right","toNode":"canh","toSide":"left","color":"5","label":"chọn · dời · xoay · nhóm"},
-		{"id":"e3","fromNode":"r3","fromSide":"right","toNode":"canh","toSide":"left","color":"5","label":"kéo-thả đồ / vật liệu"},
-		{"id":"e4","fromNode":"r4","fromSide":"right","toNode":"canh","toSide":"left","color":"5","label":"chỉnh độ nhám · màu"},
-		{"id":"e5","fromNode":"canh","fromSide":"right","toNode":"so","toSide":"left","color":"5","label":"chụp lại"},
-		{"id":"e6","fromNode":"so","fromSide":"top","toNode":"canh","toSide":"top","label":"Ctrl+Z: dựng lại"}
-	]
+ "nodes": [
+  {
+   "id": "gn",
+   "type": "group",
+   "x": 900,
+   "y": 900,
+   "width": 860,
+   "height": 170,
+   "label": "Nền — ít khi phải nghĩ tới"
+  },
+  {
+   "id": "g1",
+   "type": "group",
+   "x": 0,
+   "y": 170,
+   "width": 440,
+   "height": 900,
+   "label": "① Người dùng thấy — màn hình",
+   "color": "2"
+  },
+  {
+   "id": "t",
+   "type": "text",
+   "x": 0,
+   "y": 0,
+   "width": 1720,
+   "height": 110,
+   "text": "# 2 · Phía sau màn hình có gì\n**Mọi thao tác đều đổi CẢNH · mọi thay đổi được SỔ LỊCH SỬ chụp lại để Ctrl+Z.** Đọc trái → phải: ① → ② → ③ → ④"
+  },
+  {
+   "id": "r1",
+   "type": "text",
+   "x": 20,
+   "y": 195,
+   "width": 400,
+   "height": 105,
+   "text": "**Thanh công cụ**\n![[tq_toolbar.png|360]]\n<small>chọn Move / Rotate / Scale · xoá · snap</small>",
+   "color": "2"
+  },
+  {
+   "id": "r2",
+   "type": "text",
+   "x": 20,
+   "y": 320,
+   "width": 400,
+   "height": 235,
+   "text": "**Phòng 3D**\n![[tq_phong_ban_gizmo.png|170]]\n<small>click chọn đồ · kéo trục gizmo</small>",
+   "color": "2"
+  },
+  {
+   "id": "r3",
+   "type": "text",
+   "x": 20,
+   "y": 575,
+   "width": 400,
+   "height": 245,
+   "text": "**Cửa sổ Furniture Warehouse**\n![[tq_warehouse.png|300]]\n<small>kho đồ · vật liệu · combo — kéo thẻ vào phòng</small>",
+   "color": "2"
+  },
+  {
+   "id": "r4",
+   "type": "text",
+   "x": 20,
+   "y": 840,
+   "width": 400,
+   "height": 215,
+   "text": "**Bảng Material**\n![[tq_bang_material_tren.png|120]]\n<small>chỉnh độ nhám, màu của 1 slot</small>",
+   "color": "2"
+  },
+  {
+   "id": "dk",
+   "type": "text",
+   "x": 560,
+   "y": 330,
+   "width": 300,
+   "height": 170,
+   "text": "## ② ĐIỀU KHIỂN\nnhận click, kéo gizmo, phím tắt → quyết định làm gì\n<small>↗ [[BP_FurnitureInputManager|InputManager]] · [[BP_GizmoController|Gizmo]] · [[BP_PivotActor|Pivot]]</small>",
+   "color": "5"
+  },
+  {
+   "id": "canh",
+   "type": "text",
+   "x": 990,
+   "y": 520,
+   "width": 360,
+   "height": 230,
+   "text": "# ③ CẢNH\ncác món đồ đang đặt trong phòng: vị trí, nhóm, vật liệu từng slot\n\n→ màn hình tự cập nhật theo (viền trắng, gizmo, bảng Material)\n<small>↗ [[BP_FurnitureActor|FurnitureActor]] · [[BP_FurnitureSceneManager|SceneManager]]</small>",
+   "color": "5"
+  },
+  {
+   "id": "so",
+   "type": "text",
+   "x": 1460,
+   "y": 540,
+   "width": 260,
+   "height": 190,
+   "text": "## ④ SỔ LỊCH SỬ\nmỗi thao tác xong = **1 mốc** · Ctrl+Z = về mốc trước\n<small>↗ [[BP_UndoManager|UndoManager]] · [[L13 · Hoàn tác và làm lại|L13]]</small>",
+   "color": "5"
+  },
+  {
+   "id": "n1",
+   "type": "text",
+   "x": 915,
+   "y": 925,
+   "width": 265,
+   "height": 130,
+   "text": "**Combo** — lưu / đặt cả cụm đồ (tab COMBO), đặt vào CẢNH\n<small>↗ [[BP_ComboManager]] · [[L11 · Combo|L11]]</small>"
+  },
+  {
+   "id": "n2",
+   "type": "text",
+   "x": 1195,
+   "y": 925,
+   "width": 265,
+   "height": 130,
+   "text": "**Dịch vụ C++** — lọc danh sách, đọc/ghi vật liệu theo slot, ID bền vững, file combo\n<small>↗ [[MaterialSlotService_Reference|MaterialSlot]] · [[FurnitureFilterLibrary_Reference|Filter]]</small>"
+  },
+  {
+   "id": "n3",
+   "type": "text",
+   "x": 1475,
+   "y": 925,
+   "width": 265,
+   "height": 130,
+   "text": "**Lưu trữ** — Save / Load cảnh · Gần đây / Yêu thích\n<small>↗ [[BP_FurnitureSceneManager|Save/Load]] · [[BP_FurnitureUserPrefsManager|Prefs]] · [[L12 · Lưu và mở cảnh|L12]]</small>"
+  },
+  {
+   "id": "next",
+   "type": "text",
+   "x": 1460,
+   "y": 760,
+   "width": 300,
+   "height": 110,
+   "text": "### Đọc tiếp →\n[[docs/Brain/Tổng quát/3 · Khuôn 4 bước.canvas|3 · Khuôn 4 bước]]\n<small>4 bước mà mọi thao tác ở đây đều đi qua</small>"
+  },
+  {
+   "id": "f",
+   "type": "text",
+   "x": 0,
+   "y": 1100,
+   "width": 1760,
+   "height": 50,
+   "text": "<small>Bản tóm tắt để HIỂU — không phân ✓K2 / theo doc. Từng hàm + bằng chứng: note luồng L01…L13 → sơ đồ Phần 5 → canvas làn bơi.</small>"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e0",
+   "fromNode": "r1",
+   "fromSide": "right",
+   "toNode": "dk",
+   "toSide": "left",
+   "label": "chọn chế độ",
+   "color": "5"
+  },
+  {
+   "id": "e1",
+   "fromNode": "r2",
+   "fromSide": "right",
+   "toNode": "dk",
+   "toSide": "left",
+   "label": "click · kéo gizmo",
+   "color": "5"
+  },
+  {
+   "id": "e2",
+   "fromNode": "dk",
+   "fromSide": "right",
+   "toNode": "canh",
+   "toSide": "left",
+   "label": "chọn · dời · xoay · nhóm",
+   "color": "5"
+  },
+  {
+   "id": "e3",
+   "fromNode": "r3",
+   "fromSide": "right",
+   "toNode": "canh",
+   "toSide": "left",
+   "label": "kéo-thả đồ / vật liệu",
+   "color": "5"
+  },
+  {
+   "id": "e4",
+   "fromNode": "r4",
+   "fromSide": "right",
+   "toNode": "canh",
+   "toSide": "left",
+   "label": "chỉnh độ nhám · màu",
+   "color": "5"
+  },
+  {
+   "id": "e5",
+   "fromNode": "canh",
+   "fromSide": "right",
+   "toNode": "so",
+   "toSide": "left",
+   "label": "chụp lại",
+   "color": "5"
+  },
+  {
+   "id": "e6",
+   "fromNode": "so",
+   "fromSide": "top",
+   "toNode": "canh",
+   "toSide": "top",
+   "label": "Ctrl+Z: dựng lại"
+  }
+ ]
 }

@@ -105,6 +105,16 @@ for n in sorted(allnames):
         s = s.rstrip('\n') + '\n\n---\n\n' + b + '\n'
     save(p, s, crlf); touched.append(p)
 
+# doc từng có mục 🧠 nhưng nay không còn cạnh nào ở Phần 3 → thay bằng dòng báo, không để cạnh cũ nằm lại
+for n, p in sorted(files.items()):
+    if n in allnames: continue
+    s, crlf = load(p)
+    if START not in s: continue
+    b = '\n'.join([START, '', '## 🧠 Kết nối (bản đồ não)', '',
+                   '> Thành phần này KHÔNG còn cạnh nào trong [[Architecture_Map]] Phần 3 (vd chức năng đã chuyển sang BP khác). Xem changelog của bản đồ.', '', END])
+    s = s[:s.index(START)].rstrip('\n') + '\n\n' + b + '\n' + s[s.index(END) + len(END):].lstrip('\n')
+    save(p, s, crlf); touched.append(p)
+
 # note luồng
 for sid, title, fn, nodes, edges in flows:
     L = [f'# {fn}', '', f'> Tự sinh từ [[Architecture_Map]] mục **{sid} — {title}**. '

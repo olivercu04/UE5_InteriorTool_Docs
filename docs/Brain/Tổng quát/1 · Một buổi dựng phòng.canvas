@@ -1,32 +1,249 @@
 {
-	"nodes":[
-		{"id":"t","type":"text","text":"# 1 · Một buổi dựng phòng — người dùng đi qua đâu\nNhìn ảnh → số đỏ ① … ⑥ ứng với các bước bên phải, đọc từ trên xuống. <small>Mỗi bước có link ↗ tới note luồng (L01…L13).</small>","x":0,"y":0,"width":1610,"height":110},
-		{"id":"shot","type":"file","file":"docs/Brain/Tổng quát/ảnh/tq_UI_tong_quan.png","x":0,"y":150,"width":980,"height":551},
-		{"id":"m0","type":"text","text":"## ①","x":627,"y":169,"width":48,"height":48,"color":"1"},
-		{"id":"m1","type":"text","text":"## ②","x":96,"y":483,"width":48,"height":48,"color":"1"},
-		{"id":"m2","type":"text","text":"## ③","x":487,"y":514,"width":48,"height":48,"color":"1"},
-		{"id":"m3","type":"text","text":"## ④","x":655,"y":417,"width":48,"height":48,"color":"1"},
-		{"id":"m4","type":"text","text":"## ④","x":691,"y":169,"width":48,"height":48,"color":"1"},
-		{"id":"m5","type":"text","text":"## ⑤","x":315,"y":402,"width":48,"height":48,"color":"1"},
-		{"id":"m6","type":"text","text":"## ⑤","x":739,"y":272,"width":48,"height":48,"color":"1"},
-		{"id":"m7","type":"text","text":"## ⑥","x":168,"y":424,"width":48,"height":48,"color":"1"},
-		{"id":"s0","type":"text","text":"### ① Mở kho đồ\nbấm **Inventory** trên thanh công cụ\n<small>↗ [[L01 · Mở tool và kho đồ|L01]]</small>","x":1040,"y":150,"width":570,"height":90,"color":"5"},
-		{"id":"s1","type":"text","text":"### ② Tìm đồ\ntab FURNITURE · danh mục bên trái · Search · Recent / Favorite\n<small>↗ [[L02 · Tìm đồ trong kho|L02]]</small>","x":1040,"y":266,"width":570,"height":90,"color":"5"},
-		{"id":"s2","type":"text","text":"### ③ Đặt đồ vào phòng\nkéo thẻ ra khỏi kho, thả vào phòng — có bóng xem trước, tự bám sàn / tường\n<small>↗ [[L03 · Kéo đồ vào phòng|L03]]</small>","x":1040,"y":382,"width":570,"height":110,"color":"5"},
-		{"id":"s3","type":"text","text":"### ④ Chọn và sắp xếp\nclick chọn (viền trắng) · quét khung · Move / Rotate / Scale · kéo gizmo · snap · Ctrl+G nhóm\n<small>↗ [[L04 · Chọn đồ|L04]] · [[L05 · Di chuyển và xoay đồ|L05]] · [[L06 · Nhóm đồ và sửa nhóm|L06]]</small>","x":1040,"y":518,"width":570,"height":130,"color":"5"},
-		{"id":"s4","type":"text","text":"### ⑤ Đổi vật liệu\ntab MATERIAL: chọn slot (quả cầu) · bấm hoặc kéo vật liệu vào đồ · MATERIAL EDIT → bảng bên phải: độ nhám, màu\n<small>↗ [[L09 · Đổi vật liệu|L09]] · [[L10 · Chỉnh thông số vật liệu|L10]]</small>","x":1040,"y":674,"width":570,"height":130,"color":"5"},
-		{"id":"s5","type":"text","text":"### ⑥ Lưu / dùng lại cả cụm\ntab COMBO: lưu cụm đồ thành combo · kéo combo có sẵn vào phòng · thay cả combo\n<small>↗ [[L11 · Combo|L11]]</small>","x":1040,"y":830,"width":570,"height":100,"color":"5"},
-		{"id":"s6","type":"text","text":"### ⑦ Lưu cảnh\nlưu cả phòng để mở lại (menu Save/Load của project) <small>— phím / nút gọi lưu chưa rõ (?)</small>\n<small>↗ [[L12 · Lưu và mở cảnh|L12]]</small>","x":1040,"y":956,"width":570,"height":100,"color":"5"},
-		{"id":"any","type":"text","text":"### Bất cứ lúc nào\nCtrl+Z / Ctrl+Shift+Z hoàn tác / làm lại · chuột phải lên đồ: copy, dán, nhân bản, xoá, thay · ℹ thông tin · ♡ yêu thích\n<small>↗ [[L07 · Menu chuột phải và phím tắt|L07]] · [[L08 · Thay đồ|L08]] · [[L13 · Hoàn tác và làm lại|L13]]</small>","x":0,"y":720,"width":980,"height":110},
-		{"id":"next","type":"text","text":"### Đọc tiếp →\n[[docs/Brain/Tổng quát/2 · Phía sau màn hình.canvas|2 · Phía sau màn hình]]\n<small>mỗi vùng màn hình ở trên nối với khối nào phía sau</small>","x":1040,"y":1092,"width":570,"height":120},
-		{"id":"f","type":"text","text":"<small>Bản tóm tắt để HIỂU — không phân ✓K2 / theo doc. Từng hàm + bằng chứng: note luồng L01…L13 → sơ đồ Phần 5 → canvas làn bơi.</small>","x":0,"y":850,"width":980,"height":50}
-	],
-	"edges":[
-		{"id":"e0","fromNode":"s0","fromSide":"bottom","toNode":"s1","toSide":"top","color":"5"},
-		{"id":"e1","fromNode":"s1","fromSide":"bottom","toNode":"s2","toSide":"top","color":"5"},
-		{"id":"e2","fromNode":"s2","fromSide":"bottom","toNode":"s3","toSide":"top","color":"5"},
-		{"id":"e3","fromNode":"s3","fromSide":"bottom","toNode":"s4","toSide":"top","color":"5"},
-		{"id":"e4","fromNode":"s4","fromSide":"bottom","toNode":"s5","toSide":"top","color":"5"},
-		{"id":"e5","fromNode":"s5","fromSide":"bottom","toNode":"s6","toSide":"top","color":"5"}
-	]
+ "nodes": [
+  {
+   "id": "t",
+   "type": "text",
+   "x": 0,
+   "y": 0,
+   "width": 1610,
+   "height": 110,
+   "text": "# 1 · Một buổi dựng phòng — người dùng đi qua đâu\nNhìn ảnh → số đỏ ① … ⑥ ứng với các bước bên phải, đọc từ trên xuống. <small>Mỗi bước có link ↗ tới note luồng (L01…L13).</small>"
+  },
+  {
+   "id": "shot",
+   "type": "file",
+   "file": "docs/Brain/Tổng quát/ảnh/tq_UI_tong_quan.png",
+   "x": 0,
+   "y": 150,
+   "width": 980,
+   "height": 551
+  },
+  {
+   "id": "m0",
+   "type": "text",
+   "x": 627,
+   "y": 169,
+   "width": 48,
+   "height": 48,
+   "text": "## ①",
+   "color": "1"
+  },
+  {
+   "id": "m1",
+   "type": "text",
+   "x": 96,
+   "y": 483,
+   "width": 48,
+   "height": 48,
+   "text": "## ②",
+   "color": "1"
+  },
+  {
+   "id": "m2",
+   "type": "text",
+   "x": 487,
+   "y": 514,
+   "width": 48,
+   "height": 48,
+   "text": "## ③",
+   "color": "1"
+  },
+  {
+   "id": "m3",
+   "type": "text",
+   "x": 655,
+   "y": 417,
+   "width": 48,
+   "height": 48,
+   "text": "## ④",
+   "color": "1"
+  },
+  {
+   "id": "m4",
+   "type": "text",
+   "x": 691,
+   "y": 169,
+   "width": 48,
+   "height": 48,
+   "text": "## ④",
+   "color": "1"
+  },
+  {
+   "id": "m5",
+   "type": "text",
+   "x": 315,
+   "y": 402,
+   "width": 48,
+   "height": 48,
+   "text": "## ⑤",
+   "color": "1"
+  },
+  {
+   "id": "m6",
+   "type": "text",
+   "x": 739,
+   "y": 272,
+   "width": 48,
+   "height": 48,
+   "text": "## ⑤",
+   "color": "1"
+  },
+  {
+   "id": "m7",
+   "type": "text",
+   "x": 168,
+   "y": 424,
+   "width": 48,
+   "height": 48,
+   "text": "## ⑥",
+   "color": "1"
+  },
+  {
+   "id": "s0",
+   "type": "text",
+   "x": 1040,
+   "y": 150,
+   "width": 570,
+   "height": 90,
+   "text": "### ① Mở kho đồ\nbấm **Inventory** trên thanh công cụ\n<small>↗ [[L01 · Mở tool và kho đồ|L01]]</small>",
+   "color": "5"
+  },
+  {
+   "id": "s1",
+   "type": "text",
+   "x": 1040,
+   "y": 266,
+   "width": 570,
+   "height": 90,
+   "text": "### ② Tìm đồ\ntab FURNITURE · danh mục bên trái · Search · Recent / Favorite\n<small>↗ [[L02 · Tìm đồ trong kho|L02]]</small>",
+   "color": "5"
+  },
+  {
+   "id": "s2",
+   "type": "text",
+   "x": 1040,
+   "y": 382,
+   "width": 570,
+   "height": 110,
+   "text": "### ③ Đặt đồ vào phòng\nkéo thẻ ra khỏi kho, thả vào phòng — có bóng xem trước, tự bám sàn / tường\n<small>↗ [[L03 · Kéo đồ vào phòng|L03]]</small>",
+   "color": "5"
+  },
+  {
+   "id": "s3",
+   "type": "text",
+   "x": 1040,
+   "y": 518,
+   "width": 570,
+   "height": 130,
+   "text": "### ④ Chọn và sắp xếp\nclick chọn (viền trắng) · quét khung · Move / Rotate / Scale · kéo gizmo · snap · Ctrl+G nhóm\n<small>↗ [[L04 · Chọn đồ|L04]] · [[L05 · Di chuyển và xoay đồ|L05]] · [[L06 · Nhóm đồ và sửa nhóm|L06]]</small>",
+   "color": "5"
+  },
+  {
+   "id": "s4",
+   "type": "text",
+   "x": 1040,
+   "y": 674,
+   "width": 570,
+   "height": 130,
+   "text": "### ⑤ Đổi vật liệu\ntab MATERIAL: chọn slot (quả cầu) · bấm hoặc kéo vật liệu vào đồ · MATERIAL EDIT → bảng bên phải: độ nhám, màu\n<small>↗ [[L09 · Đổi vật liệu|L09]] · [[L10 · Chỉnh thông số vật liệu|L10]]</small>",
+   "color": "5"
+  },
+  {
+   "id": "s5",
+   "type": "text",
+   "x": 1040,
+   "y": 830,
+   "width": 570,
+   "height": 100,
+   "text": "### ⑥ Lưu / dùng lại cả cụm\ntab COMBO: lưu cụm đồ thành combo · kéo combo có sẵn vào phòng · thay cả combo\n<small>↗ [[L11 · Combo|L11]]</small>",
+   "color": "5"
+  },
+  {
+   "id": "s6",
+   "type": "text",
+   "x": 1040,
+   "y": 956,
+   "width": 570,
+   "height": 100,
+   "text": "### ⑦ Lưu cảnh\nlưu cả phòng để mở lại (menu Save/Load của project) <small>— phím / nút gọi lưu chưa rõ (?)</small>\n<small>↗ [[L12 · Lưu và mở cảnh|L12]]</small>",
+   "color": "5"
+  },
+  {
+   "id": "any",
+   "type": "text",
+   "x": 0,
+   "y": 720,
+   "width": 980,
+   "height": 110,
+   "text": "### Bất cứ lúc nào\nCtrl+Z / Ctrl+Shift+Z hoàn tác / làm lại · chuột phải lên đồ: copy, dán, nhân bản, xoá, thay · ℹ thông tin · ♡ yêu thích\n<small>↗ [[L07 · Menu chuột phải và phím tắt|L07]] · [[L08 · Thay đồ|L08]] · [[L13 · Hoàn tác và làm lại|L13]]</small>"
+  },
+  {
+   "id": "next",
+   "type": "text",
+   "x": 1040,
+   "y": 1092,
+   "width": 570,
+   "height": 120,
+   "text": "### Đọc tiếp →\n[[docs/Brain/Tổng quát/2 · Phía sau màn hình.canvas|2 · Phía sau màn hình]]\n<small>mỗi vùng màn hình ở trên nối với khối nào phía sau</small>"
+  },
+  {
+   "id": "f",
+   "type": "text",
+   "x": 0,
+   "y": 850,
+   "width": 980,
+   "height": 50,
+   "text": "<small>Bản tóm tắt để HIỂU — không phân ✓K2 / theo doc. Từng hàm + bằng chứng: note luồng L01…L13 → sơ đồ Phần 5 → canvas làn bơi.</small>"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e0",
+   "fromNode": "s0",
+   "fromSide": "bottom",
+   "toNode": "s1",
+   "toSide": "top",
+   "color": "5"
+  },
+  {
+   "id": "e1",
+   "fromNode": "s1",
+   "fromSide": "bottom",
+   "toNode": "s2",
+   "toSide": "top",
+   "color": "5"
+  },
+  {
+   "id": "e2",
+   "fromNode": "s2",
+   "fromSide": "bottom",
+   "toNode": "s3",
+   "toSide": "top",
+   "color": "5"
+  },
+  {
+   "id": "e3",
+   "fromNode": "s3",
+   "fromSide": "bottom",
+   "toNode": "s4",
+   "toSide": "top",
+   "color": "5"
+  },
+  {
+   "id": "e4",
+   "fromNode": "s4",
+   "fromSide": "bottom",
+   "toNode": "s5",
+   "toSide": "top",
+   "color": "5"
+  },
+  {
+   "id": "e5",
+   "fromNode": "s5",
+   "fromSide": "bottom",
+   "toNode": "s6",
+   "toSide": "top",
+   "color": "5"
+  }
+ ]
 }

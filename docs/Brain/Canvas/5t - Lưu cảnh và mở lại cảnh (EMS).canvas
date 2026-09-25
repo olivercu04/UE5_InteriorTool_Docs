@@ -1,43 +1,340 @@
 {
-	"nodes":[
-		{"id":"lane_MSS","type":"group","x":2640,"y":110,"width":380,"height":2370,"label":"MaterialSlotService (C++)","color":"6"},
-		{"id":"lane_EIL","type":"group","x":2200,"y":110,"width":380,"height":2370,"label":"UEntityIdLibrary (C++)","color":"6"},
-		{"id":"lane_FA","type":"group","x":1760,"y":110,"width":380,"height":2370,"label":"BP_FurnitureActor (mỗi món)","color":"5"},
-		{"id":"lane_IM","type":"group","x":1320,"y":110,"width":380,"height":2370,"label":"BP_FurnitureInputManager","color":"5"},
-		{"id":"lane_SM","type":"group","x":880,"y":110,"width":380,"height":2370,"label":"BP_FurnitureSceneManager","color":"5"},
-		{"id":"lane_SGM","type":"group","x":440,"y":110,"width":380,"height":2370,"label":"SaveGameMenu (menu Save/Load của project tổng)"},
-		{"id":"lane_U","type":"group","x":0,"y":110,"width":380,"height":2370,"label":"User"},
-		{"id":"title","type":"text","x":0,"y":-120,"width":3020,"height":170,"text":"# 5t — Lưu cảnh và mở lại cảnh (EMS)\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."},
-		{"id":"h_U","type":"text","x":25,"y":140,"width":330,"height":90,"text":"### User"},
-		{"id":"h_SGM","type":"text","x":465,"y":140,"width":330,"height":90,"text":"### [[SaveGameMenu]]\n(menu Save/Load của project tổng)"},
-		{"id":"h_SM","type":"text","x":905,"y":140,"width":330,"height":90,"text":"### [[BP_FurnitureSceneManager]]","color":"5"},
-		{"id":"h_IM","type":"text","x":1345,"y":140,"width":330,"height":90,"text":"### [[BP_FurnitureInputManager]]","color":"5"},
-		{"id":"h_FA","type":"text","x":1785,"y":140,"width":330,"height":90,"text":"### [[BP_FurnitureActor]]\n(mỗi món)","color":"5"},
-		{"id":"h_EIL","type":"text","x":2225,"y":140,"width":330,"height":90,"text":"### UEntityIdLibrary (C++)","color":"6"},
-		{"id":"h_MSS","type":"text","x":2665,"y":140,"width":330,"height":90,"text":"### [[MaterialSlotService_Reference]]","color":"6"},
-		{"id":"s1","type":"text","x":905,"y":280,"width":330,"height":212,"text":"**1.** lưu cảnh (Ctrl+S ?)\n`SaveFurnitureScene() → Save Game Actors (Level Only)`\n↗ [[BP_FurnitureSceneManager#SaveFurnitureScene|BP_FurnitureSceneManager › SaveFurnitureScene]]\n<small>← User · thao tác người dùng</small>","color":"1"},
-		{"id":"n9","type":"text","x":20,"y":532,"width":2980,"height":70,"text":"📝 EMS ghi mọi actor có biến SaveGame - mỗi món (MeshPath, RowName, PlacementSurfaceType, GroupID, PersistentID, MaterialSlots) và BP_GroupsContainer (Groups, GroupNameCounter).","color":"3"},
-		{"id":"s2","type":"text","x":465,"y":642,"width":330,"height":102,"text":"**2.** bấm Load trong menu Save/Load\n<small>← User · thao tác người dùng</small>"},
-		{"id":"s3","type":"text","x":905,"y":784,"width":330,"height":190,"text":"**3.** báo tin, SM tự bind lại mỗi Tick khi menu mới xuất hiện\n`OnLoadButtonClicked`\n↗ [[BP_FurnitureSceneManager#OnLoadButtonClicked|BP_FurnitureSceneManager › OnLoadButtonClicked]]\n<small>← SaveGameMenu · theo doc</small>"},
-		{"id":"s4","type":"text","x":1345,"y":1014,"width":330,"height":190,"text":"**4.** bỏ chọn + tắt gizmo TRƯỚC khi xoá\n`DeselectMesh()`\n↗ [[BP_FurnitureInputManager#DeselectMesh (Function — single, cũ → v1.6)|BP_FurnitureInputManager › DeselectMesh]]\n<small>← BP_FurnitureSceneManager · theo doc</small>"},
-		{"id":"s5","type":"text","x":1785,"y":1244,"width":330,"height":124,"text":"**5.** xoá hết đồ đang có\n`Destroy Actor (tag FurnitureSpawned)`\n<small>← BP_FurnitureSceneManager · theo doc</small>"},
-		{"id":"n14","type":"text","x":900,"y":1408,"width":1220,"height":70,"text":"📝 EMS nạp lại actor từ slot (Load Game Actors, Full Reload). SM có LoadFurnitureScene() nhưng doc chưa ghi ai gọi (?).","color":"3"},
-		{"id":"s6","type":"text","x":1785,"y":1518,"width":330,"height":146,"text":"**6.** chờ EMS nạp xong biến SaveGame, MeshPath rỗng thì tự huỷ\n`Event ActorLoaded → AsyncWaitForOperation(CT_Load)`\n<small>nội bộ · theo doc</small>"},
-		{"id":"s7","type":"text","x":2225,"y":1704,"width":330,"height":212,"text":"**7.** giữ danh tính cũ, chỉ sinh mới khi rỗng\n`EnsurePersistentId()`\n↗ [[EntityIdLibrary_Reference#Hàm 1 — EnsurePersistentId|EntityIdLibrary_Reference › EnsurePersistentId]]\n<small>← BP_FurnitureActor · theo doc</small>"},
-		{"id":"s8","type":"text","x":1785,"y":1956,"width":330,"height":124,"text":"**8.** nạp mesh (đồng bộ)\n`LoadAsset_Blocking(MeshPath) → SetStaticMesh`\n<small>nội bộ · theo doc</small>"},
-		{"id":"s9","type":"text","x":2665,"y":2120,"width":330,"height":300,"text":"**9.** gắn lại vật liệu + thông số từng slot\n`RestoreMyMaterialSlots → Rst_LoadNextSlot → ApplyLoadedMaterialToSlot() → ApplyParamsJsonToSlot()`\n↗ [[MaterialSlotService_Reference#ApplyLoadedMaterialToSlot(Mesh, Records&, SlotName, HintIndex, LoadedMI, RowName, PathFallback) → bool|MaterialSlotService_Reference › ApplyLoadedMaterialToSlot]]\n<small>← BP_FurnitureActor · theo doc</small>"}
-	],
-	"edges":[
-		{"id":"e0","fromNode":"h_U","fromSide":"right","toNode":"s1","toSide":"left","label":"1 ?","color":"1"},
-		{"id":"e1","fromNode":"s1","fromSide":"bottom","toNode":"n9","toSide":"top"},
-		{"id":"e2","fromNode":"n9","fromSide":"bottom","toNode":"s2","toSide":"top","label":"2"},
-		{"id":"e3","fromNode":"s2","fromSide":"right","toNode":"s3","toSide":"left","label":"3"},
-		{"id":"e4","fromNode":"s3","fromSide":"right","toNode":"s4","toSide":"left","label":"4"},
-		{"id":"e5","fromNode":"s4","fromSide":"right","toNode":"s5","toSide":"left","label":"5"},
-		{"id":"e6","fromNode":"s5","fromSide":"bottom","toNode":"n14","toSide":"top"},
-		{"id":"e7","fromNode":"n14","fromSide":"bottom","toNode":"s6","toSide":"top","label":"6"},
-		{"id":"e8","fromNode":"s6","fromSide":"right","toNode":"s7","toSide":"left","label":"7"},
-		{"id":"e9","fromNode":"s7","fromSide":"left","toNode":"s8","toSide":"right","label":"8"},
-		{"id":"e10","fromNode":"s8","fromSide":"right","toNode":"s9","toSide":"left","label":"9"}
-	]
+ "nodes": [
+  {
+   "id": "lane_MSS",
+   "type": "group",
+   "x": 2640,
+   "y": 110,
+   "width": 380,
+   "height": 2370,
+   "label": "MaterialSlotService (C++)",
+   "color": "6"
+  },
+  {
+   "id": "lane_EIL",
+   "type": "group",
+   "x": 2200,
+   "y": 110,
+   "width": 380,
+   "height": 2370,
+   "label": "UEntityIdLibrary (C++)",
+   "color": "6"
+  },
+  {
+   "id": "lane_FA",
+   "type": "group",
+   "x": 1760,
+   "y": 110,
+   "width": 380,
+   "height": 2370,
+   "label": "BP_FurnitureActor (mỗi món)",
+   "color": "5"
+  },
+  {
+   "id": "lane_IM",
+   "type": "group",
+   "x": 1320,
+   "y": 110,
+   "width": 380,
+   "height": 2370,
+   "label": "BP_FurnitureInputManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_SM",
+   "type": "group",
+   "x": 880,
+   "y": 110,
+   "width": 380,
+   "height": 2370,
+   "label": "BP_FurnitureSceneManager",
+   "color": "5"
+  },
+  {
+   "id": "lane_SGM",
+   "type": "group",
+   "x": 440,
+   "y": 110,
+   "width": 380,
+   "height": 2370,
+   "label": "SaveGameMenu (menu Save/Load của project tổng)"
+  },
+  {
+   "id": "lane_U",
+   "type": "group",
+   "x": 0,
+   "y": 110,
+   "width": 380,
+   "height": 2370,
+   "label": "User"
+  },
+  {
+   "id": "title",
+   "type": "text",
+   "x": 0,
+   "y": -120,
+   "width": 3020,
+   "height": 170,
+   "text": "# 5t — Lưu cảnh và mở lại cảnh (EMS)\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
+  },
+  {
+   "id": "h_U",
+   "type": "text",
+   "x": 25,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### User"
+  },
+  {
+   "id": "h_SGM",
+   "type": "text",
+   "x": 465,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[SaveGameMenu]]\n(menu Save/Load của project tổng)"
+  },
+  {
+   "id": "h_SM",
+   "type": "text",
+   "x": 905,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureSceneManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_IM",
+   "type": "text",
+   "x": 1345,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureInputManager]]",
+   "color": "5"
+  },
+  {
+   "id": "h_FA",
+   "type": "text",
+   "x": 1785,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_FurnitureActor]]\n(mỗi món)",
+   "color": "5"
+  },
+  {
+   "id": "h_EIL",
+   "type": "text",
+   "x": 2225,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### UEntityIdLibrary (C++)",
+   "color": "6"
+  },
+  {
+   "id": "h_MSS",
+   "type": "text",
+   "x": 2665,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[MaterialSlotService_Reference]]",
+   "color": "6"
+  },
+  {
+   "id": "s1",
+   "type": "text",
+   "x": 905,
+   "y": 280,
+   "width": 330,
+   "height": 212,
+   "text": "**1.** lưu cảnh (Ctrl+S ?)\n`SaveFurnitureScene() → Save Game Actors (Level Only)`\n↗ [[BP_FurnitureSceneManager#SaveFurnitureScene|BP_FurnitureSceneManager › SaveFurnitureScene]]\n<small>← User · thao tác người dùng</small>",
+   "color": "1"
+  },
+  {
+   "id": "n9",
+   "type": "text",
+   "x": 20,
+   "y": 532,
+   "width": 2980,
+   "height": 70,
+   "text": "📝 EMS ghi mọi actor có biến SaveGame - mỗi món (MeshPath, RowName, PlacementSurfaceType, GroupID, PersistentID, MaterialSlots) và BP_GroupsContainer (Groups, GroupNameCounter).",
+   "color": "3"
+  },
+  {
+   "id": "s2",
+   "type": "text",
+   "x": 465,
+   "y": 642,
+   "width": 330,
+   "height": 102,
+   "text": "**2.** bấm Load trong menu Save/Load\n<small>← User · thao tác người dùng</small>"
+  },
+  {
+   "id": "s3",
+   "type": "text",
+   "x": 905,
+   "y": 784,
+   "width": 330,
+   "height": 190,
+   "text": "**3.** báo tin, SM tự bind lại mỗi Tick khi menu mới xuất hiện\n`OnLoadButtonClicked`\n↗ [[BP_FurnitureSceneManager#OnLoadButtonClicked|BP_FurnitureSceneManager › OnLoadButtonClicked]]\n<small>← SaveGameMenu · theo doc</small>"
+  },
+  {
+   "id": "s4",
+   "type": "text",
+   "x": 1345,
+   "y": 1014,
+   "width": 330,
+   "height": 190,
+   "text": "**4.** bỏ chọn + tắt gizmo TRƯỚC khi xoá\n`DeselectMesh()`\n↗ [[BP_FurnitureInputManager#DeselectMesh (Function — single, cũ → v1.6)|BP_FurnitureInputManager › DeselectMesh]]\n<small>← BP_FurnitureSceneManager · theo doc</small>"
+  },
+  {
+   "id": "s5",
+   "type": "text",
+   "x": 1785,
+   "y": 1244,
+   "width": 330,
+   "height": 124,
+   "text": "**5.** xoá hết đồ đang có\n`Destroy Actor (tag FurnitureSpawned)`\n<small>← BP_FurnitureSceneManager · theo doc</small>"
+  },
+  {
+   "id": "n14",
+   "type": "text",
+   "x": 900,
+   "y": 1408,
+   "width": 1220,
+   "height": 70,
+   "text": "📝 EMS nạp lại actor từ slot (Load Game Actors, Full Reload). SM có LoadFurnitureScene() nhưng doc chưa ghi ai gọi (?).",
+   "color": "3"
+  },
+  {
+   "id": "s6",
+   "type": "text",
+   "x": 1785,
+   "y": 1518,
+   "width": 330,
+   "height": 146,
+   "text": "**6.** chờ EMS nạp xong biến SaveGame, MeshPath rỗng thì tự huỷ\n`Event ActorLoaded → AsyncWaitForOperation(CT_Load)`\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s7",
+   "type": "text",
+   "x": 2225,
+   "y": 1704,
+   "width": 330,
+   "height": 212,
+   "text": "**7.** giữ danh tính cũ, chỉ sinh mới khi rỗng\n`EnsurePersistentId()`\n↗ [[EntityIdLibrary_Reference#Hàm 1 — EnsurePersistentId|EntityIdLibrary_Reference › EnsurePersistentId]]\n<small>← BP_FurnitureActor · theo doc</small>"
+  },
+  {
+   "id": "s8",
+   "type": "text",
+   "x": 1785,
+   "y": 1956,
+   "width": 330,
+   "height": 124,
+   "text": "**8.** nạp mesh (đồng bộ)\n`LoadAsset_Blocking(MeshPath) → SetStaticMesh`\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s9",
+   "type": "text",
+   "x": 2665,
+   "y": 2120,
+   "width": 330,
+   "height": 300,
+   "text": "**9.** gắn lại vật liệu + thông số từng slot\n`RestoreMyMaterialSlots → Rst_LoadNextSlot → ApplyLoadedMaterialToSlot() → ApplyParamsJsonToSlot()`\n↗ [[MaterialSlotService_Reference#ApplyLoadedMaterialToSlot(Mesh, Records&, SlotName, HintIndex, LoadedMI, RowName, PathFallback) → bool|MaterialSlotService_Reference › ApplyLoadedMaterialToSlot]]\n<small>← BP_FurnitureActor · theo doc</small>"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e0",
+   "fromNode": "h_U",
+   "fromSide": "right",
+   "toNode": "s1",
+   "toSide": "left",
+   "label": "1 ?",
+   "color": "1"
+  },
+  {
+   "id": "e1",
+   "fromNode": "s1",
+   "fromSide": "bottom",
+   "toNode": "n9",
+   "toSide": "top"
+  },
+  {
+   "id": "e2",
+   "fromNode": "n9",
+   "fromSide": "bottom",
+   "toNode": "s2",
+   "toSide": "top",
+   "label": "2"
+  },
+  {
+   "id": "e3",
+   "fromNode": "s2",
+   "fromSide": "right",
+   "toNode": "s3",
+   "toSide": "left",
+   "label": "3"
+  },
+  {
+   "id": "e4",
+   "fromNode": "s3",
+   "fromSide": "right",
+   "toNode": "s4",
+   "toSide": "left",
+   "label": "4"
+  },
+  {
+   "id": "e5",
+   "fromNode": "s4",
+   "fromSide": "right",
+   "toNode": "s5",
+   "toSide": "left",
+   "label": "5"
+  },
+  {
+   "id": "e6",
+   "fromNode": "s5",
+   "fromSide": "bottom",
+   "toNode": "n14",
+   "toSide": "top"
+  },
+  {
+   "id": "e7",
+   "fromNode": "n14",
+   "fromSide": "bottom",
+   "toNode": "s6",
+   "toSide": "top",
+   "label": "6"
+  },
+  {
+   "id": "e8",
+   "fromNode": "s6",
+   "fromSide": "right",
+   "toNode": "s7",
+   "toSide": "left",
+   "label": "7"
+  },
+  {
+   "id": "e9",
+   "fromNode": "s7",
+   "fromSide": "left",
+   "toNode": "s8",
+   "toSide": "right",
+   "label": "8"
+  },
+  {
+   "id": "e10",
+   "fromNode": "s8",
+   "fromSide": "right",
+   "toNode": "s9",
+   "toSide": "left",
+   "label": "9"
+  }
+ ]
 }

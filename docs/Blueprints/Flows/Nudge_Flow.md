@@ -24,6 +24,7 @@ Path: `/Game/cuong/UI/Input/IA_FurnitureNudge`
 ---
 
 ## BP_FoffPlayerController — Routing
+> ⚠ **LỖI THỜI (ghi nhận 25/09/2026):** từ Gate 1.5 B2 (18/08) event Input Action nằm trong `BP_FurnitureInputManager` (gọi thẳng hàm, không qua PlayerController). Khối dưới là bản cũ — xem `BP_FurnitureInputManager.md` mục "Enhanced Input Actions".
 
 ```
 EnhancedInputAction IA_FurnitureNudge (Triggered):   ← dùng Triggered (cả Pressed + Pulse)

@@ -3,51 +3,41 @@
   {
    "id": "lane_UM",
    "type": "group",
-   "x": 2200,
+   "x": 1760,
    "y": 110,
    "width": 380,
-   "height": 1986,
+   "height": 1844,
    "label": "BP_UndoManager",
    "color": "5"
   },
   {
    "id": "lane_PV",
    "type": "group",
-   "x": 1760,
+   "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 1986,
+   "height": 1844,
    "label": "BP_PivotActor (khi ≥2 món)",
    "color": "5"
   },
   {
    "id": "lane_FA",
    "type": "group",
-   "x": 1320,
+   "x": 880,
    "y": 110,
    "width": 380,
-   "height": 1986,
+   "height": 1844,
    "label": "BP_FurnitureActor (mỗi món)",
    "color": "5"
   },
   {
    "id": "lane_IM",
    "type": "group",
-   "x": 880,
-   "y": 110,
-   "width": 380,
-   "height": 1986,
-   "label": "BP_FurnitureInputManager",
-   "color": "5"
-  },
-  {
-   "id": "lane_PC",
-   "type": "group",
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 1986,
-   "label": "BP_FoffPlayerController",
+   "height": 1844,
+   "label": "BP_FurnitureInputManager",
    "color": "5"
   },
   {
@@ -56,7 +46,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 1986,
+   "height": 1844,
    "label": "User"
   },
   {
@@ -64,7 +54,7 @@
    "type": "text",
    "x": 0,
    "y": -120,
-   "width": 2580,
+   "width": 2140,
    "height": 170,
    "text": "# 5k — Nhích đồ bằng phím mũi tên (Nudge)\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
   },
@@ -78,19 +68,9 @@
    "text": "### User"
   },
   {
-   "id": "h_PC",
-   "type": "text",
-   "x": 465,
-   "y": 140,
-   "width": 330,
-   "height": 90,
-   "text": "### [[BP_FoffPlayerController]]",
-   "color": "5"
-  },
-  {
    "id": "h_IM",
    "type": "text",
-   "x": 905,
+   "x": 465,
    "y": 140,
    "width": 330,
    "height": 90,
@@ -100,7 +80,7 @@
   {
    "id": "h_FA",
    "type": "text",
-   "x": 1345,
+   "x": 905,
    "y": 140,
    "width": 330,
    "height": 90,
@@ -110,7 +90,7 @@
   {
    "id": "h_PV",
    "type": "text",
-   "x": 1785,
+   "x": 1345,
    "y": 140,
    "width": 330,
    "height": 90,
@@ -120,7 +100,7 @@
   {
    "id": "h_UM",
    "type": "text",
-   "x": 2225,
+   "x": 1785,
    "y": 140,
    "width": 330,
    "height": 90,
@@ -133,71 +113,62 @@
    "x": 465,
    "y": 280,
    "width": 330,
-   "height": 146,
-   "text": "**1.** bấm phím mũi tên (giữ = lặp mỗi 0.1s)\n`IA_FurnitureNudge (Triggered)`\n<small>← User · thao tác người dùng</small>"
+   "height": 168,
+   "text": "**1.** bấm phím mũi tên (giữ = lặp mỗi 0.1s)\n`IA_FurnitureNudge (Triggered) → NudgeMesh(Direction)`\n<small>← User · thao tác người dùng</small>"
   },
   {
    "id": "s2",
    "type": "text",
-   "x": 905,
-   "y": 466,
+   "x": 465,
+   "y": 488,
    "width": 330,
-   "height": 124,
-   "text": "**2.** chuyển hướng bấm\n`NudgeMesh(Direction)`\n<small>← BP_FoffPlayerController · theo doc</small>"
+   "height": 190,
+   "text": "▸ nếu SnapStep lớn hơn 0 (nhích theo lưới)\n**2.** hướng theo mặt đặt của món chính + góc camera làm tròn 90°\n`GET PlacementSurfaceType (Wall - lên/xuống là trục Z)`\n<small>nội bộ · theo doc</small>"
   },
   {
    "id": "s3",
    "type": "text",
    "x": 905,
-   "y": 630,
+   "y": 718,
    "width": 330,
-   "height": 190,
-   "text": "▸ nếu SnapStep lớn hơn 0 (nhích theo lưới)\n**3.** hướng theo mặt đặt của món chính + góc camera làm tròn 90°\n`GET PlacementSurfaceType (Wall - lên/xuống là trục Z)`\n<small>nội bộ · theo doc</small>"
+   "height": 168,
+   "text": "▸ nếu SnapStep lớn hơn 0 (nhích theo lưới)\n**3.** dời mọi món đang chọn\n`Add Actor World Offset(MoveOffset)`\n<small>← BP_FurnitureInputManager · theo doc</small>"
   },
   {
    "id": "s4",
    "type": "text",
    "x": 1345,
-   "y": 860,
+   "y": 926,
    "width": 330,
-   "height": 168,
-   "text": "▸ nếu SnapStep lớn hơn 0 (nhích theo lưới)\n**4.** dời mọi món đang chọn\n`Add Actor World Offset(MoveOffset)`\n<small>← BP_FurnitureInputManager · theo doc</small>"
+   "height": 278,
+   "text": "▸ nếu SnapStep lớn hơn 0 (nhích theo lưới)\n**4.** kéo pivot về tâm mới để gizmo đi theo\n`CalculateCenter → Set Actor Location → RefreshOffsets()`\n↗ [[BP_PivotActor#Function `RefreshOffsets` — v1.1 (Transform Composition)|BP_PivotActor › RefreshOffsets]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
   },
   {
    "id": "s5",
    "type": "text",
-   "x": 1785,
-   "y": 1068,
+   "x": 465,
+   "y": 1244,
    "width": 330,
-   "height": 278,
-   "text": "▸ nếu SnapStep lớn hơn 0 (nhích theo lưới)\n**5.** kéo pivot về tâm mới để gizmo đi theo\n`CalculateCenter → Set Actor Location → RefreshOffsets()`\n↗ [[BP_PivotActor#Function `RefreshOffsets` — v1.1 (Transform Composition)|BP_PivotActor › RefreshOffsets]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
+   "height": 168,
+   "text": "▸ nếu SnapStep lớn hơn 0 (nhích theo lưới)\n**5.** hẹn ghi sổ 0.5s sau lần nhích cuối\n`Set Timer → CaptureNudgeSnapshot`\n<small>nội bộ · theo doc</small>"
   },
   {
    "id": "s6",
    "type": "text",
-   "x": 905,
-   "y": 1386,
+   "x": 1785,
+   "y": 1452,
    "width": 330,
-   "height": 168,
-   "text": "▸ nếu SnapStep lớn hơn 0 (nhích theo lưới)\n**6.** hẹn ghi sổ 0.5s sau lần nhích cuối\n`Set Timer → CaptureNudgeSnapshot`\n<small>nội bộ · theo doc</small>"
+   "height": 234,
+   "text": "▸ nếu SnapStep lớn hơn 0 (nhích theo lưới)\n**6.** cả chuỗi nhích = 1 entry\n`CaptureSnapshot(\"Nudge\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
   },
   {
    "id": "s7",
    "type": "text",
-   "x": 2225,
-   "y": 1594,
-   "width": 330,
-   "height": 234,
-   "text": "▸ nếu SnapStep lớn hơn 0 (nhích theo lưới)\n**7.** cả chuỗi nhích = 1 entry\n`CaptureSnapshot(\"Nudge\")`\n↗ [[BP_UndoManager#CaptureSnapshot(ActionName) — v1.20 VIẾT LẠI còn 2 node (U2.3)|BP_UndoManager › CaptureSnapshot]]\n<small>← BP_FurnitureInputManager · theo doc</small>"
-  },
-  {
-   "id": "s8",
-   "type": "text",
-   "x": 905,
-   "y": 1868,
+   "x": 465,
+   "y": 1726,
    "width": 330,
    "height": 168,
-   "text": "▸ ngược lại: SnapStep = 0 (tự do)\n**8.** Event Tick đọc phím mỗi frame, cùng đuôi pivot + hẹn ghi sổ\n`Is Input Key Down → MoveOffset × NudgeSpeed × DeltaSeconds`\n<small>nội bộ · theo doc</small>",
+   "text": "▸ ngược lại: SnapStep = 0 (tự do)\n**7.** Event Tick đọc phím mỗi frame, cùng đuôi pivot + hẹn ghi sổ\n`Is Input Key Down → MoveOffset × NudgeSpeed × DeltaSeconds`\n<small>nội bộ · theo doc</small>",
    "color": "3"
   }
  ],
@@ -213,17 +184,17 @@
   {
    "id": "e1",
    "fromNode": "s1",
-   "fromSide": "right",
+   "fromSide": "bottom",
    "toNode": "s2",
-   "toSide": "left",
+   "toSide": "top",
    "label": "2"
   },
   {
    "id": "e2",
    "fromNode": "s2",
-   "fromSide": "bottom",
+   "fromSide": "right",
    "toNode": "s3",
-   "toSide": "top",
+   "toSide": "left",
    "label": "3"
   },
   {
@@ -237,34 +208,26 @@
   {
    "id": "e4",
    "fromNode": "s4",
-   "fromSide": "right",
+   "fromSide": "left",
    "toNode": "s5",
-   "toSide": "left",
+   "toSide": "right",
    "label": "5"
   },
   {
    "id": "e5",
    "fromNode": "s5",
-   "fromSide": "left",
+   "fromSide": "right",
    "toNode": "s6",
-   "toSide": "right",
+   "toSide": "left",
    "label": "6"
   },
   {
    "id": "e6",
-   "fromNode": "s6",
-   "fromSide": "right",
-   "toNode": "s7",
-   "toSide": "left",
-   "label": "7"
-  },
-  {
-   "id": "e7",
-   "fromNode": "s2",
+   "fromNode": "s1",
    "fromSide": "bottom",
-   "toNode": "s8",
+   "toNode": "s7",
    "toSide": "top",
-   "label": "8"
+   "label": "7"
   }
  ]
 }

@@ -6,7 +6,6 @@
 
 ## Thành phần
 
-- [[BP_FoffPlayerController]]
 - [[BP_FurnitureActor]]
 - [[BP_FurnitureInputManager]]
 - [[BP_FurnitureSceneManager]]
@@ -47,13 +46,12 @@
 - [[WBP_MeshControls]] → [[BP_FurnitureInputManager]] — đặt chế độ Move / Rotate / Scale / Select · SET ActiveMode
 - [[WBP_MeshControls]] → [[BP_GizmoController]] — tắt rồi bật gizmo khi đổi chế độ · DeactivateGizmo() / ActivateGizmo() — lấy tham chiếu từ đâu ?
 - [[BP_FurnitureSceneManager]] → [[BP_FurnitureInputManager]] — yêu cầu bỏ chọn · DeselectMesh()
-- [[BP_FoffPlayerController]] → [[BP_UndoManager]] — phím Undo / Redo · UndoLastAction() / RedoLastAction()
+- [[BP_FurnitureInputManager]] → [[BP_UndoManager]] — phím Undo / Redo (bỏ qua khi đang kéo gizmo) · IsGizmoDragging() → UndoLastAction() / RedoLastAction()
 - [[BP_UndoManager]] → [[BP_FurnitureInputManager]] — chọn lại đồ sau khôi phục + báo tin · SelectActors(), Broadcast OnEditModeChanged
 - [[BP_UndoManager]] → [[WBP_MeshControls]] — đặt nút mode theo ảnh sau khôi phục · RefreshButtonState(ActiveMode) — lấy tham chiếu từ đâu ?
 - [[BP_FurnitureInputManager]] → [[BP_UndoManager]] — chụp mốc các thao tác khác · CaptureSnapshot(BoxSelect / CreateGroup / Ungroup / PasteMulti / DuplicateMulti / Delete / Nudge / SelectSimilar / ResetRotation)
 - [[BP_FurnitureInputManager]] → [[BP_FurnitureActor]] — dời / gán nhóm / xoá đồ đang chọn · Add Actor World Offset (NudgeMesh), SET GroupID (CreateGroup), Destroy Actor (DeleteSelected)
 - [[BP_FurnitureInputManager]] → [[BP_PivotActor]] — dời pivot theo nhóm khi nhích phím · Set Actor Location → RefreshOffsets()
-- [[BP_FoffPlayerController]] → [[BP_FurnitureInputManager]] — phím tắt nhích / copy / dán / nhân bản · NudgeMesh() / CopyMesh() / PasteMesh() / DuplicateMesh()
 - [[WBP_ContextMenuItem]] → [[BP_FurnitureInputManager]] — dòng menu được bấm → callback của IM · CB_Copy / CB_Paste / CB_Duplicate / CB_Delete … — bind trong OnRightClick ?
 - [[WBP_MeshControls]] → [[BP_FurnitureInputManager]] — bật / tắt thay đồ · BTN_Replace → StartReplaceMode(SelectedActors), IsReplaceModeActive() ✓K2
 - [[WBP_MeshControls]] → [[BP_FurnitureInputManager]] — vào / ra sửa nhóm · TryEnterEditFromSelection() / ExitEditModeOneLevel() / ExitEditModeFull()

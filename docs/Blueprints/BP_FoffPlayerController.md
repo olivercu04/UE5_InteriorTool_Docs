@@ -1,5 +1,9 @@
 # BP_FoffPlayerController — Furniture Tool Integration
-**Cập nhật:** 25/04/2026 | Project: project_22042026 (UE5.5.4)
+**Cập nhật:** 25/09/2026 09:10 — ⚠ banner LỖI THỜI (Gate 1.5 B2) | **Bản gốc:** 25/04/2026 | Project: project_22042026 (UE5.5.4)
+
+> ⚠ **LỖI THỜI từ Gate 1.5 B2 (18/08/2026) — ghi nhận 25/09/2026:** Gate 1.5 B2 (18/08): InputManager tự `AddMappingContext(LM_FurnitureInput)` ở BeginPlay, giữ suốt phiên; các Input Action nội thất nằm trong InputManager (K2 BeginPlay 25/09).
+> Các mục "Custom Events đã thêm", "Enhanced Input Actions đã bind", "Caller Diagram" bên dưới là thiết kế CŨ — giữ để tra lịch sử,
+> KHÔNG dùng làm nguồn. Nguồn hiện hành: `BP_FurnitureInputManager.md` mục "Event BeginPlay" + "Enhanced Input Actions".
  
 ---
  
@@ -98,18 +102,6 @@ Enhanced Input (khi LM_FurnitureInput active)
 
 ## 🧠 Kết nối (bản đồ não)
 
-> Nguồn: [[Architecture_Map]] Phần 3. ✓K2 = đã kiểm chứng K2, không dấu = theo doc. Mở **Local graph** của file này để thấy hàng xóm trực tiếp.
-
-**Có mặt trong thao tác:** [[L01 · Mở tool và kho đồ|L01]] · [[L05 · Di chuyển và xoay đồ|L05]] · [[L07 · Menu chuột phải và phím tắt|L07]] · [[L13 · Hoàn tác và làm lại|L13]]
-
-**Thuộc mảng kết nối:** [[Kết nối 3a - Chọn đồ Gizmo Nhóm]] · [[Kết nối 3c - Inventory + Cây thư mục]] · [[Kết nối 3d - Save Undo khởi động]]
-
-**Gọi / điều khiển →**
-- [[BP_UndoManager]] — phím Undo / Redo · UndoLastAction() / RedoLastAction()
-- [[BP_FurnitureInputManager]] — phím tắt nhích / copy / dán / nhân bản · NudgeMesh() / CopyMesh() / PasteMesh() / DuplicateMesh()
-
-**← Được gọi bởi**
-- [[WBP_FurnitureInventory]] — đổi bộ phím lúc mở/đóng · Add/Remove Mapping Context
-- [[WBP_FOFF_ToolDemo]] — đổi bộ phím khi mở / đóng kho · AddFurnitureInput() / RemoveFurnitureInput()
+> Thành phần này KHÔNG còn cạnh nào trong [[Architecture_Map]] Phần 3 (vd chức năng đã chuyển sang BP khác). Xem changelog của bản đồ.
 
 <!-- BRAIN:END -->

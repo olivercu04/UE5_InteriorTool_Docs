@@ -2558,7 +2558,6 @@ Q/W/E/R = Select/Move/Rotate/Scale | Delete = xóa | Ctrl+Z / Ctrl+Shift+Z = Und
 - [[FurnitureFilterLibrary_Reference]] — lọc đồ / vật liệu · FilterFurnitureRows() (C++)
 - [[BP_FurnitureInputManager]] — vào chế độ thay đồ · StartReplaceMode() / ShouldRouteReplaceToCombo() ✓K2
 - [[BP_UndoManager]] — giữ tham chiếu + nghe khôi phục + chụp trạng thái · UndoManagerRef, Bind OnRestoreCompleted
-- [[BP_FoffPlayerController]] — đổi bộ phím lúc mở/đóng · Add/Remove Mapping Context
 - [[Foff_GameInstance]] — tự đăng ký + hiện thông báo · FurnitureInventoryRef, ToastRef.ShowToast()
 - [[WBP_FurnitureCard]] — đổ đồ vào ListView · ListView entry WBP_FurnitureCard
 - [[BP_FurnitureItemView]] — tạo 1 ô cho mỗi hàng lọc · Make BP_FurnitureItemView

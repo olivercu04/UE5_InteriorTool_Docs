@@ -23,6 +23,5 @@
 - [[WBP_Toast]] — tạo toast + gắn vào GameInstance · Create + SET GI.ToastRef
 - [[BP_UndoManager]] — lưu mốc đầu tiên · CaptureSnapshot(Initial)
 - [[WBP_FurnitureInventory]] — mở inventory khi bấm nút · Open widget
-- [[BP_FoffPlayerController]] — đổi bộ phím khi mở / đóng kho · AddFurnitureInput() / RemoveFurnitureInput()
 
 <!-- BRAIN:END -->

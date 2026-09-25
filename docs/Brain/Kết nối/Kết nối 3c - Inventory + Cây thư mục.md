@@ -7,7 +7,6 @@
 ## Thành phần
 
 - [[BP_DragDropOperation_FurnitureCard]] *(chưa có doc)*
-- [[BP_FoffPlayerController]]
 - [[BP_FurnitureActor]]
 - [[BP_FurnitureInputManager]]
 - [[BP_FurnitureItemView]] *(chưa có doc)*
@@ -34,7 +33,6 @@
 - [[WBP_FurnitureInventory]] → [[FurnitureFilterLibrary_Reference]] — lọc đồ / vật liệu · FilterFurnitureRows() (C++)
 - [[WBP_FurnitureInventory]] → [[BP_FurnitureInputManager]] — vào chế độ thay đồ · StartReplaceMode() / ShouldRouteReplaceToCombo() ✓K2
 - [[WBP_FurnitureInventory]] → [[BP_UndoManager]] — giữ tham chiếu + nghe khôi phục + chụp trạng thái · UndoManagerRef, Bind OnRestoreCompleted
-- [[WBP_FurnitureInventory]] → [[BP_FoffPlayerController]] — đổi bộ phím lúc mở/đóng · Add/Remove Mapping Context
 - [[WBP_FurnitureInventory]] → [[Foff_GameInstance]] — tự đăng ký + hiện thông báo · FurnitureInventoryRef, ToastRef.ShowToast()
 - [[WBP_FurnitureInventory]] → [[WBP_FurnitureCard]] — đổ đồ vào ListView · ListView entry WBP_FurnitureCard
 - [[WBP_FurnitureInventory]] → [[BP_FurnitureItemView]] — tạo 1 ô cho mỗi hàng lọc · Make BP_FurnitureItemView

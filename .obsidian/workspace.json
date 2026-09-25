@@ -11,17 +11,14 @@
             "id": "5ff223a103752ffb",
             "type": "leaf",
             "state": {
-              "type": "canvas",
+              "type": "markdown",
               "state": {
-                "file": "docs/Brain/Tổng quát/2 · Phía sau màn hình.canvas",
-                "viewState": {
-                  "x": 880,
-                  "y": 575,
-                  "zoom": -0.34058080178925415
-                }
+                "file": "docs/00_Core/CrossCheck_PreGate2_02aug2026.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "lucide-layout-dashboard",
-              "title": "2 · Phía sau màn hình"
+              "icon": "lucide-file",
+              "title": "CrossCheck_PreGate2_02aug2026"
             }
           }
         ]
@@ -190,6 +187,7 @@
   },
   "active": "5ff223a103752ffb",
   "lastOpenFiles": [
+    "docs/Brain/Tổng quát/2 · Phía sau màn hình.canvas",
     "docs/Brain/Tổng quát/1 · Một buổi dựng phòng.canvas",
     "docs/Brain/Bản đồ não.md",
     "docs/00_Core/00_INDEX.md",
@@ -210,7 +208,6 @@
     "docs/Brain/Tổng quát/ảnh/tq_UI_tong_quan.png",
     "docs/Brain/Tổng quát/ảnh",
     "docs/Brain/Tổng quát/3 · Khuôn 4 bước.canvas",
-    "docs/Brain/Tổng quát/2 · Phía sau màn hình.canvas",
     "docs/Brain/Tổng quát",
     "docs/Brain/Luồng - Kéo gizmo Move.md",
     "docs/Brain/Kiểm tra bản đồ.md",

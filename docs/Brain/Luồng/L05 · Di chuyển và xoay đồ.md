@@ -35,7 +35,7 @@ Pivot giống **cái khay**: lúc bắt đầu kéo, ghi lại mỗi món đặt
 - **Nhấn lên trục mà không bị bỏ chọn / quét khung** — `Mouse Left Pressed` dừng ở Step 3 (`bIsDraggingGizmo == True`) trước khi bật cờ quét khung.
 - **Chọn nhiều món thì gizmo kéo Pivot**, Pivot mới kéo từng món (công thức tuyệt đối mỗi frame → không cộng dồn sai số).
 - **Thứ tự lúc thả là luật cứng:** `CaptureSnapshot` TRƯỚC, `SET bIsDraggingGizmo = False` SAU (✓K2 24/09).
-- **⚠ K2 24/09:** khối dọn cờ chỉ chạy sau `CaptureSnapshot` — trượt 1 trong 3 lớp chặn là dừng luôn (nghi kẹt cờ + khoá xoay camera nếu gizmo tắt giữa lúc kéo); và 2 Branch chọn tên entry cùng so `NewEnumerator2` → nhánh "Scale" không bao giờ chạy. Chờ test — [[BP_GizmoController]] v1.2.
+- **Ctrl+Z giữa lúc kéo** từng làm kẹt cờ kéo + khoá xoay camera (tool "đơ") — **đã sửa 25/09**: trượt lớp chặn 1–2 mà đang kéo thì vẫn dọn cờ, không ghi sổ. Và từ 25/09 **Ctrl+Z / Ctrl+Shift+Z bị bỏ qua khi đang giữ chuột kéo gizmo** (`IsGizmoDragging` trong InputManager) — trước đó Undo chen giữa cú kéo làm gizmo kéo tiếp món mới sinh lại và ghi mốc "Move" thừa, mất Redo. Lỗi thứ 2 (chế độ Scale bị ghi mốc tên "Move" do 2 Branch cùng so `NewEnumerator2`) **đã sửa 25/09**, PIE PASS — [[BP_GizmoController]] v1.3.
 - **Pivot không vào sổ** (tag `FurniturePivot`) — sổ chỉ ghi vị trí mới của từng món.
 - **Nhích phím: hướng theo camera làm tròn 90°** và theo mặt đặt của món chính (đồ trên tường: lên / xuống = trục Z). `SnapStep = 0` thì Tick đọc phím liên tục, dừng ngay khi thả phím.
 - Rotate / Scale dùng chung khung với Move — khác nhánh Tick và tên entry.

@@ -3,7 +3,7 @@
 > **Hành trình:** ← [[L06 · Nhóm đồ và sửa nhóm|L06 Nhóm đồ và sửa nhóm]] · **L07** · [[L08 · Thay đồ|L08 Thay đồ]] →
 > ↑ [[Bản đồ não]] · trên [[1 · Một buổi dựng phòng.canvas|Tổng quát 1]] là "Bất cứ lúc nào" · sơ đồ nhúng từ [[Architecture_Map]] Phần 5 (nguồn duy nhất — sửa ở đó). Mũi tên **liền** = ✓K2 · **đứt** = theo doc · `?` = chưa rõ.
 
-**Một câu:** chuột phải chỉ mở menu khi **bấm-thả nhanh (< 0.3s) và camera không xoay** — giữ chuột phải để xoay camera thì không mở. Mỗi dòng menu gọi 1 callback `CB_*` của InputManager; Ctrl+C / V / D đi thẳng từ PlayerController, không qua menu.
+**Một câu:** chuột phải chỉ mở menu khi **bấm-thả nhanh (< 0.3s) và camera không xoay** — giữ chuột phải để xoay camera thì không mở. Mỗi dòng menu gọi 1 callback `CB_*` của InputManager; Ctrl+C / V / D là event Input Action ngay trong InputManager (từ Gate 1.5 B2), không qua menu.
 
 ## Người dùng làm gì → thấy gì
 | Làm | Thấy | Sổ lịch sử |
@@ -42,5 +42,5 @@ Ctrl+Z cho Dán / Nhân bản / Xoá / Chọn tương tự / Đặt lại xoay (
 | Hàm | Doc |
 |---|---|
 | Right-click handler (`OnRMBPressed` / `OnRMBReleased` ✓K2) · Callbacks · `DeleteSelected` · `SelectSimilarMesh` · `ResetRotation` | [[BP_FurnitureInputManager]] |
-| Routing phím · `CopyMesh` · `PasteMesh` · `DuplicateMesh` · `SpawnFurnitureCopy` (✓K2) | [[CopyPaste_Flow]] |
+| `CopyMesh` · `PasteMesh` · `DuplicateMesh` · `SpawnFurnitureCopy` (✓K2) | [[CopyPaste_Flow]] |
 | Menu widget | [[WBP_ContextMenu]] · [[WBP_ContextMenuItem]] |

@@ -46,6 +46,7 @@ Quy tắc 1 dòng: **Undo Snapshot N → dùng ảnh của N−1. Undo Command �
 - **`SelectActors` bị gọi 2 lần** trong `RestoreSnapshot` (bước 5 và 6b) — nguồn gốc bug B-gizmo (đã sửa 24/09 bằng Deactivate trước Activate).
 - **Undo Snapshot làm mất slot đang chọn + Inspector về trống**; Undo ParamCommand thì không — đóng ở U3 (`Bug-ParamUndo-SlotContextLost`).
 - **Ctrl+Shift+Z cũng thỏa điều kiện Ctrl+Z** — `IA_FurnitureUndo` kiểm Shift để nhường Redo.
+- **Đang giữ chuột kéo gizmo thì Ctrl+Z / Ctrl+Shift+Z bị bỏ qua** (`IsGizmoDragging`, 25/09) — Undo chen giữa cú kéo từng làm kẹt tool và ghi mốc "Move" thừa.
 - Nguồn ghi sổ: InputManager (Select / Deselect / BoxSelect / Group / Paste / Duplicate / Delete / Nudge), Gizmo (Move / Rotate / Scale), lớp kéo-thả (Spawn), thẻ đồ (Replace), món đồ (ApplyMaterial), kho (ChangeMaterial, ResetSlot / ResetAll, PasteMaterial), ComboManager (SpawnCombo / ReplaceCombo), phiên chỉnh thông số (ParamCommand).
 
 ## Đường ngược (6A)
@@ -60,7 +61,7 @@ Chính là luồng này. Redo đảo lại Undo; thao tác mới cắt nhánh Re
 | Hàm | Doc |
 |---|---|
 | `UndoLastAction` · `RedoLastAction` · `CaptureSnapshot` · `BuildSceneSnapshotBase` · `AppendEntry` · `RestoreSnapshot` · `RestoreCurrentSnapshot` · `ApplyParamCommand` · `JumpToHistoryIndex` | [[BP_UndoManager]] |
-| `IA_FurnitureUndo` · `IA_FurnitureRedo` | [[BP_FoffPlayerController]] |
+| `IA_FurnitureUndo` · `IA_FurnitureRedo` · `IsGizmoDragging` (Input nằm ở đây từ Gate 1.5 B2) | [[BP_FurnitureInputManager]] |
 | `OnMouseReleased` (ghi Move / Rotate / Scale) | [[BP_GizmoController]] |
 | `SpawnFurnitureCopy` · `SelectActors` · `DeselectAll` | [[BP_FurnitureInputManager]] |
 | `LoadMeshAsync` · `RestoreMyMaterialSlots` | [[BP_FurnitureActor]] |

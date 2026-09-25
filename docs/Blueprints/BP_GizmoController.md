@@ -1,5 +1,8 @@
 # BP_GizmoController
 **HỢP NHẤT TỪ 2 file:** v1.1 base (05/06) + OnMouseReleased fragment (16/04, v1.0 tham khảo)
+**Phiên bản:** 1.5 | **Cập nhật:** 25/09/2026 09:10 ICT — F2 phần B đóng: InputManager bỏ qua Undo/Redo khi `bIsDraggingGizmo` (Function `IsGizmoDragging`), PIE PASS.
+**Phiên bản:** 1.4 | **Cập nhật:** 25/09/2026 — 08:50 ICT — Sửa kẹt cờ khi Ctrl+Z giữa lúc kéo (F2): 2 nhánh False của lớp chặn 1–2 nối vào Branch MỚI `bIsDraggingGizmo` → True về khối dọn cờ (không ghi sổ). PIE PASS. Điểm treo 2 đóng phần A.
+**Phiên bản:** 1.3 | **Cập nhật:** 25/09/2026 — 08:25 ICT — Sửa nhánh "Scale" của `OnMouseReleased` (Branch 2 so `== Scale`); PIE PASS 3/3 (Move / Rotate / Scale ghi đúng tên mốc). Đóng điểm treo 1.
 **Phiên bản:** 1.2 | **Cập nhật:** 24/09/2026 — 20:25 ICT — `OnMouseReleased` ✓K2 export: đính chính khối dọn cờ (chỉ chạy sau CaptureSnapshot) + ⚠ 2 điểm treo | Actor riêng — xử lý toàn bộ gizmo movement logic
 **Phiên bản:** 1.1 | **Cập nhật:** 05/06/2026 — 20:00 ICT
 
@@ -104,33 +107,41 @@ RESTORE COLLISION:
 ```
 Custom Event OnMouseReleased
 ▶→ Branch( bGizmoActive )
-     False → (dead-end)
+     False ▶→ [A]                                      ← SỬA 25/09 (trước: dead-end)
      True ▶→ Branch( IsValid(SelectedActor) )
-          False → (dead-end)
+          False ▶→ [A]                                 ← SỬA 25/09 (trước: dead-end)
           True ▶→ Branch( bIsDraggingGizmo )
                False → (dead-end)
                True ▶→ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0).ActiveMode
-                    ▶→ Branch( ActiveMode == NewEnumerator2 )
+                    ▶→ Branch( ActiveMode == NewEnumerator2 )      ← NewEnumerator2 = Rotate (xác nhận Print 25/09)
                          True  ▶→ Get All Actors Of Class(BP_UndoManager) → Get(0) → CaptureSnapshot("Rotate") ──┐
                          False ▶→ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0).ActiveMode           │
-                               ▶→ Branch( ActiveMode == NewEnumerator2 )   ← ⚠ CÙNG giá trị với Branch trên       │
+                               ▶→ Branch( ActiveMode == Scale )            ← SỬA 25/09 (trước so nhầm NewEnumerator2) │
                                     True  ▶→ Get All Actors Of Class(BP_UndoManager) → Get(0) → CaptureSnapshot("Scale") ─┤
                                     False ▶→ Get All Actors Of Class(BP_UndoManager) → Get(0) → CaptureSnapshot("Move")  ─┤
                                                                                                                           ▼
-                    [MERGE 3 nhánh] ▶→ SET bIsDraggingGizmo = False      ← SAU CaptureSnapshot ✓
+                    [MERGE 3 nhánh + A.True] ▶→ SET bIsDraggingGizmo = False      ← SAU CaptureSnapshot ✓
                                     ▶→ SET ActiveAxis = ""
                                     ▶→ SET PreviousMousePosition = (0, 0)
                                     ▶→ SET AccumulatedRotation = 0.0
                                     ▶→ Set Ignore Look Input(Target = Get Player Controller(0), False)   ← node cuối
 ```
+[A] Branch( bIsDraggingGizmo )   ← node MỚI 25/09 (không dùng lại lớp chặn 3)
+      True  ▶→ SET bIsDraggingGizmo = False (đầu khối dọn cờ — KHÔNG CaptureSnapshot)
+      False → (dead-end — không đang kéo thì không có gì để dọn)
+```
+> **Vì sao hỏi lại `bIsDraggingGizmo` ở [A]:** `Set Ignore Look Input` là BỘ ĐẾM (+1 / −1), không phải công tắc — gọi `False` khi chưa từng khoá sẽ trừ mất khoá của hệ thống khác. Chỉ dọn khi thật sự đã bắt đầu kéo.
+```
 > CaptureSnapshot duyệt tất cả actor tag "FurnitureSpawned" → tự động ghi đúng trạng thái mới của cả nhóm. Pivot (tag "FurniturePivot") KHÔNG bị lưu — đúng ý định.
 > SET bIsDraggingGizmo PHẢI SAU CaptureSnapshot — nếu đảo ngược sẽ bug Undo. (✓K2 24/09: đúng thứ tự.)
 
-> ⚠ **2 điểm treo từ export 24/09 — CHƯA sửa Blueprint, chờ cuhoang test:**
-> 1. Branch thứ 2 (nhánh "Scale") so lại `ActiveMode == NewEnumerator2` y hệt Branch thứ nhất → không bao giờ True →
->    `CaptureSnapshot("Scale")` không thể chạy. `NewEnumerator2` là mode nào của `E_ActiveMode` chưa xác nhận → chưa biết
->    mode nào bị ghi nhầm tên entry. Test: Scale 1 món → xem tên entry trong History.
-> 2. Thả chuột khi gizmo đã tắt / `SelectedActor` đã mất giữa lúc kéo (vd Ctrl+Z giữa chừng) → rơi vào dead-end → khối dọn
+> ⚠ **Điểm treo từ export 24/09:**
+> 1. ✅ **ĐÓNG 25/09** — Branch thứ 2 (nhánh "Scale") từng so lại `ActiveMode == NewEnumerator2` (= Rotate) y hệt Branch thứ
+>    nhất → chế độ Scale bị ghi mốc tên **"Move"** (xác nhận bằng Print: `MODE: Scale` → `SNAP: Move`). Sửa: đổi pin B của
+>    Branch 2 thành `Scale`. Test PIE 3/3: Scale → `SNAP: Scale`, Rotate → `SNAP: Rotate`, Move → `SNAP: Move`. Undo không bị
+>    ảnh hưởng (mốc nào cũng chụp cả cảnh) — chỉ tên mốc sai. Chưa re-export K2 sau khi sửa.
+> 2. ✅ **Phần A ĐÓNG 25/09** (xem [A] ở trên, PIE PASS: `REL active=false valid=false drag=true` → không MODE / SNAP → click chọn + xoay camera được). **Phần B ĐÓNG 25/09:** Ctrl+Z về mốc CÓ đồ đang chọn → Undo chọn lại + bật gizmo → lúc thả cả 3 lớp qua → ghi mốc "Move" thừa, cắt nhánh Redo (xác nhận Print). Sửa ở cửa vào: `BP_FurnitureInputManager.IsGizmoDragging` → IA Undo/Redo bỏ qua khi đang kéo. PIE PASS 3/3.
+>    Mô tả gốc: thả chuột khi gizmo đã tắt / `SelectedActor` đã mất giữa lúc kéo (vd Ctrl+Z giữa chừng) → rơi vào dead-end → khối dọn
 >    cờ KHÔNG chạy → nghi `bIsDraggingGizmo` kẹt True + Ignore Look Input kẹt → `Mouse Left Pressed` Step 3 (InputManager)
 >    chặn click chọn đồ. Giả thuyết, chưa test.
 
@@ -205,6 +216,9 @@ Branch IsValid(SelectedActor) AND bIsDraggingGizmo → True:
 |---|---|---|
 | 1.0 | 23/04/2026 | Logic gốc (fragment 16/04 — OnMouseReleased dùng PlayerController cast) |
 | 1.1 | 05/06/2026 — 20:00 ICT | T15: OnMousePressed thêm Cast → BP_PivotActor → RefreshOffsets. OnMouseReleased đổi sang Get All Actors(InputManager) → Cast → GET ActiveMode (thay Get Player Controller → BP_FoffPlayerController). |
+| 1.5 | 25/09/2026 09:10 ICT | F2 phần B: guard `IsGizmoDragging` trong IA Undo/Redo (InputManager) — không còn mốc "Move" thừa sau Ctrl+Z giữa lúc kéo. PIE PASS. |
+| 1.4 | 25/09/2026 — 08:50 ICT | F2 phần A: lớp chặn 1–2 nhánh False → Branch MỚI `bIsDraggingGizmo` → True về khối dọn cờ, không ghi sổ. Xác nhận nguyên nhân bằng Print `REL` (Ctrl+Z giữa lúc kéo → `active=false valid=false drag=true`). PIE PASS (log sạch, click + xoay camera OK). Phần B (mốc "Move" thừa khi Undo về mốc có selection) còn mở. |
+| 1.3 | 25/09/2026 — 08:25 ICT | Sửa `OnMouseReleased` Branch 2: `ActiveMode == Scale` (trước so nhầm `NewEnumerator2` = Rotate → Scale ghi mốc "Move"). Xác nhận bằng Print String + PIE 3/3 PASS. Đóng điểm treo 1; điểm 2 (kẹt cờ khi Ctrl+Z giữa lúc kéo) còn chờ test. |
 | 1.2 | 24/09/2026 — 20:25 ICT | `OnMouseReleased` ✓K2 export (36 node): khối dọn cờ chỉ chạy SAU `CaptureSnapshot` (v1.1 ghi "luôn chạy" — sai); 3 Branch gác nhánh False = dead-end; không có Cast. ⚠ 2 Branch chọn tên entry cùng so `NewEnumerator2`; ⚠ nghi kẹt `bIsDraggingGizmo` nếu thả chuột sau khi gizmo tắt giữa chừng — chờ test. |
 
 ---

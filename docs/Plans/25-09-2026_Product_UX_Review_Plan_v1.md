@@ -183,7 +183,7 @@ dùng → Confidence thấp có chủ ý; chấm lại sau Phase 1.
 
 | Phase | Làm gì | Ai | Thời gian | Xong khi |
 |---|---|---|---|---|
-| **0 · Chặn mất niềm tin** | Test + sửa F2 · toast cho F4 · test F5 · tên sản phẩm F11 · nhánh "Scale" so nhầm enum (K2 24/09) | cuhoang làm, Claude dẫn | ~1 tuần, song song U3 | 3 test 1 phút PASS; không còn thất bại im lặng đã biết |
+| **0 · Chặn mất niềm tin** | ~~Test + sửa F2~~ ✅ 25/09 · toast cho F4 · test F5 · tên sản phẩm F11 · ~~nhánh "Scale" so nhầm enum (K2 24/09)~~ ✅ sửa 25/09 | cuhoang làm, Claude dẫn | ~1 tuần, song song U3 | 3 test 1 phút PASS; không còn thất bại im lặng đã biết |
 | **1 · Hiểu người dùng** ⭐ | 1.1 trả lời 8 câu mục 4 (1 buổi với Claude) · 1.2 chốt persona · 1.3 mời 5 người · 1.4 chạy kịch bản mục 7 · 1.5 tổng hợp | cuhoang chạy test, Claude soạn + tổng hợp | ~2 tuần, không cần code | Có số đo mốc + top 10 vấn đề xếp theo *tần suất × mức độ* + empathy map thật |
 | **2 · Sprint 6 Polish theo dữ liệu** | Làm top 5 từ Phase 1 (dự kiến F1, F7–F10, F12) + chạy lại đúng 5 nhiệm vụ | như cũ (task card, Q10/Q9/Q8) | ~2–3 tuần | Thời gian tới phòng đầu tiên giảm ≥ 30% so với mốc |
 | **3 · Gate 2 — dùng thật** | Bản packaged cho 1 điểm dùng thật (showroom / FOFF) + chế độ trình chiếu + chụp ảnh | | theo Gate 2 | 3 buổi demo thật, không crash |
