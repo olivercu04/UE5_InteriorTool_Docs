@@ -50,6 +50,7 @@
 - [[BP_FurnitureSceneManager]] → [[BP_FurnitureInputManager]] — yêu cầu bỏ chọn · DeselectMesh()
 - [[BP_FurnitureUserPrefsManager]] → [[BP_UserPreferencesSave]] — ghi/đọc danh sách combo Gần đây · RecentComboIDs (SaveGame)
 - [[BP_FurnitureInputManager]] → [[BP_GroupsContainer]] — ghi số đếm nhóm để lưu · GroupNameCounter, Groups
+- [[BP_FurnitureSceneManager]] → [[BP_UndoManager]] — Load xong → xoá sổ Undo cũ + mốc gốc · ResetHistoryToBaseline(Load)
 - [[WBP_FurnitureInventory]] → [[BP_UndoManager]] — mở / chốt / hủy phiên chỉnh param (U2.4-2.5) · BeginInteractiveEdit() / CommitInteractiveEdit() / CancelInteractiveEdit()
 - [[BP_UndoManager]] → [[BP_FurnitureSceneManager]] — tìm lại đồ theo ID khi undo/chốt param — caller đầu tiên của Resolver · ResolveByPersistentId() ✓K2
 - [[BP_UndoManager]] → [[MaterialSlotService_Reference]] — đọc giá trị trước/sau + đảo 1 thông số · GetSlot*Param() / SetSlot*Param() (qua ApplyParamCommand) ✓K2

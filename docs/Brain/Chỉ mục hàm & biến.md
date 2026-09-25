@@ -4,7 +4,7 @@
 > Dùng cho **Q10**: sắp sửa 1 hàm / đổi 1 biến → xem nó nằm ở luồng nào để rà. ⚠ Chỉ phủ các luồng ĐÃ vẽ ở Phần 5 — Q10 vẫn phải quét toàn project.
 > ← [[Bản đồ não]] · [[Kiểm tra bản đồ]]
 
-## Hàm / sự kiện (137)
+## Hàm / sự kiện (138)
 
 | Hàm | Mục trong doc | Thao tác | Xuất hiện ở |
 |---|---|---|---|
@@ -118,6 +118,7 @@
 | `RefreshParamPanel` | [[WBP_FurnitureInventory#`RefreshParamPanel()` — Function — AS-BUILT ĐẦY ĐỦ 18/09/2026 (K2Node export thật)\|WBP_FurnitureInventory]] | [[L10 · Chỉnh thông số vật liệu\|L10]] [[L13 · Hoàn tác và làm lại\|L13]] [[L09 · Đổi vật liệu\|L09]] | [[5b - Chỉnh 1 thông số vật liệu (U2 Interactive Edit Session).canvas\|5b b13]] ✓K2 · [[5c - Undo - Redo — tổng quan (dispatch theo EntryKind).canvas\|5c b8]] doc · [[5d - Ghi sổ lịch sử — 1 thao tác thành 1 entry (CaptureSnapshot).canvas\|5d b8]] ✓K2 · [[5e - Undo 1 entry Snapshot — RestoreSnapshot (destroy + spawn lại).canvas\|5e b14]] doc · [[5p - Đổi vật liệu bằng cách kéo thẻ thả lên đồ.canvas\|5p b12]] doc |
 | `RefreshSlotSwatches` | [[WBP_FurnitureInventory#RefreshSlotSwatches — v1.2 — SỬA 18/09/2026 (đóng `Bug-MaterialEdit-EnableState`, phần 1/2)\|WBP_FurnitureInventory]] | [[L09 · Đổi vật liệu\|L09]] | [[5p - Đổi vật liệu bằng cách kéo thẻ thả lên đồ.canvas\|5p b12]] doc |
 | `ReplaceCombo` | [[BP_ComboManager#Custom Event ReplaceCombo(RootGroupID String, NewComboID String)\|BP_ComboManager]] | [[L11 · Combo\|L11]] | [[5s - Thay cả combo.canvas\|5s b6]] ✓K2 |
+| `ResetHistoryToBaseline` | [[BP_UndoManager#ResetHistoryToBaseline(ActionName String) — Function MỚI (25/09/2026, fix Bug-UndoAcrossLoad) — PIE PASS\|BP_UndoManager]] | [[L12 · Lưu và mở cảnh\|L12]] | [[5t - Lưu cảnh và mở lại cảnh (EMS).canvas\|5t b11]] doc |
 | `ResolveActiveComboForSave` | [[BP_FurnitureInputManager#ResolveActiveComboForSave() → (ComboID, RootGroupID String, ItemCount Int, bCanOverwrite Bool, ReasonText String)\|BP_FurnitureInputManager]] | [[L11 · Combo\|L11]] | [[5q - Lưu combo (lưu mới · ghi đè).canvas\|5q b5]] ✓K2 |
 | `ResolveByPersistentId` | [[BP_FurnitureSceneManager#ResolveByPersistentId(Id String) → (OutActor BP_FurnitureActor, bFound Bool)\|BP_FurnitureSceneManager]] | [[L10 · Chỉnh thông số vật liệu\|L10]] [[L13 · Hoàn tác và làm lại\|L13]] | [[5b - Chỉnh 1 thông số vật liệu (U2 Interactive Edit Session).canvas\|5b b4]] ✓K2 · [[5c - Undo - Redo — tổng quan (dispatch theo EntryKind).canvas\|5c b5]] ✓K2 |
 | `ResolveSelectedComboRoot` | [[BP_FurnitureInputManager#ResolveSelectedComboRoot() → RootGroupID String, ComboID String, bFound Bool — Function (ghi nhận 02/08/2026, K2Node export thật cuhoang cung cấp)\|BP_FurnitureInputManager]] | [[L11 · Combo\|L11]] | [[5s - Thay cả combo.canvas\|5s b10]] doc |

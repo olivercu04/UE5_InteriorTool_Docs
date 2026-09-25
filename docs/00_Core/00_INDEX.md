@@ -9,42 +9,42 @@
 
 ## Muốn sửa X → đọc file Y
 
-| Muốn sửa / hiểu | File |
-|---|---|
-| **Người mới / AI mới vào dự án:** lộ trình tiếp nhận 4 chặng (tổng quát → tư duy → 13 luồng → Session_State) | [Brain/Bản đồ não.md](<../Brain/Bản đồ não.md>) |
-| Cách nghĩ của dự án: sản phẩm & người dùng · kiến trúc · cách làm việc · cách viết doc | `Brain/Tư duy/` (4 note) |
-| 1 việc người dùng làm (mở kho, kéo đồ, chọn, gizmo, nhóm, menu, thay đồ, vật liệu, combo, lưu cảnh, Undo) chạy thế nào | `Brain/Luồng/L01…L13` |
-| Hàm / biến X nằm ở luồng nào · ai ghi, ai đọc biến (Q10) | [Brain/Chỉ mục hàm & biến.md](<../Brain/Chỉ mục hàm & biến.md>) (tự sinh) |
-| 1 thao tác chạy qua hàm nào, theo thứ tự nào | [Architecture_Map.md](Architecture_Map.md) Phần 5 (mục 5x) + `Brain/Canvas/5x` |
-| Sản phẩm / UX: người dùng là ai, app cần cải thiện gì, kịch bản test người dùng | [Plans/25-09-2026_Product_UX_Review_Plan_v1.md](<../Plans/25-09-2026_Product_UX_Review_Plan_v1.md>) (PLAN) |
-| Select / multi-select / box select / group / edit mode / clipboard / nudge | [Blueprints/BP_FurnitureInputManager.md](../Blueprints/BP_FurnitureInputManager.md) |
-| Undo / Redo / snapshot / CaptureSnapshot / RestoreSnapshot | [Blueprints/BP_UndoManager.md](../Blueprints/BP_UndoManager.md) (Bug B1 + bIsRestoring: xem [01_Session_State.md](01_Session_State.md)) |
-| Toolbar / info bar / breadcrumb / nút edit mode / snap fields | [Widgets/WBP_MeshControls.md](../Widgets/WBP_MeshControls.md) |
-| Inventory / filter / search / folder tree / pagination / material grid / replace mode | [Widgets/WBP_FurnitureInventory.md](../Widgets/WBP_FurnitureInventory.md) |
-| Drag-drop spawn / ghost preview / surface snap | [Widgets/WBP_DragOverlay_FurnitureCard.md](../Widgets/WBP_DragOverlay_FurnitureCard.md) |
-| Popup chi tiết sản phẩm | [Widgets/WBP_DetailPopup.md](../Widgets/WBP_DetailPopup.md) |
-| Resize window logic | [Widgets/WBP_ResizeWindow.md](../Widgets/WBP_ResizeWindow.md) |
-| Box select overlay widget | [Widgets/WBP_BoxSelectOverlay.md](../Widgets/WBP_BoxSelectOverlay.md) |
-| Gizmo movement / ray-plane / snap / rotation delta | [Blueprints/BP_GizmoController.md](../Blueprints/BP_GizmoController.md) |
-| Pivot multi-select move/rotate/scale | [Blueprints/BP_PivotActor.md](../Blueprints/BP_PivotActor.md) |
-| EMS Save/Load / spawn/destroy actor | [Blueprints/BP_FurnitureSceneManager.md](../Blueprints/BP_FurnitureSceneManager.md) + [Blueprints/BP_FurnitureActor.md](../Blueprints/BP_FurnitureActor.md) |
-| Combo save/spawn/replace / thumbnail capture (P1) | [Blueprints/BP_ComboManager.md](../Blueprints/BP_ComboManager.md) |
-| Combo C++ backend (save file/folder ops/thumbnail PNG) | [Data/ComboSerializer_Reference.md](../Data/ComboSerializer_Reference.md) |
-| Combo struct thật (FComboData/Group/Item) | [Data/Data_Structures.md](../Data/Data_Structures.md) |
-| Player controller (input routing) | [Blueprints/BP_FoffPlayerController.md](../Blueprints/BP_FoffPlayerController.md) |
-| Filter logic chi tiết | [Data/FilterBySearch_Logic.md](../Data/FilterBySearch_Logic.md), [Data/FilterByCategory_Logic.md](../Data/FilterByCategory_Logic.md) |
-| Node flow Sprint 1-4 tổng hợp | [Blueprints/Blueprint_Logic_NodeFlow.md](../Blueprints/Blueprint_Logic_NodeFlow.md) |
-| Material editor / change material | [Features/ChangeMaterial.md](../Features/ChangeMaterial.md) |
-| Copy/paste material | [Features/Material_CopyPaste.md](../Features/Material_CopyPaste.md) + [Blueprints/Flows/CopyPaste_Flow.md](../Blueprints/Flows/CopyPaste_Flow.md) |
-| Nudge phím mũi tên | [Blueprints/Flows/Nudge_Flow.md](../Blueprints/Flows/Nudge_Flow.md) |
-| Data structures / DataTable / DA / struct | [Data/Data_Structures.md](../Data/Data_Structures.md) |
-| C++ filter library (FilterFurnitureRows, FilterMaterialItems) | [Data/FurnitureFilterLibrary_Reference.md](../Data/FurnitureFilterLibrary_Reference.md) |
-| Python scripts pipeline | [Data/Python_Scripts.md](../Data/Python_Scripts.md) |
-| Kiến trúc tổng / R1-R5 | [Planning/Architecture_Overview.md](../Planning/Architecture_Overview.md), [Planning/02_Target_Architecture.md](../Planning/02_Target_Architecture.md) |
-| Hiệu năng / VRAM / budget | [Rules/Performance.md](../Rules/Performance.md), [Bugs/Bug_GPU_VRAM_Crash.md](../Bugs/Bug_GPU_VRAM_Crash.md) |
-| Antipatterns đã trả giá | [Rules/Antipatterns.md](../Rules/Antipatterns.md) |
-| Scale 1M assets | [Planning/Future_Architecture_1M_Assets.md](../Planning/Future_Architecture_1M_Assets.md) |
-| Bugs đang mở | [Bugs/Open_Bugs.md](../Bugs/Open_Bugs.md) |
+| Muốn sửa / hiểu                                                                                                        | File                                                                                                                                                        |
+| ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Người mới / AI mới vào dự án:** lộ trình tiếp nhận 4 chặng (tổng quát → tư duy → 13 luồng → Session_State)           | [Brain/Bản đồ não.md](<../Brain/Bản đồ não.md>)                                                                                                             |
+| Cách nghĩ của dự án: sản phẩm & người dùng · kiến trúc · cách làm việc · cách viết doc                                 | `Brain/Tư duy/` (4 note)                                                                                                                                    |
+| 1 việc người dùng làm (mở kho, kéo đồ, chọn, gizmo, nhóm, menu, thay đồ, vật liệu, combo, lưu cảnh, Undo) chạy thế nào | `Brain/Luồng/L01…L13`                                                                                                                                       |
+| Hàm / biến X nằm ở luồng nào · ai ghi, ai đọc biến (Q10)                                                               | [Brain/Chỉ mục hàm & biến.md](<../Brain/Chỉ mục hàm & biến.md>) (tự sinh)                                                                                   |
+| 1 thao tác chạy qua hàm nào, theo thứ tự nào                                                                           | [Architecture_Map.md](Architecture_Map.md) Phần 5 (mục 5x) + `Brain/Canvas/5x`                                                                              |
+| Sản phẩm / UX: người dùng là ai, app cần cải thiện gì, kịch bản test người dùng                                        | [Plans/25-09-2026_Product_UX_Review_Plan_v1.md](<../Plans/25-09-2026_Product_UX_Review_Plan_v1.md>) (PLAN)                                                  |
+| Select / multi-select / box select / group / edit mode / clipboard / nudge                                             | [Blueprints/BP_FurnitureInputManager.md](../Blueprints/BP_FurnitureInputManager.md)                                                                         |
+| Undo / Redo / snapshot / CaptureSnapshot / RestoreSnapshot                                                             | [Blueprints/BP_UndoManager.md](../Blueprints/BP_UndoManager.md) (Bug B1 + bIsRestoring: xem [01_Session_State.md](01_Session_State.md))                     |
+| Toolbar / info bar / breadcrumb / nút edit mode / snap fields                                                          | [Widgets/WBP_MeshControls.md](../Widgets/WBP_MeshControls.md)                                                                                               |
+| Inventory / filter / search / folder tree / pagination / material grid / replace mode                                  | [Widgets/WBP_FurnitureInventory.md](../Widgets/WBP_FurnitureInventory.md)                                                                                   |
+| Drag-drop spawn / ghost preview / surface snap                                                                         | [Widgets/WBP_DragOverlay_FurnitureCard.md](../Widgets/WBP_DragOverlay_FurnitureCard.md)                                                                     |
+| Popup chi tiết sản phẩm                                                                                                | [Widgets/WBP_DetailPopup.md](../Widgets/WBP_DetailPopup.md)                                                                                                 |
+| Resize window logic                                                                                                    | [Widgets/WBP_ResizeWindow.md](../Widgets/WBP_ResizeWindow.md)                                                                                               |
+| Box select overlay widget                                                                                              | [Widgets/WBP_BoxSelectOverlay.md](../Widgets/WBP_BoxSelectOverlay.md)                                                                                       |
+| Gizmo movement / ray-plane / snap / rotation delta                                                                     | [Blueprints/BP_GizmoController.md](../Blueprints/BP_GizmoController.md)                                                                                     |
+| Pivot multi-select move/rotate/scale                                                                                   | [Blueprints/BP_PivotActor.md](../Blueprints/BP_PivotActor.md)                                                                                               |
+| EMS Save/Load / spawn/destroy actor                                                                                    | [Blueprints/BP_FurnitureSceneManager.md](../Blueprints/BP_FurnitureSceneManager.md) + [Blueprints/BP_FurnitureActor.md](../Blueprints/BP_FurnitureActor.md) |
+| Combo save/spawn/replace / thumbnail capture (P1)                                                                      | [Blueprints/BP_ComboManager.md](../Blueprints/BP_ComboManager.md)                                                                                           |
+| Combo C++ backend (save file/folder ops/thumbnail PNG)                                                                 | [Data/ComboSerializer_Reference.md](../Data/ComboSerializer_Reference.md)                                                                                   |
+| Combo struct thật (FComboData/Group/Item)                                                                              | [Data/Data_Structures.md](../Data/Data_Structures.md)                                                                                                       |
+| Player controller (input routing)                                                                                      | [Blueprints/BP_FoffPlayerController.md](../Blueprints/BP_FoffPlayerController.md)                                                                           |
+| Filter logic chi tiết                                                                                                  | [Data/FilterBySearch_Logic.md](../Data/FilterBySearch_Logic.md), [Data/FilterByCategory_Logic.md](../Data/FilterByCategory_Logic.md)                        |
+| Node flow Sprint 1-4 tổng hợp                                                                                          | [Blueprints/Blueprint_Logic_NodeFlow.md](../Blueprints/Blueprint_Logic_NodeFlow.md)                                                                         |
+| Material editor / change material                                                                                      | [Features/ChangeMaterial.md](../Features/ChangeMaterial.md)                                                                                                 |
+| Copy/paste material                                                                                                    | [Features/Material_CopyPaste.md](../Features/Material_CopyPaste.md) + [Blueprints/Flows/CopyPaste_Flow.md](../Blueprints/Flows/CopyPaste_Flow.md)           |
+| Nudge phím mũi tên                                                                                                     | [Blueprints/Flows/Nudge_Flow.md](../Blueprints/Flows/Nudge_Flow.md)                                                                                         |
+| Data structures / DataTable / DA / struct                                                                              | [Data/Data_Structures.md](../Data/Data_Structures.md)                                                                                                       |
+| C++ filter library (FilterFurnitureRows, FilterMaterialItems)                                                          | [Data/FurnitureFilterLibrary_Reference.md](../Data/FurnitureFilterLibrary_Reference.md)                                                                     |
+| Python scripts pipeline                                                                                                | [Data/Python_Scripts.md](../Data/Python_Scripts.md)                                                                                                         |
+| Kiến trúc tổng / R1-R5                                                                                                 | [Planning/Architecture_Overview.md](../Planning/Architecture_Overview.md), [Planning/02_Target_Architecture.md](../Planning/02_Target_Architecture.md)      |
+| Hiệu năng / VRAM / budget                                                                                              | [Rules/Performance.md](../Rules/Performance.md), [Bugs/Bug_GPU_VRAM_Crash.md](../Bugs/Bug_GPU_VRAM_Crash.md)                                                |
+| Antipatterns đã trả giá                                                                                                | [Rules/Antipatterns.md](../Rules/Antipatterns.md)                                                                                                           |
+| Scale 1M assets                                                                                                        | [Planning/Future_Architecture_1M_Assets.md](../Planning/Future_Architecture_1M_Assets.md)                                                                   |
+| Bugs đang mở                                                                                                           | [Bugs/Open_Bugs.md](../Bugs/Open_Bugs.md)                                                                                                                   |
 
 ---
 

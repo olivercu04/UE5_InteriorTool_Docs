@@ -1,6 +1,6 @@
 # 10 — Kỷ Luật Thực Thi (Không bỏ cuộc, không đi lạc)
 **Nguồn:** `import_raw/28-05-2026_10_Execution_Discipline.md` (base v1.0) + `import_raw/10_Execution_Discipline_patch_v2.md` (v2.0, 14/06/2026)
-**Phiên bản:** 3.4 | **Cập nhật:** 14/09/2026 — thêm R-DOC-TASKID (định danh task con `S{sprint}G{gate}T{task}`, áp từ Sprint 7 Gate 7)
+**Phiên bản:** 3.5 | **Cập nhật:** 25/09/2026 — thêm R-DOC-CLOSE (nghi thức đóng task / đóng gate cho bộ não). Trước: 3.4 14/09/2026 — thêm R-DOC-TASKID (định danh task con `S{sprint}G{gate}T{task}`, áp từ Sprint 7 Gate 7)
 **Mục đích:** Cơ chế đảm bảo bám kế hoạch nhưng vẫn thích nghi được khi plan sai, không trôi dạt, không bỏ cuộc giữa chừng.
 
 ⚠️ Đọc file này cùng với `Rules/AI_Implementation_Rules.md`. File 09 = cách code đúng. File 10 = cách KHÔNG đi lạc trong quá trình code.
@@ -322,6 +322,32 @@ ai bắt (1 sự thật bị chép tay ở nhiều chỗ độc lập → sớm 
 
 ---
 
+### R-DOC-CLOSE — Nghi thức "đóng task" / "đóng gate" cho bộ não (thêm 25/09/2026)
+
+**Vì sao:** `build.py` chỉ bắt được doc lệch doc — KHÔNG thấy Blueprint. Doc quên cập nhật = AI đọc sai, nghĩ sai
+(ví dụ 25/09: hướng dẫn sửa ở `BP_FoffPlayerController` theo doc cũ; 4/6 lần K2 trong ngày lộ drift).
+**Gánh nặng thuộc Claude:** cuhoang chỉ nói 1 câu, Claude tự chạy checklist — cuhoang không cần thuộc.
+
+```
+cuhoang nói       Claude tự chạy
+───────────────   ─────────────────────────────────────────────────────────────────────
+"đóng task"   →   1. Doc canonical: as-built + version + ngày giờ (R-DOC-ASBUILT)
+                     K2 cuhoang gửi lúc XÁC NHẬN flow trong task = bằng chứng ✓K2 → ghi luôn
+                  2. Architecture_Map: sửa sơ đồ 5x bị ảnh hưởng + cạnh Phần 3;
+                     nét liền CHỈ khi có K2 (PIE PASS vẫn là nét đứt)
+                  3. Brain/Luồng/Lxx: "Dễ hiểu sai" / "Còn mở" / Đường ngược
+                  4. Open_Bugs · DEVIATIONS · Learning_System (nếu có)
+                  5. python Brain/_tools/build.py → ❌ ⚠ 🔗 = 0
+                  6. Báo cuhoang danh sách file đổi → cuhoang commit (1 commit / task)
+
+"đóng gate"   →   thêm: 7. Mở "Kiểm tra bản đồ" › 🧭 K2 cần xin khi đóng gate — chỉ các Lxx gate đụng tới
+                         → xin K2 những hàm còn đứt/`?` (1 export / lượt) → nâng liền
+                  8. R-DOC-COUNT / R-DOC-PASS như cũ
+```
+**Lưới an toàn khi vẫn quên:** (a) Git log — Blueprint đổi mà không có commit doc đi kèm = lỗ hổng.
+(b) Vòng 🧭 cuối gate bắt phần quên. (c) Khi suy luận: phần "theo doc" = GIẢ THUYẾT — trước khi sửa code
+dựa trên nó, xin K2 đúng đoạn đó.
+
 ## Lịch sử cập nhật
 
 | Phiên bản | Ngày | Nội dung |
@@ -332,4 +358,5 @@ ai bắt (1 sự thật bị chép tay ở nhiều chỗ độc lập → sớm 
 | 3.1 | 02/08/2026 | Thêm **R-DOC-DONE** — task tick `[x]` khi tính năng chạy và không ai làm tiếp; nghiệm thu/sweep/regression còn treo → tách entry riêng `Bugs/Open_Bugs.md`, KHÔNG giữ task checklist mở. `[~]` chỉ dùng cho việc đang làm dở trong sprint hiện tại. Nguồn: mâu thuẫn nội bộ PROGRESS.md phát hiện quanh trạng thái P2 (Studio Thumbnail) — xem `DEVIATIONS.md` "[DOC-DEBT đã đóng] PROGRESS.md P2 self-contradiction — 02/08/2026". |
 | 3.2 | 02/08/2026 (tiếp) | Thêm **R-DOC-ATOMIC** — 1 ô checklist = 1 việc tick độc lập; ô gộp nhiều việc độc lập không tách giữa sprint (chỉ sửa text mô tả), chỉ tách thành nhiều ô lúc recount mẫu số đầu sprint kế tiếp. Nguồn: ô `C3` trong PROGRESS.md gộp 3 việc (Save dialog/móc capture thumbnail/P4 LOCALAPPDATA) — xem `DEVIATIONS.md` "[DOC-DEBT] C3 gộp 3 việc — 02/08/2026". |
 | 3.3 | 02/08/2026 (tiếp 2) | Thêm **R-DOC-ASBUILT** — kết quả thực thi (test PASS/K2Node export/đính chính as-built) phải cập nhật vào doc canonical `Blueprints/`/`Widgets/`, không chỉ ghi trong file plan; tạm ghi ở plan → bắt buộc chèn banner `📌 [CHỨA AS-BUILT]` ngay lúc ghi. Nguồn: 6 file Plan/Task Card lẫn as-built phát hiện qua quét lan — xem `DEVIATIONS.md` "[DOC-DEBT] AS-BUILT lẫn trong Plans/Sprints — 02/08/2026". |
+| 3.5 | 25/09/2026 | Thêm **R-DOC-CLOSE** — nghi thức "đóng task" / "đóng gate" cho bộ não (Claude chạy checklist; 🧭 danh sách K2 theo Lxx trong `Kiểm tra bản đồ`). |
 | 3.4 | 14/09/2026 | Thêm **R-DOC-TASKID** — task con trong 1 gate đặt tên `S{sprint}G{gate}T{task}` (vd `S7G7T0`), bắt đầu từ `T0`. Áp từ Sprint 7 Gate 7 trở đi (không hồi tố G1-G6). Breakdown task đặt ở `01_Session_State.md`, PROGRESS.md chỉ đếm theo gate (G1-G10), tránh 2 mẫu số chồng nhau. Nguồn: cuhoang yêu cầu 14/09/2026, gắn cùng đợt sửa bar Sprint 7 9→10 trong `PROGRESS.md`. |

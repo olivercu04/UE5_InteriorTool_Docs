@@ -1,5 +1,7 @@
 # Architecture Map — UE5 Interior Tool
 
+**Phiên bản:** 1.21 | **Cập nhật:** 25/09/2026 11:05 — Fix Bug-UndoAcrossLoad: 5t +bước chờ EMS Load xong → `ResetHistoryToBaseline("Load")`; 3d +cạnh `SCENE→UNDO` (PIE, chưa K2).
+
 **Phiên bản:** 1.20 | **Cập nhật:** 25/09/2026 11:00 — `OnLMBReleased` do Enhanced Input `IA_LeftRelease` gọi (Find References 25/09) → 5a, 5d, 5j ghi rõ; 5d đóng `?` (3): 2 handler lúc thả thuộc 2 hệ input, thứ tự không cam kết, logic không phụ thuộc.
 
 **Phiên bản:** 1.19 | **Cập nhật:** 25/09/2026 10:55 — K2 IM Input Key LMB (Pressed + Released) 25/09: 5d bước bấm/thả sang nét liền, đóng `?` (2) (`bIsDraggingGizmo` = `GizmoControllerRef.bIsDraggingGizmo`); 3a `IM→GIZMO` nâng `==>`; 5a thêm bước menu chuột phải nuốt lượt bấm.
@@ -704,6 +706,7 @@ flowchart TB
   SCENE -.->|"yêu cầu bỏ chọn · DeselectMesh()"| IM
   PREFS -.->|"ghi/đọc danh sách combo Gần đây · RecentComboIDs (SaveGame)"| UPS
   IM -.->|"ghi số đếm nhóm để lưu · GroupNameCounter, Groups"| GROUPS
+  SCENE -.->|"Load xong → xoá sổ Undo cũ + mốc gốc · ResetHistoryToBaseline(Load)"| UNDO
   INV -.->|"mở / chốt / hủy phiên chỉnh param (U2.4-2.5) · BeginInteractiveEdit() / CommitInteractiveEdit() / CancelInteractiveEdit()"| UNDO
   UNDO ==>|"tìm lại đồ theo ID khi undo/chốt param — caller đầu tiên của Resolver · ResolveByPersistentId()"| SCENE
   UNDO ==>|"đọc giá trị trước/sau + đảo 1 thông số · GetSlot*Param() / SetSlot*Param() (qua ApplyParamCommand)"| MSS
@@ -1572,6 +1575,7 @@ sequenceDiagram
   participant FA as BP_FurnitureActor (mỗi món)
   participant EIL as UEntityIdLibrary (C++)
   participant MSS as MaterialSlotService (C++)
+  participant UM as BP_UndoManager
   U->>SGM: phím M mở menu Save/Load → chọn / đặt tên slot → Save
   Note over U,MSS: EMS ghi mọi actor có biến SaveGame - mỗi món (MeshPath, RowName, PlacementSurfaceType, GroupID, PersistentID, MaterialSlots) và BP_GroupsContainer (Groups, GroupNameCounter).
   U->>SGM: bấm Load trong menu Save/Load
@@ -1583,10 +1587,12 @@ sequenceDiagram
   FA-->>EIL: giữ danh tính cũ, chỉ sinh mới khi rỗng · EnsurePersistentId()
   FA-->>FA: nạp mesh (đồng bộ) · LoadAsset_Blocking(MeshPath) → SetStaticMesh
   FA-->>MSS: gắn lại vật liệu + thông số từng slot · RestoreMyMaterialSlots → Rst_LoadNextSlot → ApplyLoadedMaterialToSlot() → ApplyParamsJsonToSlot()
-  Note over U,MSS: ⚠ Sổ Undo KHÔNG bị xoá khi Load — Ctrl+Z ngay sau Load đưa về cảnh TRƯỚC Load (PIE 25/09). Xem Open_Bugs Bug-UndoAcrossLoad.
+  SM-->>SM: chờ EMS nạp xong (sau vòng Destroy) · Wait For Operation(Load)
+  SM-->>UM: xoá sổ Undo cũ, ghi mốc gốc "Load" · ResetHistoryToBaseline(Load) → Clear → CurrentIndex = -1 → CaptureSnapshot
+  Note over U,UM: Load không undo được (giống mở file) - Ctrl+Z ngay sau Load đứng yên. Fix Bug-UndoAcrossLoad 25/09 (PIE PASS).
 ```
 **Kiểm chứng K2:** chưa có mũi tên liền. `Event ActorLoaded` bản 07/09 dịch từ K2 (delta S7.G3), bản hiện hành chèn thêm `EnsurePersistentId` 21/09 (PIE, chưa K2).
-**Đã rõ (25/09, PIE — cuhoang):** lưu / mở cảnh qua **menu Save/Load của project (phím M)** — nút Load / Save / Delete / Back; Ctrl+S / Ctrl+O KHÔNG có (danh sách phím tắt cũ ghi sai, đã sửa). Sổ Undo KHÔNG xoá khi Load.
+**Đã rõ (25/09, PIE — cuhoang):** lưu / mở cảnh qua **menu Save/Load của project (phím M)** — nút Load / Save / Delete / Back; Ctrl+S / Ctrl+O KHÔNG có (danh sách phím tắt cũ ghi sai, đã sửa). Sổ Undo KHÔNG xoá khi Load → đã sửa 25/09 (`ResetHistoryToBaseline`, PIE PASS).
 **?** `SaveFurnitureScene` / `LoadFurnitureScene` định nghĩa ở `BP_FurnitureSceneManager` — chưa rõ menu có gọi không (có thể không dùng).
 Nguồn: `Blueprints/BP_FurnitureSceneManager.md` (Event Tick, OnLoadButtonClicked, SaveFurnitureScene, LoadFurnitureScene) · `Blueprints/BP_FurnitureActor.md` (Event ActorLoaded, RestoreMyMaterialSlots, Rst_LoadNextSlot) · `Widgets/WBP_FurnitureInventory.md` (Keyboard Shortcuts, EMS).
 

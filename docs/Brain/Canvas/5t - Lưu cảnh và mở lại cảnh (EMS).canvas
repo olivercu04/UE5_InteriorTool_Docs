@@ -1,12 +1,22 @@
 {
  "nodes": [
   {
+   "id": "lane_UM",
+   "type": "group",
+   "x": 3080,
+   "y": 110,
+   "width": 380,
+   "height": 2874,
+   "label": "BP_UndoManager",
+   "color": "5"
+  },
+  {
    "id": "lane_MSS",
    "type": "group",
    "x": 2640,
    "y": 110,
    "width": 380,
-   "height": 2392,
+   "height": 2874,
    "label": "MaterialSlotService (C++)",
    "color": "6"
   },
@@ -16,7 +26,7 @@
    "x": 2200,
    "y": 110,
    "width": 380,
-   "height": 2392,
+   "height": 2874,
    "label": "UEntityIdLibrary (C++)",
    "color": "6"
   },
@@ -26,7 +36,7 @@
    "x": 1760,
    "y": 110,
    "width": 380,
-   "height": 2392,
+   "height": 2874,
    "label": "BP_FurnitureActor (mỗi món)",
    "color": "5"
   },
@@ -36,7 +46,7 @@
    "x": 1320,
    "y": 110,
    "width": 380,
-   "height": 2392,
+   "height": 2874,
    "label": "BP_FurnitureInputManager",
    "color": "5"
   },
@@ -46,7 +56,7 @@
    "x": 880,
    "y": 110,
    "width": 380,
-   "height": 2392,
+   "height": 2874,
    "label": "BP_FurnitureSceneManager",
    "color": "5"
   },
@@ -56,7 +66,7 @@
    "x": 440,
    "y": 110,
    "width": 380,
-   "height": 2392,
+   "height": 2874,
    "label": "SaveGameMenu (menu Save/Load của project tổng)"
   },
   {
@@ -65,7 +75,7 @@
    "x": 0,
    "y": 110,
    "width": 380,
-   "height": 2392,
+   "height": 2874,
    "label": "User"
   },
   {
@@ -73,7 +83,7 @@
    "type": "text",
    "x": 0,
    "y": -120,
-   "width": 3020,
+   "width": 3460,
    "height": 170,
    "text": "# 5t — Lưu cảnh và mở lại cảnh (EMS)\nNguồn: [[Architecture_Map]] Phần 5 (tự sinh, đừng sửa tay). **Đi theo mũi tên 1 → 2 → 3… = đi theo thời gian.** Mũi tên **xanh lá + ✓K2** = đã kiểm chứng K2 · **xám** = theo doc · **đỏ + ?** = chưa rõ. Dòng nhỏ cuối thẻ = ai gọi. Thẻ vàng = nhánh ngược lại / ghi chú."
   },
@@ -146,6 +156,16 @@
    "color": "6"
   },
   {
+   "id": "h_UM",
+   "type": "text",
+   "x": 3105,
+   "y": 140,
+   "width": 330,
+   "height": 90,
+   "text": "### [[BP_UndoManager]]",
+   "color": "5"
+  },
+  {
    "id": "s1",
    "type": "text",
    "x": 465,
@@ -155,7 +175,7 @@
    "text": "**1.** phím M mở menu Save/Load → chọn / đặt tên slot → Save\n<small>← User · thao tác người dùng</small>"
   },
   {
-   "id": "n9",
+   "id": "n10",
    "type": "text",
    "x": 20,
    "y": 444,
@@ -201,7 +221,7 @@
    "text": "**5.** xoá hết đồ đang có\n`Destroy Actor (tag FurnitureSpawned)`\n<small>← BP_FurnitureSceneManager · theo doc</small>"
   },
   {
-   "id": "n14",
+   "id": "n15",
    "type": "text",
    "x": 900,
    "y": 1320,
@@ -247,13 +267,31 @@
    "text": "**9.** gắn lại vật liệu + thông số từng slot\n`RestoreMyMaterialSlots → Rst_LoadNextSlot → ApplyLoadedMaterialToSlot() → ApplyParamsJsonToSlot()`\n↗ [[MaterialSlotService_Reference#ApplyLoadedMaterialToSlot(Mesh, Records&, SlotName, HintIndex, LoadedMI, RowName, PathFallback) → bool|MaterialSlotService_Reference › ApplyLoadedMaterialToSlot]]\n<small>← BP_FurnitureActor · theo doc</small>"
   },
   {
-   "id": "n19",
+   "id": "s10",
+   "type": "text",
+   "x": 905,
+   "y": 2372,
+   "width": 330,
+   "height": 124,
+   "text": "**10.** chờ EMS nạp xong (sau vòng Destroy)\n`Wait For Operation(Load)`\n<small>nội bộ · theo doc</small>"
+  },
+  {
+   "id": "s11",
+   "type": "text",
+   "x": 3105,
+   "y": 2536,
+   "width": 330,
+   "height": 278,
+   "text": "**11.** xoá sổ Undo cũ, ghi mốc gốc \"Load\"\n`ResetHistoryToBaseline(Load) → Clear → CurrentIndex = -1 → CaptureSnapshot`\n↗ [[BP_UndoManager#ResetHistoryToBaseline(ActionName String) — Function MỚI (25/09/2026, fix Bug-UndoAcrossLoad) — PIE PASS|BP_UndoManager › ResetHistoryToBaseline]]\n<small>← BP_FurnitureSceneManager · theo doc</small>"
+  },
+  {
+   "id": "n22",
    "type": "text",
    "x": 20,
-   "y": 2372,
-   "width": 2980,
+   "y": 2854,
+   "width": 3420,
    "height": 70,
-   "text": "📝 ⚠ Sổ Undo KHÔNG bị xoá khi Load — Ctrl+Z ngay sau Load đưa về cảnh TRƯỚC Load (PIE 25/09). Xem Open_Bugs Bug-UndoAcrossLoad.",
+   "text": "📝 Load không undo được (giống mở file) - Ctrl+Z ngay sau Load đứng yên. Fix Bug-UndoAcrossLoad 25/09 (PIE PASS).",
    "color": "3"
   }
  ],
@@ -270,12 +308,12 @@
    "id": "e1",
    "fromNode": "s1",
    "fromSide": "bottom",
-   "toNode": "n9",
+   "toNode": "n10",
    "toSide": "top"
   },
   {
    "id": "e2",
-   "fromNode": "n9",
+   "fromNode": "n10",
    "fromSide": "bottom",
    "toNode": "s2",
    "toSide": "top",
@@ -309,12 +347,12 @@
    "id": "e6",
    "fromNode": "s5",
    "fromSide": "bottom",
-   "toNode": "n14",
+   "toNode": "n15",
    "toSide": "top"
   },
   {
    "id": "e7",
-   "fromNode": "n14",
+   "fromNode": "n15",
    "fromSide": "bottom",
    "toNode": "s6",
    "toSide": "top",
@@ -343,6 +381,22 @@
    "toNode": "s9",
    "toSide": "left",
    "label": "9"
+  },
+  {
+   "id": "e11",
+   "fromNode": "s9",
+   "fromSide": "left",
+   "toNode": "s10",
+   "toSide": "right",
+   "label": "10"
+  },
+  {
+   "id": "e12",
+   "fromNode": "s10",
+   "fromSide": "right",
+   "toNode": "s11",
+   "toSide": "left",
+   "label": "11"
   }
  ]
 }

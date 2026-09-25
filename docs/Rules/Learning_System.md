@@ -1,6 +1,6 @@
 # Hệ thống học UE5 — Cá nhân hóa
 **Nguồn:** `import_raw/Learning_System.md`
-**Phiên bản:** 1.7 | **Cập nhật:** 25/09/2026 — tick ✅ ForEach Loop Body vs Completed (Q&A sau fix BoxSelectCtrl). Trước: 1.6 18/09/2026 — thêm "Điều chỉnh quy trình" phiên S7G7T4 (đoán sai giả định cơ chế qua undo 3 lượt; đọc ground truth sớm; cuhoang kéo lên tầng kiến trúc) | Mentor: Claude | Học viên: Cuhoang
+**Phiên bản:** 1.7 | **Cập nhật:** 25/09/2026 — tick ✅ ForEach Loop Body vs Completed + Latent Wait For Operation (Q&A sau fix BoxSelectCtrl). Trước: 1.6 18/09/2026 — thêm "Điều chỉnh quy trình" phiên S7G7T4 (đoán sai giả định cơ chế qua undo 3 lượt; đọc ground truth sớm; cuhoang kéo lên tầng kiến trúc) | Mentor: Claude | Học viên: Cuhoang
 
 ---
 
@@ -114,6 +114,7 @@ Nếu không → giải thích lại bằng ví dụ thực tế từ dự án
 | CommonUI (LazyImage, TileView) | ✅ | WBP_MaterialCard, WBP_SlotSwatch lazy load |
 | String StartsWith + Prefix pattern (path cha-con) | ✅ | Bug `IsComboPathActive` (Issue 2 — Chip highlight, 30/06): Concat 3-pin ghép nhầm `Current+"/"+ThisPath` thay vì `ThisPath+"/"`. Kiểm tra hiểu qua Q&A: học viên tự ráp đúng ví dụ "Sofa"/"SofaBed" — xác nhận hiểu vì sao thiếu dấu "/" gây prefix giả mạo. |
 | ForEach Loop Body vs Completed — exec-out trống trong Loop Body hợp lệ, việc chạy 1 lần nối Completed | ✅ | Bug `Bug-BoxSelectCtrl-MultiSnapshot` (25/09): `CaptureSnapshot` nằm trong Loop Body → N mốc. Kiểm tra hiểu qua Q&A 25/09: học viên tự giải thích Loop Body trống không phải dead-end vì macro tự chạy vòng kế rồi đi Completed — phân biệt đúng với L2 Branch trong Event chain. |
+| Latent chờ việc async xong (EMS `Wait For Operation`) trước khi chụp trạng thái | ✅ | Fix `Bug-UndoAcrossLoad` (25/09). Q&A: học viên tự nêu bỏ Wait → chụp cảnh rỗng (sau Destroy, trước khi EMS nạp). Bổ sung đã giảng: Ctrl+Z NGAY sau Load chưa lộ lỗi (đang ở mốc 0) — lỗi nổ ở thao tác đầu tiên rồi Undo về mốc 0 = mất hết đồ. |
 
 ---
 

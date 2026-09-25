@@ -28,11 +28,10 @@ EMS giống **chụp danh sách kiểm kê**: chỉ ghi các cột được đá
 - `MeshPath` rỗng khi nạp → món tự huỷ. Nhóm được lưu qua `BP_GroupsContainer` (Groups, GroupNameCounter).
 
 ## Đường ngược (6A)
-Mở lại bản lưu trước. ⚠ Sổ Undo **không** bị xoá khi Load: Ctrl+Z ngay sau Load quay về cảnh trước Load (PIE 25/09) — `Bug-UndoAcrossLoad` ([[Open_Bugs]]).
+Load không có đường ngược — giống mở file: sau khi EMS nạp xong, SceneManager gọi `UndoManager.ResetHistoryToBaseline("Load")` → sổ Undo cũ bị xoá, mốc gốc mới là "Load". Ctrl+Z ngay sau Load đứng yên (fix `Bug-UndoAcrossLoad` 25/09, PIE PASS).
 
 ## Còn mở
 - `SaveFurnitureScene` / `LoadFurnitureScene` định nghĩa ở SceneManager nhưng chưa rõ menu Save/Load có gọi không.
-- Cần quyết cách xử lý sổ Undo khi Load (`Bug-UndoAcrossLoad`).
 - `Event ActorLoaded` bản hiện hành (chèn `EnsurePersistentId` 21/09) chưa K2.
 
 ## Nhảy tới code

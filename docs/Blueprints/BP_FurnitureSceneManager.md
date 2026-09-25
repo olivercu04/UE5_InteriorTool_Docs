@@ -1,6 +1,6 @@
 # BP_FurnitureSceneManager
 **Tách từ:** `BP_FurnitureActor_SceneManager.md` (phần SceneManager)
-**Cập nhật:** 24/08/2026 | Actor riêng — quản lý EMS Save/Load
+**Phiên bản:** 1.3 | **Cập nhật:** 25/09/2026 11:05 — `OnLoadButtonClicked` +chờ EMS Load xong → `UndoManager.ResetHistoryToBaseline("Load")` (fix Bug-UndoAcrossLoad, PIE PASS) | Actor riêng — quản lý EMS Save/Load
 
 ---
 
@@ -53,7 +53,15 @@ Get All Actors Of Class(BP_FurnitureInputManager) → Get(0) → Cast → Desele
 ← PHẢI trước Destroy — deactivate gizmo trước khi actors bị destroy
 
 Get All Actors With Tag("FurnitureSpawned") → For Each → Destroy Actor
+  Completed ▶→ Wait For Operation (Check Type = Load)           ← v1.3 (25/09/2026): chờ EMS nạp xong
+     On Completed ▶→ Get All Actors Of Class(BP_UndoManager) → Get(0) → Is Valid
+                        Is Valid     ▶→ ResetHistoryToBaseline("Load")   ← xoá sổ Undo cũ + mốc gốc "Load"
+                        Is Not Valid → (trống, cuối chuỗi)
 ```
+> **v1.3 — fix `Bug-UndoAcrossLoad` (25/09/2026, PIE PASS):** trước đây sổ Undo giữ nguyên qua Load → Ctrl+Z đưa về cảnh TRƯỚC Load.
+> Timing đã kiểm bằng Print tạm: `LOAD DONE n=3` (đúng số món vừa nạp) → `Wait For Operation` chờ đúng lúc Load xong, không chạy sớm.
+> Regression 25/09: đang chọn 2 món (Ctrl+click) → Load → click + Ctrl+Z: không Accessed None, không kẹt viền/gizmo — PASS.
+> Chưa K2. Print tạm `LOAD DONE` phải gỡ.
 
 ---
 
@@ -103,6 +111,7 @@ Q8: Function (pure resolver) | Cast tự guard AsActor (không cần IsValid ri�
 |---|---|---|
 | 1.0 | 05/05/2026 | Logic gốc — Event Tick rebind SaveGameMenu, OnLoadButtonClicked destroy + reload, Save/Load functions |
 | 1.1 | 24/08/2026 | +mục Components — Post Process Component (Unbound=True, M_SelectionOutline) thay PostProcessVolume actor (không còn đặt sẵn trong level project tổng, Volume actor cần brush). Verify PASS trong Editor. |
+| 1.3 | 25/09/2026 11:05 | `OnLoadButtonClicked`: ForEach Destroy `.Completed` → Wait For Operation(Load) → IsValid UndoManager → `ResetHistoryToBaseline("Load")`. Fix Bug-UndoAcrossLoad, PIE PASS. |
 | 1.2 | 21/09/2026 | +Function `ResolveByPersistentId` (U1.4, PersistentIdentity) — full node flow, verify từ K2 export thật. |
 
 ---
@@ -122,6 +131,7 @@ Q8: Function (pure resolver) | Cast tự guard AsActor (không cần IsValid ri�
 - [[BP_FurnitureInputManager]] — yêu cầu bỏ chọn · DeselectMesh()
 - [[BP_FurnitureActor]] — sinh / xoá đồ theo danh mục · Spawn / Destroy
 - [[SaveGameMenu]] — giữ tham chiếu menu Save · SaveGameMenuRef
+- [[BP_UndoManager]] — Load xong → xoá sổ Undo cũ + mốc gốc · ResetHistoryToBaseline(Load)
 
 **← Được gọi bởi**
 - [[BP_FurnitureInputManager]] — tìm singleton, đọc tham chiếu inventory · GetAllActorsOfClass, GET FurnitureInventoryRef ✓K2

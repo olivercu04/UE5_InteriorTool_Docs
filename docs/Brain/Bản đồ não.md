@@ -5,12 +5,12 @@
 
 ## 🧭 Lộ trình tiếp nhận — 4 chặng, ~2 giờ
 
-| Chặng | Đọc | Để biết | Thời gian |
-|---|---|---|---|
-| **1 · Nhìn tổng thể** | [[1 · Một buổi dựng phòng.canvas\|Tổng quát 1]] → [[2 · Phía sau màn hình.canvas\|2]] → [[3 · Khuôn 4 bước.canvas\|3]] | Người dùng làm gì, trên màn hình nào · bên trong gồm khối nào · mọi thao tác đi 4 bước nào | 15 phút |
-| **2 · Cách nghĩ của dự án** | [[Tư duy 1 · Sản phẩm và người dùng\|Tư duy 1]] → [[Tư duy 2 · Kiến trúc và nguyên tắc code\|2]] → [[Tư duy 3 · Cách làm việc và kiểm chứng\|3]] → [[Tư duy 4 · Cách viết tài liệu trong bộ não\|4]] | Làm cho ai · xây thế nào · làm việc thế nào · ghi chép thế nào | 30 phút |
-| **3 · Từng việc người dùng làm** | 13 note luồng bên dưới, theo thứ tự | Mỗi thao tác chạy qua hàm nào, bằng chứng tới đâu, chỗ nào dễ sai | 60 phút |
-| **4 · Bắt tay vào việc** | [[01_Session_State]] → [[00_INDEX]] "Muốn sửa X" | Đang ở sprint / gate nào, task nào | 10 phút |
+| Chặng                            | Đọc                                                                                                                                                                                                  | Để biết                                                                                    | Thời gian |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------- |
+| **1 · Nhìn tổng thể**            | [[1 · Một buổi dựng phòng.canvas\|Tổng quát 1]] → [[2 · Phía sau màn hình.canvas\|2]] → [[3 · Khuôn 4 bước.canvas\|3]]                                                                               | Người dùng làm gì, trên màn hình nào · bên trong gồm khối nào · mọi thao tác đi 4 bước nào | 15 phút   |
+| **2 · Cách nghĩ của dự án**      | [[Tư duy 1 · Sản phẩm và người dùng\|Tư duy 1]] → [[Tư duy 2 · Kiến trúc và nguyên tắc code\|2]] → [[Tư duy 3 · Cách làm việc và kiểm chứng\|3]] → [[Tư duy 4 · Cách viết tài liệu trong bộ não\|4]] | Làm cho ai · xây thế nào · làm việc thế nào · ghi chép thế nào                             | 30 phút   |
+| **3 · Từng việc người dùng làm** | 13 note luồng bên dưới, theo thứ tự                                                                                                                                                                  | Mỗi thao tác chạy qua hàm nào, bằng chứng tới đâu, chỗ nào dễ sai                          | 60 phút   |
+| **4 · Bắt tay vào việc**         | [[01_Session_State]] → [[00_INDEX]] "Muốn sửa X"                                                                                                                                                     | Đang ở sprint / gate nào, task nào                                                         | 10 phút   |
 
 ## Chặng 3 — 13 luồng theo hành trình một buổi dựng phòng
 

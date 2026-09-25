@@ -4,7 +4,7 @@
   1. gen_brain.py      — mục 🧠 Kết nối cuối mỗi doc + note "Kết nối 3x" (từ Phần 3) + dòng "Có mặt trong thao tác" (từ note Lxx)
   2. gen_canvas.py     — Canvas làn bơi cho mỗi luồng 5x (từ Phần 5); thẻ có link nhảy tới đúng mục hàm trong doc
   3. gen_tong_quat.py  — 3 canvas tầng Tổng quát (Brain/Tổng quát) — bố cục đặt tay, nội dung trong script
-  4. Brain/Kiểm tra bản đồ.md    — lệch Phần 3 ↔ Phần 5 · ? tồn đọng · K2 đáng xin nhất · thẻ chưa có link ·
+  4. Brain/Kiểm tra bản đồ.md    — lệch Phần 3 ↔ Phần 5 · ? tồn đọng · K2 đáng xin nhất · 🧭 K2 khi đóng gate (theo Lxx) · thẻ chưa có link ·
                                     mục 5x chưa thuộc note luồng nào · link gãy trong Brain/
   5. Brain/Chỉ mục hàm & biến.md — hàm / biến → luồng nào, bước nào, bằng chứng gì (điểm xuất phát cho Q10)
 Mọi file trên đều TỰ SINH — sửa Architecture_Map (hoặc script tổng quát) rồi chạy lại, đừng sửa tay. Không ghi ngày/version vào
@@ -155,6 +155,21 @@ top = sorted(wish.items(), key=lambda kv: (-len(kv[1]), kv[0]))[:10]
 L += ['', '## 🎯 K2 đáng xin nhất — mũi tên đứt dùng ở nhiều luồng nhất', '> 1 export nâng được nhiều mũi tên nhất. Export đúng hàm ở cột "Hàm / biến".', '',
       '| Luồng | Từ → Tới | Hàm / biến |', '|---|---|---|']
 L += [f"| {len(v)}: {', '.join(sorted(v))} | `{k[0]}` → `{k[1]}` | `{k[2]}` |" for k, v in top]
+# ---- 🧭 danh sách K2 lúc ĐÓNG GATE: gom mũi tên đứt theo thao tác Lxx (nghi thức đóng gate — Tư duy 3 §6)
+bysid = {f['sid']: f for f in FL}
+L += ['', '## 🧭 K2 cần xin khi đóng gate — theo thao tác (Lxx)',
+      '> Đóng gate: mở đúng các Lxx gate đã đụng → xin K2 các hàm dưới (ưu tiên hàm lặp nhiều mũi tên). K2 gửi lúc xác nhận flow trong task đã nâng liền rồi thì không còn ở đây.',
+      '> Đếm = số mũi tên đứt (không tính bước của User). `?` = mũi tên còn dấu hỏi.', '']
+for ln, sids in LN.items():
+    cnt = {}; nq = 0; tot = 0
+    for sid in sids:
+        for st in bysid.get(sid, {}).get('steps', []):
+            if st['user'] or st['k2']: continue
+            tot += 1; nq += st['unk']
+            for t in (BL.fn_tokens(st['msg']) or [st['vi'].strip()[:40]]): cnt[(t, st['B'])] = cnt.get((t, st['B']), 0) + 1
+    if not tot: L.append(f'- [[{ln}]] ({", ".join(sids)}): ✓ không còn mũi tên đứt'); continue
+    top = sorted(cnt.items(), key=lambda kv: (-kv[1], kv[0][0]))[:6]
+    L.append(f'- [[{ln}]] ({", ".join(sids)}): {tot} đứt' + (f' · {nq} `?`' if nq else '') + ' → ' + ' · '.join(f'`{t}` ({b.split(" ")[0]}{" ×" + str(c) if c > 1 else ""})' for (t, b), c in top))
 L += ['', f'## Thẻ Canvas có tên hàm nhưng chưa tìm được mục trong doc ({len(nolink)})', '> Doc chưa có heading cho hàm này (hoặc tên lệch) → thẻ không có link ↗.', '']
 L += [f"- {row(f, st)} — tìm: {', '.join(toks)}" for f, st, toks in nolink] or ['- (không có)']
 L += ['', f'## Mục 5x chưa thuộc note luồng nào ({len(orphan)})', '> Mỗi mục 5x phải được nhúng trong đúng 1 note `Brain/Luồng/Lxx` — không thì người đọc theo hành trình sẽ không gặp nó.', '']

@@ -51,6 +51,24 @@
 | 1: 5s | `BP_ComboManager` → `BP_UndoManager` | `RestoreCurrentSnapshot` |
 | 1: 5q | `BP_ComboManager` → `ComboSerializer_Reference` | `ComboToJson` |
 
+## 🧭 K2 cần xin khi đóng gate — theo thao tác (Lxx)
+> Đóng gate: mở đúng các Lxx gate đã đụng → xin K2 các hàm dưới (ưu tiên hàm lặp nhiều mũi tên). K2 gửi lúc xác nhận flow trong task đã nâng liền rồi thì không còn ở đây.
+> Đếm = số mũi tên đứt (không tính bước của User). `?` = mũi tên còn dấu hỏi.
+
+- [[L01 · Mở tool và kho đồ]] (5g): 6 đứt → `ExitReplaceMode` (WBP_FurnitureInventory) · `FilterByFolderPath` (WBP_FurnitureInventory) · `OnRestoreCompleted` (BP_UndoManager) · `OnSceneRestored` (BP_UndoManager) · `OnSelectionChanged` (BP_FurnitureInputManager) · `OnSelectionChangedMaterial` (BP_FurnitureInputManager)
+- [[L02 · Tìm đồ trong kho]] (5h): 8 đứt → `FilterBySearch` (WBP_FurnitureInventory ×2) · `AddItem` (WBP_FurnitureCard) · `DisplayPage` (WBP_FurnitureInventory) · `FilterByFolderPath` (WBP_FurnitureInventory) · `FilterFurnitureRows` (FurnitureFilterLibrary_Reference) · `OnListItemObjectSet` (WBP_FurnitureCard)
+- [[L03 · Kéo đồ vào phòng]] (5i): 12 đứt · 1 `?` → `AddRecentMesh` (BP_FurnitureUserPrefsManager) · `CaptureSnapshot` (BP_UndoManager) · `DeactivateGizmo` (WBP_FurnitureCard) · `DeactivateGizmo` (BP_FurnitureInputManager) · `EnsurePersistentId` (EntityIdLibrary_Reference) · `GetCurrentEditScope` (BP_FurnitureInputManager)
+- [[L04 · Chọn đồ]] (5a, 5j): 4 đứt → `ActivateGizmo` (BP_GizmoController) · `DeactivateGizmo` (BP_GizmoController) · `OnMeshSelected` (WBP_FurnitureInventory) · `OnSelectionChanged` (WBP_FurnitureInventory) · `OnSelectionChanged` (WBP_MeshControls) · `OnSelectionChangedInfoBar` (WBP_MeshControls)
+- [[L05 · Di chuyển và xoay đồ]] (5f, 5k): 15 đứt · 1 `?` → `RefreshOffsets` (BP_PivotActor ×2) · `ActivateGizmo` (BP_GizmoController) · `ApplyTransformToChildren` (BP_FurnitureActor) · `CaptureSnapshot` (BP_UndoManager) · `DeactivateGizmo` (BP_GizmoController) · `Event Tick đọc phím mỗi frame, cùng đuôi` (BP_FurnitureInputManager)
+- [[L06 · Nhóm đồ và sửa nhóm]] (5l): 11 đứt → `CaptureSnapshot` (BP_UndoManager ×2) · `ComputeSelectionUnits` (BP_FurnitureInputManager) · `EnterEditMode` (BP_FurnitureInputManager) · `ExitEditModeFull` (BP_FurnitureInputManager) · `ExitEditModeOneLevel` (BP_FurnitureInputManager) · `GenerateGroupID` (BP_FurnitureInputManager)
+- [[L07 · Menu chuột phải và phím tắt]] (5m): 8 đứt · 1 `?` → `CaptureSnapshot` (BP_UndoManager ×3) · `CopyMesh` (BP_FurnitureInputManager ×2) · `SpawnFurnitureCopy` (BP_FurnitureInputManager ×2) · `DeleteSelected` (BP_FurnitureActor) · `DeselectAll` (BP_UndoManager) · `DuplicateMesh` (BP_FurnitureInputManager)
+- [[L08 · Thay đồ]] (5n): 7 đứt → `AddRecentMesh` (BP_FurnitureUserPrefsManager) · `CaptureSnapshot` (BP_UndoManager) · `DeselectAll` (BP_FurnitureInputManager) · `ExitReplaceMode` (BP_FurnitureInputManager) · `SelectActors` (BP_FurnitureInputManager) · `mọi thẻ hiện nút Thay` (WBP_FurnitureCard)
+- [[L09 · Đổi vật liệu]] (5o, 5p): 9 đứt → `CaptureSnapshot` (BP_UndoManager ×2) · `AddRecentMaterial` (BP_FurnitureUserPrefsManager) · `ApplyLoadedMaterialToSlot` (MaterialSlotService_Reference) · `ApplyMaterial` (WBP_FurnitureInventory) · `BP_DragDropOperation_Material` (WBP_DragOverlay_FurnitureCard) · `HighlightSwatchByIndex` (WBP_FurnitureInventory)
+- [[L10 · Chỉnh thông số vật liệu]] (5b): 7 đứt → `SetSlotScalarParam` (MaterialSlotService_Reference ×2) · `ApplyParamCommand` (MaterialSlotService_Reference) · `BeginInteractiveEdit` (BP_UndoManager) · `CancelInteractiveEdit` (BP_UndoManager) · `CommitInteractiveEdit` (BP_UndoManager) · `OnEditBegin` (WBP_FurnitureInventory)
+- [[L11 · Combo]] (5q, 5r, 5s): 24 đứt → `SpawnComboByID` (BP_ComboManager ×2) · `CalculateComboAnchor` (BP_FurnitureInputManager) · `CaptureSnapshot` (BP_UndoManager) · `ComboToJson` (ComboSerializer_Reference) · `DeselectAll` (BP_FurnitureInputManager) · `DestroyComboCluster` (BP_FurnitureInputManager)
+- [[L12 · Lưu và mở cảnh]] (5t): 9 đứt → `ApplyLoadedMaterialToSlot` (MaterialSlotService_Reference) · `ApplyParamsJsonToSlot` (MaterialSlotService_Reference) · `AsyncWaitForOperation` (BP_FurnitureActor) · `DeselectMesh` (BP_FurnitureInputManager) · `EnsurePersistentId` (EntityIdLibrary_Reference) · `LoadAsset_Blocking` (BP_FurnitureActor)
+- [[L13 · Hoàn tác và làm lại]] (5c, 5d, 5e): 19 đứt · 1 `?` → `RefreshParamPanel` (WBP_FurnitureInventory ×2) · `SelectActors` (BP_FurnitureInputManager ×2) · `2. xoá hết đồ` (BP_UndoManager) · `ApplyLoadedMaterialToSlot` (MaterialSlotService_Reference) · `ApplyParamsJsonToSlot` (MaterialSlotService_Reference) · `ApplyRestoredActor` (WBP_FurnitureInventory)
+
 ## Thẻ Canvas có tên hàm nhưng chưa tìm được mục trong doc (31)
 > Doc chưa có heading cho hàm này (hoặc tên lệch) → thẻ không có link ↗.
 

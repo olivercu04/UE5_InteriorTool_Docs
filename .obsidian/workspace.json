@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/Plans/25-09-2026_Product_UX_Review_Plan_v1.md",
+                "file": "docs/00_Core/01_Session_State.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "25-09-2026_Product_UX_Review_Plan_v1"
+              "title": "01_Session_State"
             }
           }
         ]
@@ -83,7 +83,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 296.5
+    "width": 310.5
   },
   "right": {
     "id": "4e5140dfc2ac73c0",
@@ -187,34 +187,39 @@
   },
   "active": "5ff223a103752ffb",
   "lastOpenFiles": [
-    "docs/00_Core/sedkNdsUO",
+    "import_raw/performance.md",
+    "docs/Brain/Tư duy/Tư duy 2 · Kiến trúc và nguyên tắc code.md",
     "docs/Brain/Tư duy/Tư duy 1 · Sản phẩm và người dùng.md",
-    "import_raw/Design.md",
-    "docs/00_Core/Architecture_Map.md",
-    "docs/00_Core/CrossCheck_PreGate2_02aug2026.md",
+    "docs/Brain/Bản đồ não.md",
+    "docs/Brain/Tổng quát/3 · Khuôn 4 bước.canvas",
     "docs/Brain/Tổng quát/2 · Phía sau màn hình.canvas",
     "docs/Brain/Tổng quát/1 · Một buổi dựng phòng.canvas",
-    "docs/Brain/Bản đồ não.md",
+    "docs/Brain/Tổng quát/ảnh/tq_warehouse.png",
+    "docs/Brain/Tổng quát/ảnh/tq_vong_mau.png",
+    "docs/Brain/Tổng quát/ảnh/tq_UI_tong_quan.png",
+    "docs/Brain/Tổng quát/ảnh/tq_toolbar.png",
+    "docs/Brain/Tổng quát/ảnh/tq_phong_ban_gizmo.png",
+    "docs/Brain/Tổng quát/ảnh/tq_gizmo_nho.png",
+    "docs/Brain/Tổng quát/ảnh/tq_bang_material_tren.png",
+    "docs/Brain/Tư duy/Tư duy 4 · Cách viết tài liệu trong bộ não.md",
+    "docs/Brain/Luồng/L01 · Mở tool và kho đồ.md",
+    "docs/Brain/Canvas/5g - Mở tool và mở kho đồ.canvas",
     "docs/00_Core/00_INDEX.md",
+    "docs/Brain/Chỉ mục hàm & biến.md",
+    "docs/00_Core/01_Session_State.md",
+    "docs/00_Core/Architecture_Map.md",
+    "docs/Plans/25-09-2026_Product_UX_Review_Plan_v1.md",
+    "docs/00_Core/sedkNdsUO",
+    "import_raw/Design.md",
+    "docs/00_Core/CrossCheck_PreGate2_02aug2026.md",
     "docs/Plans/18-09-2026_UndoArchitecture_Foundation_v1.md",
-    "docs/Brain/Tư duy/Tư duy 2 · Kiến trúc và nguyên tắc code.md",
     "docs/Brain/Canvas/5t - Lưu cảnh và mở lại cảnh (EMS).canvas",
     "docs/Brain/Canvas/5h - Tìm đồ trong kho (gõ tìm · thư mục · Gần đây · Yêu thích).canvas",
     "docs/Brain/Canvas/5p - Đổi vật liệu bằng cách kéo thẻ thả lên đồ.canvas",
-    "docs/Plans/25-09-2026_Product_UX_Review_Plan_v1.md",
-    "docs/Brain/Tổng quát/ảnh/tq_gizmo_nho.png",
-    "docs/Brain/Tổng quát/ảnh/tq_vong_mau.png",
-    "docs/Brain/Tổng quát/ảnh/tq_bang_material_tren.png",
-    "docs/Brain/Tổng quát/ảnh/tq_warehouse.png",
-    "docs/Brain/Tổng quát/ảnh/tq_phong_ban_gizmo.png",
-    "docs/Brain/Tổng quát/ảnh/tq_toolbar.png",
-    "docs/Brain/Tổng quát/ảnh/tq_UI_tong_quan.png",
     "docs/Brain/Tổng quát/ảnh",
-    "docs/Brain/Tổng quát/3 · Khuôn 4 bước.canvas",
     "docs/Brain/Tổng quát",
     "docs/Brain/Luồng - Kéo gizmo Move.md",
     "docs/Brain/Kiểm tra bản đồ.md",
-    "docs/Brain/Chỉ mục hàm & biến.md",
     "docs/Brain/Luồng - Click chọn đồ trong viewport.md",
     "docs/Brain/Canvas/5b - Chỉnh 1 thông số vật liệu (U2 Interactive Edit Session).canvas",
     "docs/Brain/Canvas/5a - Click chọn đồ trong viewport.canvas",
@@ -225,20 +230,15 @@
     "docs/Brain/_tools/__pycache__/build.cpython-310.pyc",
     "docs/Brain/_tools/__pycache__/build.cpython-310.pyc.127695396697072",
     "docs/Brain/_tools/build.py",
-    "docs/Brain/_tools/__pycache__/brainlib.cpython-310.pyc.123879385756656",
     "docs/Brain/Luồng 3b - Combo lưu spawn thay combo.md",
     "docs/Brain/Luồng - Undo Redo.md",
     "docs/Brain/Canvas/5f - Kéo gizmo Move (1 món · nhiều món qua Pivot).canvas",
     "docs/Blueprints/BP_FurnitureInputManager.md",
-    "docs/Brain/Canvas/5d - Ghi sổ lịch sử — 1 thao tác thành 1 entry (CaptureSnapshot).canvas",
     "docs/Brain/Luồng 3a - Chọn đồ Gizmo Nhóm.md",
     "docs/Brain/Luồng 3c - Inventory + Cây thư mục.md",
-    "docs/00_Core/01_Session_State.md",
     "docs/Blueprints/BP_FurnitureActor.md",
     "docs/Brain/Luồng U2 - Chỉnh thông số vật liệu và Undo.md",
     "docs/Brain/Luồng 3e - Vật liệu Material.md",
-    "docs/Brain/Luồng 3d - Save Undo khởi động.md",
-    "docs/Brain/Chưa có doc/WBP_SlotSwatch.md",
-    "docs/Brain/Chưa có doc/WBP_FOFF_ToolDemo.md"
+    "docs/Brain/Luồng 3d - Save Undo khởi động.md"
   ]
 }

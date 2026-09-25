@@ -68,6 +68,18 @@ Khi cả người lẫn AI cùng đoán mà chưa ai verify → **đi lấy bằ
 - Lệch plan về logic / kiến trúc / phạm vi → ghi [[DEVIATIONS]] NGAY lúc lệch.
 - Sơ đồ bị ảnh hưởng → sửa [[Architecture_Map]] rồi chạy `python Brain/_tools/build.py` (xem [[Tư duy 4 · Cách viết tài liệu trong bộ não|Tư duy 4]]).
 
+### Nghi thức đóng task / đóng gate (R-DOC-CLOSE, 25/09/2026)
+cuhoang chỉ nói **"đóng task"** hoặc **"đóng gate"** — AI tự chạy checklist, không bắt người nhớ.
+```
+"đóng task" → doc canonical as-built → Architecture_Map (5x + Phần 3) → Luồng Lxx
+              → Open_Bugs / DEVIATIONS / Learning_System → build.py (❌⚠🔗 = 0) → báo file đổi → commit
+"đóng gate" → + mở [[Kiểm tra bản đồ]] › 🧭 K2 cần xin khi đóng gate (chỉ Lxx gate đụng) → xin K2 → nâng liền
+```
+- K2 gửi lúc **xác nhận flow trong task** chính là bằng chứng ✓K2 — ghi ngay lúc đóng task, không đợi cuối gate.
+- Nét liền chỉ khi có K2. PIE PASS vẫn là nét đứt.
+- Lưới an toàn: git log (Blueprint đổi mà không có commit doc = lỗ hổng) · vòng 🧭 cuối gate · khi suy luận, phần "theo doc" là giả thuyết → xin K2 trước khi sửa code dựa trên nó.
+- Chi tiết: [[Execution_Discipline]] mục R-DOC-CLOSE.
+
 ## 7. Giọng làm việc
 
 Tiếng Việt, ngắn, bảng / gạch đầu dòng thay đoạn văn; tên node / class / biến giữ tiếng Anh; khái niệm mới kèm 1 ví dụ đời thường. Mỗi lượt 1 việc, kết bằng "làm xong báo" + cách test cụ thể. Chi tiết: [[AI_Communication_Rules]].
